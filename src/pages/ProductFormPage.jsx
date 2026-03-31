@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { productAPI } from '../services/api';
 import { calculateProfit, formatCurrency } from '../utils/helpers';
 import Alert from '../components/Alert';
@@ -7,6 +7,8 @@ import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function ProductFormPage() {
   const navigate = useNavigate();
+  const { productId } = useParams();
+  const isEditMode = Boolean(productId);
   const [formData, setFormData] = useState({
     productName: '',
     amazonLink: '',
@@ -16,8 +18,41 @@ export default function ProductFormPage() {
     userEmail: '',
   });
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(isEditMode);
   const [alert, setAlert] = useState(null);
   const [calculatedProfit, setCalculatedProfit] = useState(0);
+
+  useEffect(() => {
+    if (!isEditMode) return;
+
+    const fetchProduct = async () => {
+      try {
+        setInitialLoading(true);
+        const response = await productAPI.getById(productId);
+        const product = response.data;
+
+        const nextData = {
+          productName: product.productName || '',
+          amazonLink: product.amazonLink || '',
+          ebayLink: product.ebayLink || '',
+          currentAmazonPrice: product.currentAmazonPrice ?? '',
+          currentEbayPrice: product.currentEbayPrice ?? '',
+          userEmail: product.userEmail || '',
+        };
+
+        setFormData(nextData);
+        setCalculatedProfit(
+          calculateProfit(nextData.currentEbayPrice, nextData.currentAmazonPrice)
+        );
+      } catch (error) {
+        setAlert({ type: 'error', message: 'Failed to load product for editing' });
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [isEditMode, productId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -62,20 +97,37 @@ export default function ProductFormPage() {
       formDataObj.append('currentEbayPrice', formData.currentEbayPrice);
       formDataObj.append('userEmail', formData.userEmail);
 
-      await productAPI.create(formDataObj);
-      setAlert({ type: 'success', message: 'Product added successfully!' });
+      if (isEditMode) {
+        await productAPI.update(productId, formDataObj);
+      } else {
+        await productAPI.create(formDataObj);
+      }
+
+      setAlert({
+        type: 'success',
+        message: isEditMode ? 'Product updated successfully!' : 'Product added successfully!',
+      });
       setTimeout(() => navigate('/dashboard'), 1500);
     } catch (error) {
-      setAlert({ type: 'error', message: error.response?.data?.message || 'Failed to add product' });
+      setAlert({
+        type: 'error',
+        message:
+          error.response?.data?.message ||
+          (isEditMode ? 'Failed to update product' : 'Failed to add product'),
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  if (initialLoading) return <LoadingSpinner />;
+
   return (
     <div className="p-4 md:p-8 min-h-screen bg-gray-100">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">Add New Product</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-8">
+          {isEditMode ? 'Edit Product' : 'Add New Product'}
+        </h1>
 
         {alert && (
           <div className="mb-6">
@@ -216,7 +268,13 @@ export default function ProductFormPage() {
               disabled={loading}
               className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold disabled:opacity-50"
             >
-              {loading ? 'Adding Product...' : 'Add Product'}
+              {loading
+                ? isEditMode
+                  ? 'Updating Product...'
+                  : 'Adding Product...'
+                : isEditMode
+                  ? 'Update Product'
+                  : 'Add Product'}
             </button>
             <button
               type="button"
