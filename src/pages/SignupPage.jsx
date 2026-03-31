@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createUserWithEmailAndPassword, updateProfile, auth } from '../services/firebase';
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signOut,
+  auth,
+} from '../services/firebase';
 import { authAPI } from '../services/api';
 import Alert from '../components/Alert';
 
@@ -58,8 +63,12 @@ export default function SignupPage() {
       // Also notify backend
       await authAPI.signup(formData.email, formData.password, formData.name);
 
-      setAlert({ type: 'success', message: 'Account created successfully!' });
-      setTimeout(() => navigate('/dashboard'), 1500);
+      // Firebase signs in immediately after signup; sign out so user lands on login.
+      await signOut(auth);
+      localStorage.removeItem('authToken');
+
+      setAlert({ type: 'success', message: 'Account created successfully! Please login.' });
+      setTimeout(() => navigate('/login'), 1200);
     } catch (error) {
       const errorMessage =
         error.code === 'auth/email-already-in-use'
