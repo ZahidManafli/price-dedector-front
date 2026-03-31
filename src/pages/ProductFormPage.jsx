@@ -16,6 +16,7 @@ export default function ProductFormPage() {
     currentAmazonPrice: '',
     currentEbayPrice: '',
     userEmail: '',
+    amazonSubscribed: false,
   });
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(isEditMode);
@@ -38,6 +39,7 @@ export default function ProductFormPage() {
           currentAmazonPrice: product.currentAmazonPrice ?? '',
           currentEbayPrice: product.currentEbayPrice ?? '',
           userEmail: product.userEmail || '',
+          amazonSubscribed: product.amazonSubscribed || false,
         };
 
         setFormData(nextData);
@@ -55,14 +57,23 @@ export default function ProductFormPage() {
   }, [isEditMode, productId]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    const nextValue = type === 'checkbox' ? checked : value;
+    setFormData((prev) => ({ ...prev, [name]: nextValue }));
 
     // Recalculate profit
-    if (name === 'currentAmazonPrice' || name === 'currentEbayPrice') {
-      const ebayPrice = name === 'currentEbayPrice' ? value : formData.currentEbayPrice;
-      const amazonPrice = name === 'currentAmazonPrice' ? value : formData.currentAmazonPrice;
-      setCalculatedProfit(calculateProfit(ebayPrice, amazonPrice));
+    if (name === 'currentAmazonPrice' || name === 'currentEbayPrice' || name === 'amazonSubscribed') {
+      const ebayPrice =
+        name === 'currentEbayPrice' ? nextValue : formData.currentEbayPrice;
+      const amazonRaw =
+        name === 'currentAmazonPrice' ? nextValue : formData.currentAmazonPrice;
+      const isSubscribed =
+        name === 'amazonSubscribed' ? nextValue : formData.amazonSubscribed;
+      const discountRate = 0.05; // keep in sync with backend default
+      const effectiveAmazon = isSubscribed
+        ? (parseFloat(amazonRaw) || 0) * (1 - discountRate)
+        : amazonRaw;
+      setCalculatedProfit(calculateProfit(ebayPrice, effectiveAmazon));
     }
   };
 
@@ -96,6 +107,7 @@ export default function ProductFormPage() {
       formDataObj.append('currentAmazonPrice', formData.currentAmazonPrice);
       formDataObj.append('currentEbayPrice', formData.currentEbayPrice);
       formDataObj.append('userEmail', formData.userEmail);
+      formDataObj.append('amazonSubscribed', String(formData.amazonSubscribed));
 
       if (isEditMode) {
         await productAPI.update(productId, formDataObj);
@@ -226,6 +238,22 @@ export default function ProductFormPage() {
                 required
               />
             </div>
+          </div>
+
+          {/* Amazon Subscribe & Save */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="amazonSubscribed"
+              name="amazonSubscribed"
+              checked={formData.amazonSubscribed}
+              onChange={handleChange}
+              disabled={loading}
+              className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+            />
+            <label htmlFor="amazonSubscribed" className="text-sm text-gray-700">
+              I have Amazon Subscribe &amp; Save for this product (use discounted price)
+            </label>
           </div>
 
           {/* Profit Preview */}
