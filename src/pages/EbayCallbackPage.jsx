@@ -44,10 +44,10 @@ export default function EbayCallbackPage() {
   }, [navigate, searchParams]);
 
   return (
-    <div className="p-4 md:p-8 min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="max-w-lg w-full bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">Connecting eBay</h1>
-        {loading && <p className="text-gray-600 mb-4">Finalizing your eBay authorization...</p>}
+    <div className="page-shell flex items-center justify-center">
+      <div className="max-w-lg w-full glass-card p-6">
+        <h1 className="text-2xl font-semibold text-slate-900 mb-4">Connecting eBay</h1>
+        {loading && <p className="text-slate-600 mb-4">Finalizing your eBay authorization...</p>}
         {alert && (
           <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
         )}

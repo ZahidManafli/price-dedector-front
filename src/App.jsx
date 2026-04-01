@@ -21,8 +21,8 @@ const ProtectedRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
       </div>
     );
   }
@@ -39,15 +39,15 @@ function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
       </div>
     );
   }
 
   return (
     <Router>
-      {isAuthenticated && <Navbar />}
+      {/* {isAuthenticated && <Navbar />} */}
       <div className="flex">
         {isAuthenticated && <Sidebar />}
         <main className={isAuthenticated ? 'flex-1 ml-0 md:ml-64' : 'w-full'}>

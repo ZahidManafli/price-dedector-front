@@ -23,14 +23,14 @@ export default function Alert({ type = 'info', message, onClose, autoClose = tru
   }[type];
 
   return (
-    <div className={`border rounded-lg p-4 flex items-start gap-3 ${bgColor}`}>
-      <span className="text-xl font-bold">{icon}</span>
+    <div className={`border rounded-xl p-4 flex items-start gap-3 shadow-sm ${bgColor}`}>
+      <span className="text-base font-bold mt-0.5">{icon}</span>
       <div className="flex-1">
-        <p>{message}</p>
+        <p className="text-sm md:text-base">{message}</p>
       </div>
       <button
         onClick={onClose}
-        className="text-xl font-bold hover:opacity-70"
+        className="text-lg font-bold hover:opacity-70"
       >
         ✕
       </button>

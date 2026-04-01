@@ -81,14 +81,14 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center px-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4 text-white text-3xl font-bold">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-indigo-50 flex items-center justify-center px-4 py-6">
+      <div className="glass-card p-6 w-full max-w-md">
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white text-3xl font-bold shadow-sm">
             PC
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">Price Check</h1>
-          <p className="text-gray-600 mt-2">Create your account</p>
+          <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">Create account</h1>
+          <p className="text-slate-600 mt-2">Start tracking products in a smarter way</p>
         </div>
 
         {alert && (
@@ -109,7 +109,7 @@ export default function SignupPage() {
             placeholder="Full Name"
             value={formData.name}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="input-base"
             disabled={loading}
           />
 
@@ -119,7 +119,7 @@ export default function SignupPage() {
             placeholder="Email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="input-base"
             disabled={loading}
           />
 
@@ -129,7 +129,7 @@ export default function SignupPage() {
             placeholder="Password (min 6 characters)"
             value={formData.password}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="input-base"
             disabled={loading}
           />
 
@@ -139,20 +139,20 @@ export default function SignupPage() {
             placeholder="Confirm Password"
             value={formData.confirmPassword}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="input-base"
             disabled={loading}
           />
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50"
+            className="w-full btn-primary py-2.5"
           >
             {loading ? 'Creating account...' : 'Sign Up'}
           </button>
         </form>
 
-        <p className="text-center text-gray-600 mt-6">
+        <p className="text-center text-slate-600 mt-6">
           Already have an account?{' '}
           <Link to="/login" className="text-blue-600 font-semibold hover:underline">
             Login

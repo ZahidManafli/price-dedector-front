@@ -18,6 +18,24 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Redirect to login on 401 / invalid token
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    if (status === 401) {
+      try {
+        localStorage.removeItem('authToken');
+      } catch {}
+      // Use hard redirect to ensure state reset
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth APIs
 export const authAPI = {
   signup: (email, password, name) => api.post('/auth/signup', { email, password, name }),

@@ -5,9 +5,7 @@ import { calculateProfit, formatCurrency } from '../utils/helpers';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 
-export default function ProductFormPage() {
-  const navigate = useNavigate();
-  const { productId } = useParams();
+export function ProductFormModal({ productId = null, onClose, onSuccess }) {
   const isEditMode = Boolean(productId);
   const [formData, setFormData] = useState({
     productName: '',
@@ -119,7 +117,10 @@ export default function ProductFormPage() {
         type: 'success',
         message: isEditMode ? 'Product updated successfully!' : 'Product added successfully!',
       });
-      setTimeout(() => navigate('/dashboard'), 1500);
+      setTimeout(() => {
+        onSuccess?.();
+        onClose?.();
+      }, 600);
     } catch (error) {
       setAlert({
         type: 'error',
@@ -135,11 +136,20 @@ export default function ProductFormPage() {
   if (initialLoading) return <LoadingSpinner />;
 
   return (
-    <div className="p-4 md:p-8 min-h-screen bg-gray-100">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">
-          {isEditMode ? 'Edit Product' : 'Add New Product'}
-        </h1>
+    <div
+      className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-[1px] p-3 md:p-6 flex items-center justify-center"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose?.();
+        }
+      }}
+    >
+      <div className="w-full max-w-2xl">
+        <div className="mb-3">
+          <h1 className="page-title">
+            {isEditMode ? 'Edit Product' : 'Add New Product'}
+          </h1>
+        </div>
 
         {alert && (
           <div className="mb-6">
@@ -152,10 +162,10 @@ export default function ProductFormPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="glass-card p-4 md:p-5 space-y-4 max-h-[82vh] overflow-y-auto">
           {/* Product Name */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Product Name *
             </label>
             <input
@@ -164,7 +174,7 @@ export default function ProductFormPage() {
               value={formData.productName}
               onChange={handleChange}
               placeholder="e.g., iPhone 15 Pro"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="input-base"
               disabled={loading}
               required
             />
@@ -172,7 +182,7 @@ export default function ProductFormPage() {
 
           {/* Amazon Link */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Amazon Product Link *
             </label>
             <input
@@ -181,7 +191,7 @@ export default function ProductFormPage() {
               value={formData.amazonLink}
               onChange={handleChange}
               placeholder="https://amazon.com/..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="input-base"
               disabled={loading}
               required
             />
@@ -189,7 +199,7 @@ export default function ProductFormPage() {
 
           {/* eBay Link */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               eBay Product Link *
             </label>
             <input
@@ -198,16 +208,16 @@ export default function ProductFormPage() {
               value={formData.ebayLink}
               onChange={handleChange}
               placeholder="https://ebay.com/..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="input-base"
               disabled={loading}
               required
             />
           </div>
 
           {/* Prices */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Amazon Price *
               </label>
               <input
@@ -217,13 +227,13 @@ export default function ProductFormPage() {
                 onChange={handleChange}
                 placeholder="0.00"
                 step="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="input-base"
                 disabled={loading}
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 eBay Price *
               </label>
               <input
@@ -233,7 +243,7 @@ export default function ProductFormPage() {
                 onChange={handleChange}
                 placeholder="0.00"
                 step="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="input-base"
                 disabled={loading}
                 required
               />
@@ -241,7 +251,7 @@ export default function ProductFormPage() {
           </div>
 
           {/* Amazon Subscribe & Save */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-2.5 border border-slate-200">
             <input
               type="checkbox"
               id="amazonSubscribed"
@@ -258,12 +268,12 @@ export default function ProductFormPage() {
 
           {/* Profit Preview */}
           {(formData.currentAmazonPrice || formData.currentEbayPrice) && (
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <p className="text-sm text-gray-600">Estimated Profit</p>
-              <p className={`text-3xl font-bold ${ calculatedProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <p className="text-sm text-slate-600">Estimated Profit</p>
+              <p className={`text-2xl font-bold ${ calculatedProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(calculatedProfit)}
               </p>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-slate-500 mt-2">
                 Formula: SP - (PC + (SP×0.129) + (SP×0.029+0.30)) + 1.45
               </p>
             </div>
@@ -271,7 +281,7 @@ export default function ProductFormPage() {
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Email for Notifications *
             </label>
             <input
@@ -280,21 +290,21 @@ export default function ProductFormPage() {
               value={formData.userEmail}
               onChange={handleChange}
               placeholder="your.email@example.com"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="input-base"
               disabled={loading}
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               You'll receive alerts when prices change
             </p>
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-4 pt-4">
+          <div className="flex gap-3 pt-2">
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold disabled:opacity-50"
+              className="flex-1 btn-primary py-3"
             >
               {loading
                 ? isEditMode
@@ -306,8 +316,8 @@ export default function ProductFormPage() {
             </button>
             <button
               type="button"
-              onClick={() => navigate('/dashboard')}
-              className="flex-1 bg-gray-600 text-white py-3 rounded-lg hover:bg-gray-700 transition font-semibold"
+              onClick={onClose}
+              className="flex-1 btn-secondary py-3"
               disabled={loading}
             >
               Cancel
@@ -316,5 +326,18 @@ export default function ProductFormPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ProductFormPage() {
+  const navigate = useNavigate();
+  const { productId } = useParams();
+
+  return (
+    <ProductFormModal
+      productId={productId || null}
+      onClose={() => navigate('/dashboard')}
+      onSuccess={() => navigate('/dashboard')}
+    />
   );
 }

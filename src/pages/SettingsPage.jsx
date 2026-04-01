@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Bell, CheckCircle2, Link2, Mail, ShieldCheck } from 'lucide-react';
 import { ebayAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 
@@ -89,9 +90,9 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 min-h-screen bg-gray-100">
+    <div className="page-shell">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">Settings</h1>
+        <h1 className="page-title mb-8">Settings</h1>
 
         {alert && (
           <div className="mb-6">
@@ -103,13 +104,16 @@ export default function SettingsPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <form onSubmit={handleSave} className="space-y-6">
+        <div className="glass-card p-4 md:p-5">
+          <form onSubmit={handleSave} className="space-y-5">
             {/* Email Notifications */}
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Email Notifications</h2>
+            <div className="rounded-lg border border-slate-200 p-3 md:p-4">
+              <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                <Bell size={16} />
+                Email Notifications
+              </h2>
 
-              <label className="flex items-center gap-3 mb-4">
+              <label className="flex items-center gap-3 mb-3 bg-slate-50 border border-slate-200 rounded-lg p-2.5">
                 <input
                   type="checkbox"
                   name="emailOnPriceChange"
@@ -118,10 +122,10 @@ export default function SettingsPage() {
                   className="w-4 h-4"
                   disabled={loading}
                 />
-                <span className="text-gray-700">Send email when prices change</span>
+                <span className="text-slate-700">Send email when prices change</span>
               </label>
 
-              <div className="ml-7">
+              <div className="ml-6">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Notification Frequency
                 </label>
@@ -129,7 +133,7 @@ export default function SettingsPage() {
                   name="emailNotificationFrequency"
                   value={preferences.emailNotificationFrequency}
                   onChange={handleChange}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="input-base"
                   disabled={!preferences.emailOnPriceChange || loading}
                 >
                   <option value="instant">Instant</option>
@@ -140,23 +144,27 @@ export default function SettingsPage() {
             </div>
 
             {/* eBay Integration */}
-            <div className="pt-4 border-t">
-              <h2 className="text-xl font-semibold text-gray-800 mb-2">eBay Integration</h2>
-              <p className="text-sm text-gray-600 mb-4">
+            <div className="rounded-lg border border-slate-200 p-3 md:p-4">
+              <h2 className="text-lg font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                <Link2 size={16} />
+                eBay Integration
+              </h2>
+              <p className="text-sm text-slate-600 mb-4">
                 Connect your eBay account to auto-update listing prices when Amazon prices change.
               </p>
-              <div className="bg-gray-50 border rounded-lg p-4 mb-4">
-                <p className="text-sm text-gray-700">
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-3">
+                <p className="text-sm text-slate-700">
                   Status:{' '}
-                  <span className={ebayStatus.connected ? 'text-green-700 font-semibold' : 'text-gray-700'}>
+                  <span className={ebayStatus.connected ? 'text-green-700 font-semibold inline-flex items-center gap-1' : 'text-slate-700'}>
+                    {ebayStatus.connected && <CheckCircle2 size={14} />}
                     {ebayStatus.connected ? 'Connected' : 'Not connected'}
                   </span>
                 </p>
                 {ebayStatus.accountId && (
-                  <p className="text-sm text-gray-700 mt-1">Account: {ebayStatus.accountId}</p>
+                  <p className="text-sm text-slate-700 mt-1">Account: {ebayStatus.accountId}</p>
                 )}
                 {ebayStatus.environment && (
-                  <p className="text-sm text-gray-700 mt-1">Environment: {ebayStatus.environment}</p>
+                  <p className="text-sm text-slate-700 mt-1">Environment: {ebayStatus.environment}</p>
                 )}
               </div>
               <div className="flex gap-3">
@@ -165,7 +173,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={handleConnectEbay}
                     disabled={ebayLoading}
-                    className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+                    className="rounded-xl bg-indigo-600 text-white px-5 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
                   >
                     {ebayLoading ? 'Connecting...' : 'Connect eBay'}
                   </button>
@@ -174,7 +182,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={handleDisconnectEbay}
                     disabled={ebayLoading}
-                    className="bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                    className="rounded-xl bg-red-600 text-white px-5 py-2.5 hover:bg-red-700 transition disabled:opacity-50"
                   >
                     {ebayLoading ? 'Disconnecting...' : 'Disconnect eBay'}
                   </button>
@@ -183,25 +191,42 @@ export default function SettingsPage() {
             </div>
 
             {/* Buttons */}
-            <div className="pt-4 border-t">
+            <div className="pt-3 border-t border-slate-200">
               <div className="flex gap-4">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold disabled:opacity-50"
+                  className="btn-primary"
                 >
                   {loading ? 'Saving...' : 'Save Settings'}
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate('/dashboard')}
-                  className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition"
+                  className="btn-secondary"
                 >
                   Back
                 </button>
               </div>
             </div>
           </form>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="glass-card p-3">
+            <p className="text-sm font-medium text-slate-900 flex items-center gap-2">
+              <Mail size={14} />
+              Notification Channel
+            </p>
+            <p className="text-xs text-slate-600 mt-1">Email alerts for price changes and sync events.</p>
+          </div>
+          <div className="glass-card p-3">
+            <p className="text-sm font-medium text-slate-900 flex items-center gap-2">
+              <ShieldCheck size={14} />
+              Account Security
+            </p>
+            <p className="text-xs text-slate-600 mt-1">OAuth tokens are stored server-side and refreshed automatically.</p>
+          </div>
         </div>
       </div>
     </div>

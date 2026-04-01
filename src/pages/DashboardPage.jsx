@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import { productAPI } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
+import { ProductFormModal } from './ProductFormPage';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingProductId, setEditingProductId] = useState(null);
 
   useEffect(() => {
     fetchProducts();
@@ -41,7 +45,8 @@ export default function DashboardPage() {
   };
 
   const handleEdit = (productId) => {
-    navigate(`/edit-product/${productId}`);
+    setEditingProductId(productId);
+    setIsFormOpen(true);
   };
 
   const handleCompare = (productId) => {
@@ -49,7 +54,18 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 min-h-screen bg-gray-100">
+    <div className="page-shell">
+      {isFormOpen && (
+        <ProductFormModal
+          productId={editingProductId}
+          onClose={() => {
+            setIsFormOpen(false);
+            setEditingProductId(null);
+          }}
+          onSuccess={fetchProducts}
+        />
+      )}
+
       {alert && (
         <div className="mb-6">
           <Alert
@@ -60,33 +76,40 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-3">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Track and compare your products</p>
+          <h1 className="page-title">Dashboard</h1>
+          <p className="page-subtitle">Track products, monitor margin, and react faster.</p>
         </div>
         <button
-          onClick={() => navigate('/add-product')}
-          className="w-full md:w-auto bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold"
+          onClick={() => {
+            setEditingProductId(null);
+            setIsFormOpen(true);
+          }}
+          className="w-full md:w-auto btn-primary flex items-center justify-center gap-1.5"
         >
-          ➕ Add Product
+          <Plus size={14} />
+          Add Product
         </button>
       </div>
 
       {loading ? (
         <LoadingSpinner />
       ) : products.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-2xl text-gray-400 mb-4">📦 No products yet</p>
+        <div className="glass-card text-center py-10">
+          <p className="text-xl text-slate-500 mb-3">No products yet</p>
           <button
-            onClick={() => navigate('/add-product')}
-            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition"
+            onClick={() => {
+              setEditingProductId(null);
+              setIsFormOpen(true);
+            }}
+            className="btn-primary"
           >
             Add your first product
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
           {products.map((product) => (
             <ProductCard
               key={product.id}

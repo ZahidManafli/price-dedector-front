@@ -14,8 +14,42 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f9fafb;
-  color: #1f2937;
+  background: #f5f7fb;
+  color: #0f172a;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white border border-slate-200 rounded-xl shadow-sm;
+  }
+
+  .page-shell {
+    @apply min-h-screen px-3 py-4 md:px-5 md:py-5;
+  }
+
+  .page-title {
+    @apply text-2xl md:text-3xl font-semibold tracking-tight text-slate-900;
+  }
+
+  .page-subtitle {
+    @apply text-slate-600 mt-1 text-sm md:text-base;
+  }
+
+  .input-base {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100;
+  }
+
+  .btn-primary {
+    @apply rounded-lg bg-blue-600 px-4 py-2 text-white text-sm font-medium transition hover:bg-blue-700 disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 text-sm font-medium transition hover:bg-slate-50;
+  }
 }
 
 /* Animations */

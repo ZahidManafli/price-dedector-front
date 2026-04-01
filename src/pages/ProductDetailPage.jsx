@@ -53,11 +53,11 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-xl text-gray-600">Product not found</p>
+      <div className="page-shell text-center">
+        <p className="text-xl text-slate-600">Product not found</p>
         <button
           onClick={() => navigate('/dashboard')}
-          className="mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+          className="mt-4 btn-primary"
         >
           Back to Dashboard
         </button>
@@ -66,11 +66,11 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 min-h-screen bg-gray-100">
+    <div className="page-shell">
       <div className="max-w-4xl mx-auto">
         <button
           onClick={() => navigate('/dashboard')}
-          className="text-blue-600 hover:underline mb-6"
+          className="text-blue-600 hover:underline mb-6 text-sm"
         >
           ← Back to Dashboard
         </button>
@@ -85,35 +85,35 @@ export default function ProductDetailPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="glass-card overflow-hidden">
           {/* Header */}
-          <div className="p-6 md:p-8 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
-            <h1 className="text-3xl font-bold mb-4">{product.productName}</h1>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-4 md:p-5 bg-gradient-to-r from-slate-900 to-blue-900 text-white">
+            <h1 className="text-2xl font-semibold mb-3 tracking-tight">{product.productName}</h1>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
-                <p className="text-blue-200 text-sm">Amazon Price</p>
-                <p className="text-2xl font-bold">{formatCurrency(product.currentAmazonPrice)}</p>
+                <p className="text-blue-100 text-sm">Amazon Price</p>
+                <p className="text-xl font-bold">{formatCurrency(product.currentAmazonPrice)}</p>
               </div>
               <div>
-                <p className="text-blue-200 text-sm">eBay Price</p>
-                <p className="text-2xl font-bold">{formatCurrency(product.currentEbayPrice)}</p>
+                <p className="text-blue-100 text-sm">eBay Price</p>
+                <p className="text-xl font-bold">{formatCurrency(product.currentEbayPrice)}</p>
               </div>
               <div>
-                <p className="text-blue-200 text-sm">Profit</p>
-                <p className="text-2xl font-bold">{formatCurrency(product.profit)}</p>
+                <p className="text-blue-100 text-sm">Profit</p>
+                <p className="text-xl font-bold">{formatCurrency(product.profit)}</p>
               </div>
               <div>
-                <p className="text-blue-200 text-sm">Last Updated</p>
-                <p className="text-sm mt-2">{formatDate(product.lastUpdated)}</p>
+                <p className="text-blue-100 text-sm">Last Updated</p>
+                <p className="text-xs mt-2">{formatDate(product.lastUpdated)}</p>
               </div>
             </div>
           </div>
 
           {/* Content */}
-          <div className="p-6 md:p-8 space-y-6">
+          <div className="p-4 md:p-5 space-y-5">
             {/* Links */}
             <div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Product Links</h2>
+              <h2 className="text-xl font-semibold text-slate-900 mb-4">Product Links</h2>
               <div className="space-y-2">
                 <a
                   href={product.amazonLink}
@@ -137,10 +137,10 @@ export default function ProductDetailPage() {
             {/* Price History */}
             {history.length > 0 && (
               <div>
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Price History</h2>
-                <div className="overflow-x-auto">
+                <h2 className="text-xl font-semibold text-slate-900 mb-4">Price History</h2>
+                <div className="overflow-x-auto border border-slate-200 rounded-lg">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-100">
+                    <thead className="bg-slate-100">
                       <tr>
                         <th className="px-4 py-2 text-left">Date</th>
                         <th className="px-4 py-2 text-left">Amazon</th>
@@ -151,7 +151,7 @@ export default function ProductDetailPage() {
                     </thead>
                     <tbody>
                       {history.map((record, idx) => (
-                        <tr key={idx} className="border-t hover:bg-gray-50">
+                        <tr key={idx} className="border-t border-slate-200 hover:bg-slate-50">
                           <td className="px-4 py-3">{formatDate(record.timestamp)}</td>
                           <td className="px-4 py-3">{formatCurrency(record.amazonPrice)}</td>
                           <td className="px-4 py-3">{formatCurrency(record.ebayPrice)}</td>
@@ -170,16 +170,16 @@ export default function ProductDetailPage() {
             )}
 
             {/* Actions */}
-            <div className="pt-6 border-t flex gap-4">
+            <div className="pt-4 border-t border-slate-200 flex flex-wrap gap-3">
               <button
                 onClick={handleCompare}
-                className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition"
+                className="rounded-xl bg-emerald-600 text-white px-6 py-3 hover:bg-emerald-700 transition"
               >
-                🔄 Compare Prices Now
+                Compare Prices Now
               </button>
               <button
                 onClick={() => navigate(`/edit-product/${productId}`)}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+                className="btn-primary"
               >
                 Edit Product
               </button>
