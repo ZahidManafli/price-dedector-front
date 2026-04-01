@@ -18,6 +18,7 @@ import AboutPage from './pages/AboutPage';
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
+  const hasToken = typeof window !== 'undefined' ? !!localStorage.getItem('authToken') : false;
 
   if (loading) {
     return (
@@ -27,7 +28,7 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!(isAuthenticated && hasToken)) {
     return <Navigate to="/login" replace />;
   }
 
@@ -36,6 +37,7 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   const { isAuthenticated, loading } = useAuth();
+  const hasToken = typeof window !== 'undefined' ? !!localStorage.getItem('authToken') : false;
 
   if (loading) {
     return (
@@ -47,19 +49,18 @@ function App() {
 
   return (
     <Router>
-      {/* {isAuthenticated && <Navbar />} */}
       <div className="flex">
-        {isAuthenticated && <Sidebar />}
-        <main className={isAuthenticated ? 'flex-1 ml-0 md:ml-64' : 'w-full'}>
+        {isAuthenticated && hasToken && <Sidebar />}
+        <main className={isAuthenticated && hasToken ? 'flex-1 ml-0 md:ml-64' : 'w-full'}>
           <Routes>
             {/* Public Routes */}
             <Route
               path="/login"
-              element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
+              element={isAuthenticated && hasToken ? <Navigate to="/dashboard" replace /> : <LoginPage />}
             />
             <Route
               path="/signup"
-              element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <SignupPage />}
+              element={isAuthenticated && hasToken ? <Navigate to="/dashboard" replace /> : <SignupPage />}
             />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/about" element={<AboutPage />} />
@@ -115,7 +116,7 @@ function App() {
             />
 
             {/* Fallback */}
-            <Route path="/" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
+            <Route path="/" element={<Navigate to={isAuthenticated && hasToken ? '/dashboard' : '/login'} replace />} />
           </Routes>
         </main>
       </div>

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { auth, signOut } from './firebase';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
@@ -9,9 +10,28 @@ const api = axios.create({
   },
 });
 
-// Add token to requests
+// Add token to requests and enforce auth presence for protected routes
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('authToken');
+  const url = config?.url || '';
+  const isAuthOrPublic =
+    url.startsWith('/auth') ||
+    url.startsWith('/health') ||
+    url.includes('/privacy') ||
+    url.includes('/about');
+
+  if (!token && !isAuthOrPublic) {
+    // Mirror logout when token missing
+    try {
+      if (auth?.currentUser) {
+        signOut(auth).catch(() => {});
+      }
+    } catch {}
+    if (typeof window !== 'undefined') window.location.href = '/login';
+    // Prevent request from going out
+    return Promise.reject(new Error('No auth token present'));
+  }
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -27,10 +47,14 @@ api.interceptors.response.use(
       try {
         localStorage.removeItem('authToken');
       } catch {}
-      // Use hard redirect to ensure state reset
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
+      // Mirror the explicit logout flow (Firebase signOut + redirect)
+      try {
+        if (auth?.currentUser) {
+          // Best-effort; do not block redirect on failure
+          signOut(auth).catch(() => {});
+        }
+      } catch {}
+      if (typeof window !== 'undefined') window.location.href = '/login';
     }
     return Promise.reject(error);
   }
