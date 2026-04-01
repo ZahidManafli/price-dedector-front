@@ -107,11 +107,7 @@ function App() {
             />
             <Route
               path="/ebay/callback"
-              element={
-                <ProtectedRoute>
-                  <EbayCallbackPage />
-                </ProtectedRoute>
-              }
+              element={<EbayCallbackPage />}
             />
 
             {/* Fallback */}
