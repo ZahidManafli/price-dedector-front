@@ -53,7 +53,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-semibold text-gray-800 mb-2">6. Contact</h2>
             <p>
-              For privacy requests, contact: <span className="font-medium">support@yourdomain.com</span>
+              For privacy requests, contact: <span className="font-medium">pricededector@gmail.com</span>
             </p>
           </section>
         </div>
