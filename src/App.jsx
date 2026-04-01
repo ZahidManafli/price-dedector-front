@@ -13,6 +13,7 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import SettingsPage from './pages/SettingsPage';
 import EbayCallbackPage from './pages/EbayCallbackPage';
 import PrivacyPage from './pages/PrivacyPage';
+import AboutPage from './pages/AboutPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -61,6 +62,7 @@ function App() {
               element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <SignupPage />}
             />
             <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/about" element={<AboutPage />} />
 
             {/* Protected Routes */}
             <Route
