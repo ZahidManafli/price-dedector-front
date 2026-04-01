@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { settingsAPI } from '../services/api';
+import { ebayAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 
 export default function SettingsPage() {
@@ -10,7 +10,30 @@ export default function SettingsPage() {
     emailNotificationFrequency: 'instant',
   });
   const [loading, setLoading] = useState(false);
+  const [ebayLoading, setEbayLoading] = useState(false);
+  const [ebayStatus, setEbayStatus] = useState({
+    connected: false,
+    accountId: null,
+    environment: null,
+    expiresAt: null,
+  });
   const [alert, setAlert] = useState(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [prefRes, ebayRes] = await Promise.all([
+          settingsAPI.getPreferences(),
+          ebayAPI.getStatus(),
+        ]);
+        setPreferences((prev) => ({ ...prev, ...(prefRes.data || {}) }));
+        setEbayStatus(ebayRes.data || {});
+      } catch (_error) {
+        // Keep defaults if optional settings/status calls fail.
+      }
+    };
+    load();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -18,6 +41,38 @@ export default function SettingsPage() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+  };
+
+  const handleConnectEbay = async () => {
+    try {
+      setEbayLoading(true);
+      const response = await ebayAPI.getConnectUrl();
+      const authUrl = response?.data?.authUrl;
+      if (!authUrl) throw new Error('Missing eBay auth URL');
+      window.location.href = authUrl;
+    } catch (error) {
+      setAlert({
+        type: 'error',
+        message: error.response?.data?.error || 'Failed to start eBay connection',
+      });
+      setEbayLoading(false);
+    }
+  };
+
+  const handleDisconnectEbay = async () => {
+    try {
+      setEbayLoading(true);
+      await ebayAPI.disconnect();
+      setEbayStatus((prev) => ({ ...prev, connected: false, accountId: null }));
+      setAlert({ type: 'success', message: 'Disconnected eBay account' });
+    } catch (error) {
+      setAlert({
+        type: 'error',
+        message: error.response?.data?.error || 'Failed to disconnect eBay',
+      });
+    } finally {
+      setEbayLoading(false);
+    }
   };
 
   const handleSave = async (e) => {
@@ -81,6 +136,49 @@ export default function SettingsPage() {
                   <option value="daily">Daily Summary</option>
                   <option value="weekly">Weekly Summary</option>
                 </select>
+              </div>
+            </div>
+
+            {/* eBay Integration */}
+            <div className="pt-4 border-t">
+              <h2 className="text-xl font-semibold text-gray-800 mb-2">eBay Integration</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Connect your eBay account to auto-update listing prices when Amazon prices change.
+              </p>
+              <div className="bg-gray-50 border rounded-lg p-4 mb-4">
+                <p className="text-sm text-gray-700">
+                  Status:{' '}
+                  <span className={ebayStatus.connected ? 'text-green-700 font-semibold' : 'text-gray-700'}>
+                    {ebayStatus.connected ? 'Connected' : 'Not connected'}
+                  </span>
+                </p>
+                {ebayStatus.accountId && (
+                  <p className="text-sm text-gray-700 mt-1">Account: {ebayStatus.accountId}</p>
+                )}
+                {ebayStatus.environment && (
+                  <p className="text-sm text-gray-700 mt-1">Environment: {ebayStatus.environment}</p>
+                )}
+              </div>
+              <div className="flex gap-3">
+                {!ebayStatus.connected ? (
+                  <button
+                    type="button"
+                    onClick={handleConnectEbay}
+                    disabled={ebayLoading}
+                    className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+                  >
+                    {ebayLoading ? 'Connecting...' : 'Connect eBay'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleDisconnectEbay}
+                    disabled={ebayLoading}
+                    className="bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                  >
+                    {ebayLoading ? 'Disconnecting...' : 'Disconnect eBay'}
+                  </button>
+                )}
               </div>
             </div>
 

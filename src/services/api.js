@@ -47,4 +47,11 @@ export const settingsAPI = {
   updatePreferences: (data) => api.put('/settings/preferences', data),
 };
 
+export const ebayAPI = {
+  getConnectUrl: () => api.get('/ebay/connect'),
+  completeCallback: (code, state) => api.post('/ebay/callback', { code, state }),
+  getStatus: () => api.get('/ebay/status'),
+  disconnect: () => api.delete('/ebay/disconnect'),
+};
+
 export default api;

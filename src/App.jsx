@@ -11,6 +11,8 @@ import DashboardPage from './pages/DashboardPage';
 import ProductFormPage from './pages/ProductFormPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import SettingsPage from './pages/SettingsPage';
+import EbayCallbackPage from './pages/EbayCallbackPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -58,6 +60,7 @@ function App() {
               path="/signup"
               element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <SignupPage />}
             />
+            <Route path="/privacy" element={<PrivacyPage />} />
 
             {/* Protected Routes */}
             <Route
@@ -97,6 +100,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ebay/callback"
+              element={
+                <ProtectedRoute>
+                  <EbayCallbackPage />
                 </ProtectedRoute>
               }
             />
