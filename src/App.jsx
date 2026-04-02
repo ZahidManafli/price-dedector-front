@@ -12,6 +12,7 @@ import ProductFormPage from './pages/ProductFormPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import SettingsPage from './pages/SettingsPage';
 import EbayCallbackPage from './pages/EbayCallbackPage';
+import AmazonLookupPage from './pages/AmazonLookupPage';
 import PrivacyPage from './pages/PrivacyPage';
 import AboutPage from './pages/AboutPage';
 
@@ -111,6 +112,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <EbayCallbackPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/amazon-lookup"
+              element={
+                <ProtectedRoute>
+                  <AmazonLookupPage />
                 </ProtectedRoute>
               }
             />

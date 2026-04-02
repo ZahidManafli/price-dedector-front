@@ -96,4 +96,9 @@ export const ebayAPI = {
   disconnect: () => api.delete('/ebay/disconnect'),
 };
 
+// Amazon lookup (title, description, images, and price)
+export const amazonAPI = {
+  lookup: (amazonUrl) => api.post('/amazon/lookup', { amazonUrl }),
+};
+
 export default api;

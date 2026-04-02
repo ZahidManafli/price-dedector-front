@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Settings, LogOut, User } from 'lucide-react';
+import { LayoutDashboard, Settings, LogOut, User, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar() {
@@ -10,7 +10,8 @@ export default function Sidebar() {
 
   const links = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { label: 'Settings', path: '/settings', icon: Settings },
+    { label: 'Amazon Lookup', path: '/amazon-lookup', icon: Search },
+    // { label: 'Settings', path: '/settings', icon: Settings },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -64,7 +65,12 @@ export default function Sidebar() {
               <User size={16} />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium truncate">{user?.email || 'User'}</p>
+              <p className="text-sm font-medium truncate">
+                {user?.displayName || user?.email || 'User'}
+              </p>
+              {user?.email && (
+                <p className="text-xs text-slate-400 truncate">{user.email}</p>
+              )}
               <Link
                 to="/settings"
                 className="text-xs text-slate-300 hover:underline"
