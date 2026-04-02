@@ -153,18 +153,19 @@ export default function SettingsPage() {
                 Connect your eBay account to auto-update listing prices when Amazon prices change.
               </p>
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-3">
-                <p className="text-sm text-slate-700">
-                  Status:{' '}
-                  <span className={ebayStatus.connected ? 'text-green-700 font-semibold inline-flex items-center gap-1' : 'text-slate-700'}>
-                    {ebayStatus.connected && <CheckCircle2 size={14} />}
-                    {ebayStatus.connected ? 'Connected' : 'Not connected'}
-                  </span>
-                </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${ebayStatus.connected ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
+                      {ebayStatus.connected && <CheckCircle2 size={14} />}
+                      {ebayStatus.connected ? 'Connected' : 'Not connected'}
+                    </span>
+                  </div>
+                  {/* Hide noisy environment text like 'sandbox' */}
+                </div>
                 {ebayStatus.accountId && (
-                  <p className="text-sm text-slate-700 mt-1">Account: {ebayStatus.accountId}</p>
-                )}
-                {ebayStatus.environment && (
-                  <p className="text-sm text-slate-700 mt-1">Environment: {ebayStatus.environment}</p>
+                  <p className="text-sm text-slate-700 mt-2">
+                    Signed in as <span className="font-medium">{ebayStatus.accountId}</span>
+                  </p>
                 )}
               </div>
               <div className="flex gap-3">
