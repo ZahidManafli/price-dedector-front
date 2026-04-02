@@ -1,169 +1,238 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
-import { productAPI, settingsAPI } from '../services/api';
-import ProductCard from '../components/ProductCard';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { adminAPI, productAPI, settingsAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
+import { formatCurrency } from '../utils/helpers';
 import { ProductFormModal } from './ProductFormPage';
+import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function DashboardPage() {
-  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  const [limits, setLimits] = useState(null);
+  const [adminStats, setAdminStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingProductId, setEditingProductId] = useState(null);
-  const [limits, setLimits] = useState(null);
+  const { isDark } = useTheme();
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchProducts();
-    fetchLimits();
+    const load = async () => {
+      try {
+        setLoading(true);
+        const [productsRes, limitsRes] = await Promise.all([
+          productAPI.getAll(),
+          settingsAPI.getLimits(),
+        ]);
+        setProducts(productsRes.data || []);
+        setLimits(limitsRes.data || null);
+        if (user?.role === 'admin') {
+          const statsRes = await adminAPI.getStats();
+          setAdminStats(statsRes.data || null);
+        }
+      } catch {
+        setAlert({ type: 'error', message: 'Failed to load dashboard analytics' });
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, []);
 
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      const response = await productAPI.getAll();
-      setProducts(response.data || []);
-    } catch (error) {
-      setAlert({ type: 'error', message: 'Failed to load products' });
-      console.error('Error fetching products:', error);
-    } finally {
-      setLoading(false);
+  const chartData = useMemo(() => {
+    const byDay = {};
+    for (let i = 6; i >= 0; i -= 1) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      byDay[key] = 0;
     }
-  };
-
-  const fetchLimits = async () => {
-    try {
-      const response = await settingsAPI.getLimits();
-      setLimits(response.data || null);
-    } catch (error) {
-      console.warn('Failed to fetch user limits:', error);
+    for (const p of products) {
+      const d = new Date(p.createdAt || p.lastUpdated);
+      const key = d.toISOString().slice(0, 10);
+      if (byDay[key] !== undefined) {
+        byDay[key] += Math.max(0, Number(p.profit || 0));
+      }
     }
-  };
+    return Object.entries(byDay).map(([day, sales]) => ({
+      day: new Date(day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      sales: Number(sales.toFixed(2)),
+    }));
+  }, [products]);
 
-  const handleDelete = async (productId) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) return;
+  const totalProfit = useMemo(
+    () => products.reduce((sum, p) => sum + Number(p.profit || 0), 0),
+    [products]
+  );
+  const productsLimit = limits?.products?.limit;
+  const productsUsed = limits?.products?.used ?? products.length;
+  const productsLeft = limits?.products?.remaining;
+  const lookupLeft = limits?.amazonLookup?.remainingToday;
+  const isProductQuotaReached =
+    productsLeft !== null && productsLeft !== undefined && productsLeft <= 0;
 
-    try {
-      await productAPI.delete(productId);
-      setProducts(products.filter((p) => p.id !== productId));
-      setAlert({ type: 'success', message: 'Product deleted successfully' });
-      fetchLimits();
-    } catch (error) {
-      setAlert({ type: 'error', message: 'Failed to delete product' });
-    }
-  };
-
-  const handleEdit = (productId) => {
-    setEditingProductId(productId);
-    setIsFormOpen(true);
-  };
-
-  const handleCompare = (productId) => {
-    navigate(`/product/${productId}`);
-  };
-
-  const productsRemaining = limits?.products?.remaining;
-  const isProductQuotaReached = productsRemaining !== null && productsRemaining !== undefined && productsRemaining <= 0;
+  if (loading) return <LoadingSpinner />;
 
   return (
     <div className="page-shell">
       {isFormOpen && (
         <ProductFormModal
-          productId={editingProductId}
-          onClose={() => {
+          productId={null}
+          onClose={() => setIsFormOpen(false)}
+          onSuccess={async () => {
             setIsFormOpen(false);
-            setEditingProductId(null);
-          }}
-          onSuccess={() => {
-            fetchProducts();
-            fetchLimits();
+            const [productsRes, limitsRes] = await Promise.all([
+              productAPI.getAll(),
+              settingsAPI.getLimits(),
+            ]);
+            setProducts(productsRes.data || []);
+            setLimits(limitsRes.data || null);
           }}
         />
       )}
 
       {alert && (
         <div className="mb-6">
-          <Alert
-            type={alert.type}
-            message={alert.message}
-            onClose={() => setAlert(null)}
-          />
+          <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-3">
-        <div>
-          <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Track products, monitor margin, and react faster.</p>
+      <h1 className="page-title mb-5">Dashboard</h1>
+
+      {user?.role === 'admin' && adminStats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+          <div className={`glass-card p-4 border ${isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-200 border-slate-300 text-slate-900'}`}>
+            <p className="text-xs opacity-80">Users registered (1 week)</p>
+            <p className="text-2xl font-bold mt-1">{adminStats.usersRegistered?.week ?? 0}</p>
+            <p className="text-xs opacity-70 mt-1">Month: {adminStats.usersRegistered?.month ?? 0} • Year: {adminStats.usersRegistered?.year ?? 0}</p>
+          </div>
+          <div className={`glass-card p-4 border ${isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-200 border-slate-300 text-slate-900'}`}>
+            <p className="text-xs opacity-80">Products added (1 week)</p>
+            <p className="text-2xl font-bold mt-1">{adminStats.productsAdded?.week ?? 0}</p>
+            <p className="text-xs opacity-70 mt-1">Month: {adminStats.productsAdded?.month ?? 0} • Year: {adminStats.productsAdded?.year ?? 0}</p>
+          </div>
+          <div className={`glass-card p-4 border ${isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-200 border-slate-300 text-slate-900'}`}>
+            <p className="text-xs opacity-80">Users reached Amazon quota</p>
+            <p className="text-2xl font-bold mt-1">{adminStats.quotaReachedUsers?.amazonLookup ?? 0}</p>
+          </div>
+          <div className={`glass-card p-4 border ${isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-200 border-slate-300 text-slate-900'}`}>
+            <p className="text-xs opacity-80">Users reached Product quota</p>
+            <p className="text-2xl font-bold mt-1">{adminStats.quotaReachedUsers?.products ?? 0}</p>
+          </div>
         </div>
-        <button
-          onClick={() => {
-            if (isProductQuotaReached) {
-              setAlert({
-                type: 'warning',
-                message: 'Product quota reached. Delete one product or ask admin to increase your limit.',
-              });
-              return;
-            }
-            setEditingProductId(null);
-            setIsFormOpen(true);
-          }}
-          disabled={isProductQuotaReached}
-          className="w-full md:w-auto btn-primary flex items-center justify-center gap-1.5 disabled:cursor-not-allowed"
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+        <div
+          className={`glass-card p-5 border ${
+            isDark
+              ? 'bg-slate-950 text-white border-slate-800'
+              : 'bg-slate-200 text-slate-900 border-slate-300'
+          }`}
         >
-          <Plus size={14} />
-          Add Product
-          {productsRemaining === null || productsRemaining === undefined ? (
-            <span className="ml-1 text-[11px] bg-white/20 px-2 py-0.5 rounded-full">Unlimited</span>
-          ) : (
-            <span className={`ml-1 text-[11px] px-2 py-0.5 rounded-full ${
-              isProductQuotaReached ? 'bg-red-500/80' : 'bg-white/20'
-            }`}>
-              {productsRemaining} left
-            </span>
-          )}
-        </button>
+          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Product upload left</p>
+          <div className="mt-2 flex items-center justify-between gap-3">
+            <p className="text-3xl font-bold">
+              {productsLeft === null || productsLeft === undefined ? 'Unlimited' : productsLeft}
+            </p>
+            <button
+              type="button"
+              disabled={isProductQuotaReached}
+              onClick={() => {
+                if (isProductQuotaReached) {
+                  setAlert({
+                    type: 'warning',
+                    message:
+                      'Product quota reached. Delete one product or ask admin to increase your limit.',
+                  });
+                  return;
+                }
+                setIsFormOpen(true);
+              }}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                isDark
+                  ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-900/40'
+                  : 'bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 hover:border-blue-300 shadow-sm'
+              }`}
+            >
+              {isProductQuotaReached ? 'Quota Reached' : 'Upload Now'}
+            </button>
+          </div>
+          <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
+            Used {productsUsed}{productsLimit != null ? ` / ${productsLimit}` : ''}
+          </p>
+        </div>
+        <div
+          className={`glass-card p-5 border ${
+            isDark
+              ? 'bg-slate-950 text-white border-slate-800'
+              : 'bg-slate-200 text-slate-900 border-slate-300'
+          }`}
+        >
+          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Auto Tracking Credits</p>
+          <p className="mt-2 text-3xl font-bold">
+            {lookupLeft === null || lookupLeft === undefined ? 'Unlimited' : lookupLeft}
+          </p>
+          <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>Amazon lookups remaining today</p>
+        </div>
+        <div
+          className={`glass-card p-5 border ${
+            isDark
+              ? 'bg-slate-950 text-white border-slate-800'
+              : 'bg-slate-200 text-slate-900 border-slate-300'
+          }`}
+        >
+          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Tracked products</p>
+          <p className="mt-2 text-2xl font-bold">Available soon</p>
+          <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>Tracking summary module is coming soon</p>
+        </div>
       </div>
 
-      {loading ? (
-        <LoadingSpinner />
-      ) : products.length === 0 ? (
-        <div className="glass-card text-center py-10">
-          <p className="text-xl text-slate-500 mb-3">No products yet</p>
-          <button
-            onClick={() => {
-              if (isProductQuotaReached) {
-                setAlert({
-                  type: 'warning',
-                  message: 'Product quota reached. Delete one product or ask admin to increase your limit.',
-                });
-                return;
-              }
-              setEditingProductId(null);
-              setIsFormOpen(true);
-            }}
-            disabled={isProductQuotaReached}
-            className="btn-primary disabled:cursor-not-allowed"
-          >
-            {isProductQuotaReached ? 'Product quota reached' : 'Add your first product'}
-          </button>
+      <div
+        className={`glass-card p-5 border ${
+          isDark
+            ? 'bg-slate-950 text-white border-slate-800'
+            : 'bg-slate-100 text-slate-900 border-slate-300'
+        }`}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-black'}`}>PRODUCT SALES</p>
+            <p className="text-3xl font-bold mt-2">
+              {isDark ? 'Available soon' : 'Available soon'}
+            </p>
+          </div>
+          <p className="text-amber-500 text-sm font-semibold">
+            Available soon
+          </p>
         </div>
-      ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onCompare={handleCompare}
-            />
-          ))}
+        <div className="h-[320px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData}>
+              <defs>
+                <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.5} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#cbd5e1'} />
+              <XAxis dataKey="day" stroke={isDark ? '#94a3b8' : '#64748b'} />
+              <YAxis stroke={isDark ? '#94a3b8' : '#64748b'} />
+              <Tooltip
+                contentStyle={{
+                  background: isDark ? '#0f172a' : '#f8fafc',
+                  border: `1px solid ${isDark ? '#1e293b' : '#cbd5e1'}`,
+                  color: isDark ? '#e2e8f0' : '#0f172a',
+                }}
+                formatter={(value) => [formatCurrency(value), 'Sales']}
+              />
+              <Area type="monotone" dataKey="sales" stroke="#3b82f6" fill="url(#salesGradient)" strokeWidth={3} />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
-      )}
+      </div>
     </div>
   );
 }

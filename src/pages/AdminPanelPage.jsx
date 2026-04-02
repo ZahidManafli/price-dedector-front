@@ -3,6 +3,7 @@ import { adminAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { ShieldCheck, Users, UserPlus, Pencil } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 function safeToString(v) {
   if (v === null || v === undefined) return '';
@@ -10,6 +11,7 @@ function safeToString(v) {
 }
 
 export default function AdminPanelPage() {
+  const { isDark } = useTheme();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [alert, setAlert] = useState(null);
@@ -37,10 +39,10 @@ export default function AdminPanelPage() {
       try {
         setLoading(true);
         setAlert(null);
-        const res = await adminAPI.listUsers();
-        setUsers(res.data?.users || []);
+        const usersRes = await adminAPI.listUsers();
+        setUsers(usersRes.data?.users || []);
         const nextEdits = {};
-        for (const u of res.data?.users || []) {
+        for (const u of usersRes.data?.users || []) {
           nextEdits[u.id] = defaultEditForUser(u);
         }
         setEdits(nextEdits);
@@ -93,10 +95,10 @@ export default function AdminPanelPage() {
       });
 
       // Refresh list
-      const res = await adminAPI.listUsers();
-      setUsers(res.data?.users || []);
+      const usersRes = await adminAPI.listUsers();
+      setUsers(usersRes.data?.users || []);
       const nextEdits = {};
-      for (const u of res.data?.users || []) {
+      for (const u of usersRes.data?.users || []) {
         nextEdits[u.id] = defaultEditForUser(u);
       }
       setEdits(nextEdits);
@@ -129,10 +131,10 @@ export default function AdminPanelPage() {
         resetAmazonUsage: !!resetUsage[userId],
       });
 
-      const res = await adminAPI.listUsers();
-      setUsers(res.data?.users || []);
+      const usersRes = await adminAPI.listUsers();
+      setUsers(usersRes.data?.users || []);
       const nextEdits = {};
-      for (const u of res.data?.users || []) {
+      for (const u of usersRes.data?.users || []) {
         nextEdits[u.id] = defaultEditForUser(u);
       }
       setEdits(nextEdits);
@@ -175,17 +177,18 @@ export default function AdminPanelPage() {
         {loading && <LoadingSpinner />}
 
         {!loading && (
+          <>
           <div className="grid grid-cols-1 lg:grid-cols-[440px_1fr] gap-4 lg:gap-6">
             {/* Create user */}
-            <div className="glass-card p-4 md:p-5">
+            <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
               <div className="flex items-center gap-2 mb-4">
                 <UserPlus size={18} className="text-blue-600" />
-                <h2 className="text-lg font-semibold text-slate-900">Create User</h2>
+                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Create User</h2>
               </div>
 
               <form onSubmit={onCreateUser} className="space-y-3">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Name</label>
+                  <label className={`block text-sm font-semibold mb-1.5 ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>Name</label>
                   <input
                     value={createForm.name}
                     onChange={(e) => setCreateForm((p) => ({ ...p, name: e.target.value }))}
@@ -196,7 +199,7 @@ export default function AdminPanelPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
+                  <label className={`block text-sm font-semibold mb-1.5 ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>Email</label>
                   <input
                     value={createForm.email}
                     onChange={(e) => setCreateForm((p) => ({ ...p, email: e.target.value }))}
@@ -207,7 +210,7 @@ export default function AdminPanelPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
+                  <label className={`block text-sm font-semibold mb-1.5 ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>Password</label>
                   <input
                     value={createForm.password}
                     onChange={(e) => setCreateForm((p) => ({ ...p, password: e.target.value }))}
@@ -218,7 +221,7 @@ export default function AdminPanelPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Role</label>
+                  <label className={`block text-sm font-semibold mb-1.5 ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>Role</label>
                   <select
                     value={createForm.role}
                     onChange={(e) => setCreateForm((p) => ({ ...p, role: e.target.value }))}
@@ -231,7 +234,7 @@ export default function AdminPanelPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <label className={`block text-sm font-semibold mb-1.5 ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
                       Amazon lookup limit / day
                     </label>
                     <input
@@ -244,7 +247,7 @@ export default function AdminPanelPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <label className={`block text-sm font-semibold mb-1.5 ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
                       Products limit
                     </label>
                     <input
@@ -266,10 +269,10 @@ export default function AdminPanelPage() {
             </div>
 
             {/* Users list */}
-            <div className="glass-card p-4 md:p-5">
+            <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
               <div className="flex items-center gap-2 mb-4">
                 <Users size={18} className="text-blue-600" />
-                <h2 className="text-lg font-semibold text-slate-900">Users</h2>
+                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Users</h2>
               </div>
 
               {users.length === 0 ? (
@@ -279,28 +282,28 @@ export default function AdminPanelPage() {
                   {users.map((u) => {
                     const rowEdits = edits[u.id] || defaultEditForUser(u);
                     return (
-                      <div key={u.id} className="border border-slate-200 rounded-xl p-3 bg-white">
+                      <div key={u.id} className={`border rounded-xl p-3 ${isDark ? 'bg-slate-950 border-slate-700' : 'bg-white border-slate-200'}`}>
                         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
                           <div className="min-w-0">
-                            <div className="font-semibold text-slate-900 truncate">
-                              {u.name || 'User'} <span className="text-xs text-slate-500">({u.email})</span>
+                            <div className={`font-semibold truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                              {u.name || 'User'} <span className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>({u.email})</span>
                             </div>
-                            <div className="text-xs text-slate-500 mt-1">
+                            <div className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                               Role: <span className="font-semibold">{u.role}</span>
                             </div>
-                            <div className="text-xs text-slate-500 mt-1">
+                            <div className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                               Amazon used today: <span className="font-semibold">{u.amazonLookupRequestsUsedToday ?? 0}</span>
                               {u.amazonLookupRequestLimitPerDay != null && (
                                 <> / <span className="font-semibold">{u.amazonLookupRequestLimitPerDay}</span></>
                               )}
                             </div>
-                            <div className="text-xs text-slate-500 mt-1">
+                            <div className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                               Reset at:{' '}
                               <span className="font-semibold">
                                 {u.amazonLookupRequestsResetAt ? new Date(u.amazonLookupRequestsResetAt).toLocaleString() : '—'}
                               </span>
                             </div>
-                            <div className="text-xs text-slate-500 mt-1">
+                            <div className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                               Products: <span className="font-semibold">{u.productCount ?? 0}</span>
                               {u.productsLimit != null && (
                                 <> / <span className="font-semibold">{u.productsLimit}</span></>
@@ -311,7 +314,7 @@ export default function AdminPanelPage() {
                           <div className="w-full lg:w-[360px]">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
                                   Role
                                 </label>
                                 <select
@@ -329,7 +332,7 @@ export default function AdminPanelPage() {
                                 </select>
                               </div>
                               <div className="sm:col-span-1">
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
                                   Amazon limit / day
                                 </label>
                                 <input
@@ -350,7 +353,7 @@ export default function AdminPanelPage() {
                                 />
                               </div>
                               <div className="sm:col-span-2">
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
                                   Products limit
                                 </label>
                                 <input
@@ -382,7 +385,7 @@ export default function AdminPanelPage() {
                                   }
                                   className="h-4 w-4 text-blue-600 border-gray-300 rounded"
                                 />
-                                <span className="text-xs text-slate-700">Reset Amazon usage now</span>
+                                <span className={`text-xs ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Reset Amazon usage now</span>
                               </label>
                               <button
                                 type="button"
@@ -402,6 +405,7 @@ export default function AdminPanelPage() {
               )}
             </div>
           </div>
+          </>
         )}
       </div>
     </div>

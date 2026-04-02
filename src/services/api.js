@@ -105,6 +105,7 @@ export const amazonAPI = {
 // Admin APIs
 export const adminAPI = {
   listUsers: () => api.get('/admin/users'),
+  getStats: () => api.get('/admin/stats'),
   createUser: (data) => api.post('/admin/users', data),
   updateUserLimits: (id, data) => api.put(`/admin/users/${id}/limits`, data),
 };

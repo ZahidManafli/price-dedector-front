@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCircle2, Link2, Mail, ShieldCheck } from 'lucide-react';
 import { ebayAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
+import { useTheme } from '../context/ThemeContext';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const { isDark } = useTheme();
   const [preferences, setPreferences] = useState({
     emailOnPriceChange: true,
     emailNotificationFrequency: 'instant',
@@ -107,13 +109,19 @@ export default function SettingsPage() {
         <div className="glass-card p-4 md:p-5">
           <form onSubmit={handleSave} className="space-y-5">
             {/* Email Notifications */}
-            <div className="rounded-lg border border-slate-200 p-3 md:p-4">
-              <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+            <div className={`rounded-lg p-3 md:p-4 ${
+              isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
+            }`}>
+              <h2 className={`text-lg font-semibold mb-3 flex items-center gap-2 ${
+                isDark ? 'text-slate-100' : 'text-slate-900'
+              }`}>
                 <Bell size={16} />
                 Email Notifications
               </h2>
 
-              <label className="flex items-center gap-3 mb-3 bg-slate-50 border border-slate-200 rounded-lg p-2.5">
+              <label className={`flex items-center gap-3 mb-3 rounded-lg p-2.5 ${
+                isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'
+              }`}>
                 <input
                   type="checkbox"
                   name="emailOnPriceChange"
@@ -122,11 +130,15 @@ export default function SettingsPage() {
                   className="w-4 h-4"
                   disabled={loading}
                 />
-                <span className="text-slate-700">Send email when prices change</span>
+                <span className={isDark ? 'text-slate-200' : 'text-slate-700'}>
+                  Send email when prices change
+                </span>
               </label>
 
               <div className="ml-6">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className={`block text-sm font-semibold mb-2 ${
+                  isDark ? 'text-slate-300' : 'text-gray-700'
+                }`}>
                   Notification Frequency
                 </label>
                 <select
@@ -144,15 +156,21 @@ export default function SettingsPage() {
             </div>
 
             {/* eBay Integration */}
-            <div className="rounded-lg border border-slate-200 p-3 md:p-4">
-              <h2 className="text-lg font-semibold text-slate-900 mb-2 flex items-center gap-2">
+            <div className={`rounded-lg p-3 md:p-4 ${
+              isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
+            }`}>
+              <h2 className={`text-lg font-semibold mb-2 flex items-center gap-2 ${
+                isDark ? 'text-slate-100' : 'text-slate-900'
+              }`}>
                 <Link2 size={16} />
                 eBay Integration
               </h2>
-              <p className="text-sm text-slate-600 mb-4">
+              <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                 Connect your eBay account to auto-update listing prices when Amazon prices change.
               </p>
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-3">
+              <div className={`rounded-lg p-3 mb-3 ${
+                isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${ebayStatus.connected ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
@@ -163,7 +181,7 @@ export default function SettingsPage() {
                   {/* Hide noisy environment text like 'sandbox' */}
                 </div>
                 {ebayStatus.accountId && (
-                  <p className="text-sm text-slate-700 mt-2">
+                  <p className={`text-sm mt-2 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                     Signed in as <span className="font-medium">{ebayStatus.accountId}</span>
                   </p>
                 )}
@@ -192,7 +210,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Buttons */}
-            <div className="pt-3 border-t border-slate-200">
+            <div className={`pt-3 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
               <div className="flex gap-4">
                 <button
                   type="submit"
@@ -215,18 +233,22 @@ export default function SettingsPage() {
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="glass-card p-3">
-            <p className="text-sm font-medium text-slate-900 flex items-center gap-2">
+            <p className={`text-sm font-medium flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
               <Mail size={14} />
               Notification Channel
             </p>
-            <p className="text-xs text-slate-600 mt-1">Email alerts for price changes and sync events.</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+              Email alerts for price changes and sync events.
+            </p>
           </div>
           <div className="glass-card p-3">
-            <p className="text-sm font-medium text-slate-900 flex items-center gap-2">
+            <p className={`text-sm font-medium flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
               <ShieldCheck size={14} />
               Account Security
             </p>
-            <p className="text-xs text-slate-600 mt-1">OAuth tokens are stored server-side and refreshed automatically.</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+              OAuth tokens are stored server-side and refreshed automatically.
+            </p>
           </div>
         </div>
       </div>

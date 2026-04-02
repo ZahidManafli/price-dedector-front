@@ -18,6 +18,11 @@ body {
   color: #0f172a;
 }
 
+html.dark body {
+  background: #020617;
+  color: #e2e8f0;
+}
+
 #root {
   min-height: 100vh;
 }
@@ -50,6 +55,26 @@ body {
   .btn-secondary {
     @apply rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 text-sm font-medium transition hover:bg-slate-50;
   }
+}
+
+html.dark .glass-card {
+  @apply bg-slate-900 border-slate-800 text-slate-100;
+}
+
+html.dark .page-title {
+  @apply text-slate-100;
+}
+
+html.dark .page-subtitle {
+  @apply text-slate-300;
+}
+
+html.dark .input-base {
+  @apply bg-slate-900 border-slate-700 text-slate-100 focus:border-blue-400 focus:ring-blue-900;
+}
+
+html.dark .btn-secondary {
+  @apply bg-slate-900 border-slate-700 text-slate-100 hover:bg-slate-800;
 }
 
 /* Animations */

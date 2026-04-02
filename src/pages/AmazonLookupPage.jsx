@@ -4,6 +4,7 @@ import { amazonAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatCurrency, isValidUrl } from '../utils/helpers';
+import { useTheme } from '../context/ThemeContext';
 import {
   Link as LinkIcon,
   Image as ImageIcon,
@@ -36,6 +37,7 @@ function useDebouncedAutoLookup({ amazonUrl, autoLookupEnabled, onLookup }) {
 }
 
 export default function AmazonLookupPage() {
+  const { isDark } = useTheme();
   const [amazonUrl, setAmazonUrl] = useState('');
   const [autoLookupEnabled, setAutoLookupEnabled] = useState(true);
 
@@ -225,7 +227,7 @@ export default function AmazonLookupPage() {
           </div>
         )}
 
-        <div className="glass-card overflow-hidden relative">
+        <div className={`glass-card overflow-hidden relative ${isDark ? 'bg-slate-950 border-slate-800' : ''}`}>
           <div className="p-4 md:p-5 bg-gradient-to-r from-slate-900 to-blue-900 text-white">
             <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
               <div className="flex-1">
@@ -332,14 +334,14 @@ export default function AmazonLookupPage() {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-4 lg:gap-5">
                 {/* Gallery */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
-                  <div className="p-3 border-b border-slate-200">
+                <div className={`rounded-xl overflow-hidden border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className={`p-3 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                     <div className="flex items-center justify-between gap-3">
-                      <div className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                      <div className={`text-sm font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                         <ImageIcon size={16} className="text-blue-600" />
                         Product images
                       </div>
-                      <div className="text-xs text-slate-600">
+                      <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                         {result?.images?.length ? `${activeImageIdx + 1}/${result.images.length}` : '—'}
                       </div>
                     </div>
@@ -348,11 +350,11 @@ export default function AmazonLookupPage() {
                   <div className="p-3">
                     {result?.images?.length ? (
                       <div className="space-y-3">
-                        <div className="bg-white border border-slate-200 rounded-lg p-3">
+                        <div className={`rounded-lg p-3 border ${isDark ? 'bg-slate-950 border-slate-700' : 'bg-white border-slate-200'}`}>
                           <img
                             src={result.images[activeImageIdx]}
                             alt={result.title || 'Amazon product image'}
-                            className="w-full h-[320px] object-contain bg-white rounded-md"
+                            className={`w-full h-[320px] object-contain rounded-md ${isDark ? 'bg-slate-900' : 'bg-white'}`}
                           />
                         </div>
 
@@ -408,8 +410,10 @@ export default function AmazonLookupPage() {
                               className={`flex-none w-20 h-14 rounded-md border ${
                                 idx === activeImageIdx
                                   ? 'border-blue-500 ring-2 ring-blue-100'
-                                  : 'border-slate-200 hover:border-slate-300'
-                              } bg-white overflow-hidden`}
+                                  : isDark
+                                    ? 'border-slate-700 hover:border-slate-500'
+                                    : 'border-slate-200 hover:border-slate-300'
+                              } ${isDark ? 'bg-slate-900' : 'bg-white'} overflow-hidden`}
                             >
                               <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-contain" />
                             </button>
@@ -417,7 +421,7 @@ export default function AmazonLookupPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="text-center py-10 text-slate-600">
+                      <div className={`text-center py-10 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                         No images found for this link.
                       </div>
                     )}
@@ -426,24 +430,24 @@ export default function AmazonLookupPage() {
 
                 {/* Details */}
                 <div className="space-y-4">
-                  <div className="glass-card p-4 md:p-5">
+                  <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                       <div className="min-w-0">
-                        <h2 className="text-xl md:text-2xl font-semibold text-slate-900 leading-tight">
+                        <h2 className={`text-xl md:text-2xl font-semibold leading-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                           {result.title}
                         </h2>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                           Extracted from your Amazon link
                         </p>
                       </div>
 
                       <div className="flex flex-col items-start md:items-end">
-                        <div className="text-xs text-slate-500">Amazon price</div>
-                        <div className="text-2xl md:text-3xl font-bold text-slate-900">
+                        <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Amazon price</div>
+                        <div className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                           {formatCurrency(result?.price?.usd ?? 0)}
                         </div>
                         {result?.price?.currency && result.price.currency !== 'USD' && (
-                          <div className="text-xs text-slate-600 mt-1">
+                          <div className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                             Raw: {Number(result.price.raw).toFixed(2)} {result.price.currency}
                           </div>
                         )}
@@ -454,7 +458,7 @@ export default function AmazonLookupPage() {
                               <span className="inline-flex items-center px-2 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">
                                 Subscribe & Save
                               </span>
-                              <span className="font-semibold text-slate-900">
+                              <span className={`font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                                 {formatCurrency(result.price.subscribedUsd)}
                               </span>
                             </div>
@@ -493,39 +497,39 @@ export default function AmazonLookupPage() {
                     </div>
                   </div>
 
-                  <div className="glass-card p-4 md:p-5">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-3">
+                  <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
+                    <h3 className={`text-lg font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                       Description
                     </h3>
 
                     {result.description ? (
-                      <div className="text-sm text-slate-700 leading-relaxed">
+                      <div className={`text-sm leading-relaxed ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                         {result.description}
                       </div>
                     ) : result.bullets?.length ? (
                       <ul className="space-y-2">
                         {result.bullets.map((b, idx) => (
-                          <li key={`${b}-${idx}`} className="text-sm text-slate-700">
+                          <li key={`${b}-${idx}`} className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                             <span className="text-blue-600 font-bold mr-2">•</span>
                             {b}
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <div className="text-sm text-slate-600">
+                      <div className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                         No description/bullets were found on this page.
                       </div>
                     )}
                   </div>
 
                     {/* Profit Planner */}
-                    <div className="glass-card p-4 md:p-5">
-                      <h3 className="text-lg font-semibold text-slate-900 mb-3">
+                    <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
+                      <h3 className={`text-lg font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                         Profit Planner (eBay price)
                       </h3>
 
                       <div className="flex flex-col gap-3">
-                        <label className="block text-sm font-semibold text-gray-700">
+                        <label className={`block text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
                           Target profit you want to make (USD)
                         </label>
                         <input
@@ -547,33 +551,33 @@ export default function AmazonLookupPage() {
                             className="h-4 w-4 text-blue-600 border-gray-300 rounded"
                             disabled={result?.price?.subscribedUsd == null}
                           />
-                          <span className="text-sm text-gray-700">
+                          <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
                             Use Subscribe &amp; Save price (if available)
                           </span>
                         </label>
 
-                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <div className={`rounded-lg p-3 border ${isDark ? 'bg-slate-950 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                           <div className="flex items-center justify-between gap-3 flex-wrap">
                             <div className="min-w-[180px]">
-                              <p className="text-xs text-slate-500">Amazon cost used</p>
-                              <p className="font-semibold text-slate-900">
+                              <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Amazon cost used</p>
+                              <p className={`font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                                 {result?.price ? formatCurrency(profitPlanner.cogs || 0) : '—'}
                               </p>
                             </div>
                             <div className="min-w-[220px]">
-                              <p className="text-xs text-slate-500">eBay listing price (sale price)</p>
-                              <p className="text-xl font-bold text-slate-900">
+                              <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>eBay listing price (sale price)</p>
+                              <p className={`text-xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                                 {profitPlanner.ebayPrice > 0 ? formatCurrency(profitPlanner.ebayPrice) : '—'}
                               </p>
                             </div>
                           </div>
 
                           {profitPlanner.ebayPrice > 0 ? (
-                            <p className="text-xs text-slate-500 mt-2">
+                            <p className={`text-xs mt-2 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                               Based on fee model: final value fee + managed payment fee (shipping/ad/other costs assumed 0).
                             </p>
                           ) : (
-                            <p className="text-xs text-slate-500 mt-2">
+                            <p className={`text-xs mt-2 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                               Enter a target profit to calculate the eBay price.
                             </p>
                           )}

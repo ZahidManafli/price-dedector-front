@@ -1,17 +1,30 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Settings, LogOut, User, Search, ShieldCheck } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Package,
+  Settings,
+  LogOut,
+  User,
+  Search,
+  ShieldCheck,
+  Moon,
+  Sun,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   const links = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'Products', path: '/products', icon: Package },
     { label: 'Amazon Lookup', path: '/amazon-lookup', icon: Search },
-    // { label: 'Settings', path: '/settings', icon: Settings },
+    { label: 'Settings', path: '/settings', icon: Settings },
     ...(user?.role === 'admin' ? [{ label: 'Admin Panel', path: '/admin', icon: ShieldCheck }] : []),
   ];
 
@@ -29,7 +42,7 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 h-screen w-64 bg-gray-900 text-white transform transition-transform duration-300 z-30 md:translate-x-0 ${
+        className={`fixed left-0 h-screen w-64 bg-gray-900 dark:bg-slate-950 text-white transform transition-transform duration-300 z-30 md:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -80,6 +93,15 @@ export default function Sidebar() {
                 Settings
               </Link>
             </div>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={toggleTheme}
+              className="flex-1 flex items-center justify-center gap-2 rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
+            >
+              {isDark ? <Sun size={14} /> : <Moon size={14} />}
+              {isDark ? 'Light' : 'Dark'}
+            </button>
           </div>
           <button
             onClick={async () => {
