@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import { adminAPI, productAPI, settingsAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
@@ -182,11 +182,20 @@ export default function DashboardPage() {
             isDark
               ? 'bg-slate-950 text-white border-slate-800'
               : 'bg-slate-200 text-slate-900 border-slate-300'
-          }`}
+          } relative overflow-hidden`}
         >
-          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Tracked products</p>
-          <p className="mt-2 text-2xl font-bold">Available soon</p>
-          <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>Tracking summary module is coming soon</p>
+          <div className="blur-[2px] opacity-70 select-none">
+            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Tracked products</p>
+            <p className="mt-2 text-2xl font-bold">{products.length}</p>
+            <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
+              Total products in your account
+            </p>
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center backdrop-blur-[2px] bg-slate-900/10 dark:bg-slate-950/20 pointer-events-none">
+            <span className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+              Available soon
+            </span>
+          </div>
         </div>
       </div>
 
@@ -195,20 +204,18 @@ export default function DashboardPage() {
           isDark
             ? 'bg-slate-950 text-white border-slate-800'
             : 'bg-slate-100 text-slate-900 border-slate-300'
-        }`}
+        } relative overflow-hidden`}
       >
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-black'}`}>PRODUCT SALES</p>
-            <p className="text-3xl font-bold mt-2">
-              {isDark ? 'Available soon' : 'Available soon'}
-            </p>
+            <p className="text-3xl font-bold mt-2">{formatCurrency(totalProfit)}</p>
           </div>
           <p className="text-amber-500 text-sm font-semibold">
-            Available soon
+            {formatCurrency(chartData.reduce((s, c) => s + c.sales, 0))} in last 7 days
           </p>
         </div>
-        <div className="h-[320px]">
+        <div className="h-[320px] pointer-events-none blur-[2px] opacity-70 select-none">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData}>
               <defs>
@@ -220,17 +227,15 @@ export default function DashboardPage() {
               <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#cbd5e1'} />
               <XAxis dataKey="day" stroke={isDark ? '#94a3b8' : '#64748b'} />
               <YAxis stroke={isDark ? '#94a3b8' : '#64748b'} />
-              <Tooltip
-                contentStyle={{
-                  background: isDark ? '#0f172a' : '#f8fafc',
-                  border: `1px solid ${isDark ? '#1e293b' : '#cbd5e1'}`,
-                  color: isDark ? '#e2e8f0' : '#0f172a',
-                }}
-                formatter={(value) => [formatCurrency(value), 'Sales']}
-              />
               <Area type="monotone" dataKey="sales" stroke="#3b82f6" fill="url(#salesGradient)" strokeWidth={3} />
             </AreaChart>
           </ResponsiveContainer>
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center backdrop-blur-[2px] bg-slate-900/10 dark:bg-slate-950/20 pointer-events-none">
+          <div className="text-center">
+            <p className={`text-2xl font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Available soon</p>
+            <p className={`text-sm mt-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Sales analytics module is under development</p>
+          </div>
         </div>
       </div>
     </div>
