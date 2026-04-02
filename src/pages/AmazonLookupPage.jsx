@@ -47,6 +47,7 @@ export default function AmazonLookupPage() {
 
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [lookupQuota, setLookupQuota] = useState(null);
+  const [history, setHistory] = useState([]);
 
   // Profit planner
   const [targetProfit, setTargetProfit] = useState('');
@@ -133,6 +134,7 @@ export default function AmazonLookupPage() {
       if (response?.data?.quota) {
         setLookupQuota(response.data.quota);
       }
+      fetchHistory();
       setActiveImageIdx(0);
       setTargetProfit('');
 
@@ -156,6 +158,15 @@ export default function AmazonLookupPage() {
     }
   }, [isLookupQuotaReached]);
 
+  const fetchHistory = useCallback(async () => {
+    try {
+      const response = await amazonAPI.getHistory(20);
+      setHistory(response?.data?.history || []);
+    } catch (error) {
+      console.warn('Failed to fetch lookup history:', error);
+    }
+  }, []);
+
   useEffect(() => {
     const fetchLimits = async () => {
       try {
@@ -175,7 +186,8 @@ export default function AmazonLookupPage() {
     };
 
     fetchLimits();
-  }, []);
+    fetchHistory();
+  }, [fetchHistory]);
 
   useDebouncedAutoLookup({
     amazonUrl,
@@ -610,6 +622,64 @@ export default function AmazonLookupPage() {
                       <SearchIcon size={14} />
                     </RouterLink>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {history.length > 0 && (
+              <div className={`mt-4 rounded-xl border p-3 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <h3 className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                    Recent Amazon searches
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={fetchHistory}
+                    className="btn-secondary text-xs px-3 py-1.5"
+                  >
+                    Refresh
+                  </button>
+                </div>
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {history.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        setAmazonUrl(item.amazonUrlOriginal || '');
+                        if (item.details) {
+                          setResult(item.details);
+                          setActiveImageIdx(0);
+                        } else if (item.amazonUrlOriginal) {
+                          lookup(item.amazonUrlOriginal);
+                        }
+                      }}
+                      className={`w-full text-left rounded-lg border p-2.5 transition ${
+                        isDark
+                          ? 'border-slate-700 hover:bg-slate-800'
+                          : 'border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className={`text-sm font-medium truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                            {item.title || item.amazonUrlOriginal}
+                          </p>
+                          <p className={`text-xs truncate ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                            {item.amazonUrlOriginal}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                            {item.priceUsd != null ? formatCurrency(item.priceUsd) : '—'}
+                          </p>
+                          <p className={`text-[11px] ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+                            {item.cached ? 'cached' : 'live'} · {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
