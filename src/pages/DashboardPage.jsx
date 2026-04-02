@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import { productAPI } from '../services/api';
+import { productAPI, settingsAPI } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
@@ -14,9 +14,11 @@ export default function DashboardPage() {
   const [alert, setAlert] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
+  const [limits, setLimits] = useState(null);
 
   useEffect(() => {
     fetchProducts();
+    fetchLimits();
   }, []);
 
   const fetchProducts = async () => {
@@ -32,6 +34,15 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchLimits = async () => {
+    try {
+      const response = await settingsAPI.getLimits();
+      setLimits(response.data || null);
+    } catch (error) {
+      console.warn('Failed to fetch user limits:', error);
+    }
+  };
+
   const handleDelete = async (productId) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
 
@@ -39,6 +50,7 @@ export default function DashboardPage() {
       await productAPI.delete(productId);
       setProducts(products.filter((p) => p.id !== productId));
       setAlert({ type: 'success', message: 'Product deleted successfully' });
+      fetchLimits();
     } catch (error) {
       setAlert({ type: 'error', message: 'Failed to delete product' });
     }
@@ -53,6 +65,9 @@ export default function DashboardPage() {
     navigate(`/product/${productId}`);
   };
 
+  const productsRemaining = limits?.products?.remaining;
+  const isProductQuotaReached = productsRemaining !== null && productsRemaining !== undefined && productsRemaining <= 0;
+
   return (
     <div className="page-shell">
       {isFormOpen && (
@@ -62,7 +77,10 @@ export default function DashboardPage() {
             setIsFormOpen(false);
             setEditingProductId(null);
           }}
-          onSuccess={fetchProducts}
+          onSuccess={() => {
+            fetchProducts();
+            fetchLimits();
+          }}
         />
       )}
 
@@ -83,13 +101,30 @@ export default function DashboardPage() {
         </div>
         <button
           onClick={() => {
+            if (isProductQuotaReached) {
+              setAlert({
+                type: 'warning',
+                message: 'Product quota reached. Delete one product or ask admin to increase your limit.',
+              });
+              return;
+            }
             setEditingProductId(null);
             setIsFormOpen(true);
           }}
-          className="w-full md:w-auto btn-primary flex items-center justify-center gap-1.5"
+          disabled={isProductQuotaReached}
+          className="w-full md:w-auto btn-primary flex items-center justify-center gap-1.5 disabled:cursor-not-allowed"
         >
           <Plus size={14} />
           Add Product
+          {productsRemaining === null || productsRemaining === undefined ? (
+            <span className="ml-1 text-[11px] bg-white/20 px-2 py-0.5 rounded-full">Unlimited</span>
+          ) : (
+            <span className={`ml-1 text-[11px] px-2 py-0.5 rounded-full ${
+              isProductQuotaReached ? 'bg-red-500/80' : 'bg-white/20'
+            }`}>
+              {productsRemaining} left
+            </span>
+          )}
         </button>
       </div>
 
@@ -100,12 +135,20 @@ export default function DashboardPage() {
           <p className="text-xl text-slate-500 mb-3">No products yet</p>
           <button
             onClick={() => {
+              if (isProductQuotaReached) {
+                setAlert({
+                  type: 'warning',
+                  message: 'Product quota reached. Delete one product or ask admin to increase your limit.',
+                });
+                return;
+              }
               setEditingProductId(null);
               setIsFormOpen(true);
             }}
-            className="btn-primary"
+            disabled={isProductQuotaReached}
+            className="btn-primary disabled:cursor-not-allowed"
           >
-            Add your first product
+            {isProductQuotaReached ? 'Product quota reached' : 'Add your first product'}
           </button>
         </div>
       ) : (

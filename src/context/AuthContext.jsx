@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { auth, onAuthStateChanged, signOut } from '../services/firebase';
+import { authAPI } from '../services/api';
 
 export const AuthContext = createContext();
 
@@ -9,9 +10,36 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setError(null);
+      if (!currentUser) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
       setUser(currentUser);
-      setLoading(false);
+
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+
+        const response = await authAPI.verifyToken();
+        const verifiedUser = response?.data?.user;
+        if (verifiedUser) {
+          // Merge Firebase user fields with backend user profile (role/limits/etc).
+          setUser({ ...currentUser, ...verifiedUser });
+        }
+      } catch (err) {
+        // If verify fails, keep Firebase user so app can still operate with auth token checks.
+        console.warn('AuthContext verifyToken failed:', err);
+      } finally {
+        setLoading(false);
+      }
     });
 
     return () => unsubscribe();

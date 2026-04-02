@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Settings, LogOut, User, Search } from 'lucide-react';
+import { LayoutDashboard, Settings, LogOut, User, Search, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar() {
@@ -12,6 +12,7 @@ export default function Sidebar() {
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: 'Amazon Lookup', path: '/amazon-lookup', icon: Search },
     // { label: 'Settings', path: '/settings', icon: Settings },
+    ...(user?.role === 'admin' ? [{ label: 'Admin Panel', path: '/admin', icon: ShieldCheck }] : []),
   ];
 
   const isActive = (path) => location.pathname === path;

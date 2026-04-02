@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { amazonAPI } from '../services/api';
+import { amazonAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatCurrency, isValidUrl } from '../utils/helpers';
@@ -44,6 +44,7 @@ export default function AmazonLookupPage() {
   const [result, setResult] = useState(null);
 
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const [lookupQuota, setLookupQuota] = useState(null);
 
   // Profit planner
   const [targetProfit, setTargetProfit] = useState('');
@@ -53,6 +54,11 @@ export default function AmazonLookupPage() {
     if (!amazonUrl) return false;
     return isValidUrl(amazonUrl.trim());
   }, [amazonUrl]);
+
+  const isLookupQuotaReached =
+    lookupQuota?.remainingToday !== null &&
+    lookupQuota?.remainingToday !== undefined &&
+    lookupQuota?.remainingToday <= 0;
 
   const profitPlanner = useMemo(() => {
     const parsedTarget = parseFloat(targetProfit);
@@ -106,6 +112,13 @@ export default function AmazonLookupPage() {
 
   const lookup = useCallback(async (url, fromAuto = false) => {
     if (!url) return;
+    if (isLookupQuotaReached) {
+      setAlert({
+        type: 'warning',
+        message: 'Amazon lookup quota reached. Ask admin to increase your limit or wait for reset.',
+      });
+      return;
+    }
 
     const trimmed = url.trim();
     if (!trimmed) return;
@@ -115,6 +128,9 @@ export default function AmazonLookupPage() {
     try {
       const response = await amazonAPI.lookup(trimmed);
       setResult(response.data || null);
+      if (response?.data?.quota) {
+        setLookupQuota(response.data.quota);
+      }
       setActiveImageIdx(0);
       setTargetProfit('');
 
@@ -123,6 +139,9 @@ export default function AmazonLookupPage() {
       }
     } catch (error) {
       setResult(null);
+      if (error?.response?.data?.quota) {
+        setLookupQuota(error.response.data.quota);
+      }
       setAlert({
         type: 'error',
         message:
@@ -133,6 +152,27 @@ export default function AmazonLookupPage() {
     } finally {
       setLoading(false);
     }
+  }, [isLookupQuotaReached]);
+
+  useEffect(() => {
+    const fetchLimits = async () => {
+      try {
+        const response = await settingsAPI.getLimits();
+        const q = response?.data?.amazonLookup;
+        if (q) {
+          setLookupQuota({
+            limitPerDay: q.limitPerDay,
+            usedToday: q.usedToday,
+            remainingToday: q.remainingToday,
+            resetAt: q.resetAt,
+          });
+        }
+      } catch (error) {
+        console.warn('Failed to load lookup quota:', error);
+      }
+    };
+
+    fetchLimits();
   }, []);
 
   useDebouncedAutoLookup({
@@ -213,7 +253,7 @@ export default function AmazonLookupPage() {
                   <div className="flex gap-2">
                     <button
                       type="submit"
-                      disabled={loading || !canLookup}
+                      disabled={loading || !canLookup || isLookupQuotaReached}
                       className="btn-primary flex items-center justify-center gap-2 px-5"
                     >
                       {loading ? (
@@ -246,7 +286,14 @@ export default function AmazonLookupPage() {
                 </form>
 
                 <div className="mt-2 text-xs text-slate-200">
-                  Tip: Press Enter to check immediately.
+                  {lookupQuota?.remainingToday === null || lookupQuota?.remainingToday === undefined ? (
+                    <>Lookup quota: Unlimited. Tip: Press Enter to check immediately.</>
+                  ) : (
+                    <>
+                      Lookup quota: {lookupQuota.remainingToday} left today
+                      {lookupQuota.resetAt ? ` (resets ${new Date(lookupQuota.resetAt).toLocaleString()})` : ''}.
+                    </>
+                  )}
                 </div>
               </div>
             </div>

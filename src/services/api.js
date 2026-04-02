@@ -87,6 +87,7 @@ export const productAPI = {
 export const settingsAPI = {
   getPreferences: () => api.get('/settings/preferences'),
   updatePreferences: (data) => api.put('/settings/preferences', data),
+  getLimits: () => api.get('/settings/limits'),
 };
 
 export const ebayAPI = {
@@ -99,6 +100,13 @@ export const ebayAPI = {
 // Amazon lookup (title, description, images, and price)
 export const amazonAPI = {
   lookup: (amazonUrl) => api.post('/amazon/lookup', { amazonUrl }),
+};
+
+// Admin APIs
+export const adminAPI = {
+  listUsers: () => api.get('/admin/users'),
+  createUser: (data) => api.post('/admin/users', data),
+  updateUserLimits: (id, data) => api.put(`/admin/users/${id}/limits`, data),
 };
 
 export default api;

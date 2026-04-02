@@ -109,11 +109,8 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-slate-600 mt-6">
-          Don't have an account?{' '}
-          <Link to="/signup" className="text-blue-600 font-semibold hover:underline">
-            Sign up
-          </Link>
+        <p className="text-center text-slate-600 mt-6 text-sm">
+          Don&apos;t have an account? Ask your admin to create access for you.
         </p>
       </div>
     </div>
