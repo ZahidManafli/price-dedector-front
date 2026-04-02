@@ -59,9 +59,9 @@ export default function AmazonLookupPage() {
   }, [amazonUrl]);
 
   const isLookupQuotaReached =
-    lookupQuota?.remainingToday !== null &&
-    lookupQuota?.remainingToday !== undefined &&
-    lookupQuota?.remainingToday <= 0;
+    lookupQuota?.remainingThisWeek !== null &&
+    lookupQuota?.remainingThisWeek !== undefined &&
+    lookupQuota?.remainingThisWeek <= 0;
 
   const profitPlanner = useMemo(() => {
     const parsedTarget = parseFloat(targetProfit);
@@ -174,9 +174,9 @@ export default function AmazonLookupPage() {
         const q = response?.data?.amazonLookup;
         if (q) {
           setLookupQuota({
-            limitPerDay: q.limitPerDay,
-            usedToday: q.usedToday,
-            remainingToday: q.remainingToday,
+            limitPerWeek: q.limitPerWeek,
+            usedThisWeek: q.usedThisWeek,
+            remainingThisWeek: q.remainingThisWeek,
             resetAt: q.resetAt,
           });
         }
@@ -300,11 +300,11 @@ export default function AmazonLookupPage() {
                 </form>
 
                 <div className="mt-2 text-xs text-slate-200">
-                  {lookupQuota?.remainingToday === null || lookupQuota?.remainingToday === undefined ? (
+                  {lookupQuota?.remainingThisWeek === null || lookupQuota?.remainingThisWeek === undefined ? (
                     <>Lookup quota: Unlimited. Tip: Press Enter to check immediately.</>
                   ) : (
                     <>
-                      Lookup quota: {lookupQuota.remainingToday} left today
+                      Lookup quota: {lookupQuota.remainingThisWeek} left this week
                       {lookupQuota.resetAt ? ` (resets ${new Date(lookupQuota.resetAt).toLocaleString()})` : ''}.
                     </>
                   )}

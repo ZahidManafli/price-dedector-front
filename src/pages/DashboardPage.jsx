@@ -69,7 +69,7 @@ export default function DashboardPage() {
   const productsLimit = limits?.products?.limit;
   const productsUsed = limits?.products?.used ?? products.length;
   const productsLeft = limits?.products?.remaining;
-  const lookupLeft = limits?.amazonLookup?.remainingToday;
+  const lookupLeft = limits?.amazonLookup?.remainingThisWeek;
   const isProductQuotaReached =
     productsLeft !== null && productsLeft !== undefined && productsLeft <= 0;
 
@@ -175,7 +175,7 @@ export default function DashboardPage() {
           <p className="mt-2 text-3xl font-bold">
             {lookupLeft === null || lookupLeft === undefined ? 'Unlimited' : lookupLeft}
           </p>
-          <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>Amazon lookups remaining today</p>
+          <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>Amazon lookups remaining this week</p>
         </div>
         <div
           className={`glass-card p-5 border ${

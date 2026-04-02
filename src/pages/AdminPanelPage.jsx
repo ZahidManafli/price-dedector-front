@@ -21,7 +21,7 @@ export default function AdminPanelPage() {
     password: '',
     name: '',
     role: 'user',
-    amazonLookupRequestLimitPerDay: '',
+    amazonLookupRequestLimitPerWeek: '',
     productsLimit: '',
   });
 
@@ -30,7 +30,7 @@ export default function AdminPanelPage() {
 
   const defaultEditForUser = (u) => ({
     role: u.role || 'user',
-    amazonLookupRequestLimitPerDay: safeToString(u.amazonLookupRequestLimitPerDay),
+    amazonLookupRequestLimitPerWeek: safeToString(u.amazonLookupRequestLimitPerWeek),
     productsLimit: safeToString(u.productsLimit),
   });
 
@@ -75,10 +75,10 @@ export default function AdminPanelPage() {
         password: createForm.password,
         name: createForm.name.trim(),
         role: createForm.role === 'admin' ? 'admin' : 'user',
-        amazonLookupRequestLimitPerDay:
-          createForm.amazonLookupRequestLimitPerDay === ''
+        amazonLookupRequestLimitPerWeek:
+          createForm.amazonLookupRequestLimitPerWeek === ''
             ? null
-            : Number(createForm.amazonLookupRequestLimitPerDay),
+            : Number(createForm.amazonLookupRequestLimitPerWeek),
         productsLimit:
           createForm.productsLimit === '' ? null : Number(createForm.productsLimit),
       };
@@ -90,7 +90,7 @@ export default function AdminPanelPage() {
         password: '',
         name: '',
         role: 'user',
-        amazonLookupRequestLimitPerDay: '',
+        amazonLookupRequestLimitPerWeek: '',
         productsLimit: '',
       });
 
@@ -123,10 +123,10 @@ export default function AdminPanelPage() {
 
       await adminAPI.updateUserLimits(userId, {
         role: uEdits.role === 'admin' ? 'admin' : 'user',
-        amazonLookupRequestLimitPerDay:
-          uEdits.amazonLookupRequestLimitPerDay === ''
+        amazonLookupRequestLimitPerWeek:
+          uEdits.amazonLookupRequestLimitPerWeek === ''
             ? null
-            : Number(uEdits.amazonLookupRequestLimitPerDay),
+            : Number(uEdits.amazonLookupRequestLimitPerWeek),
         productsLimit: uEdits.productsLimit === '' ? null : Number(uEdits.productsLimit),
         resetAmazonUsage: !!resetUsage[userId],
       });
@@ -235,11 +235,11 @@ export default function AdminPanelPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className={`block text-sm font-semibold mb-1.5 ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
-                      Amazon lookup limit / day
+                      Amazon lookup limit / week
                     </label>
                     <input
-                      value={createForm.amazonLookupRequestLimitPerDay}
-                      onChange={(e) => setCreateForm((p) => ({ ...p, amazonLookupRequestLimitPerDay: e.target.value }))}
+                      value={createForm.amazonLookupRequestLimitPerWeek}
+                      onChange={(e) => setCreateForm((p) => ({ ...p, amazonLookupRequestLimitPerWeek: e.target.value }))}
                       className="input-base"
                       placeholder="Leave empty = unlimited"
                       type="number"
@@ -292,9 +292,9 @@ export default function AdminPanelPage() {
                               Role: <span className="font-semibold">{u.role}</span>
                             </div>
                             <div className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                              Amazon used today: <span className="font-semibold">{u.amazonLookupRequestsUsedToday ?? 0}</span>
-                              {u.amazonLookupRequestLimitPerDay != null && (
-                                <> / <span className="font-semibold">{u.amazonLookupRequestLimitPerDay}</span></>
+                              Amazon used this week: <span className="font-semibold">{u.amazonLookupRequestsUsedThisWeek ?? 0}</span>
+                              {u.amazonLookupRequestLimitPerWeek != null && (
+                                <> / <span className="font-semibold">{u.amazonLookupRequestLimitPerWeek}</span></>
                               )}
                             </div>
                             <div className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
@@ -333,16 +333,16 @@ export default function AdminPanelPage() {
                               </div>
                               <div className="sm:col-span-1">
                                 <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
-                                  Amazon limit / day
+                                  Amazon limit / week
                                 </label>
                                 <input
-                                  value={rowEdits.amazonLookupRequestLimitPerDay}
+                                  value={rowEdits.amazonLookupRequestLimitPerWeek}
                                   onChange={(e) =>
                                     setEdits((prev) => ({
                                       ...prev,
                                       [u.id]: {
                                         ...prev[u.id],
-                                        amazonLookupRequestLimitPerDay: e.target.value,
+                                        amazonLookupRequestLimitPerWeek: e.target.value,
                                       },
                                     }))
                                   }
