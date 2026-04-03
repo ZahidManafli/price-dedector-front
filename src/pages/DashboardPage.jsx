@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts';
-import { adminAPI, productAPI, settingsAPI } from '../services/api';
+import { adminAPI, productAPI, settingsAPI, ebayAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
 import { formatCurrency } from '../utils/helpers';
 import { ProductFormModal } from './ProductFormPage';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { Gauge, LineChart, ShieldCheck, X } from 'lucide-react';
 
 export default function DashboardPage() {
   const [products, setProducts] = useState([]);
@@ -17,17 +19,33 @@ export default function DashboardPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { isDark } = useTheme();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [ebayStatus, setEbayStatus] = useState({ connected: false });
+  const [showEbayBanner, setShowEbayBanner] = useState(() => {
+    // Let users dismiss the banner until they reconnect eBay.
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem('hideEbayAnalyticsBanner') !== '1';
+  });
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-        const [productsRes, limitsRes] = await Promise.all([
+        const [productsRes, limitsRes, ebayRes] = await Promise.all([
           productAPI.getAll(),
           settingsAPI.getLimits(),
+          ebayAPI.getStatus().catch(() => null),
         ]);
         setProducts(productsRes.data || []);
         setLimits(limitsRes.data || null);
+        const ebayData = ebayRes?.data || {};
+        setEbayStatus(ebayData);
+        if (ebayData?.connected) {
+          setShowEbayBanner(false);
+          try {
+            localStorage.setItem('hideEbayAnalyticsBanner', '1');
+          } catch {}
+        }
         if (user?.role === 'admin') {
           const statsRes = await adminAPI.getStats();
           setAdminStats(statsRes.data || null);
@@ -40,6 +58,28 @@ export default function DashboardPage() {
     };
     load();
   }, []);
+
+  const handleDismissEbayBanner = () => {
+    setShowEbayBanner(false);
+    try {
+      localStorage.setItem('hideEbayAnalyticsBanner', '1');
+    } catch {}
+  };
+
+  const handleConnectEbay = async () => {
+    try {
+      setAlert(null);
+      const response = await ebayAPI.getConnectUrl();
+      const authUrl = response?.data?.authUrl;
+      if (!authUrl) throw new Error('Missing eBay auth URL');
+      window.location.href = authUrl;
+    } catch (err) {
+      setAlert({
+        type: 'error',
+        message: err?.response?.data?.error || err?.message || 'Failed to connect eBay',
+      });
+    }
+  };
 
   const chartData = useMemo(() => {
     const byDay = {};
@@ -77,6 +117,109 @@ export default function DashboardPage() {
 
   return (
     <div className="page-shell">
+      {showEbayBanner && !ebayStatus?.connected && (
+        <div
+          role="alert"
+          className={`relative overflow-hidden rounded-2xl border p-5 mb-5 ${
+            isDark
+              ? 'border-slate-700 text-slate-100 bg-gradient-to-r from-indigo-500/20 via-sky-500/10 to-emerald-500/10'
+              : 'border-slate-200 text-slate-900 bg-gradient-to-r from-indigo-500/10 via-sky-500/5 to-emerald-500/5'
+          }`}
+        >
+          <div className="absolute inset-0 pointer-events-none">
+            <div
+              className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-indigo-500/20 blur-2xl"
+            />
+            <div
+              className="absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-emerald-500/15 blur-2xl"
+            />
+          </div>
+
+          <button
+            type="button"
+            aria-label="Dismiss"
+            onClick={handleDismissEbayBanner}
+            className={`absolute top-3 right-3 h-9 w-9 rounded-xl flex items-center justify-center transition ${
+              isDark
+                ? 'bg-slate-900/40 hover:bg-slate-900/60 border border-slate-700'
+                : 'bg-white/70 hover:bg-white border border-slate-200'
+            }`}
+          >
+            <X size={16} />
+          </button>
+
+          <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
+            <div className="lg:col-span-2">
+              <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold mb-3 bg-white/30 border border-white/20">
+                <ShieldCheck size={14} />
+                eBay analytics unlocked with connection
+              </div>
+              <h2 className={`text-xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'} mb-2`}>
+                Connect eBay to unlock seller insights
+              </h2>
+              <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'} max-w-2xl`}>
+                Get traffic reports, customer-service benchmarks (INAD/INR), and seller standards performance so you can
+                improve listings and boost results.
+              </p>
+
+              <div className="flex flex-wrap gap-2 mt-4">
+                <button
+                  type="button"
+                  onClick={handleConnectEbay}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                    isDark
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-900/30'
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-600/20'
+                  }`}
+                >
+                  Connect eBay
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/listings')}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                    isDark
+                      ? 'bg-slate-900/30 hover:bg-slate-900/50 text-slate-100 border border-slate-700'
+                      : 'bg-white hover:bg-slate-50 text-slate-900 border border-slate-200'
+                  }`}
+                >
+                  Learn more
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
+              <div className={`rounded-xl border p-3 ${isDark ? 'bg-slate-900/40 border-slate-700' : 'bg-white border-slate-200'}`}>
+                <div className={`flex items-center gap-2 mb-1 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                  <LineChart size={16} />
+                  <span className="text-xs font-semibold">Traffic</span>
+                </div>
+                <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>7.41%</p>
+                <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Sales conversion sample</p>
+              </div>
+
+              <div className={`rounded-xl border p-3 ${isDark ? 'bg-slate-900/40 border-slate-700' : 'bg-white border-slate-200'}`}>
+                <div className={`flex items-center gap-2 mb-1 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                  <Gauge size={16} />
+                  <span className="text-xs font-semibold">Customer Service</span>
+                </div>
+                <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>0.78</p>
+                <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Projected rate sample (INR)</p>
+              </div>
+
+              <div className={`rounded-xl border p-3 ${isDark ? 'bg-slate-900/40 border-slate-700' : 'bg-white border-slate-200'}`}>
+                <div className={`flex items-center gap-2 mb-1 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                  <ShieldCheck size={16} />
+                  <span className="text-xs font-semibold">Standards</span>
+                </div>
+                <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>TOP_RATED</p>
+                <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Seller level sample</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isFormOpen && (
         <ProductFormModal
           productId={null}
