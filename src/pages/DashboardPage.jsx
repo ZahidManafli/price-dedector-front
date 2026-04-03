@@ -29,6 +29,7 @@ export default function DashboardPage() {
   const [analytics, setAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState(null);
+  const [hideAnalyticsAccessAlert, setHideAnalyticsAccessAlert] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -67,6 +68,7 @@ export default function DashboardPage() {
       if (!ebayStatus?.connected) return;
       setAnalyticsLoading(true);
       setAnalyticsError(null);
+      setHideAnalyticsAccessAlert(false);
       try {
         const res = await ebayAPI.getDashboardAnalytics();
         setAnalytics(res?.data || null);
@@ -257,6 +259,20 @@ export default function DashboardPage() {
             isDark ? 'bg-slate-950/40 border-slate-800 text-white' : 'bg-slate-100 border-slate-200 text-slate-900'
           } mb-6`}
         >
+          {analytics?.analyticsAccessDenied && !hideAnalyticsAccessAlert && (
+            <div className="mb-4">
+              <Alert
+                type="error"
+                message={
+                  analytics?.analyticsAccessErrorMessage ||
+                  'eBay analytics access denied. This eBay account may not have seller analytics permissions.'
+                }
+                onClose={() => setHideAnalyticsAccessAlert(true)}
+                autoClose={false}
+              />
+            </div>
+          )}
+
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <h2 className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
@@ -283,7 +299,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {!analyticsLoading && analytics && (
+          {!analyticsLoading && analytics && !analytics?.analyticsAccessDenied && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div
                 className={`rounded-xl border p-4 ${
