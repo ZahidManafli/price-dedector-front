@@ -156,13 +156,15 @@ export default function ListingsPage() {
               <tbody className="divide-y divide-slate-200">
                 {items.map((offer) => {
                   const key = offer.offerId || offer.listingId || offer?.listing?.listingId || Math.random().toString(36).slice(2);
-                  const title = offer?.listing?.title || offer?.title || '(no title)';
+                  const title = offer?.listing?.title || offer?.title || offer?.product?.title || '(no title)';
                   const price = offer?.pricingSummary?.price?.value
                     ? `${offer.pricingSummary.price.value} ${offer.pricingSummary.price.currency || ''}`.trim()
                     : '-';
-                  const qty = typeof offer?.availableQuantity === 'number' ? offer.availableQuantity : (offer?.quantity || '-');
+                  const qty = typeof offer?.availableQuantity === 'number'
+                    ? offer.availableQuantity
+                    : (offer?.quantity ?? offer?.availability?.shipToLocationAvailability?.quantity ?? '-');
                   const status = offer?.status || offer?.marketplaceId || '-';
-                  const listingId = offer?.listingId || offer?.listing?.listingId || offer?.listing?.legacyItemId || '-';
+                  const listingId = offer?.listingId || offer?.listing?.listingId || offer?.listing?.legacyItemId || offer?.sku || '-';
                   const isOpen = !!expanded[key];
                   return (
                     <React.Fragment key={key}>
