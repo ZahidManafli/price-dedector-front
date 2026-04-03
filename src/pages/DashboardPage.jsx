@@ -270,6 +270,30 @@ export default function DashboardPage() {
                 onClose={() => setHideAnalyticsAccessAlert(true)}
                 autoClose={false}
               />
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate('/settings')}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                    isDark
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-900/30'
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-600/20'
+                  }`}
+                >
+                  Go to Settings
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHideAnalyticsAccessAlert(true)}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                    isDark
+                      ? 'bg-slate-900/30 hover:bg-slate-900/50 text-slate-100 border border-slate-700'
+                      : 'bg-white hover:bg-slate-50 text-slate-900 border border-slate-200'
+                  }`}
+                >
+                  Dismiss
+                </button>
+              </div>
             </div>
           )}
 
