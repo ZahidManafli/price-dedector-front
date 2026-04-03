@@ -120,7 +120,11 @@ export default function OrdersPage() {
 
       {!ebayStatus.connected ? (
         <>
-          <div className={`rounded-xl p-6 text-center border ${isDark ? 'bg-slate-900/60 border-slate-700' : ''}`}>
+          <div
+            className={`rounded-xl p-6 text-center border ${
+              isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-white border-slate-200'
+            }`}
+          >
             <p className={`${isDark ? 'text-slate-300' : 'text-slate-600'} mb-4`}>
               Connect your eBay account to view your fulfillment orders.
             </p>
@@ -132,7 +136,11 @@ export default function OrdersPage() {
 
           {showConnectModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-              <div className={`w-full max-w-md p-6 rounded-xl border ${isDark ? 'bg-slate-900/80 border-slate-700' : ''}`}>
+              <div
+                className={`w-full max-w-md p-6 rounded-xl border ${
+                  isDark ? 'bg-slate-900/80 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-900'
+                }`}
+              >
                 <h2 className="text-lg font-semibold mb-2" style={{ color: isDark ? '#e2e8f0' : undefined }}>
                   eBay Sign-in Required
                 </h2>
@@ -157,7 +165,11 @@ export default function OrdersPage() {
           )}
         </>
       ) : (
-        <div className={`glass-card p-0 overflow-hidden rounded-xl border ${isDark ? 'bg-slate-900/30 border-slate-800' : ''}`}>
+            <div
+              className={`glass-card p-0 overflow-hidden rounded-xl border ${
+                isDark ? 'bg-slate-900/30 border-slate-800' : 'bg-white border-slate-200'
+              }`}
+            >
           <div className="overflow-x-auto">
             <table className={`min-w-full ${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
               <thead className={isDark ? 'bg-slate-800/70' : 'bg-slate-50'}>
@@ -222,7 +234,11 @@ export default function OrdersPage() {
                                 </div>
                               </div>
                             </div>
-                            <pre className={`text-xs overflow-auto max-h-96 ${isDark ? 'text-slate-200' : ''}`}>
+                            <pre
+                              className={`text-xs overflow-auto max-h-96 ${
+                                isDark ? 'text-slate-200' : 'text-slate-700'
+                              }`}
+                            >
                               {JSON.stringify(order, null, 2)}
                             </pre>
                           </td>
