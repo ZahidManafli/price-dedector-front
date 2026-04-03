@@ -253,7 +253,8 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {ebayStatus?.connected && (
+      {ebayStatus?.connected &&
+        (!analytics?.analyticsAccessDenied || (analytics?.analyticsAccessDenied && !hideAnalyticsAccessAlert)) && (
         <div
           className={`glass-card p-5 border ${
             isDark ? 'bg-slate-950/40 border-slate-800 text-white' : 'bg-slate-100 border-slate-200 text-slate-900'
