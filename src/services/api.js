@@ -97,6 +97,7 @@ export const ebayAPI = {
   disconnect: () => api.delete('/ebay/disconnect'),
   getListings: (offset = 0, limit = 25) => api.get('/ebay/listings', { params: { offset, limit } }),
   getDashboardAnalytics: () => api.get('/ebay/analytics/dashboard'),
+  getOrders: (offset = 0, limit = 25) => api.get('/ebay/orders', { params: { offset, limit } }),
 };
 
 // Amazon lookup (title, description, images, and price)

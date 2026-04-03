@@ -16,6 +16,7 @@ import AdminPanelPage from './pages/AdminPanelPage';
 import PrivacyPage from './pages/PrivacyPage';
 import AboutPage from './pages/AboutPage';
 import ListingsPage from './pages/ListingsPage';
+import OrdersPage from './pages/OrdersPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -156,6 +157,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ListingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <OrdersPage />
                 </ProtectedRoute>
               }
             />
