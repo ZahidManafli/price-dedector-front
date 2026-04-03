@@ -23,6 +23,7 @@ export default function Sidebar() {
   const links = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: 'Products', path: '/products', icon: Package },
+    { label: 'Listings', path: '/listings', icon: Package },
     { label: 'Amazon Lookup', path: '/amazon-lookup', icon: Search },
     { label: 'Settings', path: '/settings', icon: Settings },
     ...(user?.role === 'admin' ? [{ label: 'Admin Panel', path: '/admin', icon: ShieldCheck }] : []),

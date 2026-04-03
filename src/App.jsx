@@ -15,6 +15,7 @@ import AmazonLookupPage from './pages/AmazonLookupPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 import PrivacyPage from './pages/PrivacyPage';
 import AboutPage from './pages/AboutPage';
+import ListingsPage from './pages/ListingsPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -147,6 +148,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AmazonLookupPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/listings"
+              element={
+                <ProtectedRoute>
+                  <ListingsPage />
                 </ProtectedRoute>
               }
             />

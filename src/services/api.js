@@ -95,6 +95,7 @@ export const ebayAPI = {
   completeCallback: (code, state) => api.post('/ebay/callback', { code, state }),
   getStatus: () => api.get('/ebay/status'),
   disconnect: () => api.delete('/ebay/disconnect'),
+  getListings: (offset = 0, limit = 25) => api.get('/ebay/listings', { params: { offset, limit } }),
 };
 
 // Amazon lookup (title, description, images, and price)
