@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import { adminAPI, productAPI, settingsAPI, ebayAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -30,8 +30,6 @@ export default function DashboardPage() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState(null);
   const [hideAnalyticsAccessAlert, setHideAnalyticsAccessAlert] = useState(false);
-  const [analyticsAccessDeniedMessage, setAnalyticsAccessDeniedMessage] = useState(null);
-  const didAutoDisconnectRef = useRef(false);
 
   useEffect(() => {
     const load = async () => {
@@ -71,8 +69,6 @@ export default function DashboardPage() {
       setAnalyticsLoading(true);
       setAnalyticsError(null);
       setHideAnalyticsAccessAlert(false);
-      setAnalyticsAccessDeniedMessage(null);
-      didAutoDisconnectRef.current = false;
       try {
         const res = await ebayAPI.getDashboardAnalytics();
         setAnalytics(res?.data || null);
@@ -87,35 +83,6 @@ export default function DashboardPage() {
     };
     loadAnalytics();
   }, [ebayStatus?.connected]);
-
-  useEffect(() => {
-    if (!analytics?.analyticsAccessDenied) return;
-    if (didAutoDisconnectRef.current) return;
-
-    didAutoDisconnectRef.current = true;
-    const message =
-      analytics?.analyticsAccessErrorMessage ||
-      'eBay analytics access denied. This eBay account may not have seller analytics permissions.';
-    setAnalyticsAccessDeniedMessage(message);
-
-    // Dashboard-only behavior: disconnect eBay so the user sees "Connect eBay" on Dashboard.
-    (async () => {
-      try {
-        await ebayAPI.disconnect();
-      } catch (err) {
-        // Even if disconnect fails, we still force the UI to the connect state.
-        // eslint-disable-next-line no-console
-        console.error('Auto eBay disconnect failed:', err?.response?.data || err?.message || err);
-      } finally {
-        setEbayStatus({ connected: false });
-        setShowEbayBanner(true);
-        try {
-          localStorage.removeItem('hideEbayAnalyticsBanner');
-        } catch {}
-        setAnalytics(null);
-      }
-    })();
-  }, [analytics?.analyticsAccessDenied, analytics?.analyticsAccessErrorMessage]);
 
   const trafficChartData = useMemo(() => {
     const points = analytics?.traffic?.points || [];
@@ -183,17 +150,6 @@ export default function DashboardPage() {
 
   return (
     <div className="page-shell">
-      {analyticsAccessDeniedMessage && (
-        <div className="mb-5">
-          <Alert
-            type="error"
-            message={analyticsAccessDeniedMessage}
-            onClose={() => setAnalyticsAccessDeniedMessage(null)}
-            autoClose={false}
-          />
-        </div>
-      )}
-
       {showEbayBanner && !ebayStatus?.connected && (
         <div
           role="alert"
