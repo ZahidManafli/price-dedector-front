@@ -2,8 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ebayAPI } from '../services/api';
 import Alert from '../components/Alert';
 import { Loader2, Package, ChevronDown, ChevronUp, Link2 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ListingsPage() {
+  const { isDark } = useTheme();
   const [loading, setLoading] = useState(true);
   const [ebayStatus, setEbayStatus] = useState({ connected: false });
   const [showConnectModal, setShowConnectModal] = useState(false);
@@ -88,12 +90,12 @@ export default function ListingsPage() {
   return (
     <div className="page-shell">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="page-title flex items-center gap-2">
+        <h1 className={`page-title flex items-center gap-2 ${isDark ? 'text-slate-100' : ''}`}>
           <Package size={18} />
           Listings
         </h1>
         {ebayStatus.connected ? (
-          <div className="text-sm text-slate-500">
+          <div className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
             {typeof total === 'number' ? `Total: ${total}` : null}
           </div>
         ) : null}
@@ -108,8 +110,8 @@ export default function ListingsPage() {
       {!ebayStatus.connected ? (
         <>
           {/* Fallback content in case modal is dismissed */}
-          <div className="glass-card p-6 text-center">
-            <p className="text-slate-600 mb-4">Connect your eBay account to view your listings.</p>
+          <div className={`rounded-xl p-6 text-center border ${isDark ? 'bg-slate-900/60 border-slate-700' : 'glass-card'}`}>
+            <p className={`${isDark ? 'text-slate-300' : 'text-slate-600'} mb-4`}>Connect your eBay account to view your listings.</p>
             <button type="button" onClick={handleConnect} className="btn-primary inline-flex items-center gap-2">
               <Link2 size={16} />
               Connect eBay
@@ -117,9 +119,9 @@ export default function ListingsPage() {
           </div>
           {showConnectModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-              <div className="glass-card w-full max-w-md p-6">
-                <h2 className="text-lg font-semibold mb-2">eBay Sign-in Required</h2>
-                <p className="text-sm text-slate-600 mb-4">
+              <div className={`w-full max-w-md p-6 rounded-xl border ${isDark ? 'bg-slate-900/80 border-slate-700' : 'glass-card'}`}>
+                <h2 className={`text-lg font-semibold mb-2 ${isDark ? 'text-slate-100' : ''}`}>eBay Sign-in Required</h2>
+                <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                   You need to connect your eBay account to access your listings.
                 </p>
                 <div className="flex gap-3 justify-end">
@@ -140,20 +142,20 @@ export default function ListingsPage() {
           )}
         </>
       ) : (
-        <div className="glass-card p-0 overflow-hidden">
+        <div className={`p-0 overflow-hidden rounded-xl border ${isDark ? 'bg-slate-900/60 border-slate-700' : 'glass-card'}`}>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
+            <table className={`min-w-full ${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
+              <thead className={`${isDark ? 'bg-slate-800/70' : 'bg-slate-50'}`}>
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Listing ID</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Price</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Quantity</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Title</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Listing ID</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Price</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Quantity</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Status</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className={`${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
                 {items.map((offer) => {
                   const key = offer.offerId || offer.listingId || offer?.listing?.listingId || Math.random().toString(36).slice(2);
                   const title = offer?.listing?.title || offer?.title || offer?.product?.title || '(no title)';
@@ -168,17 +170,17 @@ export default function ListingsPage() {
                   const isOpen = !!expanded[key];
                   return (
                     <React.Fragment key={key}>
-                      <tr className="bg-white">
-                        <td className="px-4 py-3 text-sm text-slate-700">{title}</td>
-                        <td className="px-4 py-3 text-sm text-slate-700">{listingId}</td>
-                        <td className="px-4 py-3 text-sm text-slate-700">{price}</td>
-                        <td className="px-4 py-3 text-sm text-slate-700">{qty}</td>
-                        <td className="px-4 py-3 text-sm text-slate-700">{status}</td>
+                      <tr className={`${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{title}</td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{listingId}</td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{price}</td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{qty}</td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{status}</td>
                         <td className="px-4 py-3 text-right">
                           <button
                             type="button"
                             onClick={() => toggleExpand(key)}
-                            className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700"
+                            className={`inline-flex items-center gap-1 ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`}
                           >
                             {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                             {isOpen ? 'Hide' : 'Details'}
@@ -186,9 +188,9 @@ export default function ListingsPage() {
                         </td>
                       </tr>
                       {isOpen && (
-                        <tr className="bg-slate-50">
+                        <tr className={`${isDark ? 'bg-slate-800/60' : 'bg-slate-50'}`}>
                           <td colSpan={6} className="px-4 py-3">
-                            <pre className="text-xs overflow-auto max-h-96">
+                            <pre className={`text-xs overflow-auto max-h-96 ${isDark ? 'text-slate-200' : ''}`}>
 {JSON.stringify(offer, null, 2)}
                             </pre>
                           </td>
@@ -199,7 +201,7 @@ export default function ListingsPage() {
                 })}
                 {items.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-slate-500 text-sm">
+                    <td colSpan={6} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       No listings found.
                     </td>
                   </tr>
@@ -208,8 +210,8 @@ export default function ListingsPage() {
             </table>
           </div>
 
-          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-white">
-            <div className="text-sm text-slate-500">
+          <div className={`flex items-center justify-between px-4 py-3 border-t ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}>
+            <div className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
               Page {page + 1}
             </div>
             <div className="flex items-center gap-2">
