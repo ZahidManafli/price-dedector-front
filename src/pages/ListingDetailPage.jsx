@@ -231,9 +231,7 @@ export default function ListingDetailPage() {
       setSaveSuccess('');
       return;
     }
-    const soldCount =
-      trading?.quantitySold != null && trading?.quantitySold !== '' ? Number(trading.quantitySold) : 0;
-    const quantityToSend = parsedStock + (Number.isFinite(soldCount) ? soldCount : 0);
+    const quantityToSend = parsedStock;
     setSaveQtyLoading(true);
     setSaveError('');
     setSaveSuccess('');
