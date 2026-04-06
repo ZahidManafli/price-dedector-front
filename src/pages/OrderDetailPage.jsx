@@ -24,6 +24,44 @@ export default function OrderDetailPage() {
     };
   }, [order]);
 
+  const shipping = useMemo(() => {
+    const step = order?.fulfillmentStartInstructions?.[0]?.shippingStep;
+    const shipTo = step?.shipTo || order?.buyer?.buyerRegistrationAddress;
+    return {
+      name: shipTo?.fullName || '',
+      line1: shipTo?.contactAddress?.addressLine1 || '',
+      line2: shipTo?.contactAddress?.addressLine2 || '',
+      city: shipTo?.contactAddress?.city || '',
+      state: shipTo?.contactAddress?.stateOrProvince || '',
+      postalCode: shipTo?.contactAddress?.postalCode || '',
+      country: shipTo?.contactAddress?.countryCode || '',
+      phone: shipTo?.primaryPhone?.phoneNumber || shipTo?.secondaryPhone?.phoneNumber || '',
+      service: step?.shippingServiceCode || '',
+    };
+  }, [order]);
+
+  const paymentSummary = useMemo(() => {
+    const pay = order?.paymentSummary || {};
+    const firstPayment = (pay.payments || [])[0] || {};
+    const firstRefund = (pay.refunds || [])[0] || {};
+    return {
+      totalDue: pay?.totalDueSeller?.value
+        ? `${pay.totalDueSeller.value} ${pay.totalDueSeller.currency || ''}`.trim()
+        : null,
+      fees: order?.totalMarketplaceFee?.value
+        ? `${order.totalMarketplaceFee.value} ${order.totalMarketplaceFee.currency || ''}`.trim()
+        : null,
+      basis: order?.totalFeeBasisAmount?.value
+        ? `${order.totalFeeBasisAmount.value} ${order.totalFeeBasisAmount.currency || ''}`.trim()
+        : null,
+      method: firstPayment?.paymentMethod || '',
+      reference: firstPayment?.paymentReferenceId || '',
+      refundedAmount: firstRefund?.amount?.value
+        ? `${firstRefund.amount.value} ${firstRefund.amount.currency || ''}`.trim()
+        : null,
+    };
+  }, [order]);
+
   if (!order) {
     return (
       <div className="page-shell">
@@ -99,10 +137,61 @@ export default function OrderDetailPage() {
       </div>
 
       <div className={`rounded-2xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-        <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Full payload</h2>
-        <pre className={`text-xs overflow-auto max-h-[70vh] ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-          {JSON.stringify(order, null, 2)}
-        </pre>
+        <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Shipping & payment</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className={`text-xs mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ship to</p>
+            <p className={`font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{shipping.name || '—'}</p>
+            <p className={`${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+              {[shipping.line1, shipping.line2].filter(Boolean).join(' ')}
+            </p>
+            <p className={`${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+              {[shipping.city, shipping.state, shipping.postalCode].filter(Boolean).join(', ')}
+            </p>
+            <p className={`${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{shipping.country}</p>
+            {shipping.phone && (
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Phone: {shipping.phone}</p>
+            )}
+            {shipping.service && (
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Service: {shipping.service}
+              </p>
+            )}
+          </div>
+          <div>
+            <p className={`text-xs mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Payment summary</p>
+            {paymentSummary.method && (
+              <p className={`${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                Method: <span className="font-semibold">{paymentSummary.method}</span>
+              </p>
+            )}
+            {paymentSummary.reference && (
+              <p className={`${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                Ref: <span className="font-mono text-xs">{paymentSummary.reference}</span>
+              </p>
+            )}
+            {paymentSummary.totalDue && (
+              <p className={`${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                Payout to seller: <span className="font-semibold">{paymentSummary.totalDue}</span>
+              </p>
+            )}
+            {paymentSummary.fees && (
+              <p className={`${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                Marketplace fees: <span className="font-semibold">{paymentSummary.fees}</span>
+              </p>
+            )}
+            {paymentSummary.basis && (
+              <p className={`${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                Fee basis: <span className="font-semibold">{paymentSummary.basis}</span>
+              </p>
+            )}
+            {paymentSummary.refundedAmount && (
+              <p className={`text-xs mt-1 ${isDark ? 'text-rose-300' : 'text-rose-600'}`}>
+                Refunded: {paymentSummary.refundedAmount}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
