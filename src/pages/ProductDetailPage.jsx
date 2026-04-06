@@ -4,8 +4,10 @@ import { productAPI } from '../services/api';
 import { buildAmazonProductUrl, extractAmazonAsin, formatCurrency, formatDate } from '../utils/helpers';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ProductDetailPage() {
+  const { isDark } = useTheme();
   const { productId } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
@@ -89,9 +91,9 @@ export default function ProductDetailPage() {
           </div>
         )}
 
-        <div className="glass-card overflow-hidden">
+        <div className={`glass-card overflow-hidden ${isDark ? 'bg-slate-950 border-slate-800' : ''}`}>
           {/* Header */}
-          <div className="p-4 md:p-5 bg-gradient-to-r from-slate-900 to-blue-900 text-white">
+          <div className={`p-4 md:p-5 bg-gradient-to-r ${isDark ? 'from-slate-800 to-blue-900' : 'from-slate-900 to-blue-900'} text-white`}>
             <h1 className="text-2xl font-semibold mb-3 tracking-tight">{product.productName}</h1>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
@@ -117,13 +119,13 @@ export default function ProductDetailPage() {
           <div className="p-4 md:p-5 space-y-5">
             {/* Links */}
             <div>
-              <h2 className="text-xl font-semibold text-slate-900 mb-4">Product Links</h2>
+              <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Product Links</h2>
               <div className="space-y-2">
                 <a
                   href={amazonUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-blue-600 hover:underline"
+                  className={`flex items-center gap-2 hover:underline ${isDark ? 'text-blue-400' : 'text-blue-600'}`}
                 >
                   🔗 Amazon {amazonAsin ? `(${amazonAsin})` : 'Link'}
                 </a>
@@ -131,7 +133,7 @@ export default function ProductDetailPage() {
                   href={ebayUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-blue-600 hover:underline"
+                  className={`flex items-center gap-2 hover:underline ${isDark ? 'text-blue-400' : 'text-blue-600'}`}
                 >
                   🔗 eBay {ebayItemId ? `(${ebayItemId})` : 'Link'}
                 </a>
@@ -141,21 +143,28 @@ export default function ProductDetailPage() {
             {/* Price History */}
             {history.length > 0 && (
               <div>
-                <h2 className="text-xl font-semibold text-slate-900 mb-4">Price History</h2>
-                <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Price History</h2>
+                <div className={`overflow-x-auto border rounded-lg ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                   <table className="w-full text-sm">
-                    <thead className="bg-slate-100">
+                    <thead className={isDark ? 'bg-slate-800/90' : 'bg-slate-100'}>
                       <tr>
-                        <th className="px-4 py-2 text-left">Date</th>
-                        <th className="px-4 py-2 text-left">Amazon</th>
-                        <th className="px-4 py-2 text-left">eBay</th>
-                        <th className="px-4 py-2 text-left">Profit</th>
-                        <th className="px-4 py-2 text-left">Difference</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>Date</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>Amazon</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>eBay</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>Profit</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>Difference</th>
                       </tr>
                     </thead>
                     <tbody>
                       {history.map((record, idx) => (
-                        <tr key={idx} className="border-t border-slate-200 hover:bg-slate-50">
+                        <tr
+                          key={idx}
+                          className={`border-t ${
+                            isDark
+                              ? 'border-slate-700 hover:bg-slate-900/60 text-slate-100'
+                              : 'border-slate-200 hover:bg-slate-50 text-slate-900'
+                          }`}
+                        >
                           <td className="px-4 py-3">{formatDate(record.timestamp)}</td>
                           <td className="px-4 py-3">{formatCurrency(record.amazonPrice)}</td>
                           <td className="px-4 py-3">{formatCurrency(record.ebayPrice)}</td>
@@ -174,7 +183,7 @@ export default function ProductDetailPage() {
             )}
 
             {/* Actions */}
-            <div className="pt-4 border-t border-slate-200 flex flex-wrap gap-3">
+            <div className={`pt-4 border-t flex flex-wrap gap-3 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
               <button
                 onClick={handleCompare}
                 className="rounded-xl bg-emerald-600 text-white px-6 py-3 hover:bg-emerald-700 transition"
