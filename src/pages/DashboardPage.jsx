@@ -384,6 +384,26 @@ export default function DashboardPage() {
                       isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'
                     }`}
                   >
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      <div className={`rounded-lg border p-2 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
+                        <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Program</p>
+                        <p className={`text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                          {analytics?.sellerStandards?.profile?.program || '-'}
+                        </p>
+                      </div>
+                      <div className={`rounded-lg border p-2 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
+                        <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Cycle</p>
+                        <p className={`text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                          {analytics?.sellerStandards?.profile?.cycle?.cycleType || '-'}
+                        </p>
+                      </div>
+                      <div className={`rounded-lg border p-2 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
+                        <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Metrics</p>
+                        <p className={`text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                          {(analytics?.sellerStandards?.profile?.metrics || []).length}
+                        </p>
+                      </div>
+                    </div>
                     <p className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                       Seller Standards Profile
                     </p>
@@ -442,28 +462,36 @@ export default function DashboardPage() {
                         last 7 days
                       </span>
                     </div>
-                    <div className="h-[220px] mt-3">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={trafficChartData}>
-                          <defs>
-                            <linearGradient id="convGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.5} />
-                              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.05} />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#cbd5e1'} />
-                          <XAxis dataKey="day" stroke={isDark ? '#94a3b8' : '#64748b'} />
-                          <YAxis stroke={isDark ? '#94a3b8' : '#64748b'} />
-                          <Area
-                            type="monotone"
-                            dataKey="conversion"
-                            stroke="#8b5cf6"
-                            fill="url(#convGradient)"
-                            strokeWidth={3}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
+                    {trafficChartData.length > 0 ? (
+                      <div className="h-[220px] mt-3">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={trafficChartData}>
+                            <defs>
+                              <linearGradient id="convGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.5} />
+                                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.05} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#cbd5e1'} />
+                            <XAxis dataKey="day" stroke={isDark ? '#94a3b8' : '#64748b'} />
+                            <YAxis stroke={isDark ? '#94a3b8' : '#64748b'} />
+                            <Area
+                              type="monotone"
+                              dataKey="conversion"
+                              stroke="#8b5cf6"
+                              fill="url(#convGradient)"
+                              strokeWidth={3}
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className={`mt-3 h-[220px] rounded-xl border border-dashed flex items-center justify-center text-sm ${
+                        isDark ? 'border-slate-700 text-slate-400 bg-slate-900/40' : 'border-slate-300 text-slate-500 bg-slate-50'
+                      }`}>
+                        No traffic data for selected period.
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

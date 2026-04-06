@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ebayAPI } from '../services/api';
 import Alert from '../components/Alert';
-import { Loader2, Package, ChevronDown, ChevronUp, Link2 } from 'lucide-react';
+import { Loader2, Package, ChevronDown, ChevronUp, Link2, Search, SlidersHorizontal } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 export default function ListingsPage() {
@@ -17,6 +17,8 @@ export default function ListingsPage() {
   const [expanded, setExpanded] = useState({});
   const [paging, setPaging] = useState({ nextOffset: null });
   const [fetchingPage, setFetchingPage] = useState(false);
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
   const offset = useMemo(() => page * limit, [page, limit]);
 
@@ -78,6 +80,51 @@ export default function ListingsPage() {
 
   const canPrev = page > 0;
   const canNext = items.length === limit && (paging.nextOffset === null ? true : paging.nextOffset >= (page + 1) * limit);
+  const normalizedItems = useMemo(
+    () =>
+      (items || []).map((offer) => {
+        const id = offer?.offerId || offer?.listingId || offer?.listing?.listingId || offer?.sku || '-';
+        const status = String(offer?.status || offer?.marketplaceId || '-');
+        const title = offer?.listing?.title || offer?.title || offer?.product?.title || '(no title)';
+        return { ...offer, _id: id, _status: status, _title: title };
+      }),
+    [items]
+  );
+  const filteredItems = useMemo(() => {
+    return normalizedItems.filter((offer) => {
+      const q = query.trim().toLowerCase();
+      const matchesQuery =
+        !q ||
+        offer._title.toLowerCase().includes(q) ||
+        String(offer._id).toLowerCase().includes(q);
+      const matchesStatus = statusFilter === 'ALL' || offer._status.toUpperCase() === statusFilter;
+      return matchesQuery && matchesStatus;
+    });
+  }, [normalizedItems, query, statusFilter]);
+  const activeCount = useMemo(
+    () => normalizedItems.filter((i) => String(i._status).toUpperCase() === 'ACTIVE').length,
+    [normalizedItems]
+  );
+  const completedCount = useMemo(
+    () => normalizedItems.filter((i) => String(i._status).toUpperCase() === 'COMPLETED').length,
+    [normalizedItems]
+  );
+  const getStatusPill = (statusRaw) => {
+    const status = String(statusRaw || '-').toUpperCase();
+    if (status.includes('ACTIVE')) {
+      return isDark
+        ? 'bg-emerald-900/30 text-emerald-300 border-emerald-800'
+        : 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    }
+    if (status.includes('COMPLETE')) {
+      return isDark
+        ? 'bg-slate-800 text-slate-300 border-slate-700'
+        : 'bg-slate-100 text-slate-700 border-slate-200';
+    }
+    return isDark
+      ? 'bg-indigo-900/30 text-indigo-300 border-indigo-800'
+      : 'bg-indigo-50 text-indigo-700 border-indigo-200';
+  };
 
   if (loading) {
     return (
@@ -142,6 +189,50 @@ export default function ListingsPage() {
           )}
         </>
       ) : (
+        <>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Showing</p>
+            <p className={`text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{filteredItems.length}</p>
+          </div>
+          <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Active</p>
+            <p className={`text-2xl font-bold ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{activeCount}</p>
+          </div>
+          <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Completed</p>
+            <p className={`text-2xl font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{completedCount}</p>
+          </div>
+        </div>
+        <div className={`mb-4 rounded-xl border p-3 ${isDark ? 'bg-slate-900/40 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <label className="relative md:col-span-2">
+              <Search size={15} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by title or listing ID..."
+                className={`w-full rounded-lg pl-9 pr-3 py-2 text-sm border ${
+                  isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+                }`}
+              />
+            </label>
+            <label className="relative">
+              <SlidersHorizontal size={15} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className={`w-full rounded-lg pl-9 pr-3 py-2 text-sm border ${
+                  isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+                }`}
+              >
+                <option value="ALL">All status</option>
+                <option value="ACTIVE">Active</option>
+                <option value="COMPLETED">Completed</option>
+              </select>
+            </label>
+          </div>
+        </div>
         <div className={`p-0 overflow-hidden rounded-xl border ${isDark ? 'bg-slate-900/60 border-slate-700' : 'glass-card'}`}>
           <div className="overflow-x-auto">
             <table className={`min-w-full ${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
@@ -156,16 +247,16 @@ export default function ListingsPage() {
                 </tr>
               </thead>
               <tbody className={`${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
-                {items.map((offer) => {
-                  const key = offer.offerId || offer.listingId || offer?.listing?.listingId || Math.random().toString(36).slice(2);
-                  const title = offer?.listing?.title || offer?.title || offer?.product?.title || '(no title)';
+                {filteredItems.map((offer) => {
+                  const key = offer._id;
+                  const title = offer._title;
                   const price = offer?.pricingSummary?.price?.value
                     ? `${offer.pricingSummary.price.value} ${offer.pricingSummary.price.currency || ''}`.trim()
                     : '-';
                   const qty = typeof offer?.availableQuantity === 'number'
                     ? offer.availableQuantity
                     : (offer?.quantity ?? offer?.availability?.shipToLocationAvailability?.quantity ?? '-');
-                  const status = offer?.status || offer?.marketplaceId || '-';
+                  const status = offer?._status || '-';
                   const listingId = offer?.listingId || offer?.listing?.listingId || offer?.listing?.legacyItemId || offer?.sku || '-';
                   const isOpen = !!expanded[key];
                   return (
@@ -175,7 +266,11 @@ export default function ListingsPage() {
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{listingId}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{price}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{qty}</td>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{status}</td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${getStatusPill(status)}`}>
+                            {status}
+                          </span>
+                        </td>
                         <td className="px-4 py-3 text-right">
                           <button
                             type="button"
@@ -199,10 +294,10 @@ export default function ListingsPage() {
                     </React.Fragment>
                   );
                 })}
-                {items.length === 0 && (
+                {filteredItems.length === 0 && (
                   <tr>
                     <td colSpan={6} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      No listings found.
+                      No listings found for current filters.
                     </td>
                   </tr>
                 )}
@@ -234,6 +329,7 @@ export default function ListingsPage() {
             </div>
           </div>
         </div>
+        </>
       )}
     </div>
   );

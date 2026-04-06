@@ -1,13 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ebayAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import Alert from '../components/Alert';
-import LoadingSpinner from '../components/LoadingSpinner';
-import { Loader2, Package, ChevronDown, ChevronUp, Link2 } from 'lucide-react';
+import { Loader2, Package, ChevronDown, ChevronUp, Link2, Search, SlidersHorizontal } from 'lucide-react';
 
 export default function OrdersPage() {
-  const navigate = useNavigate();
   const { isDark } = useTheme();
 
   const [loading, setLoading] = useState(true);
@@ -22,9 +19,42 @@ export default function OrdersPage() {
   const [fetchingPage, setFetchingPage] = useState(false);
   const [nextOffset, setNextOffset] = useState(null);
   const [total, setTotal] = useState(null);
+  const [query, setQuery] = useState('');
+  const [fulfillmentFilter, setFulfillmentFilter] = useState('ALL');
+  const [paymentFilter, setPaymentFilter] = useState('ALL');
 
   const canNext = nextOffset !== null;
   const offset = useMemo(() => page * limit, [page, limit]);
+  const filteredOrders = useMemo(() => {
+    return (orders || []).filter((order) => {
+      const q = query.trim().toLowerCase();
+      const matchQuery =
+        !q ||
+        String(order?.orderId || '').toLowerCase().includes(q) ||
+        String(order?.buyer?.username || '').toLowerCase().includes(q) ||
+        String(order?.lineItems?.[0]?.title || '').toLowerCase().includes(q);
+      const matchFulfillment =
+        fulfillmentFilter === 'ALL' || String(order?.orderFulfillmentStatus || '') === fulfillmentFilter;
+      const matchPayment = paymentFilter === 'ALL' || String(order?.orderPaymentStatus || '') === paymentFilter;
+      return matchQuery && matchFulfillment && matchPayment;
+    });
+  }, [orders, query, fulfillmentFilter, paymentFilter]);
+  const stats = useMemo(() => {
+    const paid = orders.filter((o) => String(o?.orderPaymentStatus || '') === 'PAID').length;
+    const refunded = orders.filter((o) => String(o?.orderPaymentStatus || '').includes('REFUNDED')).length;
+    const fulfilled = orders.filter((o) => String(o?.orderFulfillmentStatus || '') === 'FULFILLED').length;
+    return { paid, refunded, fulfilled };
+  }, [orders]);
+  const getPill = (value, type) => {
+    const v = String(value || '');
+    if (type === 'payment') {
+      if (v.includes('REFUND')) return isDark ? 'bg-rose-900/30 text-rose-300 border-rose-800' : 'bg-rose-50 text-rose-700 border-rose-200';
+      if (v === 'PAID') return isDark ? 'bg-emerald-900/30 text-emerald-300 border-emerald-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    }
+    if (v === 'FULFILLED') return isDark ? 'bg-emerald-900/30 text-emerald-300 border-emerald-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    if (v === 'NOT_STARTED') return isDark ? 'bg-amber-900/30 text-amber-300 border-amber-800' : 'bg-amber-50 text-amber-700 border-amber-200';
+    return isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-100 text-slate-700 border-slate-200';
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -165,7 +195,69 @@ export default function OrdersPage() {
           )}
         </>
       ) : (
-            <div
+        <>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+          <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Showing</p>
+            <p className={`text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{filteredOrders.length}</p>
+          </div>
+          <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Paid</p>
+            <p className={`text-2xl font-bold ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{stats.paid}</p>
+          </div>
+          <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Fulfilled</p>
+            <p className={`text-2xl font-bold ${isDark ? 'text-indigo-300' : 'text-indigo-700'}`}>{stats.fulfilled}</p>
+          </div>
+          <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Refunded</p>
+            <p className={`text-2xl font-bold ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{stats.refunded}</p>
+          </div>
+        </div>
+        <div className={`mb-4 rounded-xl border p-3 ${isDark ? 'bg-slate-900/40 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <label className="relative md:col-span-1">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search ID, buyer, item..."
+                className={`w-full rounded-lg pl-9 pr-3 py-2 text-sm border ${
+                  isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+                }`}
+              />
+            </label>
+            <label className="relative">
+              <SlidersHorizontal size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <select
+                value={paymentFilter}
+                onChange={(e) => setPaymentFilter(e.target.value)}
+                className={`w-full rounded-lg pl-9 pr-3 py-2 text-sm border ${
+                  isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+                }`}
+              >
+                <option value="ALL">All payment</option>
+                <option value="PAID">PAID</option>
+                <option value="FULLY_REFUNDED">FULLY_REFUNDED</option>
+              </select>
+            </label>
+            <label className="relative">
+              <SlidersHorizontal size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <select
+                value={fulfillmentFilter}
+                onChange={(e) => setFulfillmentFilter(e.target.value)}
+                className={`w-full rounded-lg pl-9 pr-3 py-2 text-sm border ${
+                  isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+                }`}
+              >
+                <option value="ALL">All fulfillment</option>
+                <option value="NOT_STARTED">NOT_STARTED</option>
+                <option value="FULFILLED">FULFILLED</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div
               className={`glass-card p-0 overflow-hidden rounded-xl border ${
                 isDark ? 'bg-slate-900/30 border-slate-800' : 'bg-white border-slate-200'
               }`}
@@ -190,7 +282,7 @@ export default function OrdersPage() {
                 </tr>
               </thead>
               <tbody className={isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}>
-                {orders.map((order) => {
+                {filteredOrders.map((order) => {
                   const id = order.orderId;
                   const isOpen = !!expanded[id];
                   const payment = order.orderPaymentStatus || '-';
@@ -204,8 +296,16 @@ export default function OrdersPage() {
                     <React.Fragment key={id}>
                       <tr className={isDark ? 'bg-slate-900' : 'bg-white'}>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{id}</td>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{payment}</td>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{fulfillment}</td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${getPill(payment, 'payment')}`}>
+                            {payment}
+                          </span>
+                        </td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${getPill(fulfillment, 'fulfillment')}`}>
+                            {fulfillment}
+                          </span>
+                        </td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                           {totalValue != null ? `${totalValue} ${totalCurrency || ''}`.trim() : '-'}
                         </td>
@@ -248,10 +348,10 @@ export default function OrdersPage() {
                   );
                 })}
 
-                {orders.length === 0 && (
+                {filteredOrders.length === 0 && (
                   <tr>
                     <td colSpan={5} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      No orders found.
+                      No orders found for current filters.
                     </td>
                   </tr>
                 )}
@@ -281,6 +381,7 @@ export default function OrdersPage() {
             </div>
           </div>
         </div>
+        </>
       )}
     </div>
   );
