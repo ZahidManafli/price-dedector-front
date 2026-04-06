@@ -2,12 +2,20 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ebayAPI } from '../services/api';
 
 export default function ListingDetailPage() {
   const { isDark } = useTheme();
   const location = useLocation();
-  const listing = location?.state?.listing || null;
+  const initialListing = location?.state?.listing || null;
+  const [listing, setListing] = useState(initialListing);
   const [selectedImage, setSelectedImage] = useState('');
+  const [titleDraft, setTitleDraft] = useState('');
+  const [priceDraft, setPriceDraft] = useState('');
+  const [saveTitleLoading, setSaveTitleLoading] = useState(false);
+  const [savePriceLoading, setSavePriceLoading] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState('');
 
   const keyFacts = useMemo(() => {
     if (!listing) return {};
@@ -118,6 +126,86 @@ export default function ListingDetailPage() {
     setSelectedImage(gallery[0] || '');
   }, [gallery]);
 
+  useEffect(() => {
+    setListing(initialListing);
+  }, [initialListing]);
+
+  useEffect(() => {
+    const currentTitle = listing?.listing?.title || listing?.title || listing?.product?.title || '';
+    const currentPrice =
+      listing?.pricingSummary?.price?.value ??
+      (trading?.currentPrice ? String(trading.currentPrice).split(' ')[0] : '');
+    setTitleDraft(currentTitle);
+    setPriceDraft(currentPrice ? String(currentPrice) : '');
+  }, [listing, trading?.currentPrice]);
+
+  const handleUpdateTitle = async () => {
+    const listingId = keyFacts.listingId;
+    if (!listingId || listingId === '-') return;
+    if (!titleDraft.trim()) {
+      setSaveError('Title cannot be empty.');
+      setSaveSuccess('');
+      return;
+    }
+    setSaveTitleLoading(true);
+    setSaveError('');
+    setSaveSuccess('');
+    try {
+      await ebayAPI.updateListing(listingId, { title: titleDraft.trim() });
+      setListing((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          title: titleDraft.trim(),
+          listing: {
+            ...(prev.listing || {}),
+            title: titleDraft.trim(),
+          },
+        };
+      });
+      setSaveSuccess('Title updated successfully.');
+    } catch (err) {
+      setSaveError(err?.response?.data?.error || err?.message || 'Failed to update title.');
+    } finally {
+      setSaveTitleLoading(false);
+    }
+  };
+
+  const handleUpdatePrice = async () => {
+    const listingId = keyFacts.listingId;
+    if (!listingId || listingId === '-') return;
+    const parsed = Number(priceDraft);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setSaveError('Enter a valid positive price.');
+      setSaveSuccess('');
+      return;
+    }
+    setSavePriceLoading(true);
+    setSaveError('');
+    setSaveSuccess('');
+    try {
+      await ebayAPI.updateListing(listingId, { price: parsed, currency: 'USD' });
+      setListing((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          pricingSummary: {
+            ...(prev.pricingSummary || {}),
+            price: {
+              value: parsed.toFixed(2),
+              currency: 'USD',
+            },
+          },
+        };
+      });
+      setSaveSuccess('Price updated successfully.');
+    } catch (err) {
+      setSaveError(err?.response?.data?.error || err?.message || 'Failed to update price.');
+    } finally {
+      setSavePriceLoading(false);
+    }
+  };
+
   if (!listing) {
     return (
       <div className="page-shell">
@@ -219,6 +307,61 @@ export default function ListingDetailPage() {
               <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Shipping: {trading?.sellerShippingProfile || '-'}</p>
               <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Return: {trading?.sellerReturnProfile || '-'}</p>
               <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Payment: {trading?.sellerPaymentProfile || '-'}</p>
+            </div>
+            <div className={`mt-4 rounded-xl border p-4 ${isDark ? 'border-slate-700 bg-slate-900/60' : 'border-slate-200 bg-slate-50'}`}>
+              <p className={`text-sm font-semibold mb-3 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Quick edit listing</p>
+              <div className="space-y-3">
+                <div>
+                  <label className={`block text-xs mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Title</label>
+                  <input
+                    type="text"
+                    value={titleDraft}
+                    onChange={(e) => setTitleDraft(e.target.value)}
+                    className={`w-full rounded-lg border px-3 py-2 text-sm ${
+                      isDark
+                        ? 'bg-slate-900 border-slate-700 text-slate-100'
+                        : 'bg-white border-slate-300 text-slate-900'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleUpdateTitle}
+                    disabled={saveTitleLoading}
+                    className="btn-secondary mt-2"
+                  >
+                    {saveTitleLoading ? 'Updating title...' : 'Update title'}
+                  </button>
+                </div>
+                <div>
+                  <label className={`block text-xs mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Price (USD)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={priceDraft}
+                    onChange={(e) => setPriceDraft(e.target.value)}
+                    className={`w-full rounded-lg border px-3 py-2 text-sm ${
+                      isDark
+                        ? 'bg-slate-900 border-slate-700 text-slate-100'
+                        : 'bg-white border-slate-300 text-slate-900'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleUpdatePrice}
+                    disabled={savePriceLoading}
+                    className="btn-secondary mt-2"
+                  >
+                    {savePriceLoading ? 'Updating price...' : 'Update price'}
+                  </button>
+                </div>
+              </div>
+              {saveError ? (
+                <p className={`text-xs mt-3 ${isDark ? 'text-rose-300' : 'text-rose-600'}`}>{saveError}</p>
+              ) : null}
+              {saveSuccess ? (
+                <p className={`text-xs mt-3 ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{saveSuccess}</p>
+              ) : null}
             </div>
           </div>
         </div>

@@ -96,6 +96,7 @@ export const ebayAPI = {
   getStatus: () => api.get('/ebay/status'),
   disconnect: () => api.delete('/ebay/disconnect'),
   getListings: (offset = 0, limit = 25) => api.get('/ebay/listings', { params: { offset, limit } }),
+  updateListing: (listingId, payload) => api.patch(`/ebay/listings/${listingId}`, payload),
   getDashboardAnalytics: () => api.get('/ebay/analytics/dashboard'),
   getOrders: (offset = 0, limit = 25) => api.get('/ebay/orders', { params: { offset, limit } }),
 };
