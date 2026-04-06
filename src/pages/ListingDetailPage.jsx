@@ -109,14 +109,12 @@ export default function ListingDetailPage() {
   }, [listing]);
 
   const stockCount = useMemo(() => {
-    const totalQtyRaw =
-      trading?.quantity != null && trading?.quantity !== ''
-        ? Number(trading.quantity)
-        : Number(
-            listing?.quantity ??
-              listing?.availableQuantity ??
-              listing?.availability?.shipToLocationAvailability?.quantity
-          );
+    const totalQtyRaw = Number(
+      listing?.quantity ??
+        listing?.availableQuantity ??
+        listing?.availability?.shipToLocationAvailability?.quantity ??
+        trading?.quantity
+    );
     const soldRaw = trading?.quantitySold != null && trading?.quantitySold !== '' ? Number(trading.quantitySold) : 0;
     if (Number.isFinite(totalQtyRaw)) {
       return Math.max(0, totalQtyRaw - (Number.isFinite(soldRaw) ? soldRaw : 0));
@@ -152,14 +150,10 @@ export default function ListingDetailPage() {
     const currentPrice =
       listing?.pricingSummary?.price?.value ??
       (trading?.currentPrice ? String(trading.currentPrice).split(' ')[0] : '');
-    const currentQuantity =
-      listing?.quantity ??
-      listing?.availableQuantity ??
-      (trading?.quantity ? Number(trading.quantity) : '');
     setTitleDraft(currentTitle);
     setPriceDraft(currentPrice ? String(currentPrice) : '');
-    setQuantityDraft(currentQuantity !== '' && currentQuantity != null ? String(currentQuantity) : '');
-  }, [listing, trading?.currentPrice]);
+    setQuantityDraft(stockCount !== '' && stockCount != null ? String(stockCount) : '');
+  }, [listing, trading?.currentPrice, stockCount]);
 
   const handleUpdateTitle = async () => {
     const listingId = keyFacts.listingId;
@@ -231,35 +225,39 @@ export default function ListingDetailPage() {
   const handleUpdateQuantity = async () => {
     const listingId = keyFacts.listingId;
     if (!listingId || listingId === '-') return;
-    const parsed = Number(quantityDraft);
-    if (!Number.isInteger(parsed) || parsed < 0) {
-      setSaveError('Enter a valid quantity (0 or greater).');
+    const parsedStock = Number(quantityDraft);
+    if (!Number.isInteger(parsedStock) || parsedStock < 0) {
+      setSaveError('Enter a valid stock count (0 or greater).');
       setSaveSuccess('');
       return;
     }
+    const soldCount =
+      trading?.quantitySold != null && trading?.quantitySold !== '' ? Number(trading.quantitySold) : 0;
+    const quantityToSend = parsedStock + (Number.isFinite(soldCount) ? soldCount : 0);
     setSaveQtyLoading(true);
     setSaveError('');
     setSaveSuccess('');
     try {
-      await ebayAPI.updateListing(listingId, { quantity: parsed });
+      await ebayAPI.updateListing(listingId, { quantity: quantityToSend });
       setListing((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
-          quantity: parsed,
-          availableQuantity: parsed,
+          quantity: quantityToSend,
+          availableQuantity: quantityToSend,
           availability: {
             ...(prev.availability || {}),
             shipToLocationAvailability: {
               ...((prev.availability || {}).shipToLocationAvailability || {}),
-              quantity: parsed,
+              quantity: quantityToSend,
             },
           },
         };
       });
-      setSaveSuccess('Quantity updated successfully.');
+      setQuantityDraft(String(parsedStock));
+      setSaveSuccess('Stock count updated successfully.');
     } catch (err) {
-      setSaveError(err?.response?.data?.error || err?.message || 'Failed to update quantity.');
+      setSaveError(err?.response?.data?.error || err?.message || 'Failed to update stock count.');
     } finally {
       setSaveQtyLoading(false);
     }
@@ -439,7 +437,7 @@ export default function ListingDetailPage() {
                   </button>
                 </div>
                 <div>
-                  <label className={`block text-xs mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Quantity</label>
+                  <label className={`block text-xs mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Stock Count</label>
                   <input
                     type="number"
                     min="0"
@@ -458,7 +456,7 @@ export default function ListingDetailPage() {
                     disabled={saveQtyLoading}
                     className="btn-secondary mt-2"
                   >
-                    {saveQtyLoading ? 'Updating quantity...' : 'Update quantity'}
+                    {saveQtyLoading ? 'Updating stock count...' : 'Update stock count'}
                   </button>
                 </div>
               </div>
