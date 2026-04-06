@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
@@ -7,6 +7,7 @@ export default function ListingDetailPage() {
   const { isDark } = useTheme();
   const location = useLocation();
   const listing = location?.state?.listing || null;
+  const [selectedImage, setSelectedImage] = useState('');
 
   const keyFacts = useMemo(() => {
     if (!listing) return {};
@@ -113,6 +114,10 @@ export default function ListingDetailPage() {
     return Array.from(new Set(images)).slice(0, 24);
   }, [listing, trading]);
 
+  useEffect(() => {
+    setSelectedImage(gallery[0] || '');
+  }, [gallery]);
+
   if (!listing) {
     return (
       <div className="page-shell">
@@ -146,114 +151,103 @@ export default function ListingDetailPage() {
           </a>
         ) : null}
       </div>
-
-      <div className={`rounded-2xl border p-5 mb-4 ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-white border-slate-200'}`}>
-        <h1 className={`text-2xl font-bold mb-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Listing Detail</h1>
-        <p className={`${isDark ? 'text-slate-300' : 'text-slate-600'} text-sm`}>{keyFacts.title}</p>
+      <div className={`rounded-2xl border p-4 mb-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div className="lg:col-span-7">
+            <div className="grid grid-cols-[72px,1fr] gap-3">
+              <div className="space-y-2 max-h-[540px] overflow-auto pr-1">
+                {(gallery.length ? gallery : ['']).map((src, idx) => (
+                  <button
+                    key={`${src}-${idx}`}
+                    type="button"
+                    onClick={() => src && setSelectedImage(src)}
+                    className={`w-[64px] h-[64px] rounded-lg border overflow-hidden ${
+                      selectedImage === src
+                        ? isDark
+                          ? 'border-indigo-400'
+                          : 'border-indigo-500'
+                        : isDark
+                        ? 'border-slate-700'
+                        : 'border-slate-300'
+                    }`}
+                  >
+                    {src ? (
+                      <img src={src} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className={`w-full h-full ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className={`rounded-xl border overflow-hidden ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
+                {selectedImage ? (
+                  <img src={selectedImage} alt={keyFacts.title} className="w-full h-[540px] object-contain" />
+                ) : (
+                  <div className="h-[540px] flex items-center justify-center text-sm opacity-70">
+                    No image
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="lg:col-span-5">
+            <h1 className={`text-3xl font-bold leading-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+              {keyFacts.title}
+            </h1>
+            <div className={`mt-4 pb-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Price</p>
+              <p className={`text-4xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                {trading?.currentPrice || keyFacts.price}
+              </p>
+              <p className={`mt-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                Status: <span className="font-semibold">{trading?.listingStatus || keyFacts.status}</span>
+              </p>
+            </div>
+            <div className={`mt-4 space-y-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+              <p><span className="font-semibold">Listing ID:</span> {keyFacts.listingId}</p>
+              <p><span className="font-semibold">Condition:</span> {trading?.condition || meta.condition || '-'}</p>
+              <p><span className="font-semibold">Quantity:</span> {trading?.quantity || keyFacts.quantity} <span className="opacity-70 ml-1">(Sold: {trading?.quantitySold || 0})</span></p>
+              <p><span className="font-semibold">Best Offer:</span> {trading?.bestOfferEnabled || '-'} {trading?.bestOfferCount ? `(${trading.bestOfferCount})` : ''}</p>
+              <p><span className="font-semibold">Watch / Bids:</span> {trading?.bidCount || 0}</p>
+              <p><span className="font-semibold">Brand:</span> {meta.category || trading?.categoryName || '-'}</p>
+              <p><span className="font-semibold">Start:</span> {trading?.startTime ? new Date(trading.startTime).toLocaleDateString() : '-'}</p>
+              <p><span className="font-semibold">End:</span> {trading?.endTime ? new Date(trading.endTime).toLocaleDateString() : '-'}</p>
+              <p><span className="font-semibold">Location:</span> {trading?.location || meta.location || '-'} {trading?.postalCode ? `(${trading.postalCode})` : ''}</p>
+            </div>
+            <div className={`mt-4 rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-900/60' : 'border-slate-200 bg-slate-50'}`}>
+              <p className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Seller profiles</p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Shipping: {trading?.sellerShippingProfile || '-'}</p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Return: {trading?.sellerReturnProfile || '-'}</p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Payment: {trading?.sellerPaymentProfile || '-'}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-        {[
-          ['Listing ID', keyFacts.listingId],
-          ['Status', trading?.listingStatus || keyFacts.status],
-          ['Price', trading?.currentPrice || keyFacts.price],
-          ['Quantity', String(trading?.quantity || keyFacts.quantity)],
-        ].map(([label, value]) => (
-          <div key={label} className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
-            <p className={`text-sm font-bold mt-1 break-all ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{value}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={`rounded-2xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Shipping, returns & policies</h2>
+          <div className={`space-y-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+            <p><span className="font-semibold">Ships to:</span> {trading?.shipToLocations || '-'}</p>
+            <p><span className="font-semibold">Buyer protection:</span> {trading?.buyerProtection || '-'}</p>
+            <p><span className="font-semibold">Returns accepted:</span> {trading?.returnsAccepted || '-'}</p>
+            <p><span className="font-semibold">Return window:</span> {trading?.returnsWithin || '-'}</p>
+            <p><span className="font-semibold">Return shipping paid by:</span> {trading?.shippingPaidBy || '-'}</p>
+            <p><span className="font-semibold">Buyer responsible shipping:</span> {trading?.buyerResponsibleShipping || '-'}</p>
           </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-        <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Marketplace</p>
-          <p className={`text-sm font-bold mt-1 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{trading?.site || meta.site}</p>
-          {(trading?.categoryName || meta.category) && (
-            <p className={`text-xs mt-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Category: {trading?.categoryName || meta.category}</p>
-          )}
-          {(trading?.condition || meta.condition) && (
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Condition: {trading?.condition || meta.condition}</p>
-          )}
         </div>
-        <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Timing</p>
-          <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            Started:{' '}
-            <span className="font-semibold">
-              {trading?.startTime ? new Date(trading.startTime).toLocaleString() : meta.created ? new Date(meta.created).toLocaleString() : 'N/A'}
-            </span>
-          </p>
-          <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            Ended:{' '}
-            <span className="font-semibold">
-              {trading?.endTime ? new Date(trading.endTime).toLocaleString() : meta.ended ? new Date(meta.ended).toLocaleString() : '—'}
-            </span>
-          </p>
-          {trading?.timeLeft && (
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Time left: <span className="font-semibold">{trading.timeLeft}</span></p>
-          )}
-        </div>
-        <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Location</p>
-          <p className={`text-sm font-bold mt-1 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-            {trading?.location || meta.location || '—'}
-          </p>
-          <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            {trading?.postalCode ? `Postal code: ${trading.postalCode}` : ''}
-          </p>
-          <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Source: {keyFacts.source} {trading?.country ? `• Country: ${trading.country}` : ''}</p>
+        <div className={`rounded-2xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Listing health</h2>
+          <div className={`space-y-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+            <p><span className="font-semibold">Listing duration:</span> {trading?.listingDuration || '-'}</p>
+            <p><span className="font-semibold">Time left:</span> {trading?.timeLeft || '-'}</p>
+            <p><span className="font-semibold">AutoPay:</span> {trading?.autoPay || '-'}</p>
+            <p><span className="font-semibold">Secure description:</span> {trading?.secureDescription || '-'}</p>
+            <p><span className="font-semibold">Hide from search:</span> {trading?.hideFromSearch || '-'}</p>
+            <p><span className="font-semibold">Location defaulted:</span> {trading?.locationDefaulted || '-'}</p>
+          </div>
         </div>
       </div>
-
-      {trading && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-          <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <h2 className={`font-semibold mb-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Sales</h2>
-            <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Current price: <span className="font-semibold">{trading.currentPrice || '-'}</span></p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Minimum bid: <span className="font-semibold">{trading.minimumToBid || '-'}</span></p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Sold qty: <span className="font-semibold">{trading.quantitySold || '0'}</span></p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Bid count: <span className="font-semibold">{trading.bidCount || '0'}</span></p>
-          </div>
-          <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <h2 className={`font-semibold mb-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Offers & Returns</h2>
-            <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Best offer enabled: <span className="font-semibold">{trading.bestOfferEnabled || '-'}</span></p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Best offer count: <span className="font-semibold">{trading.bestOfferCount || '0'}</span></p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Returns accepted: <span className="font-semibold">{trading.returnsAccepted || '-'}</span></p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Return window: <span className="font-semibold">{trading.returnsWithin || '-'}</span></p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Return shipping paid by: <span className="font-semibold">{trading.shippingPaidBy || '-'}</span></p>
-          </div>
-          <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <h2 className={`font-semibold mb-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Seller & Compliance</h2>
-            <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Shipping profile: <span className="font-semibold">{trading.sellerShippingProfile || '-'}</span></p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Return profile: <span className="font-semibold">{trading.sellerReturnProfile || '-'}</span></p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Payment profile: <span className="font-semibold">{trading.sellerPaymentProfile || '-'}</span></p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Secure description: <span className="font-semibold">{trading.secureDescription || '-'}</span></p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Hide from search: <span className="font-semibold">{trading.hideFromSearch || '-'}</span></p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>AutoPay: <span className="font-semibold">{trading.autoPay || '-'}</span></p>
-          </div>
-        </div>
-      )}
-
-      {gallery.length > 0 && (
-        <div className={`rounded-2xl border p-4 mb-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-          <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Photos</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
-            {gallery.map((src) => (
-              <a
-                key={src}
-                href={src}
-                target="_blank"
-                rel="noreferrer"
-                className="block rounded-xl overflow-hidden border border-slate-200 bg-slate-100"
-              >
-                <img src={src} alt="" className="h-24 w-full object-cover" />
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
