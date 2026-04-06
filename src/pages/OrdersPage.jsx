@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ebayAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import Alert from '../components/Alert';
-import { Loader2, Package, Link2, Search, SlidersHorizontal } from 'lucide-react';
+import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal } from 'lucide-react';
 
 export default function OrdersPage() {
   const navigate = useNavigate();
@@ -23,11 +23,13 @@ export default function OrdersPage() {
   const [query, setQuery] = useState('');
   const [fulfillmentFilter, setFulfillmentFilter] = useState('ALL');
   const [paymentFilter, setPaymentFilter] = useState('ALL');
+  const [sortKey, setSortKey] = useState('orderId');
+  const [sortDir, setSortDir] = useState('asc');
 
   const canNext = nextOffset !== null;
   const offset = useMemo(() => page * limit, [page, limit]);
   const filteredOrders = useMemo(() => {
-    return (orders || []).filter((order) => {
+    const base = (orders || []).filter((order) => {
       const q = query.trim().toLowerCase();
       const matchQuery =
         !q ||
@@ -39,7 +41,38 @@ export default function OrdersPage() {
       const matchPayment = paymentFilter === 'ALL' || String(order?.orderPaymentStatus || '') === paymentFilter;
       return matchQuery && matchFulfillment && matchPayment;
     });
-  }, [orders, query, fulfillmentFilter, paymentFilter]);
+    const compare = (a, b) => {
+      if (sortKey === 'orderId') return String(a?.orderId || '').localeCompare(String(b?.orderId || ''));
+      if (sortKey === 'payment') {
+        return String(a?.orderPaymentStatus || '').localeCompare(String(b?.orderPaymentStatus || ''));
+      }
+      if (sortKey === 'fulfillment') {
+        return String(a?.orderFulfillmentStatus || '').localeCompare(String(b?.orderFulfillmentStatus || ''));
+      }
+      if (sortKey === 'total') {
+        return Number(a?.pricingSummary?.total?.value ?? -1) - Number(b?.pricingSummary?.total?.value ?? -1);
+      }
+      return 0;
+    };
+    const sorted = [...base].sort(compare);
+    return sortDir === 'desc' ? sorted.reverse() : sorted;
+  }, [orders, query, fulfillmentFilter, paymentFilter, sortKey, sortDir]);
+  const onSort = (key) => {
+    setSortKey((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        return prev;
+      }
+      setSortDir('asc');
+      return key;
+    });
+  };
+  const sortLabel = (key, label) => (
+    <button type="button" onClick={() => onSort(key)} className="inline-flex items-center gap-1">
+      {label}
+      <ArrowDownUp size={12} className={sortKey === key ? 'opacity-100' : 'opacity-40'} />
+    </button>
+  );
   const stats = useMemo(() => {
     const paid = orders.filter((o) => String(o?.orderPaymentStatus || '') === 'PAID').length;
     const refunded = orders.filter((o) => String(o?.orderPaymentStatus || '').includes('REFUNDED')).length;
@@ -264,16 +297,16 @@ export default function OrdersPage() {
               <thead className={isDark ? 'bg-slate-800/70' : 'bg-slate-50'}>
                 <tr>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    Order ID
+                    {sortLabel('orderId', 'Order ID')}
                   </th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    Payment
+                    {sortLabel('payment', 'Payment')}
                   </th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    Fulfillment
+                    {sortLabel('fulfillment', 'Fulfillment')}
                   </th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    Total
+                    {sortLabel('total', 'Total')}
                   </th>
                   <th className="px-4 py-3" />
                 </tr>

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ebayAPI } from '../services/api';
 import Alert from '../components/Alert';
-import { Loader2, Package, Link2, Search, SlidersHorizontal } from 'lucide-react';
+import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 export default function ListingsPage() {
@@ -17,9 +17,12 @@ export default function ListingsPage() {
   const [page, setPage] = useState(0);
   const [limit] = useState(25);
   const [paging, setPaging] = useState({ nextOffset: null });
+  const [pageOffsets, setPageOffsets] = useState({ 0: 0 });
   const [fetchingPage, setFetchingPage] = useState(false);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [sortKey, setSortKey] = useState('title');
+  const [sortDir, setSortDir] = useState('asc');
 
   const offset = useMemo(() => page * limit, [page, limit]);
 
@@ -49,11 +52,20 @@ export default function ListingsPage() {
   const loadPage = async (pageIndex) => {
     try {
       setFetchingPage(true);
-      const res = await ebayAPI.getListings(pageIndex * limit, limit);
+      const requestOffset =
+        pageIndex === 0
+          ? 0
+          : pageOffsets[pageIndex] ?? (pageIndex === page + 1 ? paging.nextOffset : pageIndex * limit);
+      const res = await ebayAPI.getListings(requestOffset, limit);
       const data = res?.data || {};
       setItems(data.items || []);
       setTotal(typeof data.total === 'number' ? data.total : undefined);
       setPaging({ nextOffset: data.nextOffset ?? null, limit: data.limit, offset: data.offset });
+      setPageOffsets((prev) => ({
+        ...prev,
+        [pageIndex]: Number(data.offset ?? requestOffset ?? 0),
+        ...(data.nextOffset != null ? { [pageIndex + 1]: Number(data.nextOffset) } : {}),
+      }));
       setPage(pageIndex);
     } catch (err) {
       const msg = err?.response?.data?.error || 'Failed to load eBay listings';
@@ -76,7 +88,7 @@ export default function ListingsPage() {
   };
 
   const canPrev = page > 0;
-  const canNext = items.length === limit && (paging.nextOffset === null ? true : paging.nextOffset >= (page + 1) * limit);
+  const canNext = paging.nextOffset !== null;
   const normalizedItems = useMemo(
     () =>
       (items || []).map((offer) => {
@@ -85,29 +97,51 @@ export default function ListingsPage() {
         const title = offer?.listing?.title || offer?.title || offer?.product?.title || '(no title)';
         let rawQuantity = null;
         let rawSold = null;
+        let rawThumb = '';
         if (offer?.rawXml && typeof DOMParser !== 'undefined') {
           try {
             const doc = new DOMParser().parseFromString(offer.rawXml, 'text/xml');
             const getText = (selector) => doc.querySelector(selector)?.textContent?.trim() || '';
+            const getAllText = (selector) =>
+              Array.from(doc.querySelectorAll(selector))
+                .map((n) => n.textContent?.trim())
+                .filter(Boolean);
             const q = getText('Quantity');
             const s = getText('SellingStatus > QuantitySold');
+            const pics = getAllText('PictureDetails > PictureURL');
             rawQuantity = q !== '' ? Number(q) : null;
             rawSold = s !== '' ? Number(s) : null;
+            rawThumb = pics[0] || '';
           } catch {
             rawQuantity = null;
             rawSold = null;
+            rawThumb = '';
           }
         }
         const fallbackQuantity =
           typeof offer?.availableQuantity === 'number'
             ? offer.availableQuantity
             : offer?.quantity ?? offer?.availability?.shipToLocationAvailability?.quantity ?? null;
-        return { ...offer, _id: id, _status: status, _title: title };
+        const priceNumber = Number(offer?.pricingSummary?.price?.value);
+        return {
+          ...offer,
+          _id: id,
+          _status: status,
+          _title: title,
+          _qty: rawQuantity ?? fallbackQuantity ?? null,
+          _sold: rawSold ?? 0,
+          _priceText:
+            offer?.pricingSummary?.price?.value != null
+              ? `${offer.pricingSummary.price.value} ${offer.pricingSummary.price.currency || ''}`.trim()
+              : '-',
+          _priceValue: Number.isFinite(priceNumber) ? priceNumber : null,
+          _thumb: rawThumb,
+        };
       }),
     [items]
   );
   const filteredItems = useMemo(() => {
-    return normalizedItems.filter((offer) => {
+    const base = normalizedItems.filter((offer) => {
       const q = query.trim().toLowerCase();
       const matchesQuery =
         !q ||
@@ -116,7 +150,34 @@ export default function ListingsPage() {
       const matchesStatus = statusFilter === 'ALL' || offer._status.toUpperCase() === statusFilter;
       return matchesQuery && matchesStatus;
     });
-  }, [normalizedItems, query, statusFilter]);
+    const compare = (a, b) => {
+      if (sortKey === 'title') return String(a._title || '').localeCompare(String(b._title || ''));
+      if (sortKey === 'listingId') return String(a._id || '').localeCompare(String(b._id || ''));
+      if (sortKey === 'price') return Number(a._priceValue ?? -1) - Number(b._priceValue ?? -1);
+      if (sortKey === 'quantity') return Number(a._qty ?? -1) - Number(b._qty ?? -1);
+      if (sortKey === 'sold') return Number(a._sold ?? -1) - Number(b._sold ?? -1);
+      if (sortKey === 'status') return String(a._status || '').localeCompare(String(b._status || ''));
+      return 0;
+    };
+    const sorted = [...base].sort(compare);
+    return sortDir === 'desc' ? sorted.reverse() : sorted;
+  }, [normalizedItems, query, statusFilter, sortKey, sortDir]);
+  const onSort = (key) => {
+    setSortKey((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        return prev;
+      }
+      setSortDir('asc');
+      return key;
+    });
+  };
+  const sortLabel = (key, label) => (
+    <button type="button" onClick={() => onSort(key)} className="inline-flex items-center gap-1">
+      {label}
+      <ArrowDownUp size={12} className={sortKey === key ? 'opacity-100' : 'opacity-40'} />
+    </button>
+  );
   const activeCount = useMemo(
     () => normalizedItems.filter((i) => String(i._status).toUpperCase() === 'ACTIVE').length,
     [normalizedItems]
@@ -254,12 +315,13 @@ export default function ListingsPage() {
             <table className={`min-w-full ${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
               <thead className={`${isDark ? 'bg-slate-800/70' : 'bg-slate-50'}`}>
                 <tr>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Title</th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Listing ID</th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Price</th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Quantity</th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Sold</th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Status</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Image</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('title', 'Title')}</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('listingId', 'Listing ID')}</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('price', 'Price')}</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('quantity', 'Quantity')}</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('sold', 'Sold')}</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('status', 'Status')}</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -267,41 +329,23 @@ export default function ListingsPage() {
                 {filteredItems.map((offer, idx) => {
                   const key = offer._id;
                   const title = offer._title;
-                  const price = offer?.pricingSummary?.price?.value
-                    ? `${offer.pricingSummary.price.value} ${offer.pricingSummary.price.currency || ''}`.trim()
-                    : '-';
-                  let qty = null;
-                  let sold = null;
-                  if (offer?.rawXml && typeof DOMParser !== 'undefined') {
-                    try {
-                      const doc = new DOMParser().parseFromString(offer.rawXml, 'text/xml');
-                      const getText = (selector) => doc.querySelector(selector)?.textContent?.trim() || '';
-                      const q = getText('Quantity');
-                      const s = getText('SellingStatus > QuantitySold');
-                      qty = q !== '' ? Number(q) : null;
-                      sold = s !== '' ? Number(s) : null;
-                    } catch {
-                      qty = null;
-                      sold = null;
-                    }
-                  }
-                  if (qty == null) {
-                    qty =
-                      typeof offer?.availableQuantity === 'number'
-                        ? offer.availableQuantity
-                        : offer?.quantity ?? offer?.availability?.shipToLocationAvailability?.quantity ?? null;
-                  }
-                  if (sold == null) sold = '-';
                   const status = offer?._status || '-';
                   const listingId = offer?.listingId || offer?.listing?.listingId || offer?.listing?.legacyItemId || offer?.sku || '-';
                   return (
                     <React.Fragment key={`${key}-${idx}`}>
                       <tr className={`${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+                        <td className="px-4 py-3">
+                          <div className={`w-12 h-12 rounded-md overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
+                            {offer._thumb ? (
+                              <img src={offer._thumb} alt="" className="w-full h-full object-cover" />
+                            ) : null}
+                          </div>
+                        </td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{title}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{listingId}</td>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{price}</td>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{qty ?? '-'}</td>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{sold}</td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{offer._priceText}</td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{offer._qty ?? '-'}</td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{offer._sold}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                           <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${getStatusPill(status)}`}>
                             {status}
@@ -326,7 +370,7 @@ export default function ListingsPage() {
                 })}
                 {filteredItems.length === 0 && (
                   <tr>
-                    <td colSpan={7} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <td colSpan={8} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       No listings found for current filters.
                     </td>
                   </tr>

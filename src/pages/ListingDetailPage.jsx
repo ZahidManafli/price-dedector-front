@@ -12,8 +12,10 @@ export default function ListingDetailPage() {
   const [selectedImage, setSelectedImage] = useState('');
   const [titleDraft, setTitleDraft] = useState('');
   const [priceDraft, setPriceDraft] = useState('');
+  const [quantityDraft, setQuantityDraft] = useState('');
   const [saveTitleLoading, setSaveTitleLoading] = useState(false);
   const [savePriceLoading, setSavePriceLoading] = useState(false);
+  const [saveQtyLoading, setSaveQtyLoading] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState('');
 
@@ -135,8 +137,13 @@ export default function ListingDetailPage() {
     const currentPrice =
       listing?.pricingSummary?.price?.value ??
       (trading?.currentPrice ? String(trading.currentPrice).split(' ')[0] : '');
+    const currentQuantity =
+      listing?.quantity ??
+      listing?.availableQuantity ??
+      (trading?.quantity ? Number(trading.quantity) : '');
     setTitleDraft(currentTitle);
     setPriceDraft(currentPrice ? String(currentPrice) : '');
+    setQuantityDraft(currentQuantity !== '' && currentQuantity != null ? String(currentQuantity) : '');
   }, [listing, trading?.currentPrice]);
 
   const handleUpdateTitle = async () => {
@@ -203,6 +210,43 @@ export default function ListingDetailPage() {
       setSaveError(err?.response?.data?.error || err?.message || 'Failed to update price.');
     } finally {
       setSavePriceLoading(false);
+    }
+  };
+
+  const handleUpdateQuantity = async () => {
+    const listingId = keyFacts.listingId;
+    if (!listingId || listingId === '-') return;
+    const parsed = Number(quantityDraft);
+    if (!Number.isInteger(parsed) || parsed < 0) {
+      setSaveError('Enter a valid quantity (0 or greater).');
+      setSaveSuccess('');
+      return;
+    }
+    setSaveQtyLoading(true);
+    setSaveError('');
+    setSaveSuccess('');
+    try {
+      await ebayAPI.updateListing(listingId, { quantity: parsed });
+      setListing((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          quantity: parsed,
+          availableQuantity: parsed,
+          availability: {
+            ...(prev.availability || {}),
+            shipToLocationAvailability: {
+              ...((prev.availability || {}).shipToLocationAvailability || {}),
+              quantity: parsed,
+            },
+          },
+        };
+      });
+      setSaveSuccess('Quantity updated successfully.');
+    } catch (err) {
+      setSaveError(err?.response?.data?.error || err?.message || 'Failed to update quantity.');
+    } finally {
+      setSaveQtyLoading(false);
     }
   };
 
@@ -318,7 +362,7 @@ export default function ListingDetailPage() {
             <div className={`mt-4 space-y-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
               <p><span className="font-semibold">Listing ID:</span> {keyFacts.listingId}</p>
               <p><span className="font-semibold">Condition:</span> {trading?.condition || meta.condition || '-'}</p>
-              <p><span className="font-semibold">Quantity:</span> {trading?.quantity || keyFacts.quantity} <span className="opacity-70 ml-1">(Sold: {trading?.quantitySold || 0})</span></p>
+              <p><span className="font-semibold">Quantity:</span> {keyFacts.quantity} <span className="opacity-70 ml-1">(Sold: {trading?.quantitySold || 0})</span></p>
               <p><span className="font-semibold">Best Offer:</span> {trading?.bestOfferEnabled || '-'} {trading?.bestOfferCount ? `(${trading.bestOfferCount})` : ''}</p>
               <p><span className="font-semibold">Watch / Bids:</span> {trading?.bidCount || 0}</p>
               <p><span className="font-semibold">Brand:</span> {meta.category || trading?.categoryName || '-'}</p>
@@ -377,6 +421,29 @@ export default function ListingDetailPage() {
                     className="btn-secondary mt-2"
                   >
                     {savePriceLoading ? 'Updating price...' : 'Update price'}
+                  </button>
+                </div>
+                <div>
+                  <label className={`block text-xs mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Quantity</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={quantityDraft}
+                    onChange={(e) => setQuantityDraft(e.target.value)}
+                    className={`w-full rounded-lg border px-3 py-2 text-sm ${
+                      isDark
+                        ? 'bg-slate-900 border-slate-700 text-slate-100'
+                        : 'bg-white border-slate-300 text-slate-900'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleUpdateQuantity}
+                    disabled={saveQtyLoading}
+                    className="btn-secondary mt-2"
+                  >
+                    {saveQtyLoading ? 'Updating quantity...' : 'Update quantity'}
                   </button>
                 </div>
               </div>
