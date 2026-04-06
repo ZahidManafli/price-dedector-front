@@ -66,6 +66,8 @@ export default function ProductDetailPage() {
   }
   const amazonAsin = product.amazonAsin || extractAmazonAsin(product.amazonLink || '');
   const amazonUrl = buildAmazonProductUrl(amazonAsin) || product.amazonLink;
+  const ebayItemId = String(product.ebayItemId || '').trim();
+  const ebayUrl = ebayItemId ? `https://www.ebay.com/itm/${ebayItemId}` : product.ebayLink;
 
   return (
     <div className="page-shell">
@@ -126,12 +128,12 @@ export default function ProductDetailPage() {
                   🔗 Amazon {amazonAsin ? `(${amazonAsin})` : 'Link'}
                 </a>
                 <a
-                  href={product.ebayLink}
+                  href={ebayUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-blue-600 hover:underline"
                 >
-                  🔗 eBay Link
+                  🔗 eBay {ebayItemId ? `(${ebayItemId})` : 'Link'}
                 </a>
               </div>
             </div>

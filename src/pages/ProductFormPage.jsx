@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { productAPI } from '../services/api';
-import { calculateProfit, extractAmazonAsin, formatCurrency, isValidAmazonAsin } from '../utils/helpers';
+import {
+  calculateProfit,
+  extractAmazonAsin,
+  formatCurrency,
+  isValidAmazonAsin,
+} from '../utils/helpers';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -10,7 +15,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     productName: '',
     amazonAsin: '',
-    ebayLink: '',
+    ebayItemId: '',
     currentAmazonPrice: '',
     currentEbayPrice: '',
     userEmail: '',
@@ -32,7 +37,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
         const nextData = {
           productName: product.productName || '',
           amazonAsin: product.amazonAsin || extractAmazonAsin(product.amazonLink || ''),
-          ebayLink: product.ebayLink || '',
+          ebayItemId: product.ebayItemId || '',
           currentAmazonPrice: product.currentAmazonPrice ?? '',
           currentEbayPrice: product.currentEbayPrice ?? '',
           userEmail: product.userEmail || '',
@@ -72,10 +77,15 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
     setAlert(null);
 
     // Validation
-    if (!formData.productName || !formData.amazonAsin || !formData.ebayLink) {
+    if (!formData.productName || !formData.amazonAsin || !formData.ebayItemId) {
       setAlert({ type: 'error', message: 'Please fill all required fields' });
       return;
     }
+    if (!/^\d{9,15}$/.test(String(formData.ebayItemId || '').trim())) {
+      setAlert({ type: 'error', message: 'eBay product ID must be 9-15 digits.' });
+      return;
+    }
+
     if (!isValidAmazonAsin(formData.amazonAsin)) {
       setAlert({ type: 'error', message: 'Amazon ASIN must be exactly 10 letters/numbers.' });
       return;
@@ -97,7 +107,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       const formDataObj = new FormData();
       formDataObj.append('productName', formData.productName);
       formDataObj.append('amazonAsin', formData.amazonAsin.trim().toUpperCase());
-      formDataObj.append('ebayLink', formData.ebayLink);
+      formDataObj.append('ebayItemId', String(formData.ebayItemId || '').trim());
       formDataObj.append('currentAmazonPrice', formData.currentAmazonPrice);
       formDataObj.append('currentEbayPrice', formData.currentEbayPrice);
       formDataObj.append('userEmail', formData.userEmail);
@@ -192,17 +202,17 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
             />
           </div>
 
-          {/* eBay Link */}
+          {/* eBay Item ID */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              eBay Product Link *
+              eBay Product ID *
             </label>
             <input
-              type="url"
-              name="ebayLink"
-              value={formData.ebayLink}
+              type="text"
+              name="ebayItemId"
+              value={formData.ebayItemId}
               onChange={handleChange}
-              placeholder="https://ebay.com/..."
+              placeholder="389129383838"
               className="input-base"
               disabled={loading}
               required
