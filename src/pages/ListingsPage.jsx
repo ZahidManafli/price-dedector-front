@@ -122,14 +122,19 @@ export default function ListingsPage() {
           typeof offer?.availableQuantity === 'number'
             ? offer.availableQuantity
             : offer?.quantity ?? offer?.availability?.shipToLocationAvailability?.quantity ?? null;
+        const soldCount = rawSold != null ? rawSold : 0;
+        const stockCount =
+          rawQuantity != null
+            ? Math.max(0, Number(rawQuantity) - Number(soldCount || 0))
+            : fallbackQuantity;
         const priceNumber = Number(offer?.pricingSummary?.price?.value);
         return {
           ...offer,
           _id: id,
           _status: status,
           _title: title,
-          _qty: rawQuantity ?? fallbackQuantity ?? null,
-          _sold: rawSold ?? 0,
+          _stock: stockCount ?? null,
+          _sold: soldCount,
           _priceText:
             offer?.pricingSummary?.price?.value != null
               ? `${offer.pricingSummary.price.value} ${offer.pricingSummary.price.currency || ''}`.trim()
@@ -154,7 +159,7 @@ export default function ListingsPage() {
       if (sortKey === 'title') return String(a._title || '').localeCompare(String(b._title || ''));
       if (sortKey === 'listingId') return String(a._id || '').localeCompare(String(b._id || ''));
       if (sortKey === 'price') return Number(a._priceValue ?? -1) - Number(b._priceValue ?? -1);
-      if (sortKey === 'quantity') return Number(a._qty ?? -1) - Number(b._qty ?? -1);
+      if (sortKey === 'quantity') return Number(a._stock ?? -1) - Number(b._stock ?? -1);
       if (sortKey === 'sold') return Number(a._sold ?? -1) - Number(b._sold ?? -1);
       if (sortKey === 'status') return String(a._status || '').localeCompare(String(b._status || ''));
       return 0;
@@ -319,7 +324,7 @@ export default function ListingsPage() {
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('title', 'Title')}</th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('listingId', 'Listing ID')}</th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('price', 'Price')}</th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('quantity', 'Quantity')}</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('quantity', 'Stock Count')}</th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('sold', 'Sold')}</th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('status', 'Status')}</th>
                   <th className="px-4 py-3" />
@@ -344,7 +349,7 @@ export default function ListingsPage() {
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{title}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{listingId}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{offer._priceText}</td>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{offer._qty ?? '-'}</td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{offer._stock ?? '-'}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{offer._sold}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                           <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${getStatusPill(status)}`}>

@@ -48,6 +48,21 @@ export default function ListingDetailPage() {
       location: listing?.location || listing?.itemLocation || '',
     };
   }, [listing]);
+  const stockCount = useMemo(() => {
+    const totalQtyRaw =
+      trading?.quantity != null && trading?.quantity !== ''
+        ? Number(trading.quantity)
+        : Number(
+            listing?.quantity ??
+              listing?.availableQuantity ??
+              listing?.availability?.shipToLocationAvailability?.quantity
+          );
+    const soldRaw = trading?.quantitySold != null && trading?.quantitySold !== '' ? Number(trading.quantitySold) : 0;
+    if (Number.isFinite(totalQtyRaw)) {
+      return Math.max(0, totalQtyRaw - (Number.isFinite(soldRaw) ? soldRaw : 0));
+    }
+    return keyFacts.quantity;
+  }, [trading?.quantity, trading?.quantitySold, listing, keyFacts.quantity]);
 
   const trading = useMemo(() => {
     const xml = listing?.rawXml;
@@ -362,7 +377,7 @@ export default function ListingDetailPage() {
             <div className={`mt-4 space-y-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
               <p><span className="font-semibold">Listing ID:</span> {keyFacts.listingId}</p>
               <p><span className="font-semibold">Condition:</span> {trading?.condition || meta.condition || '-'}</p>
-              <p><span className="font-semibold">Quantity:</span> {keyFacts.quantity} <span className="opacity-70 ml-1">(Sold: {trading?.quantitySold || 0})</span></p>
+              <p><span className="font-semibold">Stock Count:</span> {stockCount} <span className="opacity-70 ml-1">(Quantity Sold: {trading?.quantitySold || 0})</span></p>
               <p><span className="font-semibold">Best Offer:</span> {trading?.bestOfferEnabled || '-'} {trading?.bestOfferCount ? `(${trading.bestOfferCount})` : ''}</p>
               <p><span className="font-semibold">Watch / Bids:</span> {trading?.bidCount || 0}</p>
               <p><span className="font-semibold">Brand:</span> {meta.category || trading?.categoryName || '-'}</p>
