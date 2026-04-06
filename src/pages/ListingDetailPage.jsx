@@ -48,22 +48,6 @@ export default function ListingDetailPage() {
       location: listing?.location || listing?.itemLocation || '',
     };
   }, [listing]);
-  const stockCount = useMemo(() => {
-    const totalQtyRaw =
-      trading?.quantity != null && trading?.quantity !== ''
-        ? Number(trading.quantity)
-        : Number(
-            listing?.quantity ??
-              listing?.availableQuantity ??
-              listing?.availability?.shipToLocationAvailability?.quantity
-          );
-    const soldRaw = trading?.quantitySold != null && trading?.quantitySold !== '' ? Number(trading.quantitySold) : 0;
-    if (Number.isFinite(totalQtyRaw)) {
-      return Math.max(0, totalQtyRaw - (Number.isFinite(soldRaw) ? soldRaw : 0));
-    }
-    return keyFacts.quantity;
-  }, [trading?.quantity, trading?.quantitySold, listing, keyFacts.quantity]);
-
   const trading = useMemo(() => {
     const xml = listing?.rawXml;
     if (!xml || typeof DOMParser === 'undefined') return null;
@@ -123,6 +107,22 @@ export default function ListingDetailPage() {
       return null;
     }
   }, [listing]);
+
+  const stockCount = useMemo(() => {
+    const totalQtyRaw =
+      trading?.quantity != null && trading?.quantity !== ''
+        ? Number(trading.quantity)
+        : Number(
+            listing?.quantity ??
+              listing?.availableQuantity ??
+              listing?.availability?.shipToLocationAvailability?.quantity
+          );
+    const soldRaw = trading?.quantitySold != null && trading?.quantitySold !== '' ? Number(trading.quantitySold) : 0;
+    if (Number.isFinite(totalQtyRaw)) {
+      return Math.max(0, totalQtyRaw - (Number.isFinite(soldRaw) ? soldRaw : 0));
+    }
+    return keyFacts.quantity;
+  }, [trading?.quantity, trading?.quantitySold, listing, keyFacts.quantity]);
 
   const gallery = useMemo(() => {
     const images = [];
