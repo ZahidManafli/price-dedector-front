@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { productAPI } from '../services/api';
-import { calculateProfit, formatCurrency } from '../utils/helpers';
+import { calculateProfit, extractAmazonAsin, formatCurrency, isValidAmazonAsin } from '../utils/helpers';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -9,7 +9,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
   const isEditMode = Boolean(productId);
   const [formData, setFormData] = useState({
     productName: '',
-    amazonLink: '',
+    amazonAsin: '',
     ebayLink: '',
     currentAmazonPrice: '',
     currentEbayPrice: '',
@@ -32,7 +32,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
 
         const nextData = {
           productName: product.productName || '',
-          amazonLink: product.amazonLink || '',
+          amazonAsin: product.amazonAsin || extractAmazonAsin(product.amazonLink || ''),
           ebayLink: product.ebayLink || '',
           currentAmazonPrice: product.currentAmazonPrice ?? '',
           currentEbayPrice: product.currentEbayPrice ?? '',
@@ -80,8 +80,12 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
     setAlert(null);
 
     // Validation
-    if (!formData.productName || !formData.amazonLink || !formData.ebayLink) {
+    if (!formData.productName || !formData.amazonAsin || !formData.ebayLink) {
       setAlert({ type: 'error', message: 'Please fill all required fields' });
+      return;
+    }
+    if (!isValidAmazonAsin(formData.amazonAsin)) {
+      setAlert({ type: 'error', message: 'Amazon ASIN must be exactly 10 letters/numbers.' });
       return;
     }
 
@@ -100,7 +104,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
 
       const formDataObj = new FormData();
       formDataObj.append('productName', formData.productName);
-      formDataObj.append('amazonLink', formData.amazonLink);
+      formDataObj.append('amazonAsin', formData.amazonAsin.trim().toUpperCase());
       formDataObj.append('ebayLink', formData.ebayLink);
       formDataObj.append('currentAmazonPrice', formData.currentAmazonPrice);
       formDataObj.append('currentEbayPrice', formData.currentEbayPrice);
@@ -180,17 +184,17 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
             />
           </div>
 
-          {/* Amazon Link */}
+          {/* Amazon ASIN */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Amazon Product Link *
+              Amazon ASIN *
             </label>
             <input
-              type="url"
-              name="amazonLink"
-              value={formData.amazonLink}
+              type="text"
+              name="amazonAsin"
+              value={formData.amazonAsin}
               onChange={handleChange}
-              placeholder="https://amazon.com/..."
+              placeholder="B09836X9RR"
               className="input-base"
               disabled={loading}
               required

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { productAPI } from '../services/api';
-import { formatCurrency, formatDate } from '../utils/helpers';
+import { buildAmazonProductUrl, extractAmazonAsin, formatCurrency, formatDate } from '../utils/helpers';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
 
@@ -64,6 +64,8 @@ export default function ProductDetailPage() {
       </div>
     );
   }
+  const amazonAsin = product.amazonAsin || extractAmazonAsin(product.amazonLink || '');
+  const amazonUrl = buildAmazonProductUrl(amazonAsin) || product.amazonLink;
 
   return (
     <div className="page-shell">
@@ -116,12 +118,12 @@ export default function ProductDetailPage() {
               <h2 className="text-xl font-semibold text-slate-900 mb-4">Product Links</h2>
               <div className="space-y-2">
                 <a
-                  href={product.amazonLink}
+                  href={amazonUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-blue-600 hover:underline"
                 >
-                  🔗 Amazon Link
+                  🔗 Amazon {amazonAsin ? `(${amazonAsin})` : 'Link'}
                 </a>
                 <a
                   href={product.ebayLink}

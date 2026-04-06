@@ -3,7 +3,12 @@ import { Link as RouterLink } from 'react-router-dom';
 import { amazonAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { formatCurrency, isValidUrl } from '../utils/helpers';
+import {
+  buildAmazonProductUrl,
+  extractAmazonAsin,
+  formatCurrency,
+  isValidAmazonAsin,
+} from '../utils/helpers';
 import { useTheme } from '../context/ThemeContext';
 import {
   Link as LinkIcon,
@@ -12,33 +17,30 @@ import {
   Trash2,
 } from 'lucide-react';
 
-function useDebouncedAutoLookup({ amazonUrl, autoLookupEnabled, onLookup }) {
+function useDebouncedAutoLookup({ amazonAsin, autoLookupEnabled, onLookup }) {
   const lastLookedUp = useRef(null);
 
   useEffect(() => {
     if (!autoLookupEnabled) return;
-    if (!amazonUrl) return;
-
-    const trimmed = amazonUrl.trim();
-    if (trimmed.length < 15) return;
-    if (!isValidUrl(trimmed)) return;
-    if (!trimmed.toLowerCase().includes('amazon.')) return;
+    if (!amazonAsin) return;
+    const asin = extractAmazonAsin(amazonAsin);
+    if (!isValidAmazonAsin(asin)) return;
 
     const t = setTimeout(() => {
-      if (lastLookedUp.current === trimmed) return;
-      lastLookedUp.current = trimmed;
-      onLookup(trimmed, true);
+      if (lastLookedUp.current === asin) return;
+      lastLookedUp.current = asin;
+      onLookup(asin, true);
     }, 800);
 
     return () => clearTimeout(t);
-  }, [amazonUrl, autoLookupEnabled, onLookup]);
+  }, [amazonAsin, autoLookupEnabled, onLookup]);
 
   return lastLookedUp;
 }
 
 export default function AmazonLookupPage() {
   const { isDark } = useTheme();
-  const [amazonUrl, setAmazonUrl] = useState('');
+  const [amazonAsin, setAmazonAsin] = useState('');
   const [autoLookupEnabled, setAutoLookupEnabled] = useState(true);
 
   const [loading, setLoading] = useState(false);
@@ -54,9 +56,8 @@ export default function AmazonLookupPage() {
   const [useSubscribedPrice, setUseSubscribedPrice] = useState(true);
 
   const canLookup = useMemo(() => {
-    if (!amazonUrl) return false;
-    return isValidUrl(amazonUrl.trim());
-  }, [amazonUrl]);
+    return isValidAmazonAsin(extractAmazonAsin(amazonAsin));
+  }, [amazonAsin]);
 
   const isLookupQuotaReached =
     lookupQuota?.remainingThisWeek !== null &&
@@ -113,8 +114,8 @@ export default function AmazonLookupPage() {
     }
   };
 
-  const lookup = useCallback(async (url, fromAuto = false) => {
-    if (!url) return;
+  const lookup = useCallback(async (asinValue, fromAuto = false) => {
+    if (!asinValue) return;
     if (isLookupQuotaReached) {
       setAlert({
         type: 'warning',
@@ -123,13 +124,16 @@ export default function AmazonLookupPage() {
       return;
     }
 
-    const trimmed = url.trim();
-    if (!trimmed) return;
+    const normalizedAsin = extractAmazonAsin(asinValue);
+    if (!isValidAmazonAsin(normalizedAsin)) {
+      setAlert({ type: 'warning', message: 'Please enter a valid Amazon ASIN (10 characters).' });
+      return;
+    }
 
     setAlert(null);
     setLoading(true);
     try {
-      const response = await amazonAPI.lookup(trimmed);
+      const response = await amazonAPI.lookup(normalizedAsin);
       setResult(response.data || null);
       if (response?.data?.quota) {
         setLookupQuota(response.data.quota);
@@ -151,7 +155,7 @@ export default function AmazonLookupPage() {
         message:
           error.response?.data?.error ||
           error.message ||
-          'Failed to lookup Amazon product. Please check the link and try again.',
+          'Failed to lookup Amazon product. Please check the ASIN and try again.',
       });
     } finally {
       setLoading(false);
@@ -190,7 +194,7 @@ export default function AmazonLookupPage() {
   }, [fetchHistory]);
 
   useDebouncedAutoLookup({
-    amazonUrl,
+    amazonAsin,
     autoLookupEnabled,
     onLookup: lookup,
   });
@@ -198,10 +202,10 @@ export default function AmazonLookupPage() {
   const onSubmit = (e) => {
     e.preventDefault();
     if (!canLookup) {
-      setAlert({ type: 'warning', message: 'Please enter a valid Amazon URL.' });
+      setAlert({ type: 'warning', message: 'Please enter a valid Amazon ASIN (10 characters).' });
       return;
     }
-    lookup(amazonUrl);
+    lookup(extractAmazonAsin(amazonAsin));
   };
 
   return (
@@ -211,7 +215,7 @@ export default function AmazonLookupPage() {
           <div>
             <h1 className="page-title">Amazon Lookup</h1>
             <p className="page-subtitle">
-              Paste an Amazon link to instantly get images, description, and price.
+              Enter an Amazon ASIN to instantly get images, description, and price.
             </p>
           </div>
 
@@ -245,22 +249,22 @@ export default function AmazonLookupPage() {
               <div className="flex-1">
                 <div className="text-xs text-blue-100 flex items-center gap-2 mb-2">
                   <SearchIcon size={14} />
-                  Amazon product link
+                  Amazon ASIN
                 </div>
                 <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-3">
                   <div className="flex-1 flex items-center gap-2 rounded-xl border border-white/10 bg-white/95 px-3 py-2">
                     <LinkIcon size={16} className="text-slate-400" />
                     <input
-                      value={amazonUrl}
-                      onChange={(e) => setAmazonUrl(e.target.value)}
+                      value={amazonAsin}
+                      onChange={(e) => setAmazonAsin(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           // Let submit handler run.
                         }
                       }}
-                      placeholder="https://www.amazon.com/..."
+                      placeholder="B09836X9RR"
                       className="w-full bg-transparent outline-none text-slate-800 text-sm"
-                      type="url"
+                      type="text"
                     />
                   </div>
 
@@ -285,9 +289,9 @@ export default function AmazonLookupPage() {
 
                     <button
                       type="button"
-                      disabled={loading || !amazonUrl}
+                      disabled={loading || !amazonAsin}
                       onClick={() => {
-                        setAmazonUrl('');
+                        setAmazonAsin('');
                         setResult(null);
                         setActiveImageIdx(0);
                         setAlert(null);
@@ -323,7 +327,7 @@ export default function AmazonLookupPage() {
                     Instant Results
                   </div>
                   <p className="text-sm text-slate-600">
-                    Paste an Amazon URL and the app extracts price, images, and description.
+                    Enter an Amazon ASIN and the app extracts price, images, and description.
                   </p>
                 </div>
                 <div className="glass-card p-4 md:p-5">
@@ -434,7 +438,7 @@ export default function AmazonLookupPage() {
                       </div>
                     ) : (
                       <div className={`text-center py-10 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                        No images found for this link.
+                        No images found for this ASIN.
                       </div>
                     )}
                   </div>
@@ -449,7 +453,7 @@ export default function AmazonLookupPage() {
                           {result.title}
                         </h2>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                          Extracted from your Amazon link
+                          Extracted from your Amazon ASIN
                         </p>
                       </div>
 
@@ -481,7 +485,7 @@ export default function AmazonLookupPage() {
 
                     <div className="mt-4 flex flex-wrap items-center gap-2">
                       <a
-                        href={amazonUrl}
+                        href={buildAmazonProductUrl(result?.asin || extractAmazonAsin(amazonAsin))}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn-secondary inline-flex items-center gap-2"
@@ -493,18 +497,20 @@ export default function AmazonLookupPage() {
                         type="button"
                         onClick={async () => {
                           try {
-                            await navigator.clipboard.writeText(amazonUrl);
+                            await navigator.clipboard.writeText(
+                              buildAmazonProductUrl(result?.asin || extractAmazonAsin(amazonAsin))
+                            );
                             setAlert({ type: 'success', message: 'Link copied!' });
                           } catch {
                             setAlert({
                               type: 'warning',
-                              message: 'Could not copy link on this browser.',
+                              message: 'Could not copy URL on this browser.',
                             });
                           }
                         }}
                         className="btn-secondary inline-flex items-center gap-2"
                       >
-                        Copy link
+                        Copy URL
                       </button>
                     </div>
                   </div>
@@ -601,20 +607,20 @@ export default function AmazonLookupPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        setAmazonUrl('');
+                        setAmazonAsin('');
                         setResult(null);
                         setActiveImageIdx(0);
                         setAlert(null);
                       }}
                       className="btn-secondary"
                     >
-                      Check another link
+                      Check another ASIN
                     </button>
                     <RouterLink
                       to="/add-product"
                       className="btn-primary inline-flex items-center justify-center gap-2"
                       state={{
-                        amazonLink: amazonUrl,
+                        amazonAsin: result?.asin || extractAmazonAsin(amazonAsin),
                         amazonTitle: result.title,
                       }}
                     >
@@ -646,12 +652,13 @@ export default function AmazonLookupPage() {
                       key={item.id}
                       type="button"
                       onClick={() => {
-                        setAmazonUrl(item.amazonUrlOriginal || '');
+                        const historyAsin = item.amazonAsin || extractAmazonAsin(item.amazonUrlOriginal || '');
+                        setAmazonAsin(historyAsin || '');
                         if (item.details) {
                           setResult(item.details);
                           setActiveImageIdx(0);
-                        } else if (item.amazonUrlOriginal) {
-                          lookup(item.amazonUrlOriginal);
+                        } else if (historyAsin) {
+                          lookup(historyAsin);
                         }
                       }}
                       className={`w-full text-left rounded-lg border p-2.5 transition ${
@@ -663,10 +670,10 @@ export default function AmazonLookupPage() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className={`text-sm font-medium truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                            {item.title || item.amazonUrlOriginal}
+                            {item.title || item.amazonAsin || item.amazonUrlOriginal}
                           </p>
                           <p className={`text-xs truncate ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                            {item.amazonUrlOriginal}
+                            {item.amazonAsin || item.amazonUrlOriginal}
                           </p>
                         </div>
                         <div className="text-right">

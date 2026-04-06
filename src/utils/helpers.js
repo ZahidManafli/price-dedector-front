@@ -109,3 +109,24 @@ export const isValidUrl = (url) => {
   }
 };
 
+export const extractAmazonAsin = (input) => {
+  if (!input || typeof input !== 'string') return '';
+  const value = input.trim();
+  if (/^[A-Z0-9]{10}$/i.test(value)) return value.toUpperCase();
+  const patterns = [
+    /\/dp\/([A-Z0-9]{10})(?:[/?#]|$)/i,
+    /\/gp\/product\/([A-Z0-9]{10})(?:[/?#]|$)/i,
+    /[?&]asin=([A-Z0-9]{10})(?:[&#]|$)/i,
+  ];
+  for (const re of patterns) {
+    const m = value.match(re);
+    if (m?.[1]) return m[1].toUpperCase();
+  }
+  const fallback = value.match(/\b([A-Z0-9]{10})\b/i);
+  return fallback?.[1]?.toUpperCase() || '';
+};
+
+export const isValidAmazonAsin = (input) => /^[A-Z0-9]{10}$/i.test(String(input || '').trim());
+
+export const buildAmazonProductUrl = (asin) =>
+  isValidAmazonAsin(asin) ? `https://www.amazon.com/dp/${String(asin).trim().toUpperCase()}` : '';

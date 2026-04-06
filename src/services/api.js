@@ -103,7 +103,7 @@ export const ebayAPI = {
 
 // Amazon lookup (title, description, images, and price)
 export const amazonAPI = {
-  lookup: (amazonUrl) => api.post('/amazon/lookup', { amazonUrl }),
+  lookup: (amazonAsin) => api.post('/amazon/lookup', { amazonAsin }),
   getHistory: (limit = 20) => api.get(`/amazon/history?limit=${limit}`),
 };
 
