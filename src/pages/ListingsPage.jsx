@@ -83,6 +83,25 @@ export default function ListingsPage() {
         const id = offer?.offerId || offer?.listingId || offer?.listing?.listingId || offer?.sku || '-';
         const status = String(offer?.status || offer?.marketplaceId || '-');
         const title = offer?.listing?.title || offer?.title || offer?.product?.title || '(no title)';
+        let rawQuantity = null;
+        let rawSold = null;
+        if (offer?.rawXml && typeof DOMParser !== 'undefined') {
+          try {
+            const doc = new DOMParser().parseFromString(offer.rawXml, 'text/xml');
+            const getText = (selector) => doc.querySelector(selector)?.textContent?.trim() || '';
+            const q = getText('Quantity');
+            const s = getText('SellingStatus > QuantitySold');
+            rawQuantity = q !== '' ? Number(q) : null;
+            rawSold = s !== '' ? Number(s) : null;
+          } catch {
+            rawQuantity = null;
+            rawSold = null;
+          }
+        }
+        const fallbackQuantity =
+          typeof offer?.availableQuantity === 'number'
+            ? offer.availableQuantity
+            : offer?.quantity ?? offer?.availability?.shipToLocationAvailability?.quantity ?? null;
         return { ...offer, _id: id, _status: status, _title: title };
       }),
     [items]
@@ -239,6 +258,7 @@ export default function ListingsPage() {
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Listing ID</th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Price</th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Quantity</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Sold</th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Status</th>
                   <th className="px-4 py-3" />
                 </tr>
@@ -250,9 +270,28 @@ export default function ListingsPage() {
                   const price = offer?.pricingSummary?.price?.value
                     ? `${offer.pricingSummary.price.value} ${offer.pricingSummary.price.currency || ''}`.trim()
                     : '-';
-                  const qty = typeof offer?.availableQuantity === 'number'
-                    ? offer.availableQuantity
-                    : (offer?.quantity ?? offer?.availability?.shipToLocationAvailability?.quantity ?? '-');
+                  let qty = null;
+                  let sold = null;
+                  if (offer?.rawXml && typeof DOMParser !== 'undefined') {
+                    try {
+                      const doc = new DOMParser().parseFromString(offer.rawXml, 'text/xml');
+                      const getText = (selector) => doc.querySelector(selector)?.textContent?.trim() || '';
+                      const q = getText('Quantity');
+                      const s = getText('SellingStatus > QuantitySold');
+                      qty = q !== '' ? Number(q) : null;
+                      sold = s !== '' ? Number(s) : null;
+                    } catch {
+                      qty = null;
+                      sold = null;
+                    }
+                  }
+                  if (qty == null) {
+                    qty =
+                      typeof offer?.availableQuantity === 'number'
+                        ? offer.availableQuantity
+                        : offer?.quantity ?? offer?.availability?.shipToLocationAvailability?.quantity ?? null;
+                  }
+                  if (sold == null) sold = '-';
                   const status = offer?._status || '-';
                   const listingId = offer?.listingId || offer?.listing?.listingId || offer?.listing?.legacyItemId || offer?.sku || '-';
                   return (
@@ -261,7 +300,8 @@ export default function ListingsPage() {
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{title}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{listingId}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{price}</td>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{qty}</td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{qty ?? '-'}</td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{sold}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                           <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${getStatusPill(status)}`}>
                             {status}
@@ -286,7 +326,7 @@ export default function ListingsPage() {
                 })}
                 {filteredItems.length === 0 && (
                   <tr>
-                    <td colSpan={6} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <td colSpan={7} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       No listings found for current filters.
                     </td>
                   </tr>
