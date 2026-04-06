@@ -91,6 +91,30 @@ export default function DashboardPage() {
       conversion: Number(p.conversionRate || 0),
     }));
   }, [analytics]);
+  const executiveStats = useMemo(() => {
+    const metrics = analytics?.sellerStandards?.profile?.metrics || [];
+    const find = (key) => metrics.find((m) => m.metricKey === key)?.value;
+    const conversionPoints = (analytics?.traffic?.points || []).map((p) => Number(p.conversionRate || 0));
+    const avgConv =
+      conversionPoints.length > 0
+        ? conversionPoints.reduce((sum, n) => sum + n, 0) / conversionPoints.length
+        : 0;
+    let peakPoint = null;
+    for (const p of analytics?.traffic?.points || []) {
+      if (!peakPoint || Number(p.conversionRate || 0) > Number(peakPoint.conversionRate || 0)) {
+        peakPoint = p;
+      }
+    }
+    return {
+      defectRate: find('DEFECTIVE_TRANSACTION_COUNT') ?? '-',
+      salesAmount: find('MIN_GMV') ?? '-',
+      transactions: find('MIN_TXN_COUNT') ?? '-',
+      lateShipments: find('SHIPPING_MISS_COUNT') ?? '-',
+      avgConversion: avgConv,
+      peakDay: peakPoint?.day || '-',
+      peakConversion: Number(peakPoint?.conversionRate || 0),
+    };
+  }, [analytics]);
 
   const handleDismissEbayBanner = () => {
     setShowEbayBanner(false);
@@ -315,6 +339,33 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-xs opacity-80">
                   {analyticsLoading ? 'Loading…' : analytics ? 'Updated' : ''}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 mb-4">
+                <div className={`rounded-lg border p-3 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
+                  <p className={`text-[10px] uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Transactions</p>
+                  <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{executiveStats.transactions}</p>
+                </div>
+                <div className={`rounded-lg border p-3 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
+                  <p className={`text-[10px] uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Sales Amount</p>
+                  <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{executiveStats.salesAmount}</p>
+                </div>
+                <div className={`rounded-lg border p-3 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
+                  <p className={`text-[10px] uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Defect Count</p>
+                  <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{executiveStats.defectRate}</p>
+                </div>
+                <div className={`rounded-lg border p-3 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
+                  <p className={`text-[10px] uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Late Shipments</p>
+                  <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{executiveStats.lateShipments}</p>
+                </div>
+                <div className={`rounded-lg border p-3 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
+                  <p className={`text-[10px] uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Avg Conversion</p>
+                  <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{executiveStats.avgConversion.toFixed(3)}</p>
+                </div>
+                <div className={`rounded-lg border p-3 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
+                  <p className={`text-[10px] uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Peak Day</p>
+                  <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{executiveStats.peakDay}</p>
+                  <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{executiveStats.peakConversion.toFixed(3)}</p>
                 </div>
               </div>
 

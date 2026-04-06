@@ -1,0 +1,110 @@
+import React, { useMemo } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
+import { ArrowLeft, User, Receipt, Truck } from 'lucide-react';
+
+export default function OrderDetailPage() {
+  const { isDark } = useTheme();
+  const location = useLocation();
+  const order = location?.state?.order || null;
+
+  const summary = useMemo(() => {
+    if (!order) return {};
+    return {
+      id: order?.orderId || '-',
+      buyer: order?.buyer?.username || '-',
+      payment: order?.orderPaymentStatus || '-',
+      fulfillment: order?.orderFulfillmentStatus || '-',
+      total: order?.pricingSummary?.total?.value
+        ? `${order.pricingSummary.total.value} ${order.pricingSummary.total.currency || ''}`.trim()
+        : '-',
+      created: order?.creationDate ? new Date(order.creationDate).toLocaleString() : '-',
+      modified: order?.lastModifiedDate ? new Date(order.lastModifiedDate).toLocaleString() : '-',
+      lineItems: order?.lineItems || [],
+    };
+  }, [order]);
+
+  if (!order) {
+    return (
+      <div className="page-shell">
+        <div className={`rounded-xl border p-6 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-900'}`}>
+          <p className="mb-4">Order details are unavailable. Open this page from the Orders table.</p>
+          <Link to="/orders" className="btn-secondary inline-flex items-center gap-2">
+            <ArrowLeft size={16} />
+            Back to Orders
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page-shell">
+      <div className="mb-4">
+        <Link to="/orders" className="btn-secondary inline-flex items-center gap-2">
+          <ArrowLeft size={16} />
+          Back
+        </Link>
+      </div>
+
+      <div className={`rounded-2xl border p-5 mb-4 ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-white border-slate-200'}`}>
+        <h1 className={`text-2xl font-bold mb-1 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Order Detail</h1>
+        <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{summary.id}</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className="flex items-center gap-2 mb-2">
+            <User size={15} />
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Buyer</p>
+          </div>
+          <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{summary.buyer}</p>
+        </div>
+        <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className="flex items-center gap-2 mb-2">
+            <Receipt size={15} />
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Payment</p>
+          </div>
+          <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{summary.payment}</p>
+        </div>
+        <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className="flex items-center gap-2 mb-2">
+            <Truck size={15} />
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Fulfillment</p>
+          </div>
+          <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{summary.fulfillment}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+        <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Order Total</p>
+          <p className={`text-xl font-bold mt-1 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{summary.total}</p>
+          <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Created: {summary.created}</p>
+          <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Last update: {summary.modified}</p>
+        </div>
+        <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <p className={`text-xs mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Line items ({summary.lineItems.length})</p>
+          <div className="space-y-2 max-h-36 overflow-auto pr-1">
+            {summary.lineItems.map((item) => (
+              <div key={item.lineItemId} className={`rounded-lg border px-3 py-2 ${isDark ? 'border-slate-700 bg-slate-900/30' : 'border-slate-200 bg-slate-50'}`}>
+                <p className={`text-xs font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.title || item.lineItemId}</p>
+                <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  Qty: {item.quantity || 0} • {item?.lineItemCost?.value || '-'} {item?.lineItemCost?.currency || ''}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className={`rounded-2xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+        <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Full payload</h2>
+        <pre className={`text-xs overflow-auto max-h-[70vh] ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+          {JSON.stringify(order, null, 2)}
+        </pre>
+      </div>
+    </div>
+  );
+}
+

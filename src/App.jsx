@@ -17,6 +17,8 @@ import PrivacyPage from './pages/PrivacyPage';
 import AboutPage from './pages/AboutPage';
 import ListingsPage from './pages/ListingsPage';
 import OrdersPage from './pages/OrdersPage';
+import ListingDetailPage from './pages/ListingDetailPage';
+import OrderDetailPage from './pages/OrderDetailPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -165,6 +167,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <OrdersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders/:orderId"
+              element={
+                <ProtectedRoute>
+                  <OrderDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/listings/:listingId"
+              element={
+                <ProtectedRoute>
+                  <ListingDetailPage />
                 </ProtectedRoute>
               }
             />

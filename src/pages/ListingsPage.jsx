@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ebayAPI } from '../services/api';
 import Alert from '../components/Alert';
-import { Loader2, Package, ChevronDown, ChevronUp, Link2, Search, SlidersHorizontal } from 'lucide-react';
+import { Loader2, Package, Link2, Search, SlidersHorizontal } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 export default function ListingsPage() {
+  const navigate = useNavigate();
   const { isDark } = useTheme();
   const [loading, setLoading] = useState(true);
   const [ebayStatus, setEbayStatus] = useState({ connected: false });
@@ -14,7 +16,6 @@ export default function ListingsPage() {
   const [total, setTotal] = useState(undefined);
   const [page, setPage] = useState(0);
   const [limit] = useState(25);
-  const [expanded, setExpanded] = useState({});
   const [paging, setPaging] = useState({ nextOffset: null });
   const [fetchingPage, setFetchingPage] = useState(false);
   const [query, setQuery] = useState('');
@@ -72,10 +73,6 @@ export default function ListingsPage() {
       const msg = err?.response?.data?.error || 'Failed to start eBay connection';
       setError(msg);
     }
-  };
-
-  const toggleExpand = (id) => {
-    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const canPrev = page > 0;
@@ -247,7 +244,7 @@ export default function ListingsPage() {
                 </tr>
               </thead>
               <tbody className={`${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
-                {filteredItems.map((offer) => {
+                {filteredItems.map((offer, idx) => {
                   const key = offer._id;
                   const title = offer._title;
                   const price = offer?.pricingSummary?.price?.value
@@ -258,9 +255,8 @@ export default function ListingsPage() {
                     : (offer?.quantity ?? offer?.availability?.shipToLocationAvailability?.quantity ?? '-');
                   const status = offer?._status || '-';
                   const listingId = offer?.listingId || offer?.listing?.listingId || offer?.listing?.legacyItemId || offer?.sku || '-';
-                  const isOpen = !!expanded[key];
                   return (
-                    <React.Fragment key={key}>
+                    <React.Fragment key={`${key}-${idx}`}>
                       <tr className={`${isDark ? 'bg-slate-900' : 'bg-white'}`}>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{title}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{listingId}</td>
@@ -274,23 +270,17 @@ export default function ListingsPage() {
                         <td className="px-4 py-3 text-right">
                           <button
                             type="button"
-                            onClick={() => toggleExpand(key)}
+                            onClick={() =>
+                              navigate(`/listings/${encodeURIComponent(String(listingId))}`, {
+                                state: { listing: offer },
+                              })
+                            }
                             className={`inline-flex items-center gap-1 ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`}
                           >
-                            {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                            {isOpen ? 'Hide' : 'Details'}
+                            Details
                           </button>
                         </td>
                       </tr>
-                      {isOpen && (
-                        <tr className={`${isDark ? 'bg-slate-800/60' : 'bg-slate-50'}`}>
-                          <td colSpan={6} className="px-4 py-3">
-                            <pre className={`text-xs overflow-auto max-h-96 ${isDark ? 'text-slate-200' : ''}`}>
-{JSON.stringify(offer, null, 2)}
-                            </pre>
-                          </td>
-                        </tr>
-                      )}
                     </React.Fragment>
                   );
                 })}

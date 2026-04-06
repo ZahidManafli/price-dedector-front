@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ebayAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import Alert from '../components/Alert';
-import { Loader2, Package, ChevronDown, ChevronUp, Link2, Search, SlidersHorizontal } from 'lucide-react';
+import { Loader2, Package, Link2, Search, SlidersHorizontal } from 'lucide-react';
 
 export default function OrdersPage() {
+  const navigate = useNavigate();
   const { isDark } = useTheme();
 
   const [loading, setLoading] = useState(true);
@@ -15,7 +17,6 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
   const [page, setPage] = useState(0);
   const [limit] = useState(25);
-  const [expanded, setExpanded] = useState({});
   const [fetchingPage, setFetchingPage] = useState(false);
   const [nextOffset, setNextOffset] = useState(null);
   const [total, setTotal] = useState(null);
@@ -116,10 +117,6 @@ export default function OrdersPage() {
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Failed to start eBay connection');
     }
-  };
-
-  const toggleExpand = (orderId) => {
-    setExpanded((prev) => ({ ...prev, [orderId]: !prev[orderId] }));
   };
 
   if (loading) {
@@ -284,7 +281,6 @@ export default function OrdersPage() {
               <tbody className={isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}>
                 {filteredOrders.map((order) => {
                   const id = order.orderId;
-                  const isOpen = !!expanded[id];
                   const payment = order.orderPaymentStatus || '-';
                   const fulfillment = order.orderFulfillmentStatus || '-';
                   const totalValue = order?.pricingSummary?.total?.value;
@@ -312,38 +308,17 @@ export default function OrdersPage() {
                         <td className="px-4 py-3 text-right">
                           <button
                             type="button"
-                            onClick={() => toggleExpand(id)}
+                            onClick={() =>
+                              navigate(`/orders/${encodeURIComponent(String(id))}`, {
+                                state: { order },
+                              })
+                            }
                             className={`inline-flex items-center gap-1 ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`}
                           >
-                            {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                            {isOpen ? 'Hide' : 'Details'}
+                            Details
                           </button>
                         </td>
                       </tr>
-
-                      {isOpen && (
-                        <tr className={isDark ? 'bg-slate-800/60' : 'bg-slate-50'}>
-                          <td colSpan={5} className="px-4 py-3">
-                            <div className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'} mb-3`}>
-                              <div className="flex flex-wrap gap-x-6 gap-y-1">
-                                <div>
-                                  Buyer: <span className="font-semibold">{buyer}</span>
-                                </div>
-                                <div>
-                                  Created: <span className="font-semibold">{createdAt}</span>
-                                </div>
-                              </div>
-                            </div>
-                            <pre
-                              className={`text-xs overflow-auto max-h-96 ${
-                                isDark ? 'text-slate-200' : 'text-slate-700'
-                              }`}
-                            >
-                              {JSON.stringify(order, null, 2)}
-                            </pre>
-                          </td>
-                        </tr>
-                      )}
                     </React.Fragment>
                   );
                 })}
