@@ -14,7 +14,6 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
     currentAmazonPrice: '',
     currentEbayPrice: '',
     userEmail: '',
-    amazonSubscribed: false,
   });
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(isEditMode);
@@ -37,7 +36,6 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
           currentAmazonPrice: product.currentAmazonPrice ?? '',
           currentEbayPrice: product.currentEbayPrice ?? '',
           userEmail: product.userEmail || '',
-          amazonSubscribed: product.amazonSubscribed || false,
         };
 
         setFormData(nextData);
@@ -60,18 +58,12 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
     setFormData((prev) => ({ ...prev, [name]: nextValue }));
 
     // Recalculate profit
-    if (name === 'currentAmazonPrice' || name === 'currentEbayPrice' || name === 'amazonSubscribed') {
+    if (name === 'currentAmazonPrice' || name === 'currentEbayPrice') {
       const ebayPrice =
         name === 'currentEbayPrice' ? nextValue : formData.currentEbayPrice;
       const amazonRaw =
         name === 'currentAmazonPrice' ? nextValue : formData.currentAmazonPrice;
-      const isSubscribed =
-        name === 'amazonSubscribed' ? nextValue : formData.amazonSubscribed;
-      const discountRate = 0.05; // keep in sync with backend default
-      const effectiveAmazon = isSubscribed
-        ? (parseFloat(amazonRaw) || 0) * (1 - discountRate)
-        : amazonRaw;
-      setCalculatedProfit(calculateProfit(ebayPrice, effectiveAmazon));
+      setCalculatedProfit(calculateProfit(ebayPrice, amazonRaw));
     }
   };
 
@@ -109,7 +101,6 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       formDataObj.append('currentAmazonPrice', formData.currentAmazonPrice);
       formDataObj.append('currentEbayPrice', formData.currentEbayPrice);
       formDataObj.append('userEmail', formData.userEmail);
-      formDataObj.append('amazonSubscribed', String(formData.amazonSubscribed));
 
       if (isEditMode) {
         await productAPI.update(productId, formDataObj);
@@ -252,22 +243,6 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
                 required
               />
             </div>
-          </div>
-
-          {/* Amazon Subscribe & Save */}
-          <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-2.5 border border-slate-200">
-            <input
-              type="checkbox"
-              id="amazonSubscribed"
-              name="amazonSubscribed"
-              checked={formData.amazonSubscribed}
-              onChange={handleChange}
-              disabled={loading}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-            />
-            <label htmlFor="amazonSubscribed" className="text-sm text-gray-700">
-              I have Amazon Subscribe &amp; Save for this product (use discounted price)
-            </label>
           </div>
 
           {/* Profit Preview */}
