@@ -73,13 +73,16 @@ export default function AmazonLookupPage() {
 
     const cogs = useSubscribedPrice && subscribedUsd != null ? subscribedUsd : amazonUsd;
 
-    // Invert frontend `calculateProfit()` formula (shipping/ad/other costs are 0):
-    // netProfit = salePrice - (cogs + salePrice*0.129 + salePrice*0.027 + 0.25)
-    //           = salePrice*0.844 - cogs - 0.25
-    // => salePrice = (targetProfit + cogs + 0.25) / 0.844
     if (!haveTarget || !cogs || cogs <= 0) return { target: parsedTarget, cogs, ebayPrice: 0 };
 
-    const ebayPrice = (parsedTarget + cogs + 0.25) / 0.844;
+    const FINAL_VALUE_FEE_RATE = 0.129;
+    const TAX_RATE = 0;
+    const AD_RATE = 0;
+    const FIXED_FEE = 0.25;
+    const denominator = 1 - FINAL_VALUE_FEE_RATE * (1 + TAX_RATE) - AD_RATE;
+    if (denominator <= 0) return { target: parsedTarget, cogs, ebayPrice: 0 };
+
+    const ebayPrice = (cogs + parsedTarget + FIXED_FEE) / denominator;
     return {
       target: parsedTarget,
       cogs,

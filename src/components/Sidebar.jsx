@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Moon,
   Sun,
+  Calculator,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -26,6 +27,7 @@ export default function Sidebar() {
     { label: 'Listings', path: '/listings', icon: Package },
     { label: 'Orders', path: '/orders', icon: Package },
     { label: 'Amazon Lookup', path: '/amazon-lookup', icon: Search },
+     { label: 'eBay Calculator', path: '/ebay-calculator', icon: Calculator },
     { label: 'Settings', path: '/settings', icon: Settings },
     ...(user?.role === 'admin' ? [{ label: 'Admin Panel', path: '/admin', icon: ShieldCheck }] : []),
   ];

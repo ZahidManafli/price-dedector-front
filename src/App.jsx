@@ -19,6 +19,7 @@ import ListingsPage from './pages/ListingsPage';
 import OrdersPage from './pages/OrdersPage';
 import ListingDetailPage from './pages/ListingDetailPage';
 import OrderDetailPage from './pages/OrderDetailPage';
+import EbayCalculatorPage from './pages/EbayCalculatorPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -151,6 +152,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AmazonLookupPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ebay-calculator"
+              element={
+                <ProtectedRoute>
+                  <EbayCalculatorPage />
                 </ProtectedRoute>
               }
             />
