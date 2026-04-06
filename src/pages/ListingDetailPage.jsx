@@ -109,12 +109,14 @@ export default function ListingDetailPage() {
   }, [listing]);
 
   const stockCount = useMemo(() => {
-    const totalQtyRaw = Number(
-      listing?.quantity ??
-        listing?.availableQuantity ??
-        listing?.availability?.shipToLocationAvailability?.quantity ??
-        trading?.quantity
-    );
+    const hasTradingQty = trading?.quantity != null && trading?.quantity !== '';
+    const totalQtyRaw = hasTradingQty
+      ? Number(trading.quantity)
+      : Number(
+          listing?.quantity ??
+            listing?.availableQuantity ??
+            listing?.availability?.shipToLocationAvailability?.quantity
+        );
     const soldRaw = trading?.quantitySold != null && trading?.quantitySold !== '' ? Number(trading.quantitySold) : 0;
     if (Number.isFinite(totalQtyRaw)) {
       return Math.max(0, totalQtyRaw - (Number.isFinite(soldRaw) ? soldRaw : 0));
