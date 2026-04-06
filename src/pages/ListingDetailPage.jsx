@@ -277,6 +277,30 @@ export default function ListingDetailPage() {
                 )}
               </div>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className={`rounded-2xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+                <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Shipping, returns & policies</h2>
+                <div className={`space-y-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  <p><span className="font-semibold">Ships to:</span> {trading?.shipToLocations || '-'}</p>
+                  <p><span className="font-semibold">Buyer protection:</span> {trading?.buyerProtection || '-'}</p>
+                  <p><span className="font-semibold">Returns accepted:</span> {trading?.returnsAccepted || '-'}</p>
+                  <p><span className="font-semibold">Return window:</span> {trading?.returnsWithin || '-'}</p>
+                  <p><span className="font-semibold">Return shipping paid by:</span> {trading?.shippingPaidBy || '-'}</p>
+                  <p><span className="font-semibold">Buyer responsible shipping:</span> {trading?.buyerResponsibleShipping || '-'}</p>
+                </div>
+              </div>
+              <div className={`rounded-2xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+                <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Listing health</h2>
+                <div className={`space-y-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  <p><span className="font-semibold">Listing duration:</span> {trading?.listingDuration || '-'}</p>
+                  <p><span className="font-semibold">Time left:</span> {trading?.timeLeft || '-'}</p>
+                  <p><span className="font-semibold">AutoPay:</span> {trading?.autoPay || '-'}</p>
+                  <p><span className="font-semibold">Secure description:</span> {trading?.secureDescription || '-'}</p>
+                  <p><span className="font-semibold">Hide from search:</span> {trading?.hideFromSearch || '-'}</p>
+                  <p><span className="font-semibold">Location defaulted:</span> {trading?.locationDefaulted || '-'}</p>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="lg:col-span-5">
             <h1 className={`text-3xl font-bold leading-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
@@ -363,31 +387,6 @@ export default function ListingDetailPage() {
                 <p className={`text-xs mt-3 ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{saveSuccess}</p>
               ) : null}
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className={`rounded-2xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-          <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Shipping, returns & policies</h2>
-          <div className={`space-y-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-            <p><span className="font-semibold">Ships to:</span> {trading?.shipToLocations || '-'}</p>
-            <p><span className="font-semibold">Buyer protection:</span> {trading?.buyerProtection || '-'}</p>
-            <p><span className="font-semibold">Returns accepted:</span> {trading?.returnsAccepted || '-'}</p>
-            <p><span className="font-semibold">Return window:</span> {trading?.returnsWithin || '-'}</p>
-            <p><span className="font-semibold">Return shipping paid by:</span> {trading?.shippingPaidBy || '-'}</p>
-            <p><span className="font-semibold">Buyer responsible shipping:</span> {trading?.buyerResponsibleShipping || '-'}</p>
-          </div>
-        </div>
-        <div className={`rounded-2xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-          <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Listing health</h2>
-          <div className={`space-y-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-            <p><span className="font-semibold">Listing duration:</span> {trading?.listingDuration || '-'}</p>
-            <p><span className="font-semibold">Time left:</span> {trading?.timeLeft || '-'}</p>
-            <p><span className="font-semibold">AutoPay:</span> {trading?.autoPay || '-'}</p>
-            <p><span className="font-semibold">Secure description:</span> {trading?.secureDescription || '-'}</p>
-            <p><span className="font-semibold">Hide from search:</span> {trading?.hideFromSearch || '-'}</p>
-            <p><span className="font-semibold">Location defaulted:</span> {trading?.locationDefaulted || '-'}</p>
           </div>
         </div>
       </div>
