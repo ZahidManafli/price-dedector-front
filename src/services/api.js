@@ -112,6 +112,11 @@ export const amazonAPI = {
   getHistory: (limit = 20) => api.get(`/amazon/history?limit=${limit}`),
 };
 
+export const dewisoAPI = {
+  getHistory: (limit = 20) => api.get('/dewiso/history', { params: { limit } }),
+  saveHistory: (payload) => api.post('/dewiso/history', payload),
+};
+
 // Admin APIs
 export const adminAPI = {
   listUsers: () => api.get('/admin/users'),

@@ -20,6 +20,7 @@ import OrdersPage from './pages/OrdersPage';
 import ListingDetailPage from './pages/ListingDetailPage';
 import OrderDetailPage from './pages/OrderDetailPage';
 import EbayCalculatorPage from './pages/EbayCalculatorPage';
+import DewisoPage from './pages/DewisoPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -160,6 +161,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <EbayCalculatorPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dewiso"
+              element={
+                <ProtectedRoute>
+                  <DewisoPage />
                 </ProtectedRoute>
               }
             />
