@@ -238,6 +238,7 @@ export default function SettingsPage() {
                     {ebayStatus.ebayAccounts.map((acc) => {
                       const isActive = acc.id && ebayStatus.activeEbayAccountId === acc.id;
                       const label = acc.profileUserId || 'Unknown';
+                      const tradingAccountId = acc.tradingAccountId || null;
                       const connected = !!acc.connected;
                       return (
                         <div
@@ -264,6 +265,7 @@ export default function SettingsPage() {
                             <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                               {connected ? 'Connected' : 'Disconnected'}
                               {acc.updatedAt ? ` · Updated ${new Date(acc.updatedAt).toLocaleString()}` : ''}
+                              {tradingAccountId ? ` · AccountID ${tradingAccountId}` : ''}
                             </div>
                           </button>
                           <div className="flex items-center gap-2 pl-3">
