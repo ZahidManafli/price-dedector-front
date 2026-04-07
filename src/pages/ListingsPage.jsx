@@ -225,9 +225,9 @@ export default function ListingsPage() {
         </h1>
         {ebayStatus.connected ? (
           <div className={`text-sm flex items-center gap-3 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-            {ebayStatus.accountId ? (
+            {(ebayStatus.activeAccountLabel || ebayStatus.accountId) ? (
               <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${isDark ? 'border-slate-700 bg-slate-900/60 text-slate-200' : 'border-slate-200 bg-white text-slate-700'}`}>
-                Active: <span className="ml-1 font-semibold">{ebayStatus.accountId}</span>
+                Active: <span className="ml-1 font-semibold">{ebayStatus.activeAccountLabel || ebayStatus.accountId}</span>
               </span>
             ) : null}
             {typeof total === 'number' ? `Total: ${total}` : null}

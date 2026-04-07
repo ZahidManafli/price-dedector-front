@@ -23,6 +23,7 @@ export default function SettingsPage() {
     activeEbayAccountId: null,
   });
   const [alert, setAlert] = useState(null);
+  const [nameDrafts, setNameDrafts] = useState({});
 
   useEffect(() => {
     const load = async () => {
@@ -32,7 +33,13 @@ export default function SettingsPage() {
           ebayAPI.getStatus(),
         ]);
         setPreferences((prev) => ({ ...prev, ...(prefRes.data || {}) }));
-        setEbayStatus(ebayRes.data || {});
+        const nextStatus = ebayRes.data || {};
+        setEbayStatus(nextStatus);
+        const drafts = {};
+        (nextStatus.ebayAccounts || []).forEach((a) => {
+          drafts[a.id] = a.connectionName || a.username || a.profileUserId || '';
+        });
+        setNameDrafts(drafts);
       } catch (_error) {
         // Keep defaults if optional settings/status calls fail.
       }
@@ -85,7 +92,8 @@ export default function SettingsPage() {
       setEbayLoading(true);
       await ebayAPI.setActiveAccount(ebayAccountId);
       const ebayRes = await ebayAPI.getStatus();
-      setEbayStatus(ebayRes.data || {});
+      const nextStatus = ebayRes.data || {};
+      setEbayStatus(nextStatus);
       setAlert({ type: 'success', message: 'Active eBay account updated' });
     } catch (error) {
       setAlert({
@@ -104,12 +112,46 @@ export default function SettingsPage() {
       setEbayLoading(true);
       await ebayAPI.deleteAccount(ebayAccountId);
       const ebayRes = await ebayAPI.getStatus();
-      setEbayStatus(ebayRes.data || {});
+      const nextStatus = ebayRes.data || {};
+      setEbayStatus(nextStatus);
+      const drafts = {};
+      (nextStatus.ebayAccounts || []).forEach((a) => {
+        drafts[a.id] = a.connectionName || a.username || a.profileUserId || '';
+      });
+      setNameDrafts(drafts);
       setAlert({ type: 'success', message: 'eBay account deleted' });
     } catch (error) {
       setAlert({
         type: 'error',
         message: error.response?.data?.error || 'Failed to delete eBay account',
+      });
+    } finally {
+      setEbayLoading(false);
+    }
+  };
+
+  const handleSaveAccountName = async (ebayAccountId) => {
+    const connectionName = String(nameDrafts[ebayAccountId] || '').trim();
+    if (!connectionName) {
+      setAlert({ type: 'error', message: 'Connection name cannot be empty' });
+      return;
+    }
+    try {
+      setEbayLoading(true);
+      await ebayAPI.setAccountName(ebayAccountId, connectionName);
+      const ebayRes = await ebayAPI.getStatus();
+      const nextStatus = ebayRes.data || {};
+      setEbayStatus(nextStatus);
+      const drafts = {};
+      (nextStatus.ebayAccounts || []).forEach((a) => {
+        drafts[a.id] = a.connectionName || a.username || a.profileUserId || '';
+      });
+      setNameDrafts(drafts);
+      setAlert({ type: 'success', message: 'eBay connection name updated' });
+    } catch (error) {
+      setAlert({
+        type: 'error',
+        message: error.response?.data?.error || 'Failed to update eBay connection name',
       });
     } finally {
       setEbayLoading(false);
@@ -218,9 +260,9 @@ export default function SettingsPage() {
                   </div>
                   {/* Hide noisy environment text like 'sandbox' */}
                 </div>
-                {ebayStatus.accountId && (
+                {ebayStatus.activeAccountLabel && (
                   <p className={`text-sm mt-2 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                    Signed in as <span className="font-medium">{ebayStatus.accountId}</span>
+                    Active account: <span className="font-medium">{ebayStatus.activeAccountLabel}</span>
                   </p>
                 )}
               </div>
@@ -237,7 +279,7 @@ export default function SettingsPage() {
                   <div className="space-y-2">
                     {ebayStatus.ebayAccounts.map((acc) => {
                       const isActive = acc.id && ebayStatus.activeEbayAccountId === acc.id;
-                      const label = acc.username || acc.profileUserId || 'Unknown';
+                      const label = acc.connectionName || acc.username || acc.profileUserId || 'Unknown';
                       const tradingAccountId = acc.tradingAccountId || null;
                       const connected = !!acc.connected;
                       return (
@@ -253,22 +295,57 @@ export default function SettingsPage() {
                                 : 'bg-white border-slate-200'
                           } ${!connected ? 'opacity-60' : ''}`}
                         >
-                          <button
-                            type="button"
-                            onClick={() => handleSetActiveEbayAccount(acc.id)}
-                            disabled={ebayLoading || !connected || isActive}
-                            className="flex-1 text-left"
-                          >
+                          <div className="flex-1 text-left">
                             <div className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                               {label}
+                            </div>
+                            <div className="mt-1 flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={nameDrafts[acc.id] ?? label}
+                                onChange={(e) =>
+                                  setNameDrafts((prev) => ({ ...prev, [acc.id]: e.target.value }))
+                                }
+                                disabled={ebayLoading}
+                                className={`text-xs rounded px-2 py-1 border w-48 ${
+                                  isDark
+                                    ? 'bg-slate-900 border-slate-700 text-slate-100'
+                                    : 'bg-white border-slate-300 text-slate-900'
+                                }`}
+                                placeholder="Connection name"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleSaveAccountName(acc.id)}
+                                disabled={ebayLoading}
+                                className={`text-xs font-semibold rounded-md px-2 py-1 border ${
+                                  isDark
+                                    ? 'border-indigo-700 text-indigo-200 hover:bg-indigo-900/30'
+                                    : 'border-indigo-200 text-indigo-700 hover:bg-indigo-50'
+                                }`}
+                              >
+                                Save name
+                              </button>
                             </div>
                             <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                               {connected ? 'Connected' : 'Disconnected'}
                               {acc.updatedAt ? ` · Updated ${new Date(acc.updatedAt).toLocaleString()}` : ''}
                               {tradingAccountId ? ` · AccountID ${tradingAccountId}` : ''}
                             </div>
-                          </button>
+                          </div>
                           <div className="flex items-center gap-2 pl-3">
+                            <button
+                              type="button"
+                              onClick={() => handleSetActiveEbayAccount(acc.id)}
+                              disabled={ebayLoading || !connected || isActive}
+                              className={`text-xs font-semibold rounded-md px-2 py-1 border ${
+                                isDark
+                                  ? 'border-emerald-800 text-emerald-200 hover:bg-emerald-900/30'
+                                  : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
+                              }`}
+                            >
+                              Set active
+                            </button>
                             {isActive && (
                               <span className={`text-xs font-semibold ${isDark ? 'text-emerald-200' : 'text-emerald-700'}`}>
                                 Active

@@ -42,7 +42,7 @@ export default function Sidebar() {
       try {
         const res = await ebayAPI.getStatus();
         const status = res?.data || {};
-        const label = status?.accountId || null;
+        const label = status?.activeAccountLabel || status?.accountId || null;
         if (!cancelled) setActiveEbayLabel(label);
       } catch {
         if (!cancelled) setActiveEbayLabel(null);
