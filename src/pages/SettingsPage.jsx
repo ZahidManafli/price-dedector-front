@@ -239,6 +239,8 @@ export default function SettingsPage() {
                       const isActive = acc.id && ebayStatus.activeEbayAccountId === acc.id;
                       const label = acc.profileUserId || 'Unknown';
                       const tradingAccountId = acc.tradingAccountId || null;
+                      const accountType = acc.accountType || null;
+                      const regMarket = acc.registrationMarketplaceId || null;
                       const connected = !!acc.connected;
                       return (
                         <div
@@ -266,6 +268,8 @@ export default function SettingsPage() {
                               {connected ? 'Connected' : 'Disconnected'}
                               {acc.updatedAt ? ` · Updated ${new Date(acc.updatedAt).toLocaleString()}` : ''}
                               {tradingAccountId ? ` · AccountID ${tradingAccountId}` : ''}
+                              {accountType ? ` · ${accountType}` : ''}
+                              {regMarket ? ` · ${regMarket}` : ''}
                             </div>
                           </button>
                           <div className="flex items-center gap-2 pl-3">
