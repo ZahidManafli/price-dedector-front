@@ -37,7 +37,9 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
         setEbayAccounts(accounts);
         setActiveEbayAccountId(status.activeEbayAccountId || null);
         if (!isEditMode) {
-          const defaultId = status.activeEbayAccountId || accounts[0]?.id || '';
+          const activeAcc = accounts.find((a) => a.id === status.activeEbayAccountId) || null;
+          const defaultId =
+            activeAcc?.tradingAccountId || activeAcc?.id || accounts[0]?.tradingAccountId || accounts[0]?.id || '';
           setSelectedEbayAccountId(defaultId);
         }
       } catch {
@@ -71,7 +73,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
           calculateProfit(nextData.currentEbayPrice, nextData.currentAmazonPrice)
         );
         // Default account selection for edit: keep bound account if present, else active.
-        const boundAccountId = product.ebayAccountId || '';
+        const boundAccountId = product.ebayTradingAccountId || product.ebayAccountId || '';
         setSelectedEbayAccountId((prev) => prev || boundAccountId || activeEbayAccountId || '');
       } catch (error) {
         setAlert({ type: 'error', message: 'Failed to load product for editing' });
@@ -139,7 +141,9 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       formDataObj.append('userEmail', formData.userEmail);
       if (selectedEbayAccountId) {
         formDataObj.append('ebayAccountId', selectedEbayAccountId);
-        const selectedAcc = ebayAccounts.find((a) => a.id === selectedEbayAccountId);
+        const selectedAcc = ebayAccounts.find(
+          (a) => a.id === selectedEbayAccountId || a.tradingAccountId === selectedEbayAccountId
+        );
         if (selectedAcc?.tradingAccountId) {
           formDataObj.append('tradingAccountId', selectedAcc.tradingAccountId);
         }
@@ -266,7 +270,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
                 required
               >
                 {ebayAccounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>
+                  <option key={acc.id} value={acc.tradingAccountId || acc.id}>
                     {acc.connectionName || acc.username || acc.profileUserId || 'Unknown account'}
                     {acc.id === activeEbayAccountId ? ' (active)' : ''}
                   </option>
