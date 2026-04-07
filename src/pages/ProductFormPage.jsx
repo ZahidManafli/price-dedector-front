@@ -139,6 +139,10 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       formDataObj.append('userEmail', formData.userEmail);
       if (selectedEbayAccountId) {
         formDataObj.append('ebayAccountId', selectedEbayAccountId);
+        const selectedAcc = ebayAccounts.find((a) => a.id === selectedEbayAccountId);
+        if (selectedAcc?.tradingAccountId) {
+          formDataObj.append('tradingAccountId', selectedAcc.tradingAccountId);
+        }
       }
 
       if (isEditMode) {
