@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCircle2, Link2, Mail, ShieldCheck } from 'lucide-react';
+import { Bell, CheckCircle2, Link2, Mail, ShieldCheck, Users } from 'lucide-react';
 import { ebayAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import { useTheme } from '../context/ThemeContext';
@@ -19,6 +19,8 @@ export default function SettingsPage() {
     accountId: null,
     environment: null,
     expiresAt: null,
+    ebayAccounts: [],
+    activeEbayAccountId: null,
   });
   const [alert, setAlert] = useState(null);
 
@@ -72,6 +74,23 @@ export default function SettingsPage() {
       setAlert({
         type: 'error',
         message: error.response?.data?.error || 'Failed to disconnect eBay',
+      });
+    } finally {
+      setEbayLoading(false);
+    }
+  };
+
+  const handleSetActiveEbayAccount = async (ebayAccountId) => {
+    try {
+      setEbayLoading(true);
+      await ebayAPI.setActiveAccount(ebayAccountId);
+      const ebayRes = await ebayAPI.getStatus();
+      setEbayStatus(ebayRes.data || {});
+      setAlert({ type: 'success', message: 'Active eBay account updated' });
+    } catch (error) {
+      setAlert({
+        type: 'error',
+        message: error.response?.data?.error || 'Failed to set active eBay account',
       });
     } finally {
       setEbayLoading(false);
@@ -186,6 +205,63 @@ export default function SettingsPage() {
                   </p>
                 )}
               </div>
+
+              {/* Multi-account selector */}
+              {Array.isArray(ebayStatus.ebayAccounts) && ebayStatus.ebayAccounts.length > 0 && (
+                <div className={`rounded-lg p-3 mb-3 ${
+                  isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'
+                }`}>
+                  <div className={`text-sm font-semibold mb-2 flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                    <Users size={14} />
+                    Active eBay account
+                  </div>
+                  <div className="space-y-2">
+                    {ebayStatus.ebayAccounts.map((acc) => {
+                      const isActive = acc.id && ebayStatus.activeEbayAccountId === acc.id;
+                      const label = acc.profileUserId || 'Unknown';
+                      const connected = !!acc.connected;
+                      return (
+                        <button
+                          key={acc.id}
+                          type="button"
+                          onClick={() => handleSetActiveEbayAccount(acc.id)}
+                          disabled={ebayLoading || !connected || isActive}
+                          className={`w-full flex items-center justify-between rounded-lg px-3 py-2 border transition ${
+                            isActive
+                              ? isDark
+                                ? 'bg-emerald-900/30 border-emerald-700'
+                                : 'bg-emerald-50 border-emerald-200'
+                              : isDark
+                                ? 'bg-slate-900/40 border-slate-700 hover:bg-slate-900/70'
+                                : 'bg-white border-slate-200 hover:bg-slate-100'
+                          } ${!connected ? 'opacity-60' : ''}`}
+                        >
+                          <div className="text-left">
+                            <div className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                              {label}
+                            </div>
+                            <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                              {connected ? 'Connected' : 'Disconnected'}
+                              {acc.updatedAt ? ` · Updated ${new Date(acc.updatedAt).toLocaleString()}` : ''}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {isActive && (
+                              <span className={`text-xs font-semibold ${isDark ? 'text-emerald-200' : 'text-emerald-700'}`}>
+                                Active
+                              </span>
+                            )}
+                            {connected && <CheckCircle2 size={16} className={isDark ? 'text-emerald-300' : 'text-emerald-600'} />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className={`text-xs mt-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                    Listings, orders, and edit actions will use your active eBay account.
+                  </p>
+                </div>
+              )}
               <div className="flex gap-3">
                 {!ebayStatus.connected ? (
                   <button

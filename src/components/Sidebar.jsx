@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -14,12 +14,14 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { ebayAPI } from '../services/api';
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const [activeEbayLabel, setActiveEbayLabel] = useState(null);
 
   const links = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -33,6 +35,24 @@ export default function Sidebar() {
   ];
 
   const isActive = (path) => location.pathname === path;
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await ebayAPI.getStatus();
+        const status = res?.data || {};
+        const label = status?.accountId || null;
+        if (!cancelled) setActiveEbayLabel(label);
+      } catch {
+        if (!cancelled) setActiveEbayLabel(null);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <>
@@ -53,7 +73,16 @@ export default function Sidebar() {
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
             <img src="/logo-2.png" alt="Logo" className="w-16 h-16 rounded-xl object-cover border border-slate-700/50" />
-            <span className="text-xl font-semibold">Price Check</span>
+            <div className="min-w-0">
+              <span className="block text-xl font-semibold">Price Check</span>
+              {activeEbayLabel ? (
+                <span className="block text-xs text-slate-300 truncate">
+                  Active eBay: <span className="font-medium text-slate-100">{activeEbayLabel}</span>
+                </span>
+              ) : (
+                <span className="block text-xs text-slate-400 truncate">Active eBay: —</span>
+              )}
+            </div>
           </div>
 
           <nav className="space-y-2">

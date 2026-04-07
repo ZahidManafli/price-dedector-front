@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { productAPI } from '../services/api';
+import { ebayAPI, productAPI } from '../services/api';
 import {
   calculateProfit,
   extractAmazonAsin,
@@ -24,6 +24,29 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
   const [initialLoading, setInitialLoading] = useState(isEditMode);
   const [alert, setAlert] = useState(null);
   const [calculatedProfit, setCalculatedProfit] = useState(0);
+  const [ebayAccounts, setEbayAccounts] = useState([]);
+  const [activeEbayAccountId, setActiveEbayAccountId] = useState(null);
+  const [selectedEbayAccountId, setSelectedEbayAccountId] = useState('');
+
+  useEffect(() => {
+    const loadEbayAccounts = async () => {
+      try {
+        const res = await ebayAPI.getStatus();
+        const status = res?.data || {};
+        const accounts = Array.isArray(status.ebayAccounts) ? status.ebayAccounts : [];
+        setEbayAccounts(accounts);
+        setActiveEbayAccountId(status.activeEbayAccountId || null);
+        if (!isEditMode) {
+          const defaultId = status.activeEbayAccountId || accounts[0]?.id || '';
+          setSelectedEbayAccountId(defaultId);
+        }
+      } catch {
+        setEbayAccounts([]);
+        setActiveEbayAccountId(null);
+      }
+    };
+    loadEbayAccounts();
+  }, [isEditMode]);
 
   useEffect(() => {
     if (!isEditMode) return;
@@ -47,6 +70,9 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
         setCalculatedProfit(
           calculateProfit(nextData.currentEbayPrice, nextData.currentAmazonPrice)
         );
+        // Default account selection for edit: keep bound account if present, else active.
+        const boundAccountId = product.ebayAccountId || '';
+        setSelectedEbayAccountId((prev) => prev || boundAccountId || activeEbayAccountId || '');
       } catch (error) {
         setAlert({ type: 'error', message: 'Failed to load product for editing' });
       } finally {
@@ -111,6 +137,9 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       formDataObj.append('currentAmazonPrice', formData.currentAmazonPrice);
       formDataObj.append('currentEbayPrice', formData.currentEbayPrice);
       formDataObj.append('userEmail', formData.userEmail);
+      if (selectedEbayAccountId) {
+        formDataObj.append('ebayAccountId', selectedEbayAccountId);
+      }
 
       if (isEditMode) {
         await productAPI.update(productId, formDataObj);
@@ -218,6 +247,32 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
               required
             />
           </div>
+
+          {/* eBay Account selection (if multiple accounts) */}
+          {ebayAccounts.length > 0 && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                eBay account for this product *
+              </label>
+              <select
+                value={selectedEbayAccountId}
+                onChange={(e) => setSelectedEbayAccountId(e.target.value)}
+                className="input-base"
+                disabled={loading}
+                required
+              >
+                {ebayAccounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.profileUserId || 'Unknown account'}
+                    {acc.id === activeEbayAccountId ? ' (active)' : ''}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500 mt-1">
+                Used for listing updates and auto-sync on this product.
+              </p>
+            </div>
+          )}
 
           {/* Prices */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
