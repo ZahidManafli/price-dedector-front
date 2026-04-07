@@ -263,7 +263,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
               >
                 {ebayAccounts.map((acc) => (
                   <option key={acc.id} value={acc.id}>
-                    {acc.profileUserId || 'Unknown account'}
+                    {acc.username || acc.profileUserId || 'Unknown account'}
                     {acc.id === activeEbayAccountId ? ' (active)' : ''}
                   </option>
                 ))}

@@ -237,7 +237,7 @@ export default function SettingsPage() {
                   <div className="space-y-2">
                     {ebayStatus.ebayAccounts.map((acc) => {
                       const isActive = acc.id && ebayStatus.activeEbayAccountId === acc.id;
-                      const label = acc.profileUserId || 'Unknown';
+                      const label = acc.username || acc.profileUserId || 'Unknown';
                       const tradingAccountId = acc.tradingAccountId || null;
                       const connected = !!acc.connected;
                       return (
