@@ -95,6 +95,8 @@ export const ebayAPI = {
   completeCallback: (code, state) => api.post('/ebay/callback', { code, state }),
   getStatus: () => api.get('/ebay/status'),
   setActiveAccount: (ebayAccountId) => api.patch('/ebay/active-account', { ebayAccountId }),
+  disconnectAccount: (ebayAccountId) => api.patch(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}/disconnect`),
+  deleteAccount: (ebayAccountId) => api.delete(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}`),
   disconnect: () => api.delete('/ebay/disconnect'),
   getListings: (offset = 0, limit = 25) => api.get('/ebay/listings', { params: { offset, limit } }),
   updateListing: (listingId, payload) => api.patch(`/ebay/listings/${listingId}`, payload),

@@ -97,6 +97,25 @@ export default function SettingsPage() {
     }
   };
 
+  const handleDeleteEbayAccount = async (ebayAccountId) => {
+    const ok = window.confirm('Delete this eBay account? This will disconnect it and remove it from your saved accounts.');
+    if (!ok) return;
+    try {
+      setEbayLoading(true);
+      await ebayAPI.deleteAccount(ebayAccountId);
+      const ebayRes = await ebayAPI.getStatus();
+      setEbayStatus(ebayRes.data || {});
+      setAlert({ type: 'success', message: 'eBay account deleted' });
+    } catch (error) {
+      setAlert({
+        type: 'error',
+        message: error.response?.data?.error || 'Failed to delete eBay account',
+      });
+    } finally {
+      setEbayLoading(false);
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     try {
@@ -221,22 +240,24 @@ export default function SettingsPage() {
                       const label = acc.profileUserId || 'Unknown';
                       const connected = !!acc.connected;
                       return (
-                        <button
+                        <div
                           key={acc.id}
-                          type="button"
-                          onClick={() => handleSetActiveEbayAccount(acc.id)}
-                          disabled={ebayLoading || !connected || isActive}
                           className={`w-full flex items-center justify-between rounded-lg px-3 py-2 border transition ${
                             isActive
                               ? isDark
                                 ? 'bg-emerald-900/30 border-emerald-700'
                                 : 'bg-emerald-50 border-emerald-200'
                               : isDark
-                                ? 'bg-slate-900/40 border-slate-700 hover:bg-slate-900/70'
-                                : 'bg-white border-slate-200 hover:bg-slate-100'
+                                ? 'bg-slate-900/40 border-slate-700'
+                                : 'bg-white border-slate-200'
                           } ${!connected ? 'opacity-60' : ''}`}
                         >
-                          <div className="text-left">
+                          <button
+                            type="button"
+                            onClick={() => handleSetActiveEbayAccount(acc.id)}
+                            disabled={ebayLoading || !connected || isActive}
+                            className="flex-1 text-left"
+                          >
                             <div className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                               {label}
                             </div>
@@ -244,16 +265,29 @@ export default function SettingsPage() {
                               {connected ? 'Connected' : 'Disconnected'}
                               {acc.updatedAt ? ` · Updated ${new Date(acc.updatedAt).toLocaleString()}` : ''}
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2">
+                          </button>
+                          <div className="flex items-center gap-2 pl-3">
                             {isActive && (
                               <span className={`text-xs font-semibold ${isDark ? 'text-emerald-200' : 'text-emerald-700'}`}>
                                 Active
                               </span>
                             )}
                             {connected && <CheckCircle2 size={16} className={isDark ? 'text-emerald-300' : 'text-emerald-600'} />}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteEbayAccount(acc.id)}
+                              disabled={ebayLoading}
+                              className={`text-xs font-semibold rounded-md px-2 py-1 border ${
+                                isDark
+                                  ? 'border-rose-800 text-rose-200 hover:bg-rose-900/30'
+                                  : 'border-rose-200 text-rose-700 hover:bg-rose-50'
+                              }`}
+                              title="Delete account"
+                            >
+                              Delete
+                            </button>
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
@@ -273,14 +307,26 @@ export default function SettingsPage() {
                     {ebayLoading ? 'Connecting...' : 'Connect eBay'}
                   </button>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={handleDisconnectEbay}
-                    disabled={ebayLoading}
-                    className="rounded-xl bg-red-600 text-white px-5 py-2.5 hover:bg-red-700 transition disabled:opacity-50"
-                  >
-                    {ebayLoading ? 'Disconnecting...' : 'Disconnect eBay'}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleConnectEbay}
+                      disabled={ebayLoading}
+                      className="rounded-xl bg-indigo-600 text-white px-5 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
+                      title="Connect another eBay account (will be added to your saved accounts)"
+                    >
+                      {ebayLoading ? 'Connecting...' : 'Connect another eBay'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDisconnectEbay}
+                      disabled={ebayLoading}
+                      className="rounded-xl bg-red-600 text-white px-5 py-2.5 hover:bg-red-700 transition disabled:opacity-50"
+                      title="Disconnect the legacy single-account connection (kept for backward compatibility)"
+                    >
+                      {ebayLoading ? 'Disconnecting...' : 'Disconnect (legacy)'}
+                    </button>
+                  </>
                 )}
               </div>
             </div>
