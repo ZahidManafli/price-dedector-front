@@ -129,7 +129,7 @@ export default function MarketListingDetailPage() {
         setHistoryHtml('');
       }
       const response = await browseAPI.getPurchaseHistoryTable(purchaseHistoryItemId);
-      const tableHtml = String(response?.data?.data?.tableHtml || '').trim();
+      const tableHtml = String(response?.data?.data?.html || response?.data?.data?.tableHtml || '').trim();
       if (!tableHtml) {
         throw new Error('Purchase history table is empty.');
       }
