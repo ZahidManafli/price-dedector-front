@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ExternalLink, LayoutGrid, List, Store } from 'lucide-react';
+import { ArrowLeft, ExternalLink, LayoutGrid, List, Search, Store } from 'lucide-react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -13,6 +13,7 @@ function normalizeSummary(summary) {
     imageUrl: summary?.image?.imageUrl || summary?.thumbnailImages?.[0]?.imageUrl || '',
     priceValue: Number(summary?.price?.value || 0),
     shippingValue: Number(summary?.shippingOptions?.[0]?.shippingCost?.value || 0),
+    soldQuantity: Number(summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity || 0),
     condition: summary?.condition || 'Unknown',
     itemWebUrl: summary?.itemWebUrl || summary?.itemAffiliateWebUrl || '',
   };
@@ -126,6 +127,20 @@ export default function MarketListingDetailPage() {
     } finally {
       setSellerLoading(false);
     }
+  };
+
+  const handleSearchItem = (item) => {
+    const titleQuery = String(item?.title || '').trim();
+    if (!titleQuery) return;
+    navigate('/market-analysis', {
+      state: {
+        presetSearch: {
+          q: titleQuery,
+          categoryId: '',
+          sellerUsername: '',
+        },
+      },
+    });
   };
 
   useEffect(() => {
@@ -283,9 +298,17 @@ export default function MarketListingDetailPage() {
                       </div>
                       <h3 className="text-sm font-semibold line-clamp-2 text-slate-900 dark:text-slate-100">{item.title}</h3>
                       <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">{item.condition}</p>
-                      <p className="text-sm mt-1 font-semibold text-slate-900 dark:text-slate-100">
-                        {formatCurrency(item.priceValue + item.shippingValue)}
+                      <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
+                        Sold Qty: <span className="font-semibold">{Number(item.soldQuantity || 0)}</span>
                       </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          {formatCurrency(item.priceValue + item.shippingValue)}
+                        </p>
+                        <button type="button" className="btn-secondary text-xs px-2 py-1" onClick={() => handleSearchItem(item)} title="Search this title">
+                          <Search size={14} />
+                        </button>
+                      </div>
                     </Link>
                   ))}
                 </div>
@@ -297,6 +320,7 @@ export default function MarketListingDetailPage() {
                         <th className="text-left p-3">Image</th>
                         <th className="text-left p-3">Title</th>
                         <th className="text-left p-3">Condition</th>
+                        <th className="text-left p-3">Sold Qty</th>
                         <th className="text-left p-3">Market Cost</th>
                         <th className="text-left p-3">Actions</th>
                       </tr>
@@ -315,14 +339,20 @@ export default function MarketListingDetailPage() {
                           </td>
                           <td className="p-3 max-w-[340px] truncate">{item.title}</td>
                           <td className="p-3">{item.condition}</td>
+                          <td className="p-3 font-medium">{Number(item.soldQuantity || 0)}</td>
                           <td className="p-3 font-semibold">{formatCurrency(item.priceValue + item.shippingValue)}</td>
                           <td className="p-3">
-                            <Link
-                              to={`/market-analysis/item/${encodeURIComponent(item.id)}?sellerUsername=${encodeURIComponent(detail?.seller?.username || '')}`}
-                              className="btn-primary"
-                            >
-                              Details
-                            </Link>
+                            <div className="flex gap-2">
+                              <Link
+                                to={`/market-analysis/item/${encodeURIComponent(item.id)}?sellerUsername=${encodeURIComponent(detail?.seller?.username || '')}`}
+                                className="btn-primary"
+                              >
+                                Details
+                              </Link>
+                              <button type="button" className="btn-secondary" onClick={() => handleSearchItem(item)} title="Search this title">
+                                <Search size={14} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}

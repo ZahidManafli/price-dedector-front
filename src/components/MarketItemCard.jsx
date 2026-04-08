@@ -1,8 +1,8 @@
 import React from 'react';
-import { ExternalLink, PlusCircle } from 'lucide-react';
+import { ExternalLink, PlusCircle, Search } from 'lucide-react';
 import { formatCurrency } from '../utils/helpers';
 
-export default function MarketItemCard({ item, onSelect, onInspect, onSellerClick, isSelected }) {
+export default function MarketItemCard({ item, onSelect, onInspect, onSellerClick, onSearchTitle, isSelected }) {
   const totalVisiblePrice = Number(item.priceValue || 0) + Number(item.shippingValue || 0);
 
   return (
@@ -54,6 +54,9 @@ export default function MarketItemCard({ item, onSelect, onInspect, onSellerClic
         <button type="button" onClick={() => onSelect(item)} className="btn-secondary flex-1 text-xs">
           <PlusCircle size={14} className="inline mr-1" />
           {isSelected ? 'Selected' : 'Compare'}
+        </button>
+        <button type="button" onClick={() => onSearchTitle?.(item)} className="btn-secondary text-xs px-3" title="Search this title">
+          <Search size={14} />
         </button>
         <button type="button" onClick={() => onInspect(item)} className="btn-primary flex-1 text-xs">
           Details

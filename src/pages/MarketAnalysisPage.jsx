@@ -1,10 +1,9 @@
-import React, { useMemo, useState } from 'react';
-import { LayoutGrid, List, RefreshCw, SearchCheck } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { LayoutGrid, List, RefreshCw, Search, SearchCheck } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import MarketSearchBar from '../components/MarketSearchBar';
-import MarketRefinementPanel from '../components/MarketRefinementPanel';
 import MarketItemCard from '../components/MarketItemCard';
 import MarketComparePanel from '../components/MarketComparePanel';
 import useBrowseSearch from '../hooks/useBrowseSearch';
@@ -22,12 +21,30 @@ function median(values) {
 
 export default function MarketAnalysisPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { params, setParams, results, total, refinement, loading, error, setError, searchNow } = useBrowseSearch({
     fieldgroups: 'ASPECT_REFINEMENTS,MATCHING_ITEMS',
   });
   const [selectedIds, setSelectedIds] = useState([]);
   const [viewMode, setViewMode] = useState('list');
   const [sortConfig, setSortConfig] = useState({ key: 'marketCost', direction: 'desc' });
+
+  useEffect(() => {
+    const presetSearch = location.state?.presetSearch;
+    if (!presetSearch) return;
+    const nextParams = {
+      ...params,
+      q: String(presetSearch.q || '').trim(),
+      categoryId: String(presetSearch.categoryId || ''),
+      sellerUsername: String(presetSearch.sellerUsername || '').trim(),
+      offset: 0,
+    };
+    setParams(nextParams);
+    searchNow(nextParams);
+    navigate(location.pathname, { replace: true, state: null });
+    // Run once per preset search handoff.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   const filteredResults = useMemo(() => {
     const seller = String(params.sellerUsername || '').trim().toLowerCase();
@@ -147,6 +164,20 @@ export default function MarketAnalysisPage() {
     searchNow(nextParams);
   };
 
+  const handleTitleSearch = (item) => {
+    const titleQuery = String(item?.title || '').trim();
+    if (!titleQuery) return;
+    const nextParams = {
+      ...params,
+      q: titleQuery,
+      categoryId: '',
+      sellerUsername: '',
+      offset: 0,
+    };
+    setParams(nextParams);
+    searchNow(nextParams);
+  };
+
   const onNextPage = () => {
     setParams((prev) => ({ ...prev, offset: prev.offset + prev.limit }));
   };
@@ -220,11 +251,7 @@ export default function MarketAnalysisPage() {
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-3">
-          <MarketRefinementPanel refinement={refinement} />
-        </div>
-
-        <div className="lg:col-span-9 space-y-4">
+        <div className="lg:col-span-12 space-y-4">
           <div className="flex justify-end gap-2">
             <button
               type="button"
@@ -265,6 +292,7 @@ export default function MarketAnalysisPage() {
                       onSelect={handleSelect}
                       onInspect={handleInspect}
                       onSellerClick={handleSellerClick}
+                      onSearchTitle={handleTitleSearch}
                     />
                   ))}
                 </div>
@@ -345,6 +373,9 @@ export default function MarketAnalysisPage() {
                             <div className="flex gap-2">
                               <button type="button" className="btn-secondary" onClick={() => handleSelect(item)}>
                                 {selectedIds.includes(item.id) ? 'Selected' : 'Compare'}
+                              </button>
+                              <button type="button" className="btn-secondary" onClick={() => handleTitleSearch(item)} title="Search this title">
+                                <Search size={14} />
                               </button>
                               <button type="button" className="btn-primary" onClick={() => handleInspect(item)}>
                                 Details
