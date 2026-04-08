@@ -29,6 +29,9 @@ export default function MarketListingDetailPage() {
   const [sellerLoading, setSellerLoading] = useState(false);
   const [sellerError, setSellerError] = useState(null);
   const [sellerListings, setSellerListings] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
+  const [historyHtml, setHistoryHtml] = useState('');
 
   const backQuery = useMemo(() => {
     const q = searchParams.get('q') || '';
@@ -197,19 +200,61 @@ export default function MarketListingDetailPage() {
                 </div>
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 md:col-span-2">
                   <p className="text-xs text-slate-500 dark:text-slate-300">Selling History</p>
-                  <a
-                    href={`https://www.ebay.com/bin/purchasehistory?item=${encodeURIComponent(purchaseHistoryItemId)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn-secondary inline-flex items-center gap-2 mt-2"
-                  >
-                    See selling history
-                    <ExternalLink size={14} />
-                  </a>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <button
+                      type="button"
+                      className="btn-secondary inline-flex items-center gap-2"
+                      onClick={async () => {
+                        try {
+                          setHistoryLoading(true);
+                          setHistoryError(null);
+                          setHistoryHtml('');
+                          const response = await browseAPI.getPurchaseHistoryTable(purchaseHistoryItemId);
+                          const tableHtml = String(response?.data?.data?.tableHtml || '').trim();
+                          if (!tableHtml) {
+                            throw new Error('Purchase history table is empty.');
+                          }
+                          setHistoryHtml(tableHtml);
+                        } catch (err) {
+                          setHistoryError(
+                            err?.response?.data?.error || err?.message || 'Failed to load purchase history table'
+                          );
+                        } finally {
+                          setHistoryLoading(false);
+                        }
+                      }}
+                    >
+                      {historyLoading ? 'Loading history...' : 'See selling history'}
+                      <ExternalLink size={14} />
+                    </button>
+                    <a
+                      href={`https://www.ebay.com/bin/purchasehistory?item=${encodeURIComponent(purchaseHistoryItemId)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-secondary inline-flex items-center gap-2"
+                    >
+                      Open eBay page
+                      <ExternalLink size={14} />
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
           </section>
+
+          {historyError && (
+            <Alert type="warning" message={historyError} onClose={() => setHistoryError(null)} autoClose={false} />
+          )}
+
+          {historyHtml && (
+            <section className="glass-card p-5 overflow-x-auto">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Price History</h2>
+              <div
+                className="min-w-[760px]"
+                dangerouslySetInnerHTML={{ __html: historyHtml }}
+              />
+            </section>
+          )}
 
           <section className="glass-card p-5">
             <div className="flex items-center justify-between gap-3 mb-3">
