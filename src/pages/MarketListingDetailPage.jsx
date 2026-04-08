@@ -121,6 +121,28 @@ export default function MarketListingDetailPage() {
     }
   };
 
+  const loadPurchaseHistoryFromApi = async ({ forceRefresh = false } = {}) => {
+    try {
+      setHistoryLoading(true);
+      setHistoryError(null);
+      if (forceRefresh) {
+        setHistoryHtml('');
+      }
+      const response = await browseAPI.getPurchaseHistoryTable(purchaseHistoryItemId);
+      const tableHtml = String(response?.data?.data?.tableHtml || '').trim();
+      if (!tableHtml) {
+        throw new Error('Purchase history table is empty.');
+      }
+      setHistoryHtml(tableHtml);
+    } catch (err) {
+      setHistoryError(
+        err?.response?.data?.error || err?.message || 'Failed to load purchase history table'
+      );
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   if (loading) {
     return <LoadingSpinner message="Loading listing details..." />;
   }
@@ -204,27 +226,19 @@ export default function MarketListingDetailPage() {
                     <button
                       type="button"
                       className="btn-secondary inline-flex items-center gap-2"
-                      onClick={async () => {
-                        try {
-                          setHistoryLoading(true);
-                          setHistoryError(null);
-                          setHistoryHtml('');
-                          const response = await browseAPI.getPurchaseHistoryTable(purchaseHistoryItemId);
-                          const tableHtml = String(response?.data?.data?.tableHtml || '').trim();
-                          if (!tableHtml) {
-                            throw new Error('Purchase history table is empty.');
-                          }
-                          setHistoryHtml(tableHtml);
-                        } catch (err) {
-                          setHistoryError(
-                            err?.response?.data?.error || err?.message || 'Failed to load purchase history table'
-                          );
-                        } finally {
-                          setHistoryLoading(false);
-                        }
-                      }}
+                      onClick={() => loadPurchaseHistoryFromApi({ forceRefresh: false })}
+                      disabled={historyLoading}
                     >
-                      {historyLoading ? 'Loading history...' : 'See selling history'}
+                      {historyLoading ? 'Loading API HTML...' : 'Load history (API)'}
+                      <ExternalLink size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary inline-flex items-center gap-2"
+                      onClick={() => loadPurchaseHistoryFromApi({ forceRefresh: true })}
+                      disabled={historyLoading}
+                    >
+                      Refresh API HTML
                       <ExternalLink size={14} />
                     </button>
                     <a
