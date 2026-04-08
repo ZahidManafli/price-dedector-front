@@ -116,6 +116,8 @@ export const browseAPI = {
     api.get(`/ebay/browse/item-by-legacy/${encodeURIComponent(legacyItemId)}`, {
       params: fieldgroups ? { fieldgroups } : undefined,
     }),
+  getSellHistory: (itemId, params = {}) =>
+    api.get(`/ebay/browse/item/${encodeURIComponent(itemId)}/sell-history`, { params }),
   getRefinements: (categoryId, q, limit = 20) =>
     api.get(`/ebay/browse/refinements/${encodeURIComponent(categoryId)}`, {
       params: { q, limit },

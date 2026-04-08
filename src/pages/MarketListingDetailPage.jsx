@@ -29,6 +29,11 @@ export default function MarketListingDetailPage() {
   const [sellerLoading, setSellerLoading] = useState(false);
   const [sellerError, setSellerError] = useState(null);
   const [sellerListings, setSellerListings] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
+  const [historyNotice, setHistoryNotice] = useState('');
+  const [sellHistory, setSellHistory] = useState([]);
+  const [soldEstimate, setSoldEstimate] = useState(0);
 
   const backQuery = useMemo(() => {
     const q = searchParams.get('q') || '';
@@ -70,6 +75,44 @@ export default function MarketListingDetailPage() {
     };
   }, [itemId]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSellHistory = async () => {
+      try {
+        setHistoryLoading(true);
+        setHistoryError(null);
+        setHistoryNotice('');
+        const res = await browseAPI.getSellHistory(itemId, {
+          numberOfDays: 30,
+          page: 1,
+          entriesPerPage: 25,
+        });
+        if (cancelled) return;
+        const payload = res?.data?.data || {};
+        setSellHistory(Array.isArray(payload.transactions) ? payload.transactions : []);
+        setSoldEstimate(Number(payload.soldEstimate || 0));
+        if (payload.notice) {
+          setHistoryNotice(payload.notice);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        setHistoryError(err?.response?.data?.error || err?.message || 'Failed to load sell history');
+        setSellHistory([]);
+      } finally {
+        if (!cancelled) setHistoryLoading(false);
+      }
+    };
+
+    if (itemId) {
+      loadSellHistory();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [itemId]);
+
   const sold = Number(detail?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity || 0);
   const available = Number(detail?.estimatedAvailabilities?.[0]?.estimatedAvailableQuantity || 0);
   const totalQty = sold + available;
@@ -89,7 +132,7 @@ export default function MarketListingDetailPage() {
         sellerUsername,
         limit: 12,
         offset: 0,
-        fieldgroups: 'MATCHING_ITEMS',
+        fieldgroups: 'EXTENDED',
       });
       const rows = Array.isArray(response?.data?.data?.itemSummaries)
         ? response.data.data.itemSummaries
@@ -106,6 +149,19 @@ export default function MarketListingDetailPage() {
   if (loading) {
     return <LoadingSpinner message="Loading listing details..." />;
   }
+
+  const averageSoldPrice = sellHistory.length
+    ? sellHistory.reduce((sum, tx) => sum + Number(tx?.transactionPrice?.value || 0), 0) / sellHistory.length
+    : null;
+
+  const latestSales = sellHistory
+    .map((tx) => ({
+      ...tx,
+      when: tx?.paidTime || tx?.createdDate || tx?.lastModified || null,
+    }))
+    .filter((tx) => tx.when)
+    .sort((a, b) => new Date(b.when).getTime() - new Date(a.when).getTime())
+    .slice(0, 8);
 
   return (
     <div className="page-shell space-y-4">
@@ -182,6 +238,101 @@ export default function MarketListingDetailPage() {
                 </div>
               </div>
             </div>
+          </section>
+
+          <section className="glass-card p-5">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Sell History</h2>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={async () => {
+                  try {
+                    setHistoryLoading(true);
+                    setHistoryError(null);
+                    setHistoryNotice('');
+                    const res = await browseAPI.getSellHistory(itemId, {
+                      numberOfDays: 30,
+                      page: 1,
+                      entriesPerPage: 25,
+                    });
+                    const payload = res?.data?.data || {};
+                    setSellHistory(Array.isArray(payload.transactions) ? payload.transactions : []);
+                    setSoldEstimate(Number(payload.soldEstimate || 0));
+                    if (payload.notice) setHistoryNotice(payload.notice);
+                  } catch (err) {
+                    setHistoryError(err?.response?.data?.error || err?.message || 'Failed to refresh sell history');
+                    setSellHistory([]);
+                  } finally {
+                    setHistoryLoading(false);
+                  }
+                }}
+              >
+                Refresh history
+              </button>
+            </div>
+
+            {historyError && (
+              <div className="mb-3">
+                <Alert type="warning" message={historyError} onClose={() => setHistoryError(null)} autoClose={false} />
+              </div>
+            )}
+
+            {historyNotice && (
+              <div className="mb-3">
+                <Alert type="info" message={historyNotice} onClose={() => setHistoryNotice('')} autoClose={false} />
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                <p className="text-xs text-slate-500 dark:text-slate-300">Transactions Loaded</p>
+                <p className="text-xl font-semibold">{sellHistory.length}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                <p className="text-xs text-slate-500 dark:text-slate-300">Average Sold Price</p>
+                <p className="text-xl font-semibold">{averageSoldPrice !== null ? formatCurrency(averageSoldPrice) : 'N/A'}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                <p className="text-xs text-slate-500 dark:text-slate-300">Estimated Sold (Browse)</p>
+                <p className="text-xl font-semibold">{soldEstimate || sold}</p>
+              </div>
+            </div>
+
+            {historyLoading ? (
+              <LoadingSpinner message="Loading sell history..." />
+            ) : latestSales.length === 0 ? (
+              <p className="text-sm text-slate-500 dark:text-slate-300">
+                No transaction events were returned for this listing in the selected period.
+              </p>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                      <th className="text-left p-3">When</th>
+                      <th className="text-left p-3">Quantity</th>
+                      <th className="text-left p-3">Transaction Price</th>
+                      <th className="text-left p-3">Amount Paid</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {latestSales.map((tx) => (
+                      <tr key={tx.transactionId || `${tx.when}-${tx.quantityPurchased}`} className="border-b border-slate-100 dark:border-slate-800">
+                        <td className="p-3">{tx.when ? new Date(tx.when).toLocaleString() : 'N/A'}</td>
+                        <td className="p-3">{tx.quantityPurchased || 0}</td>
+                        <td className="p-3">
+                          {tx?.transactionPrice?.value != null ? formatCurrency(tx.transactionPrice.value) : 'N/A'}
+                        </td>
+                        <td className="p-3">
+                          {tx?.amountPaid?.value != null ? formatCurrency(tx.amountPaid.value) : 'N/A'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
 
           <section className="glass-card p-5">
