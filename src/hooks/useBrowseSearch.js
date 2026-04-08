@@ -42,6 +42,7 @@ export default function useBrowseSearch(initialParams = {}) {
   const [error, setError] = useState(null);
 
   const debounceRef = useRef(null);
+  const enrichRequestRef = useRef(0);
 
   const canSearch = useMemo(() => {
     return Boolean(
@@ -67,6 +68,7 @@ export default function useBrowseSearch(initialParams = {}) {
     setLoading(true);
     setError(null);
     try {
+      const requestId = ++enrichRequestRef.current;
       const requestParams = Object.fromEntries(
         Object.entries(nextParams).filter(([key, value]) => {
           if (value === undefined || value === null) return false;
@@ -80,9 +82,45 @@ export default function useBrowseSearch(initialParams = {}) {
       const response = await browseAPI.search(requestParams);
       const payload = response?.data?.data || {};
       const itemSummaries = Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : [];
-      setResults(itemSummaries.map(normalizeItem));
+      const mappedItems = itemSummaries.map(normalizeItem);
+      setResults(mappedItems);
       setTotal(Number(payload?.total || 0));
       setRefinement(payload?.refinement || null);
+
+      // eBay search summaries often omit accurate sold quantity; enrich visible page from item details.
+      const needEnrichment = mappedItems.some((item) => Number(item.soldQuantity || 0) <= 0);
+      if (needEnrichment) {
+        const chunkSize = 6;
+        const updates = new Map();
+        for (let i = 0; i < mappedItems.length; i += chunkSize) {
+          if (enrichRequestRef.current !== requestId) return;
+          const chunk = mappedItems.slice(i, i + chunkSize);
+          const chunkResults = await Promise.all(
+            chunk.map(async (item) => {
+              try {
+                const detailRes = await browseAPI.getItem(item.id, 'PRODUCT');
+                const detail = detailRes?.data?.data || {};
+                const sold = Number(detail?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity || 0);
+                return { id: item.id, soldQuantity: Number.isFinite(sold) ? sold : item.soldQuantity };
+              } catch {
+                return { id: item.id, soldQuantity: item.soldQuantity };
+              }
+            })
+          );
+
+          chunkResults.forEach((entry) => updates.set(entry.id, entry.soldQuantity));
+        }
+
+        if (enrichRequestRef.current === requestId) {
+          setResults((prev) =>
+            prev.map((item) =>
+              updates.has(item.id)
+                ? { ...item, soldQuantity: Number(updates.get(item.id) || 0) }
+                : item
+            )
+          );
+        }
+      }
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Market search failed');
     } finally {
