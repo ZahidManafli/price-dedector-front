@@ -29,6 +29,9 @@ export default function MarketListingDetailPage() {
   const [sellerLoading, setSellerLoading] = useState(false);
   const [sellerError, setSellerError] = useState(null);
   const [sellerListings, setSellerListings] = useState([]);
+  const [sellerTotal, setSellerTotal] = useState(0);
+  const [sellerOffset, setSellerOffset] = useState(0);
+  const [sellerLimit] = useState(12);
   const [sellerViewMode, setSellerViewMode] = useState('list');
 
   const backQuery = useMemo(() => {
@@ -91,12 +94,8 @@ export default function MarketListingDetailPage() {
     return fromParam;
   }, [detail, itemId]);
 
-  const handleLoadSellerListings = async () => {
+  const handleLoadSellerListings = async (nextOffset = 0) => {
     const sellerUsername = String(detail?.seller?.username || '').trim();
-    const queryFromUrl = String(searchParams.get('q') || '').trim();
-    const categoryFromUrl = String(searchParams.get('categoryId') || '').trim();
-    const q = queryFromUrl;
-    const categoryId = categoryFromUrl || (!q ? '0' : '');
     if (!sellerUsername) {
       setSellerError('Seller username is not available for this listing.');
       return;
@@ -106,24 +105,33 @@ export default function MarketListingDetailPage() {
       setSellerLoading(true);
       setSellerError(null);
       const response = await browseAPI.search({
-        ...(q ? { q } : {}),
-        ...(categoryId ? { categoryId } : {}),
+        categoryId: '0',
         sellerUsername,
-        limit: 12,
-        offset: 0,
+        limit: sellerLimit,
+        offset: nextOffset,
         fieldgroups: 'EXTENDED',
       });
-      const rows = Array.isArray(response?.data?.data?.itemSummaries)
-        ? response.data.data.itemSummaries
+      const payload = response?.data?.data || {};
+      const rows = Array.isArray(payload?.itemSummaries)
+        ? payload.itemSummaries
         : [];
       setSellerListings(rows.map(normalizeSummary));
+      setSellerTotal(Number(payload?.total || 0));
+      setSellerOffset(nextOffset);
     } catch (err) {
       setSellerError(err?.response?.data?.error || err?.message || 'Failed to load seller listings');
       setSellerListings([]);
+      setSellerTotal(0);
+      setSellerOffset(0);
     } finally {
       setSellerLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!detail?.seller?.username) return;
+    handleLoadSellerListings(0);
+  }, [detail?.seller?.username]);
 
   if (loading) {
     return <LoadingSpinner message="Loading listing details..." />;
@@ -241,7 +249,7 @@ export default function MarketListingDetailPage() {
                   <LayoutGrid size={14} />
                   Card
                 </button>
-                <button type="button" className="btn-secondary" onClick={handleLoadSellerListings}>
+                <button type="button" className="btn-secondary" onClick={() => handleLoadSellerListings(0)}>
                   Load seller listings
                 </button>
               </div>
@@ -323,6 +331,30 @@ export default function MarketListingDetailPage() {
                 </div>
               )
             )}
+
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
+              <p className="text-sm text-slate-500 dark:text-slate-300">
+                Showing {sellerListings.length} result(s)
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => handleLoadSellerListings(Math.max(0, sellerOffset - sellerLimit))}
+                  disabled={sellerLoading || sellerOffset <= 0}
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => handleLoadSellerListings(sellerOffset + sellerLimit)}
+                  disabled={sellerLoading || sellerOffset + sellerLimit >= (sellerTotal || 0)}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </section>
         </>
       )}

@@ -138,6 +138,8 @@ export default function MarketAnalysisPage() {
   const handleSellerClick = (sellerName) => {
     const nextParams = {
       ...params,
+      q: '',
+      categoryId: '0',
       sellerUsername: String(sellerName || '').trim(),
       offset: 0,
     };
