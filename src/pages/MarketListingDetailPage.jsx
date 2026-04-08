@@ -92,8 +92,17 @@ export default function MarketListingDetailPage() {
 
   const handleLoadSellerListings = async () => {
     const sellerUsername = String(detail?.seller?.username || '').trim();
+    const queryFromUrl = String(searchParams.get('q') || '').trim();
+    const fallbackQuery = String(detail?.title || '')
+      .split(/\s+/)
+      .find((word) => word && word.length >= 3) || '';
+    const q = queryFromUrl || fallbackQuery;
     if (!sellerUsername) {
       setSellerError('Seller username is not available for this listing.');
+      return;
+    }
+    if (!q) {
+      setSellerError('Cannot load seller listings because no keyword query is available.');
       return;
     }
 
@@ -101,6 +110,7 @@ export default function MarketListingDetailPage() {
       setSellerLoading(true);
       setSellerError(null);
       const response = await browseAPI.search({
+        q,
         sellerUsername,
         limit: 12,
         offset: 0,
