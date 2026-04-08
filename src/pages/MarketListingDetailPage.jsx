@@ -34,6 +34,7 @@ export default function MarketListingDetailPage() {
   const [sellerOffset, setSellerOffset] = useState(0);
   const [sellerLimit] = useState(12);
   const [sellerViewMode, setSellerViewMode] = useState('list');
+  const [sellerSortConfig, setSellerSortConfig] = useState({ key: 'marketCost', direction: 'desc' });
 
   const backQuery = useMemo(() => {
     const q = searchParams.get('q') || '';
@@ -141,6 +142,59 @@ export default function MarketListingDetailPage() {
         },
       },
     });
+  };
+
+  const sortedSellerListings = useMemo(() => {
+    const data = [...sellerListings];
+    const { key, direction } = sellerSortConfig;
+    if (!key) return data;
+
+    const getValue = (item) => {
+      switch (key) {
+        case 'title':
+          return String(item.title || '').toLowerCase();
+        case 'condition':
+          return String(item.condition || '').toLowerCase();
+        case 'soldQuantity':
+          return Number(item.soldQuantity || 0);
+        case 'priceValue':
+          return Number(item.priceValue || 0);
+        case 'shippingValue':
+          return Number(item.shippingValue || 0);
+        case 'marketCost':
+          return Number(item.priceValue || 0) + Number(item.shippingValue || 0);
+        default:
+          return '';
+      }
+    };
+
+    data.sort((a, b) => {
+      const av = getValue(a);
+      const bv = getValue(b);
+      let cmp = 0;
+      if (typeof av === 'number' && typeof bv === 'number') {
+        cmp = av - bv;
+      } else {
+        cmp = String(av).localeCompare(String(bv));
+      }
+      return direction === 'asc' ? cmp : -cmp;
+    });
+
+    return data;
+  }, [sellerListings, sellerSortConfig]);
+
+  const toggleSellerSort = (key) => {
+    setSellerSortConfig((prev) => {
+      if (prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  const renderSellerSortLabel = (label, key) => {
+    if (sellerSortConfig.key !== key) return label;
+    return `${label} ${sellerSortConfig.direction === 'asc' ? '▲' : '▼'}`;
   };
 
   useEffect(() => {
@@ -278,12 +332,12 @@ export default function MarketListingDetailPage() {
 
             {sellerLoading ? (
               <LoadingSpinner message="Loading seller listings..." />
-            ) : sellerListings.length === 0 ? (
+            ) : sortedSellerListings.length === 0 ? (
               <p className="text-sm text-slate-500 dark:text-slate-300">Click seller name or "Load seller listings" to fetch matching seller inventory.</p>
             ) : (
               sellerViewMode === 'card' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {sellerListings.map((item) => (
+                  {sortedSellerListings.map((item) => (
                     <Link
                       key={item.id}
                       to={`/market-analysis/item/${encodeURIComponent(item.id)}?sellerUsername=${encodeURIComponent(detail?.seller?.username || '')}`}
@@ -318,15 +372,41 @@ export default function MarketListingDetailPage() {
                     <thead>
                       <tr className="border-b border-slate-200 dark:border-slate-700">
                         <th className="text-left p-3">Image</th>
-                        <th className="text-left p-3">Title</th>
-                        <th className="text-left p-3">Condition</th>
-                        <th className="text-left p-3">Sold Qty</th>
-                        <th className="text-left p-3">Market Cost</th>
+                        <th className="text-left p-3">
+                          <button type="button" onClick={() => toggleSellerSort('title')} className="hover:underline">
+                            {renderSellerSortLabel('Title', 'title')}
+                          </button>
+                        </th>
+                        <th className="text-left p-3">
+                          <button type="button" onClick={() => toggleSellerSort('condition')} className="hover:underline">
+                            {renderSellerSortLabel('Condition', 'condition')}
+                          </button>
+                        </th>
+                        <th className="text-left p-3">
+                          <button type="button" onClick={() => toggleSellerSort('soldQuantity')} className="hover:underline">
+                            {renderSellerSortLabel('Sold Qty', 'soldQuantity')}
+                          </button>
+                        </th>
+                        <th className="text-left p-3">
+                          <button type="button" onClick={() => toggleSellerSort('priceValue')} className="hover:underline">
+                            {renderSellerSortLabel('Item Price', 'priceValue')}
+                          </button>
+                        </th>
+                        <th className="text-left p-3">
+                          <button type="button" onClick={() => toggleSellerSort('shippingValue')} className="hover:underline">
+                            {renderSellerSortLabel('Shipping', 'shippingValue')}
+                          </button>
+                        </th>
+                        <th className="text-left p-3">
+                          <button type="button" onClick={() => toggleSellerSort('marketCost')} className="hover:underline">
+                            {renderSellerSortLabel('Market Cost', 'marketCost')}
+                          </button>
+                        </th>
                         <th className="text-left p-3">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {sellerListings.map((item) => (
+                      {sortedSellerListings.map((item) => (
                         <tr key={item.id} className="border-b border-slate-100 dark:border-slate-800">
                           <td className="p-3">
                             <div className="w-12 h-12 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
@@ -340,6 +420,8 @@ export default function MarketListingDetailPage() {
                           <td className="p-3 max-w-[340px] truncate">{item.title}</td>
                           <td className="p-3">{item.condition}</td>
                           <td className="p-3 font-medium">{Number(item.soldQuantity || 0)}</td>
+                          <td className="p-3">{formatCurrency(item.priceValue)}</td>
+                          <td className="p-3">{formatCurrency(item.shippingValue)}</td>
                           <td className="p-3 font-semibold">{formatCurrency(item.priceValue + item.shippingValue)}</td>
                           <td className="p-3">
                             <div className="flex gap-2">
