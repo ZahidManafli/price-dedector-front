@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ExternalLink, Store } from 'lucide-react';
+import { ArrowLeft, ExternalLink, LayoutGrid, List, Store } from 'lucide-react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -29,6 +29,7 @@ export default function MarketListingDetailPage() {
   const [sellerLoading, setSellerLoading] = useState(false);
   const [sellerError, setSellerError] = useState(null);
   const [sellerListings, setSellerListings] = useState([]);
+  const [sellerViewMode, setSellerViewMode] = useState('list');
 
   const backQuery = useMemo(() => {
     const q = searchParams.get('q') || '';
@@ -93,16 +94,11 @@ export default function MarketListingDetailPage() {
   const handleLoadSellerListings = async () => {
     const sellerUsername = String(detail?.seller?.username || '').trim();
     const queryFromUrl = String(searchParams.get('q') || '').trim();
-    const fallbackQuery = String(detail?.title || '')
-      .split(/\s+/)
-      .find((word) => word && word.length >= 3) || '';
-    const q = queryFromUrl || fallbackQuery;
+    const categoryFromUrl = String(searchParams.get('categoryId') || '').trim();
+    const q = queryFromUrl;
+    const categoryId = categoryFromUrl || (!q ? '0' : '');
     if (!sellerUsername) {
       setSellerError('Seller username is not available for this listing.');
-      return;
-    }
-    if (!q) {
-      setSellerError('Cannot load seller listings because no keyword query is available.');
       return;
     }
 
@@ -110,7 +106,8 @@ export default function MarketListingDetailPage() {
       setSellerLoading(true);
       setSellerError(null);
       const response = await browseAPI.search({
-        q,
+        ...(q ? { q } : {}),
+        ...(categoryId ? { categoryId } : {}),
         sellerUsername,
         limit: 12,
         offset: 0,
@@ -227,9 +224,27 @@ export default function MarketListingDetailPage() {
                 <Store size={18} />
                 Seller Listings
               </h2>
-              <button type="button" className="btn-secondary" onClick={handleLoadSellerListings}>
-                Load seller listings
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSellerViewMode('list')}
+                  className={`btn-secondary flex items-center gap-1 ${sellerViewMode === 'list' ? 'ring-2 ring-blue-300' : ''}`}
+                >
+                  <List size={14} />
+                  List
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSellerViewMode('card')}
+                  className={`btn-secondary flex items-center gap-1 ${sellerViewMode === 'card' ? 'ring-2 ring-blue-300' : ''}`}
+                >
+                  <LayoutGrid size={14} />
+                  Card
+                </button>
+                <button type="button" className="btn-secondary" onClick={handleLoadSellerListings}>
+                  Load seller listings
+                </button>
+              </div>
             </div>
 
             {sellerError && (
@@ -243,28 +258,70 @@ export default function MarketListingDetailPage() {
             ) : sellerListings.length === 0 ? (
               <p className="text-sm text-slate-500 dark:text-slate-300">Click seller name or "Load seller listings" to fetch matching seller inventory.</p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {sellerListings.map((item) => (
-                  <Link
-                    key={item.id}
-                    to={`/market-analysis/item/${encodeURIComponent(item.id)}?sellerUsername=${encodeURIComponent(detail?.seller?.username || '')}`}
-                    className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 hover:border-blue-400 transition"
-                  >
-                    <div className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 mb-2">
-                      {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">No image</div>
-                      )}
-                    </div>
-                    <h3 className="text-sm font-semibold line-clamp-2 text-slate-900 dark:text-slate-100">{item.title}</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">{item.condition}</p>
-                    <p className="text-sm mt-1 font-semibold text-slate-900 dark:text-slate-100">
-                      {formatCurrency(item.priceValue + item.shippingValue)}
-                    </p>
-                  </Link>
-                ))}
-              </div>
+              sellerViewMode === 'card' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                  {sellerListings.map((item) => (
+                    <Link
+                      key={item.id}
+                      to={`/market-analysis/item/${encodeURIComponent(item.id)}?sellerUsername=${encodeURIComponent(detail?.seller?.username || '')}`}
+                      className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 hover:border-blue-400 transition"
+                    >
+                      <div className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 mb-2">
+                        {item.imageUrl ? (
+                          <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">No image</div>
+                        )}
+                      </div>
+                      <h3 className="text-sm font-semibold line-clamp-2 text-slate-900 dark:text-slate-100">{item.title}</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">{item.condition}</p>
+                      <p className="text-sm mt-1 font-semibold text-slate-900 dark:text-slate-100">
+                        {formatCurrency(item.priceValue + item.shippingValue)}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="glass-card overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-700">
+                        <th className="text-left p-3">Image</th>
+                        <th className="text-left p-3">Title</th>
+                        <th className="text-left p-3">Condition</th>
+                        <th className="text-left p-3">Market Cost</th>
+                        <th className="text-left p-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sellerListings.map((item) => (
+                        <tr key={item.id} className="border-b border-slate-100 dark:border-slate-800">
+                          <td className="p-3">
+                            <div className="w-12 h-12 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                              {item.imageUrl ? (
+                                <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400">N/A</div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3 max-w-[340px] truncate">{item.title}</td>
+                          <td className="p-3">{item.condition}</td>
+                          <td className="p-3 font-semibold">{formatCurrency(item.priceValue + item.shippingValue)}</td>
+                          <td className="p-3">
+                            <Link
+                              to={`/market-analysis/item/${encodeURIComponent(item.id)}?sellerUsername=${encodeURIComponent(detail?.seller?.username || '')}`}
+                              className="btn-primary"
+                            >
+                              Details
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
             )}
           </section>
         </>

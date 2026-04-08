@@ -26,7 +26,7 @@ export default function MarketAnalysisPage() {
     fieldgroups: 'ASPECT_REFINEMENTS,MATCHING_ITEMS',
   });
   const [selectedIds, setSelectedIds] = useState([]);
-  const [viewMode, setViewMode] = useState('card');
+  const [viewMode, setViewMode] = useState('list');
   const [sortConfig, setSortConfig] = useState({ key: 'marketCost', direction: 'desc' });
 
   const filteredResults = useMemo(() => {
@@ -271,6 +271,7 @@ export default function MarketAnalysisPage() {
                   <table className="min-w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-200 dark:border-slate-700">
+                        <th className="text-left p-3">Image</th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('title')} className="hover:underline">
                             {renderSortLabel('Title', 'title')}
@@ -312,6 +313,15 @@ export default function MarketAnalysisPage() {
                     <tbody>
                       {sortedResults.map((item) => (
                         <tr key={item.id} className="border-b border-slate-100 dark:border-slate-800">
+                          <td className="p-3">
+                            <div className="w-12 h-12 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                              {item.imageUrl ? (
+                                <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400">N/A</div>
+                              )}
+                            </div>
+                          </td>
                           <td className="p-3 max-w-[300px] truncate">{item.title}</td>
                           <td className="p-3">
                             <button
