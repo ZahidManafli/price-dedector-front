@@ -27,6 +27,7 @@ export default function useBrowseSearch(initialParams = {}) {
     maxPrice: initialParams.maxPrice || '',
     sort: initialParams.sort || '',
     buyingOptions: initialParams.buyingOptions || '',
+    sellerUsername: initialParams.sellerUsername || '',
     freeShipping: initialParams.freeShipping || false,
     autoCorrect: initialParams.autoCorrect || true,
     limit: initialParams.limit || 24,

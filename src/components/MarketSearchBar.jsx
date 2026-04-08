@@ -108,6 +108,16 @@ export default function MarketSearchBar({ params, onChange, onSubmit, disabled }
         </div>
 
         <div className="md:col-span-2">
+          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">Seller</label>
+          <input
+            className="input-base"
+            placeholder="seller username"
+            value={params.sellerUsername || ''}
+            onChange={(e) => setValue('sellerUsername', e.target.value)}
+          />
+        </div>
+
+        <div className="md:col-span-2">
           <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">Per Page</label>
           <select className="input-base" value={params.limit} onChange={(e) => setValue('limit', Number(e.target.value))}>
             <option value={12}>12</option>
@@ -116,7 +126,7 @@ export default function MarketSearchBar({ params, onChange, onSubmit, disabled }
           </select>
         </div>
 
-        <div className="md:col-span-3 flex items-center gap-2">
+        <div className="md:col-span-2 flex items-center gap-2">
           <input
             id="freeShipping"
             type="checkbox"
@@ -128,7 +138,7 @@ export default function MarketSearchBar({ params, onChange, onSubmit, disabled }
           </label>
         </div>
 
-        <div className="md:col-span-3 flex justify-end">
+        <div className="md:col-span-2 flex justify-end">
           <button type="button" onClick={onSubmit} disabled={disabled} className="btn-primary w-full md:w-auto">
             Run Market Search
           </button>
