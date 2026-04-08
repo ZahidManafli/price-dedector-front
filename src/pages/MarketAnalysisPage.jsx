@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { LayoutGrid, List, RefreshCw, SearchCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import MarketSearchBar from '../components/MarketSearchBar';
@@ -7,7 +8,6 @@ import MarketRefinementPanel from '../components/MarketRefinementPanel';
 import MarketItemCard from '../components/MarketItemCard';
 import MarketComparePanel from '../components/MarketComparePanel';
 import useBrowseSearch from '../hooks/useBrowseSearch';
-import { browseAPI } from '../services/api';
 import { formatCurrency } from '../utils/helpers';
 
 function median(values) {
@@ -21,12 +21,11 @@ function median(values) {
 }
 
 export default function MarketAnalysisPage() {
+  const navigate = useNavigate();
   const { params, setParams, results, total, refinement, loading, error, setError, searchNow } = useBrowseSearch({
     fieldgroups: 'ASPECT_REFINEMENTS,MATCHING_ITEMS',
   });
   const [selectedIds, setSelectedIds] = useState([]);
-  const [detailsItem, setDetailsItem] = useState(null);
-  const [detailsError, setDetailsError] = useState(null);
   const [viewMode, setViewMode] = useState('card');
 
   const filteredResults = useMemo(() => {
@@ -72,15 +71,22 @@ export default function MarketAnalysisPage() {
     });
   };
 
-  const handleInspect = async (item) => {
-    setDetailsError(null);
-    try {
-      const response = await browseAPI.getItem(item.id, 'PRODUCT,ADDITIONAL_SELLER_DETAILS');
-      setDetailsItem(response?.data?.data || null);
-    } catch (err) {
-      setDetailsError(err?.response?.data?.error || err?.message || 'Failed to load listing details');
-      setDetailsItem(null);
-    }
+  const handleInspect = (item) => {
+    const query = new URLSearchParams();
+    if (params.q) query.set('q', params.q);
+    if (params.categoryId) query.set('categoryId', params.categoryId);
+    if (params.sellerUsername) query.set('sellerUsername', params.sellerUsername);
+    navigate(`/market-analysis/item/${encodeURIComponent(item.id)}${query.toString() ? `?${query.toString()}` : ''}`);
+  };
+
+  const handleSellerClick = (sellerName) => {
+    const nextParams = {
+      ...params,
+      sellerUsername: String(sellerName || '').trim(),
+      offset: 0,
+    };
+    setParams(nextParams);
+    searchNow(nextParams);
   };
 
   const onNextPage = () => {
@@ -200,6 +206,7 @@ export default function MarketAnalysisPage() {
                       isSelected={selectedIds.includes(item.id)}
                       onSelect={handleSelect}
                       onInspect={handleInspect}
+                      onSellerClick={handleSellerClick}
                     />
                   ))}
                 </div>
@@ -221,7 +228,15 @@ export default function MarketAnalysisPage() {
                       {filteredResults.map((item) => (
                         <tr key={item.id} className="border-b border-slate-100 dark:border-slate-800">
                           <td className="p-3 max-w-[300px] truncate">{item.title}</td>
-                          <td className="p-3">{item.sellerName}</td>
+                          <td className="p-3">
+                            <button
+                              type="button"
+                              onClick={() => handleSellerClick(item.sellerName)}
+                              className="text-blue-700 dark:text-blue-400 hover:underline"
+                            >
+                              {item.sellerName || 'Unknown'}
+                            </button>
+                          </td>
                           <td className="p-3">{item.condition}</td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>
                           <td className="p-3">{formatCurrency(item.shippingValue)}</td>
@@ -273,69 +288,6 @@ export default function MarketAnalysisPage() {
         onRemove={(id) => setSelectedIds((prev) => prev.filter((x) => x !== id))}
         onClear={() => setSelectedIds([])}
       />
-
-      {detailsError && (
-        <Alert
-          type="warning"
-          message={detailsError}
-          onClose={() => setDetailsError(null)}
-          autoClose={false}
-        />
-      )}
-
-      {detailsItem && (
-        <section className="glass-card p-4">
-          <div className="flex justify-between items-start gap-3">
-            <div>
-              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Listing Details</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-300 mt-1">{detailsItem.title}</p>
-            </div>
-            <button type="button" className="btn-secondary text-xs" onClick={() => setDetailsItem(null)}>
-              Close
-            </button>
-          </div>
-          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-            <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
-              <p className="text-slate-500 dark:text-slate-300">Condition</p>
-              <p className="font-medium">{detailsItem.condition || 'N/A'}</p>
-            </div>
-            <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
-              <p className="text-slate-500 dark:text-slate-300">Price</p>
-              <p className="font-medium">
-                {formatCurrency(Number(detailsItem?.price?.value || 0))} {detailsItem?.price?.currency || 'USD'}
-              </p>
-            </div>
-            <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
-              <p className="text-slate-500 dark:text-slate-300">Seller</p>
-              <p className="font-medium">{detailsItem?.seller?.username || 'N/A'}</p>
-            </div>
-            <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
-              <p className="text-slate-500 dark:text-slate-300">Sold Count</p>
-              <p className="font-medium">
-                {Number(detailsItem?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity || 0)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
-              <p className="text-slate-500 dark:text-slate-300">Selling Success</p>
-              <p className="font-medium">
-                {(() => {
-                  const sold = Number(detailsItem?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity || 0);
-                  const available = Number(detailsItem?.estimatedAvailabilities?.[0]?.estimatedAvailableQuantity || 0);
-                  const totalQty = sold + available;
-                  if (!totalQty) return 'N/A';
-                  return `${Math.round((sold / totalQty) * 100)}%`;
-                })()}
-              </p>
-            </div>
-            <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
-              <p className="text-slate-500 dark:text-slate-300">Last Seen</p>
-              <p className="font-medium">
-                {detailsItem?.itemEndDate || detailsItem?.itemCreationDate || 'N/A'}
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
     </div>
   );
 }

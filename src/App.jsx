@@ -22,6 +22,7 @@ import OrderDetailPage from './pages/OrderDetailPage';
 import EbayCalculatorPage from './pages/EbayCalculatorPage';
 import DewisoPage from './pages/DewisoPage';
 import MarketAnalysisPage from './pages/MarketAnalysisPage';
+import MarketListingDetailPage from './pages/MarketListingDetailPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -170,6 +171,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <MarketAnalysisPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/market-analysis/item/:itemId"
+              element={
+                <ProtectedRoute>
+                  <MarketListingDetailPage />
                 </ProtectedRoute>
               }
             />

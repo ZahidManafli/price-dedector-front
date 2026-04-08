@@ -2,7 +2,7 @@ import React from 'react';
 import { ExternalLink, PlusCircle } from 'lucide-react';
 import { formatCurrency } from '../utils/helpers';
 
-export default function MarketItemCard({ item, onSelect, onInspect, isSelected }) {
+export default function MarketItemCard({ item, onSelect, onInspect, onSellerClick, isSelected }) {
   const totalVisiblePrice = Number(item.priceValue || 0) + Number(item.shippingValue || 0);
 
   return (
@@ -20,7 +20,14 @@ export default function MarketItemCard({ item, onSelect, onInspect, isSelected }
       <div>
         <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 line-clamp-2 min-h-[40px]">{item.title}</h4>
         <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
-          {item.condition} | Seller: {item.sellerName}
+          {item.condition} | Seller:{' '}
+          <button
+            type="button"
+            onClick={() => onSellerClick?.(item.sellerName)}
+            className="text-blue-700 dark:text-blue-400 hover:underline"
+          >
+            {item.sellerName || 'Unknown'}
+          </button>
         </p>
       </div>
 
