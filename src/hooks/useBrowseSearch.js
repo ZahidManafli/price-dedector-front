@@ -57,7 +57,17 @@ export default function useBrowseSearch(initialParams = {}) {
     setLoading(true);
     setError(null);
     try {
-      const response = await browseAPI.search(nextParams);
+      const requestParams = Object.fromEntries(
+        Object.entries(nextParams).filter(([key, value]) => {
+          if (value === undefined || value === null) return false;
+          if (typeof value === 'string' && value.trim() === '') return false;
+          if (typeof value === 'boolean') return value;
+          if (key === 'condition' && String(value).toUpperCase() === 'ALL') return false;
+          return true;
+        })
+      );
+
+      const response = await browseAPI.search(requestParams);
       const payload = response?.data?.data || {};
       const itemSummaries = Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : [];
       setResults(itemSummaries.map(normalizeItem));
