@@ -218,6 +218,7 @@ export default function MarketAnalysisPage() {
                         <th className="text-left p-3">Title</th>
                         <th className="text-left p-3">Seller</th>
                         <th className="text-left p-3">Condition</th>
+                        <th className="text-left p-3">Sold Qty</th>
                         <th className="text-left p-3">Item Price</th>
                         <th className="text-left p-3">Shipping</th>
                         <th className="text-left p-3">Market Cost</th>
@@ -238,6 +239,7 @@ export default function MarketAnalysisPage() {
                             </button>
                           </td>
                           <td className="p-3">{item.condition}</td>
+                          <td className="p-3 font-medium">{Number(item.soldQuantity || 0)}</td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>
                           <td className="p-3">{formatCurrency(item.shippingValue)}</td>
                           <td className="p-3 font-semibold">

@@ -10,6 +10,7 @@ function normalizeItem(summary) {
     priceValue: Number(summary?.price?.value || 0),
     priceCurrency: summary?.price?.currency || 'USD',
     shippingValue: Number(summary?.shippingOptions?.[0]?.shippingCost?.value || 0),
+    soldQuantity: Number(summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity || 0),
     condition: summary?.condition || 'Unknown',
     sellerName: summary?.seller?.username || 'Unknown seller',
     sellerFeedback: Number(summary?.seller?.feedbackScore || 0),
@@ -43,11 +44,19 @@ export default function useBrowseSearch(initialParams = {}) {
   const debounceRef = useRef(null);
 
   const canSearch = useMemo(() => {
-    return Boolean(String(params.q || '').trim() || String(params.categoryId || '').trim());
+    return Boolean(
+      String(params.q || '').trim() ||
+      String(params.categoryId || '').trim() ||
+      String(params.sellerUsername || '').trim()
+    );
   }, [params]);
 
   const searchNow = useCallback(async (nextParams = params) => {
-    if (!String(nextParams.q || '').trim() && !String(nextParams.categoryId || '').trim()) {
+    if (
+      !String(nextParams.q || '').trim() &&
+      !String(nextParams.categoryId || '').trim() &&
+      !String(nextParams.sellerUsername || '').trim()
+    ) {
       setResults([]);
       setTotal(0);
       setRefinement(null);
