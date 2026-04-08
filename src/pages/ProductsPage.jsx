@@ -87,35 +87,43 @@ export default function ProductsPage() {
           <h1 className="page-title">Products</h1>
           <p className="page-subtitle">Manage your tracked items and monitor performance.</p>
         </div>
-        <button
-          onClick={() => {
-            if (isProductQuotaReached) {
-              setAlert({
-                type: 'warning',
-                message: 'Product quota reached. Delete one product or ask admin to increase your limit.',
-              });
-              return;
-            }
-            setEditingProductId(null);
-            setIsFormOpen(true);
-          }}
-          disabled={isProductQuotaReached}
-          className="w-full md:w-auto btn-primary flex items-center justify-center gap-1.5 disabled:cursor-not-allowed"
-        >
-          <Plus size={14} />
-          Add Product
-          {productsRemaining === null || productsRemaining === undefined ? (
-            <span className="ml-1 text-[11px] bg-white/20 px-2 py-0.5 rounded-full">Unlimited</span>
-          ) : (
-            <span
-              className={`ml-1 text-[11px] px-2 py-0.5 rounded-full ${
-                isProductQuotaReached ? 'bg-red-500/80' : 'bg-white/20'
-              }`}
-            >
-              {productsRemaining} left
-            </span>
-          )}
-        </button>
+        <div className="w-full md:w-auto flex flex-col md:flex-row gap-2">
+          <button
+            onClick={() => navigate('/market-analysis')}
+            className="w-full md:w-auto btn-secondary"
+          >
+            Open Market Analysis
+          </button>
+          <button
+            onClick={() => {
+              if (isProductQuotaReached) {
+                setAlert({
+                  type: 'warning',
+                  message: 'Product quota reached. Delete one product or ask admin to increase your limit.',
+                });
+                return;
+              }
+              setEditingProductId(null);
+              setIsFormOpen(true);
+            }}
+            disabled={isProductQuotaReached}
+            className="w-full md:w-auto btn-primary flex items-center justify-center gap-1.5 disabled:cursor-not-allowed"
+          >
+            <Plus size={14} />
+            Add Product
+            {productsRemaining === null || productsRemaining === undefined ? (
+              <span className="ml-1 text-[11px] bg-white/20 px-2 py-0.5 rounded-full">Unlimited</span>
+            ) : (
+              <span
+                className={`ml-1 text-[11px] px-2 py-0.5 rounded-full ${
+                  isProductQuotaReached ? 'bg-red-500/80' : 'bg-white/20'
+                }`}
+              >
+                {productsRemaining} left
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {loading ? (

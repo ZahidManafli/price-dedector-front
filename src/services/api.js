@@ -106,6 +106,23 @@ export const ebayAPI = {
   getOrders: (offset = 0, limit = 25) => api.get('/ebay/orders', { params: { offset, limit } }),
 };
 
+export const browseAPI = {
+  search: (params = {}) => api.get('/ebay/browse/search', { params }),
+  getItem: (itemId, fieldgroups = '') =>
+    api.get(`/ebay/browse/item/${encodeURIComponent(itemId)}`, {
+      params: fieldgroups ? { fieldgroups } : undefined,
+    }),
+  getItemByLegacy: (legacyItemId, fieldgroups = '') =>
+    api.get(`/ebay/browse/item-by-legacy/${encodeURIComponent(legacyItemId)}`, {
+      params: fieldgroups ? { fieldgroups } : undefined,
+    }),
+  getRefinements: (categoryId, q, limit = 20) =>
+    api.get(`/ebay/browse/refinements/${encodeURIComponent(categoryId)}`, {
+      params: { q, limit },
+    }),
+  searchByImage: (payload) => api.post('/ebay/browse/search-by-image', payload),
+};
+
 // Amazon lookup (title, description, images, and price)
 export const amazonAPI = {
   lookup: (amazonAsin) => api.post('/amazon/lookup', { amazonAsin }),

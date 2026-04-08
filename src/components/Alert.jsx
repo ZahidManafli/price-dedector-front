@@ -1,13 +1,22 @@
 import React from 'react';
 import { useTheme } from '../context/ThemeContext';
 
-export default function Alert({ type = 'info', message, onClose, autoClose = true }) {
+export default function Alert({
+  type = 'info',
+  message,
+  onClose,
+  autoClose = true,
+  actionLabel,
+  onAction,
+}) {
   const { isDark } = useTheme();
+
   React.useEffect(() => {
-    if (autoClose) {
+    if (autoClose && typeof onClose === 'function') {
       const timer = setTimeout(onClose, 5000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [autoClose, onClose]);
 
   const bgColor = isDark
@@ -32,17 +41,34 @@ export default function Alert({ type = 'info', message, onClose, autoClose = tru
   }[type];
 
   return (
-    <div className={`border rounded-xl p-4 flex items-start gap-3 shadow-sm ${bgColor}`}>
+    <div
+      role="alert"
+      aria-live="polite"
+      className={`border rounded-xl p-4 flex items-start gap-3 shadow-sm ${bgColor}`}
+    >
       <span className="text-base font-bold mt-0.5">{icon}</span>
       <div className="flex-1">
         <p className="text-sm md:text-base">{message}</p>
+        {actionLabel && typeof onAction === 'function' && (
+          <button
+            type="button"
+            onClick={onAction}
+            className="mt-2 text-sm underline underline-offset-2 hover:opacity-80"
+          >
+            {actionLabel}
+          </button>
+        )}
       </div>
-      <button
-        onClick={onClose}
-        className="text-lg font-bold hover:opacity-70"
-      >
-        ✕
-      </button>
+      {typeof onClose === 'function' && (
+        <button
+          type="button"
+          aria-label="Close alert"
+          onClick={onClose}
+          className="text-lg font-bold hover:opacity-70"
+        >
+          ✕
+        </button>
+      )}
     </div>
   );
 }
