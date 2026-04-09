@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ExternalLink, LayoutGrid, List, Search, Store } from 'lucide-react';
+import { ArrowDownAZ, ArrowLeft, ArrowUpAZ, ExternalLink, LayoutGrid, List, Search, Store } from 'lucide-react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -18,6 +18,15 @@ function normalizeSummary(summary) {
     itemWebUrl: summary?.itemWebUrl || summary?.itemAffiliateWebUrl || '',
   };
 }
+
+const sellerSortOptions = [
+  { value: 'marketCost', label: 'Market Cost' },
+  { value: 'title', label: 'Title' },
+  { value: 'condition', label: 'Condition' },
+  { value: 'soldQuantity', label: 'Sold Qty' },
+  { value: 'priceValue', label: 'Item Price' },
+  { value: 'shippingValue', label: 'Shipping' },
+];
 
 export default function MarketListingDetailPage() {
   const { itemId } = useParams();
@@ -197,6 +206,21 @@ export default function MarketListingDetailPage() {
     return `${label} ${sellerSortConfig.direction === 'asc' ? '▲' : '▼'}`;
   };
 
+  const handleSellerSortFieldChange = (key) => {
+    if (!key) return;
+    setSellerSortConfig((prev) => ({
+      key,
+      direction: prev.key === key ? prev.direction : 'asc',
+    }));
+  };
+
+  const toggleSellerSortDirection = () => {
+    setSellerSortConfig((prev) => ({
+      ...prev,
+      direction: prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
   useEffect(() => {
     if (!detail?.seller?.username) return;
     handleLoadSellerListings(0);
@@ -317,6 +341,23 @@ export default function MarketListingDetailPage() {
                 >
                   <LayoutGrid size={14} />
                   Card
+                </button>
+                <select
+                  className="input-base w-[160px]"
+                  value={sellerSortConfig.key}
+                  onChange={(e) => handleSellerSortFieldChange(e.target.value)}
+                >
+                  {sellerSortOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={toggleSellerSortDirection}
+                  title={`Sort ${sellerSortConfig.direction === 'asc' ? 'descending' : 'ascending'}`}
+                >
+                  {sellerSortConfig.direction === 'asc' ? <ArrowUpAZ size={14} /> : <ArrowDownAZ size={14} />}
                 </button>
                 <button type="button" className="btn-secondary" onClick={() => handleLoadSellerListings(0)}>
                   Load seller listings
