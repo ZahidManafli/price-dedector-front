@@ -322,6 +322,7 @@ export default function MarketAnalysisPage() {
                             {renderSortLabel('Seller', 'seller')}
                           </button>
                         </th>
+                        <th className="text-left p-3">Feedback Score</th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('condition')} className="hover:underline">
                             {renderSortLabel('Condition', 'condition')}
@@ -372,6 +373,7 @@ export default function MarketAnalysisPage() {
                               {item.sellerName || 'Unknown'}
                             </button>
                           </td>
+                          <td className="p-3 font-medium">{Number(item.sellerFeedback || 0)}</td>
                           <td className="p-3">{item.condition}</td>
                           <td className="p-3 font-medium">{Number(item.soldQuantity || 0)}</td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>

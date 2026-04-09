@@ -29,6 +29,9 @@ export default function MarketItemCard({ item, onSelect, onInspect, onSellerClic
             {item.sellerName || 'Unknown'}
           </button>
         </p>
+        <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
+          Feedback score: <span className="font-semibold">{Number(item.sellerFeedback || 0)}</span>
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-xs">
