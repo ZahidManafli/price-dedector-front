@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { amazonAPI, settingsAPI } from '../services/api';
+import { amazonAPI, ebayAPI, productAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
+import EbayListingDraftModal from '../components/EbayListingDraftModal';
 import {
   buildAmazonProductUrl,
   extractAmazonAsin,
@@ -50,6 +51,12 @@ export default function AmazonLookupPage() {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [lookupQuota, setLookupQuota] = useState(null);
   const [history, setHistory] = useState([]);
+  const [listingDraft, setListingDraft] = useState(null);
+  const [isListingModalOpen, setIsListingModalOpen] = useState(false);
+  const [listingError, setListingError] = useState('');
+  const [isSubmittingListing, setIsSubmittingListing] = useState(false);
+  const [listingSubmission, setListingSubmission] = useState(null);
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
 
   // Profit planner
   const [targetProfit, setTargetProfit] = useState('');
@@ -210,6 +217,102 @@ export default function AmazonLookupPage() {
     }
     lookup(extractAmazonAsin(amazonAsin));
   };
+
+  const openListingModal = useCallback(async () => {
+    const asin = result?.asin || extractAmazonAsin(amazonAsin);
+    if (!asin) {
+      setAlert({ type: 'warning', message: 'No ASIN found for this result.' });
+      return;
+    }
+
+    setListingError('');
+    setListingSubmission(null);
+    setListingDraft(null);
+    setIsListingModalOpen(true);
+
+    try {
+      const overrides = {};
+      if (profitPlanner.ebayPrice > 0) {
+        overrides.price = profitPlanner.ebayPrice;
+      }
+
+      const response = await ebayAPI.createListingDraft({
+        asin,
+        overrides,
+      });
+      setListingDraft(response?.data?.draft || null);
+    } catch (error) {
+      setListingError(
+        error?.response?.data?.error ||
+          error?.message ||
+          'Failed to prepare eBay listing draft.'
+      );
+    }
+  }, [amazonAsin, profitPlanner.ebayPrice, result]);
+
+  const submitListing = useCallback(async () => {
+    if (!listingDraft?.id) return;
+    setListingError('');
+    setIsSubmittingListing(true);
+    try {
+      const response = await ebayAPI.submitListingDraft(listingDraft.id);
+      setListingSubmission(response?.data?.submission || null);
+      setListingDraft((prev) => ({ ...prev, ...(response?.data?.payload || {}) }));
+      setAlert({ type: 'success', message: 'eBay listing created successfully.' });
+    } catch (error) {
+      setListingError(
+        error?.response?.data?.error || error?.message || 'Failed to submit listing to eBay.'
+      );
+    } finally {
+      setIsSubmittingListing(false);
+    }
+  }, [listingDraft]);
+
+  const addToProductsAfterListing = useCallback(async (email) => {
+    const trimmedEmail = String(email || '').trim();
+    if (!trimmedEmail) {
+      setListingError('Email is required to add this listing to products.');
+      return;
+    }
+
+    const asin = listingDraft?.asin || result?.asin || extractAmazonAsin(amazonAsin);
+    const ebayItemId = String(listingSubmission?.itemId || '').match(/\d{9,15}/)?.[0] || '';
+    if (!asin || !ebayItemId) {
+      setListingError('Could not extract ASIN or eBay Item ID for product creation.');
+      return;
+    }
+
+    const amazonPrice = Number(result?.price?.usd || 0);
+    const ebayPrice = Number(listingDraft?.price || 0);
+    if (!(amazonPrice > 0 && ebayPrice > 0)) {
+      setListingError('Amazon and eBay prices must be greater than zero to add product.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('productName', String(listingDraft?.title || result?.title || `ASIN ${asin}`).slice(0, 120));
+    formData.append('amazonAsin', asin);
+    formData.append('ebayItemId', ebayItemId);
+    formData.append('currentAmazonPrice', String(amazonPrice));
+    formData.append('currentEbayPrice', String(ebayPrice));
+    formData.append('userEmail', trimmedEmail);
+
+    setIsAddingProduct(true);
+    setListingError('');
+    try {
+      await productAPI.create(formData);
+      setAlert({ type: 'success', message: 'Listing was added to products successfully.' });
+      setIsListingModalOpen(false);
+      setListingSubmission(null);
+      setListingDraft(null);
+    } catch (error) {
+      setListingError(
+        error?.response?.data?.error || error?.message || 'Failed to add listing to products.'
+      );
+    } finally {
+      setIsAddingProduct(false);
+    }
+  }, [amazonAsin, listingDraft, listingSubmission, result]);
 
   return (
     <div className="page-shell">
@@ -609,6 +712,14 @@ export default function AmazonLookupPage() {
                   <div className="flex flex-col sm:flex-row gap-2 justify-end">
                     <button
                       type="button"
+                      onClick={openListingModal}
+                      className="btn-primary"
+                      disabled={loading}
+                    >
+                      List on eBay
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => {
                         setAmazonAsin('');
                         setResult(null);
@@ -702,6 +813,24 @@ export default function AmazonLookupPage() {
           )}
         </div>
       </div>
+
+      <EbayListingDraftModal
+        isOpen={isListingModalOpen}
+        draft={listingDraft}
+        error={listingError}
+        submitting={isSubmittingListing}
+        creatingProduct={isAddingProduct}
+        submission={listingSubmission}
+        onClose={() => {
+          if (isSubmittingListing || isAddingProduct) return;
+          setIsListingModalOpen(false);
+          setListingError('');
+          setListingSubmission(null);
+          setListingDraft(null);
+        }}
+        onConfirm={submitListing}
+        onCreateProduct={addToProductsAfterListing}
+      />
     </div>
   );
 }
