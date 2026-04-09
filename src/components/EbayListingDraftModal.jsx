@@ -1,24 +1,65 @@
 import React, { useEffect, useState } from 'react';
-import { formatCurrency } from '../utils/helpers';
 
 export default function EbayListingDraftModal({
   isOpen,
   draft,
   error,
   submitting,
+  updatingDraft,
   creatingProduct,
   submission,
   onClose,
   onConfirm,
+  onUpdateDraft,
   onCreateProduct,
 }) {
   const [email, setEmail] = useState('');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
 
   useEffect(() => {
     if (!isOpen) {
       setEmail('');
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    setTitle(String(draft?.title || ''));
+    setDescription(String(draft?.description || ''));
+    setPrice(draft?.price != null ? String(draft.price) : '');
+  }, [draft?.title, draft?.description, draft?.price]);
+
+  const readFileAsDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('Failed to read selected image'));
+      reader.readAsDataURL(file);
+    });
+
+  const saveDraftFields = async () => {
+    if (!draft?.id || !onUpdateDraft) return;
+    await onUpdateDraft({
+      title,
+      description,
+      price,
+    });
+  };
+
+  const replaceImageAtIndex = async (index, file) => {
+    if (!draft?.id || !onUpdateDraft || !file) return;
+    const dataUrl = await readFileAsDataUrl(file);
+    await onUpdateDraft({
+      imageReplacements: [
+        {
+          index,
+          dataUrl,
+          fileName: file.name,
+        },
+      ],
+    });
+  };
 
   if (!isOpen) return null;
 
@@ -46,7 +87,14 @@ export default function EbayListingDraftModal({
             <>
               <div className="rounded-lg border border-slate-200 p-3 md:p-4 bg-slate-50">
                 <p className="text-xs text-slate-500 mb-1">Title</p>
-                <p className="text-sm font-semibold text-slate-900">{draft.title || 'Untitled'}</p>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  className="input-base"
+                  maxLength={80}
+                  disabled={submitting || updatingDraft}
+                />
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mt-3 text-xs">
                   <div>
                     <p className="text-slate-500">ASIN</p>
@@ -54,7 +102,16 @@ export default function EbayListingDraftModal({
                   </div>
                   <div>
                     <p className="text-slate-500">Price</p>
-                    <p className="font-semibold text-slate-800">{formatCurrency(draft.price || 0)}</p>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min="0.01"
+                      step="0.01"
+                      value={price}
+                      onChange={(event) => setPrice(event.target.value)}
+                      className="input-base text-sm"
+                      disabled={submitting || updatingDraft}
+                    />
                   </div>
                   <div>
                     <p className="text-slate-500">Quantity</p>
@@ -69,13 +126,62 @@ export default function EbayListingDraftModal({
                     <p className="font-semibold text-slate-800">{draft.imageCount || 0}</p>
                   </div>
                 </div>
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={saveDraftFields}
+                    disabled={submitting || updatingDraft}
+                  >
+                    {updatingDraft ? 'Saving...' : 'Save edits'}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <p className="text-sm font-semibold text-slate-900 mb-1">Description</p>
-                <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700 whitespace-pre-wrap">
-                  {draft.description || 'No description generated.'}
-                </div>
+                <textarea
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  rows={8}
+                  className="input-base w-full"
+                  disabled={submitting || updatingDraft}
+                />
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-slate-900 mb-2">Images</p>
+                {(draft?.pictureUrls || []).length === 0 ? (
+                  <p className="text-sm text-slate-600">No images available.</p>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {(draft.pictureUrls || []).map((url, idx) => (
+                      <div key={`${url}-${idx}`} className="rounded-lg border border-slate-200 p-2 bg-white">
+                        <div className="aspect-square rounded-md overflow-hidden border border-slate-100 bg-slate-50">
+                          <img src={url} alt={`Listing image ${idx + 1}`} className="w-full h-full object-contain" />
+                        </div>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <span className="text-xs text-slate-500">#{idx + 1}</span>
+                          <label className="btn-secondary text-xs px-2 py-1 cursor-pointer">
+                            Replace
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              disabled={submitting || updatingDraft}
+                              onChange={async (event) => {
+                                const file = event.target.files?.[0];
+                                event.target.value = '';
+                                if (!file) return;
+                                await replaceImageAtIndex(idx, file);
+                              }}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -105,7 +211,7 @@ export default function EbayListingDraftModal({
                     type="button"
                     className="btn-primary"
                     onClick={onConfirm}
-                    disabled={submitting}
+                    disabled={submitting || updatingDraft}
                   >
                     {submitting ? 'Listing on eBay...' : 'OK, List on eBay'}
                   </button>

@@ -55,6 +55,7 @@ export default function AmazonLookupPage() {
   const [isListingModalOpen, setIsListingModalOpen] = useState(false);
   const [listingError, setListingError] = useState('');
   const [isSubmittingListing, setIsSubmittingListing] = useState(false);
+  const [isUpdatingDraft, setIsUpdatingDraft] = useState(false);
   const [listingSubmission, setListingSubmission] = useState(null);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
 
@@ -231,9 +232,11 @@ export default function AmazonLookupPage() {
     setIsListingModalOpen(true);
 
     try {
+      const amazonBasePrice = Number(result?.price?.usd || 0);
+      const defaultPrice = amazonBasePrice > 0 ? Number((amazonBasePrice + 2).toFixed(2)) : undefined;
       const overrides = {};
-      if (profitPlanner.ebayPrice > 0) {
-        overrides.price = profitPlanner.ebayPrice;
+      if (Number.isFinite(defaultPrice) && defaultPrice > 0) {
+        overrides.price = defaultPrice;
       }
 
       const response = await ebayAPI.createListingDraft({
@@ -248,7 +251,23 @@ export default function AmazonLookupPage() {
           'Failed to prepare eBay listing draft.'
       );
     }
-  }, [amazonAsin, profitPlanner.ebayPrice, result]);
+  }, [amazonAsin, result]);
+
+  const updateDraft = useCallback(async (updates) => {
+    if (!listingDraft?.id) return;
+    setIsUpdatingDraft(true);
+    setListingError('');
+    try {
+      const response = await ebayAPI.updateListingDraft(listingDraft.id, updates || {});
+      setListingDraft(response?.data?.draft || listingDraft);
+    } catch (error) {
+      setListingError(
+        error?.response?.data?.error || error?.message || 'Failed to update listing draft.'
+      );
+    } finally {
+      setIsUpdatingDraft(false);
+    }
+  }, [listingDraft]);
 
   const submitListing = useCallback(async () => {
     if (!listingDraft?.id) return;
@@ -819,6 +838,7 @@ export default function AmazonLookupPage() {
         draft={listingDraft}
         error={listingError}
         submitting={isSubmittingListing}
+        updatingDraft={isUpdatingDraft}
         creatingProduct={isAddingProduct}
         submission={listingSubmission}
         onClose={() => {
@@ -829,6 +849,7 @@ export default function AmazonLookupPage() {
           setListingDraft(null);
         }}
         onConfirm={submitListing}
+        onUpdateDraft={updateDraft}
         onCreateProduct={addToProductsAfterListing}
       />
     </div>

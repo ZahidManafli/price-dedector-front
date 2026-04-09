@@ -103,6 +103,7 @@ export const ebayAPI = {
   getListings: (offset = 0, limit = 25) => api.get('/ebay/listings', { params: { offset, limit } }),
   updateListing: (listingId, payload) => api.patch(`/ebay/listings/${listingId}`, payload),
   createListingDraft: (payload) => api.post('/ebay/listing/draft', payload),
+  updateListingDraft: (draftId, payload) => api.patch(`/ebay/listing/draft/${encodeURIComponent(draftId)}`, payload),
   submitListingDraft: (draftId) => api.post('/ebay/listing/submit', { draftId }),
   getDashboardAnalytics: () => api.get('/ebay/analytics/dashboard'),
   getOrders: (offset = 0, limit = 25) => api.get('/ebay/orders', { params: { offset, limit } }),
