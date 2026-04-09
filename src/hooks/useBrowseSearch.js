@@ -227,6 +227,17 @@ export default function useBrowseSearch(initialParams = {}) {
     }
   }, [params, cache]);
 
+  const clearCache = useCallback(() => {
+    setCache({});
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(MARKET_ANALYSIS_STORAGE_KEY);
+    }
+  }, []);
+
+  const refreshFromEbay = useCallback(async (nextParams = params) => {
+    await searchNow(nextParams, { force: true });
+  }, [params, searchNow]);
+
   return {
     params,
     setParams,
@@ -238,5 +249,7 @@ export default function useBrowseSearch(initialParams = {}) {
     setError,
     canSearch,
     searchNow,
+    clearCache,
+    refreshFromEbay,
   };
 }

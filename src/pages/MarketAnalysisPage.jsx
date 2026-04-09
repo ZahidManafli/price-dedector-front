@@ -22,7 +22,19 @@ function median(values) {
 export default function MarketAnalysisPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { params, setParams, results, total, refinement, loading, error, setError, searchNow } = useBrowseSearch({
+  const {
+    params,
+    setParams,
+    results,
+    total,
+    refinement,
+    loading,
+    error,
+    setError,
+    searchNow,
+    clearCache,
+    refreshFromEbay,
+  } = useBrowseSearch({
     fieldgroups: 'ASPECT_REFINEMENTS,MATCHING_ITEMS',
   });
   const [selectedIds, setSelectedIds] = useState([]);
@@ -212,6 +224,22 @@ export default function MarketAnalysisPage() {
         >
           <RefreshCw size={14} />
           Refresh
+        </button>
+        <button
+          type="button"
+          onClick={() => refreshFromEbay(params)}
+          disabled={loading}
+          className="btn-secondary flex items-center gap-2"
+        >
+          <RefreshCw size={14} />
+          Refresh From eBay
+        </button>
+        <button
+          type="button"
+          onClick={clearCache}
+          className="btn-secondary flex items-center gap-2"
+        >
+          Clear Cache
         </button>
       </header>
 
