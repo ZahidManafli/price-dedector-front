@@ -1,6 +1,116 @@
 import { useCallback, useMemo, useState } from 'react';
 import { browseAPI } from '../services/api';
 
+const MARKET_ANALYSIS_STORAGE_KEY = 'marketAnalysisState:v1';
+
+function safeJsonParse(value, fallback) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
+function getDefaultParams(initialParams = {}) {
+  return {
+    q: initialParams.q || '',
+    categoryId: initialParams.categoryId || '',
+    condition: initialParams.condition || 'ALL',
+    minPrice: initialParams.minPrice || '',
+    maxPrice: initialParams.maxPrice || '',
+    sort: initialParams.sort || '',
+    buyingOptions: initialParams.buyingOptions || '',
+    sellerUsername: initialParams.sellerUsername || '',
+    freeShipping: initialParams.freeShipping || false,
+    autoCorrect: initialParams.autoCorrect || true,
+    limit: initialParams.limit || 24,
+    offset: initialParams.offset || 0,
+    fieldgroups: initialParams.fieldgroups || 'MATCHING_ITEMS',
+  };
+}
+
+function buildCacheKey(rawParams = {}) {
+  const p = rawParams || {};
+  return JSON.stringify({
+    q: String(p.q || '').trim(),
+    categoryId: String(p.categoryId || '').trim(),
+    condition: String(p.condition || 'ALL').toUpperCase(),
+    minPrice: String(p.minPrice ?? '').trim(),
+    maxPrice: String(p.maxPrice ?? '').trim(),
+    sort: String(p.sort || '').trim(),
+    buyingOptions: String(p.buyingOptions || '').trim(),
+    sellerUsername: String(p.sellerUsername || '').trim(),
+    freeShipping: Boolean(p.freeShipping),
+    autoCorrect: Boolean(p.autoCorrect),
+    limit: Number(p.limit || 24),
+    offset: Number(p.offset || 0),
+    fieldgroups: String(p.fieldgroups || '').trim(),
+  });
+}
+
+function loadPersistedState(initialParams = {}) {
+  const defaults = getDefaultParams(initialParams);
+  if (typeof window === 'undefined') {
+    return {
+      params: defaults,
+      cache: {},
+      restored: null,
+    };
+  }
+
+  const raw = window.localStorage.getItem(MARKET_ANALYSIS_STORAGE_KEY);
+  if (!raw) {
+    return {
+      params: defaults,
+      cache: {},
+      restored: null,
+    };
+  }
+
+  const parsed = safeJsonParse(raw, null);
+  if (!parsed || typeof parsed !== 'object') {
+    return {
+      params: defaults,
+      cache: {},
+      restored: null,
+    };
+  }
+
+  const persistedParams = {
+    ...defaults,
+    ...(parsed.params || {}),
+  };
+  const cache = parsed.cache && typeof parsed.cache === 'object' ? parsed.cache : {};
+  const restored = cache[buildCacheKey(persistedParams)] || null;
+
+  return {
+    params: persistedParams,
+    cache,
+    restored,
+  };
+}
+
+function persistState(params, cache) {
+  if (typeof window === 'undefined') return;
+  const payload = {
+    params,
+    cache,
+    savedAt: new Date().toISOString(),
+  };
+  window.localStorage.setItem(MARKET_ANALYSIS_STORAGE_KEY, JSON.stringify(payload));
+}
+
+function trimCache(cache, maxEntries = 30) {
+  const entries = Object.entries(cache || {});
+  if (entries.length <= maxEntries) return cache;
+  const sorted = entries.sort((a, b) => {
+    const aTs = Number(a?.[1]?.savedAtMs || 0);
+    const bTs = Number(b?.[1]?.savedAtMs || 0);
+    return bTs - aTs;
+  });
+  return Object.fromEntries(sorted.slice(0, maxEntries));
+}
+
 function normalizeItem(summary) {
   return {
     id: summary?.itemId || '',
@@ -20,26 +130,23 @@ function normalizeItem(summary) {
 }
 
 export default function useBrowseSearch(initialParams = {}) {
-  const [params, setParams] = useState({
-    q: initialParams.q || '',
-    categoryId: initialParams.categoryId || '',
-    condition: initialParams.condition || 'ALL',
-    minPrice: initialParams.minPrice || '',
-    maxPrice: initialParams.maxPrice || '',
-    sort: initialParams.sort || '',
-    buyingOptions: initialParams.buyingOptions || '',
-    sellerUsername: initialParams.sellerUsername || '',
-    freeShipping: initialParams.freeShipping || false,
-    autoCorrect: initialParams.autoCorrect || true,
-    limit: initialParams.limit || 24,
-    offset: initialParams.offset || 0,
-    fieldgroups: initialParams.fieldgroups || 'MATCHING_ITEMS',
-  });
-  const [results, setResults] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [refinement, setRefinement] = useState(null);
+  const persisted = useMemo(() => loadPersistedState(initialParams), []);
+
+  const [params, setParamsState] = useState(persisted.params);
+  const [cache, setCache] = useState(persisted.cache || {});
+  const [results, setResults] = useState(Array.isArray(persisted.restored?.results) ? persisted.restored.results : []);
+  const [total, setTotal] = useState(Number(persisted.restored?.total || 0));
+  const [refinement, setRefinement] = useState(persisted.restored?.refinement || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const setParams = useCallback((updater) => {
+    setParamsState((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      persistState(next, cache);
+      return next;
+    });
+  }, [cache]);
 
   const canSearch = useMemo(() => {
     return Boolean(
@@ -49,7 +156,7 @@ export default function useBrowseSearch(initialParams = {}) {
     );
   }, [params]);
 
-  const searchNow = useCallback(async (nextParams = params) => {
+  const searchNow = useCallback(async (nextParams = params, { force = false } = {}) => {
     if (
       !String(nextParams.q || '').trim() &&
       !String(nextParams.categoryId || '').trim() &&
@@ -59,6 +166,19 @@ export default function useBrowseSearch(initialParams = {}) {
       setTotal(0);
       setRefinement(null);
       setError(null);
+      persistState(nextParams, cache);
+      return;
+    }
+
+    const cacheKey = buildCacheKey(nextParams);
+    if (!force && cache[cacheKey]) {
+      const cached = cache[cacheKey];
+      setResults(Array.isArray(cached.results) ? cached.results : []);
+      setTotal(Number(cached.total || 0));
+      setRefinement(cached.refinement || null);
+      setError(null);
+      setParamsState(nextParams);
+      persistState(nextParams, cache);
       return;
     }
 
@@ -78,15 +198,34 @@ export default function useBrowseSearch(initialParams = {}) {
       const response = await browseAPI.search(requestParams);
       const payload = response?.data?.data || {};
       const itemSummaries = Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : [];
-      setResults(itemSummaries.map(normalizeItem));
-      setTotal(Number(payload?.total || 0));
-      setRefinement(payload?.refinement || null);
+      const normalized = itemSummaries.map(normalizeItem);
+      const nextTotal = Number(payload?.total || 0);
+      const nextRefinement = payload?.refinement || null;
+
+      setResults(normalized);
+      setTotal(nextTotal);
+      setRefinement(nextRefinement);
+      setParamsState(nextParams);
+
+      setCache((prev) => {
+        const nextCache = trimCache({
+          ...prev,
+          [cacheKey]: {
+            results: normalized,
+            total: nextTotal,
+            refinement: nextRefinement,
+            savedAtMs: Date.now(),
+          },
+        });
+        persistState(nextParams, nextCache);
+        return nextCache;
+      });
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Market search failed');
     } finally {
       setLoading(false);
     }
-  }, [params]);
+  }, [params, cache]);
 
   return {
     params,

@@ -179,11 +179,21 @@ export default function MarketAnalysisPage() {
   };
 
   const onNextPage = () => {
-    setParams((prev) => ({ ...prev, offset: prev.offset + prev.limit }));
+    const nextParams = {
+      ...params,
+      offset: Number(params.offset || 0) + Number(params.limit || 24),
+    };
+    setParams(nextParams);
+    searchNow(nextParams);
   };
 
   const onPrevPage = () => {
-    setParams((prev) => ({ ...prev, offset: Math.max(0, prev.offset - prev.limit) }));
+    const nextParams = {
+      ...params,
+      offset: Math.max(0, Number(params.offset || 0) - Number(params.limit || 24)),
+    };
+    setParams(nextParams);
+    searchNow(nextParams);
   };
 
   return (
