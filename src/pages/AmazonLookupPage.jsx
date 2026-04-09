@@ -242,6 +242,7 @@ export default function AmazonLookupPage() {
       const response = await ebayAPI.createListingDraft({
         asin,
         overrides,
+        sourceProduct: result,
       });
       setListingDraft(response?.data?.draft || null);
     } catch (error) {
