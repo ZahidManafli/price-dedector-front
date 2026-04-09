@@ -203,7 +203,7 @@ export default function MarketListingDetailPage() {
 
   const renderSellerSortLabel = (label, key) => {
     if (sellerSortConfig.key !== key) return label;
-    return `${label} ${sellerSortConfig.direction === 'asc' ? '▲' : '▼'}`;
+    return `${label} ${sellerSortConfig.direction !== 'asc' ? '▲' : '▼'}`;
   };
 
   const handleSellerSortFieldChange = (key) => {

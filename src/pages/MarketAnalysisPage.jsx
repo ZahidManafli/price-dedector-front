@@ -121,7 +121,7 @@ export default function MarketAnalysisPage() {
 
   const renderSortLabel = (label, key) => {
     if (sortConfig.key !== key) return label;
-    return `${label} ${sortConfig.direction === 'asc' ? '▲' : '▼'}`;
+    return `${label} ${sortConfig.direction !== 'asc' ? '▲' : '▼'}`;
   };
 
   const metrics = useMemo(() => {
