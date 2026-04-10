@@ -5,12 +5,10 @@ import {
   BadgeCheck,
   BarChart3,
   CheckCircle2,
-  Clock3,
   Globe2,
   Radar,
   ShieldCheck,
   Sparkles,
-  Star,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { settingsAPI } from '../services/api';
@@ -385,53 +383,12 @@ export default function LandingPage() {
             <div className="relative">
               <div className="absolute -inset-6 rounded-[2rem] bg-gradient-to-br from-cyan-400/10 via-blue-500/5 to-transparent blur-2xl" />
               <div className="relative rounded-[2rem] border border-white/10 bg-slate-900/80 p-4 shadow-2xl shadow-black/40 backdrop-blur-xl md:p-5">
-                <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Visual preview</p>
-                    <p className="mt-2 text-sm text-slate-300">Swap these panels with your own screenshots or promo imagery.</p>
-                  </div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-100">
-                    <Star size={14} />
-                    Premium layout
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-4 md:grid-cols-[1.15fr_0.85fr]">
-                  <div className="rounded-[1.75rem] border border-dashed border-cyan-300/30 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 p-5">
-                    <div className="flex h-full min-h-[17rem] flex-col justify-between rounded-[1.35rem] border border-white/10 bg-white/[0.03] p-5">
-                      <div className="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-slate-400">
-                        <span>Homepage image slot</span>
-                        <Clock3 className="h-4 w-4 text-cyan-300" />
-                      </div>
-                      <div className="overflow-hidden rounded-[1.1rem] border border-white/10 bg-slate-950/60">
-                        <img
-                          src="/checkila-analysis.png"
-                          alt="Checkila Analysis preview"
-                          className="h-full min-h-[13rem] w-full object-cover"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4">
-                    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4">
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Product visual</p>
-                      <div className="mt-3 overflow-hidden rounded-[1.1rem] border border-white/15 bg-slate-950/60">
-                        <img
-                          src="/profit-calculator.png"
-                          alt="Profit calculator preview"
-                          className="h-full min-h-[7.5rem] w-full object-cover"
-                        />
-                      </div>
-                    </div>
-                    <div className="rounded-[1.5rem] border border-white/10 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 p-4">
-                      <p className="text-xs uppercase tracking-[0.2em] text-cyan-100">Trust marker</p>
-                      <p className="mt-3 text-lg font-semibold text-white">Clear plans, clear usage, clear upgrades.</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-300">
-                        Show pricing, credits, and support in one place so buyers understand the value fast.
-                      </p>
-                    </div>
-                  </div>
+                <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-950/60">
+                  <img
+                    src="/checkila-analysis.png"
+                    alt="Checkila Analysis preview"
+                    className="h-full min-h-[28rem] w-full object-cover"
+                  />
                 </div>
               </div>
             </div>
