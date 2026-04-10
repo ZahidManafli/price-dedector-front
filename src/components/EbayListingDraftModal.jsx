@@ -17,6 +17,7 @@ export default function EbayListingDraftModal({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [merchantLocationKey, setMerchantLocationKey] = useState('');
 
   useEffect(() => {
     if (!isOpen) {
@@ -28,7 +29,8 @@ export default function EbayListingDraftModal({
     setTitle(String(draft?.title || ''));
     setDescription(String(draft?.description || ''));
     setPrice(draft?.price != null ? String(draft.price) : '');
-  }, [draft?.title, draft?.description, draft?.price]);
+    setMerchantLocationKey(String(draft?.merchantLocationKey || ''));
+  }, [draft?.title, draft?.description, draft?.price, draft?.merchantLocationKey]);
 
   const readFileAsDataUrl = (file) =>
     new Promise((resolve, reject) => {
@@ -44,7 +46,20 @@ export default function EbayListingDraftModal({
       title,
       description,
       price,
+      merchantLocationKey: String(merchantLocationKey || '').trim(),
     });
+  };
+
+  const handleConfirm = async () => {
+    if (!draft?.id || !onConfirm) return;
+    const trimmedLocationKey = String(merchantLocationKey || '').trim();
+    if (!trimmedLocationKey) return;
+
+    if (onUpdateDraft && trimmedLocationKey !== String(draft?.merchantLocationKey || '').trim()) {
+      await onUpdateDraft({ merchantLocationKey: trimmedLocationKey });
+    }
+
+    await onConfirm();
   };
 
   const replaceImageAtIndex = async (index, file) => {
@@ -126,6 +141,17 @@ export default function EbayListingDraftModal({
                     <p className="font-semibold text-slate-800">{draft.imageCount || 0}</p>
                   </div>
                 </div>
+                <div className="mt-3">
+                  <p className="text-xs text-slate-500 mb-1">Merchant Location Key (required)</p>
+                  <input
+                    type="text"
+                    value={merchantLocationKey}
+                    onChange={(event) => setMerchantLocationKey(event.target.value)}
+                    className="input-base text-sm"
+                    placeholder="warehouse-ny"
+                    disabled={submitting || updatingDraft}
+                  />
+                </div>
                 <div className="mt-3 flex justify-end">
                   <button
                     type="button"
@@ -197,6 +223,12 @@ export default function EbayListingDraftModal({
                 </div>
               ) : null}
 
+              {!String(merchantLocationKey || '').trim() ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+                  Enter your eBay Merchant Location Key before listing.
+                </div>
+              ) : null}
+
               {!submission ? (
                 <div className="flex flex-col sm:flex-row justify-end gap-2 pt-1">
                   <button
@@ -210,8 +242,8 @@ export default function EbayListingDraftModal({
                   <button
                     type="button"
                     className="btn-primary"
-                    onClick={onConfirm}
-                    disabled={submitting || updatingDraft}
+                    onClick={handleConfirm}
+                    disabled={submitting || updatingDraft || !String(merchantLocationKey || '').trim()}
                   >
                     {submitting ? 'Listing on eBay...' : 'OK, List on eBay'}
                   </button>
