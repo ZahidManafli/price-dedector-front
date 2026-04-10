@@ -577,10 +577,7 @@ export default function LandingPage() {
               <h3 className="mt-3 text-2xl font-semibold tracking-tight text-white md:text-4xl">
                 Start with the plan that matches your volume, then scale when the workflow proves itself.
               </h3>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-                If you want to replace the visuals later, the layout already leaves room for screenshots, product
-                shots, and brand assets without breaking the structure.
-              </p>
+
             </div>
 
             <div className="flex flex-col justify-between gap-4 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5">
