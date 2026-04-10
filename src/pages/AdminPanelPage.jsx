@@ -26,6 +26,9 @@ function defaultPlanForm() {
     name: '',
     category: 'subscription',
     price: '',
+    actualPrice: '',
+    discountedPrice: '',
+    currency: 'AZN',
     duration: '',
     description: '',
     featuresText: '',
@@ -194,6 +197,9 @@ export default function AdminPanelPage() {
         name: planForm.name.trim(),
         category: planForm.category,
         price: planForm.price.trim(),
+        actualPrice: planForm.actualPrice === '' ? null : Number(planForm.actualPrice),
+        discountedPrice: planForm.discountedPrice === '' ? null : Number(planForm.discountedPrice),
+        currency: planForm.currency || 'AZN',
         duration: planForm.duration.trim(),
         description: planForm.description.trim(),
         features: planForm.featuresText
@@ -235,6 +241,9 @@ export default function AdminPanelPage() {
       name: plan.name || '',
       category: plan.category === 'analytics' ? 'analytics' : 'subscription',
       price: plan.price || '',
+      actualPrice: safeToString(plan.actualPrice),
+      discountedPrice: safeToString(plan.discountedPrice),
+      currency: plan.currency || 'AZN',
       duration: plan.duration || '',
       description: plan.description || '',
       featuresText: Array.isArray(plan.features) ? plan.features.join('\n') : '',
@@ -560,6 +569,34 @@ export default function AdminPanelPage() {
                   <input value={planForm.price} onChange={(e) => setPlanForm((p) => ({ ...p, price: e.target.value }))} className="input-base" placeholder="Price" type="text" />
                 </div>
 
+                <div className="grid grid-cols-3 gap-3">
+                  <input
+                    value={planForm.actualPrice}
+                    onChange={(e) => setPlanForm((p) => ({ ...p, actualPrice: e.target.value }))}
+                    className="input-base"
+                    placeholder="Actual price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                  />
+                  <input
+                    value={planForm.discountedPrice}
+                    onChange={(e) => setPlanForm((p) => ({ ...p, discountedPrice: e.target.value }))}
+                    className="input-base"
+                    placeholder="Discounted price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                  />
+                  <input
+                    value={planForm.currency}
+                    onChange={(e) => setPlanForm((p) => ({ ...p, currency: e.target.value.toUpperCase() }))}
+                    className="input-base"
+                    placeholder="Currency"
+                    type="text"
+                  />
+                </div>
+
                 <input value={planForm.duration} onChange={(e) => setPlanForm((p) => ({ ...p, duration: e.target.value }))} className="input-base" placeholder="Duration" type="text" />
                 <textarea value={planForm.description} onChange={(e) => setPlanForm((p) => ({ ...p, description: e.target.value }))} className="input-base min-h-[88px]" placeholder="Description" />
                 <textarea value={planForm.featuresText} onChange={(e) => setPlanForm((p) => ({ ...p, featuresText: e.target.value }))} className="input-base min-h-[110px]" placeholder="Features (one per line)" />
@@ -610,6 +647,7 @@ export default function AdminPanelPage() {
                       <div>
                         <p className="text-sm font-semibold">{plan.name}</p>
                         <p className="text-xs text-slate-500">{plan.category} • {plan.price || 'no price'} • {plan.duration || 'no duration'}</p>
+                        <p className="text-xs text-slate-500">Pricing: {plan.actualPrice ?? '-'} → {plan.discountedPrice ?? '-'} {plan.currency || 'AZN'}</p>
                         <p className="mt-1 text-xs text-slate-500">Amazon/week: {plan.amazonLookupLimitPerWeek ?? 'unlimited'} | Products: {plan.productsLimit ?? 'unlimited'} | Market credits: {plan.marketAnalysisCreditsLimit ?? 'unlimited'} | eBay accounts: {plan.ebayAccountsLimit ?? 'unlimited'}</p>
                       </div>
                       <button type="button" className="btn-secondary px-3 py-1.5" onClick={() => startEditPlan(plan)}>

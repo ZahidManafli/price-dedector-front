@@ -134,6 +134,17 @@ function PlanCard({ plan, onSubscribe }) {
     ? 'border-cyan-300/50 bg-slate-900/95 shadow-[0_20px_80px_rgba(34,211,238,0.14)]'
     : 'border-white/10 bg-slate-900/70';
 
+  const hasDiscount =
+    Number.isFinite(Number(plan.actualPrice)) &&
+    Number.isFinite(Number(plan.discountedPrice)) &&
+    Number(plan.actualPrice) > Number(plan.discountedPrice);
+
+  const discountPercent = hasDiscount
+    ? Math.round(((Number(plan.actualPrice) - Number(plan.discountedPrice)) / Number(plan.actualPrice)) * 100)
+    : 0;
+
+  const currency = plan.currency || 'AZN';
+
   return (
     <article
       className={`relative overflow-hidden rounded-3xl border p-5 shadow-lg backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-white/20 ${featuredClasses}`}
@@ -153,8 +164,29 @@ function PlanCard({ plan, onSubscribe }) {
           ) : null}
         </div>
 
-        <div className="mt-5 flex items-end gap-2">
-          <span className="text-3xl font-semibold tracking-tight text-white">{plan.price}</span>
+        <div className="mt-5 rounded-2xl border border-cyan-300/20 bg-slate-950/45 p-3">
+          {hasDiscount ? (
+            <>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm text-slate-300 line-through">
+                  {Number(plan.actualPrice).toFixed(2)} {currency}
+                </p>
+                <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-100">
+                  Save {discountPercent}%
+                </span>
+              </div>
+              <div className="mt-1 flex items-end gap-2">
+                <span className="text-3xl font-semibold tracking-tight text-white">
+                  {Number(plan.discountedPrice).toFixed(2)} {currency}
+                </span>
+                <span className="text-xs text-slate-400">special offer</span>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-end gap-2">
+              <span className="text-3xl font-semibold tracking-tight text-white">{plan.price}</span>
+            </div>
+          )}
         </div>
 
         <p className="mt-3 min-h-[3rem] text-sm leading-6 text-slate-300">{plan.summary}</p>
@@ -191,6 +223,9 @@ function normalizePlan(raw = {}) {
     name: raw.name || 'Plan',
     duration: raw.duration || '',
     price: raw.price || '',
+    actualPrice: raw.actualPrice ?? null,
+    discountedPrice: raw.discountedPrice ?? null,
+    currency: raw.currency || 'AZN',
     summary: raw.description || '',
     features: Array.isArray(raw.features) ? raw.features : [],
     category: raw.category === 'analytics' ? 'analytics' : 'subscription',
