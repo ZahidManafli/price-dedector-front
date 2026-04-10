@@ -3,8 +3,6 @@ import { ExternalLink, PlusCircle, Search } from 'lucide-react';
 import { formatCurrency } from '../utils/helpers';
 
 export default function MarketItemCard({ item, onSelect, onInspect, onSellerClick, onSearchTitle, isSelected }) {
-  const totalVisiblePrice = Number(item.priceValue || 0) + Number(item.shippingValue || 0);
-
   return (
     <article className="glass-card p-3 flex flex-col gap-3">
       <div className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
@@ -18,7 +16,7 @@ export default function MarketItemCard({ item, onSelect, onInspect, onSellerClic
       </div>
 
       <div>
-        <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 line-clamp-2 min-h-[40px]">{item.title}</h4>
+        <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 line-clamp-1 min-h-[20px]">{item.title}</h4>
         <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
           {item.condition} | Seller:{' '}
           <button
@@ -40,17 +38,13 @@ export default function MarketItemCard({ item, onSelect, onInspect, onSellerClic
           <p className="font-semibold text-slate-900 dark:text-slate-100">{formatCurrency(item.priceValue)}</p>
         </div>
         <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-2">
-          <p className="text-slate-500 dark:text-slate-300">+ Shipping</p>
-          <p className="font-semibold text-slate-900 dark:text-slate-100">{formatCurrency(item.shippingValue)}</p>
+          <p className="text-slate-500 dark:text-slate-300">Condition</p>
+          <p className="font-semibold text-slate-900 dark:text-slate-100">{item.condition || 'N/A'}</p>
         </div>
       </div>
 
       <div className="rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/60 dark:bg-emerald-950/30 px-2 py-1 text-xs">
         Sold quantity: <span className="font-semibold">{Number(item.soldQuantity || 0)}</span>
-      </div>
-
-      <div className="rounded-lg border border-blue-200 dark:border-blue-900 bg-blue-50/60 dark:bg-blue-950/30 px-2 py-1 text-xs">
-        Total visible cost: <span className="font-semibold">{formatCurrency(totalVisiblePrice)}</span>
       </div>
 
       <div className="flex gap-2 mt-auto">

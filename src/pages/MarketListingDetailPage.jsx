@@ -20,12 +20,10 @@ function normalizeSummary(summary) {
 }
 
 const sellerSortOptions = [
-  { value: 'marketCost', label: 'Market Cost' },
+  { value: 'soldQuantity', label: 'Sold Qty' },
   { value: 'title', label: 'Title' },
   { value: 'condition', label: 'Condition' },
-  { value: 'soldQuantity', label: 'Sold Qty' },
   { value: 'priceValue', label: 'Item Price' },
-  { value: 'shippingValue', label: 'Shipping' },
 ];
 
 export default function MarketListingDetailPage() {
@@ -43,7 +41,7 @@ export default function MarketListingDetailPage() {
   const [sellerOffset, setSellerOffset] = useState(0);
   const [sellerLimit] = useState(12);
   const [sellerViewMode, setSellerViewMode] = useState('list');
-  const [sellerSortConfig, setSellerSortConfig] = useState({ key: 'marketCost', direction: 'desc' });
+  const [sellerSortConfig, setSellerSortConfig] = useState({ key: 'soldQuantity', direction: 'desc' });
 
   const backQuery = useMemo(() => {
     const q = searchParams.get('q') || '';
@@ -168,10 +166,6 @@ export default function MarketListingDetailPage() {
           return Number(item.soldQuantity || 0);
         case 'priceValue':
           return Number(item.priceValue || 0);
-        case 'shippingValue':
-          return Number(item.shippingValue || 0);
-        case 'marketCost':
-          return Number(item.priceValue || 0) + Number(item.shippingValue || 0);
         default:
           return '';
       }
@@ -257,7 +251,7 @@ export default function MarketListingDetailPage() {
         <>
           <section className="glass-card overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600/10 to-emerald-600/10 p-5 border-b border-slate-200 dark:border-slate-700">
-              <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{detail.title}</h1>
+              <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 line-clamp-2">{detail.title}</h1>
               <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{detail.shortDescription || 'Detailed market listing insights'}</p>
             </div>
 
@@ -276,10 +270,6 @@ export default function MarketListingDetailPage() {
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                   <p className="text-xs text-slate-500 dark:text-slate-300">Item Price</p>
                   <p className="text-xl font-semibold">{formatCurrency(Number(detail?.price?.value || 0))}</p>
-                </div>
-                <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                  <p className="text-xs text-slate-500 dark:text-slate-300">Shipping (estimated)</p>
-                  <p className="text-xl font-semibold">{formatCurrency(Number(detail?.shippingOptions?.[0]?.shippingCost?.value || 0))}</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                   <p className="text-xs text-slate-500 dark:text-slate-300">Condition</p>
@@ -391,14 +381,14 @@ export default function MarketListingDetailPage() {
                           <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">No image</div>
                         )}
                       </div>
-                      <h3 className="text-sm font-semibold line-clamp-2 text-slate-900 dark:text-slate-100">{item.title}</h3>
+                      <h3 className="text-sm font-semibold line-clamp-1 text-slate-900 dark:text-slate-100">{item.title}</h3>
                       <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">{item.condition}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
                         Sold Qty: <span className="font-semibold">{Number(item.soldQuantity || 0)}</span>
                       </p>
                       <div className="mt-2 flex items-center gap-2">
                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                          {formatCurrency(item.priceValue + item.shippingValue)}
+                          {formatCurrency(item.priceValue)}
                         </p>
                         <button type="button" className="btn-secondary text-xs px-2 py-1" onClick={() => handleSearchItem(item)} title="Search this title">
                           <Search size={14} />
@@ -433,16 +423,6 @@ export default function MarketListingDetailPage() {
                             {renderSellerSortLabel('Item Price', 'priceValue')}
                           </button>
                         </th>
-                        <th className="text-left p-3">
-                          <button type="button" onClick={() => toggleSellerSort('shippingValue')} className="hover:underline">
-                            {renderSellerSortLabel('Shipping', 'shippingValue')}
-                          </button>
-                        </th>
-                        <th className="text-left p-3">
-                          <button type="button" onClick={() => toggleSellerSort('marketCost')} className="hover:underline">
-                            {renderSellerSortLabel('Market Cost', 'marketCost')}
-                          </button>
-                        </th>
                         <th className="text-left p-3">Actions</th>
                       </tr>
                     </thead>
@@ -458,12 +438,10 @@ export default function MarketListingDetailPage() {
                               )}
                             </div>
                           </td>
-                          <td className="p-3 max-w-[340px] truncate">{item.title}</td>
+                          <td className="p-3 max-w-[220px] truncate text-xs">{item.title}</td>
                           <td className="p-3">{item.condition}</td>
                           <td className="p-3 font-medium">{Number(item.soldQuantity || 0)}</td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>
-                          <td className="p-3">{formatCurrency(item.shippingValue)}</td>
-                          <td className="p-3 font-semibold">{formatCurrency(item.priceValue + item.shippingValue)}</td>
                           <td className="p-3">
                             <div className="flex gap-2">
                               <Link

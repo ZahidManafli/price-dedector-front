@@ -41,7 +41,7 @@ export default function MarketAnalysisPage() {
   });
   const [selectedIds, setSelectedIds] = useState([]);
   const [viewMode, setViewMode] = useState('list');
-  const [sortConfig, setSortConfig] = useState({ key: 'marketCost', direction: 'desc' });
+  const [sortConfig, setSortConfig] = useState({ key: 'soldQuantity', direction: 'desc' });
   const [marketCreditsState, setMarketCreditsState] = useState(null);
 
   useEffect(() => {
@@ -123,10 +123,6 @@ export default function MarketAnalysisPage() {
           return Number(item.soldQuantity || 0);
         case 'priceValue':
           return Number(item.priceValue || 0);
-        case 'shippingValue':
-          return Number(item.shippingValue || 0);
-        case 'marketCost':
-          return Number(item.priceValue || 0) + Number(item.shippingValue || 0);
         default:
           return '';
       }
@@ -165,7 +161,6 @@ export default function MarketAnalysisPage() {
     if (!filteredResults.length) {
       return {
         averagePrice: 0,
-        averageMarketCost: 0,
         medianPrice: 0,
         minPrice: 0,
         maxPrice: 0,
@@ -173,11 +168,9 @@ export default function MarketAnalysisPage() {
       };
     }
     const prices = filteredResults.map((r) => Number(r.priceValue || 0));
-    const marketCosts = filteredResults.map((r) => Number(r.priceValue || 0) + Number(r.shippingValue || 0));
     const freeShippingCount = filteredResults.filter((r) => Number(r.shippingValue || 0) === 0).length;
     return {
       averagePrice: prices.reduce((sum, n) => sum + n, 0) / prices.length,
-      averageMarketCost: marketCosts.reduce((sum, n) => sum + n, 0) / marketCosts.length,
       medianPrice: median(prices),
       minPrice: Math.min(...prices),
       maxPrice: Math.max(...prices),
@@ -300,7 +293,7 @@ export default function MarketAnalysisPage() {
         searchCost={searchCost}
       />
 
-      <section className="grid grid-cols-2 md:grid-cols-6 gap-2">
+      <section className="grid grid-cols-2 md:grid-cols-5 gap-2">
         <div className="glass-card p-3">
           <p className="text-xs text-slate-500 dark:text-slate-300">Results</p>
           <p className="text-lg font-semibold">{filteredResults.length || 0}</p>
@@ -308,10 +301,6 @@ export default function MarketAnalysisPage() {
         <div className="glass-card p-3">
           <p className="text-xs text-slate-500 dark:text-slate-300">Average Item</p>
           <p className="text-lg font-semibold">{formatCurrency(metrics.averagePrice)}</p>
-        </div>
-        <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">Average Market Cost</p>
-          <p className="text-lg font-semibold">{formatCurrency(metrics.averageMarketCost)}</p>
         </div>
         <div className="glass-card p-3">
           <p className="text-xs text-slate-500 dark:text-slate-300">Median</p>
@@ -405,16 +394,6 @@ export default function MarketAnalysisPage() {
                             {renderSortLabel('Item Price', 'priceValue')}
                           </button>
                         </th>
-                        <th className="text-left p-3">
-                          <button type="button" onClick={() => toggleSort('shippingValue')} className="hover:underline">
-                            {renderSortLabel('Shipping', 'shippingValue')}
-                          </button>
-                        </th>
-                        <th className="text-left p-3">
-                          <button type="button" onClick={() => toggleSort('marketCost')} className="hover:underline">
-                            {renderSortLabel('Market Cost', 'marketCost')}
-                          </button>
-                        </th>
                         <th className="text-left p-3">Actions</th>
                       </tr>
                     </thead>
@@ -430,7 +409,7 @@ export default function MarketAnalysisPage() {
                               )}
                             </div>
                           </td>
-                          <td className="p-3 max-w-[300px] truncate">{item.title}</td>
+                          <td className="p-3 max-w-[220px] truncate text-xs">{item.title}</td>
                           <td className="p-3">
                             <button
                               type="button"
@@ -444,10 +423,6 @@ export default function MarketAnalysisPage() {
                           <td className="p-3">{item.condition}</td>
                           <td className="p-3 font-medium">{Number(item.soldQuantity || 0)}</td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>
-                          <td className="p-3">{formatCurrency(item.shippingValue)}</td>
-                          <td className="p-3 font-semibold">
-                            {formatCurrency(Number(item.priceValue || 0) + Number(item.shippingValue || 0))}
-                          </td>
                           <td className="p-3">
                             <div className="flex gap-2">
                               <button type="button" className="btn-secondary" onClick={() => handleSelect(item)}>
