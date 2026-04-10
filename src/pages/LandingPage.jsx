@@ -403,12 +403,12 @@ export default function LandingPage() {
                         <span>Homepage image slot</span>
                         <Clock3 className="h-4 w-4 text-cyan-300" />
                       </div>
-                      <div className="space-y-3">
-                        <p className="text-2xl font-semibold text-white">Insert a dashboard or product screenshot here</p>
-                        <p className="max-w-sm text-sm leading-6 text-slate-300">
-                          This panel is intentionally framed so your own media can drop in later without changing
-                          the overall composition.
-                        </p>
+                      <div className="overflow-hidden rounded-[1.1rem] border border-white/10 bg-slate-950/60">
+                        <img
+                          src="/checkila-analysis.png"
+                          alt="Checkila Analysis preview"
+                          className="h-full min-h-[13rem] w-full object-cover"
+                        />
                       </div>
                     </div>
                   </div>
@@ -416,8 +416,12 @@ export default function LandingPage() {
                   <div className="grid gap-4">
                     <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4">
                       <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Product visual</p>
-                      <div className="mt-3 flex min-h-[7.5rem] items-center justify-center rounded-[1.1rem] border border-dashed border-white/15 bg-slate-950/60 text-center text-sm text-slate-400">
-                        Replace with a product shot or app mockup
+                      <div className="mt-3 overflow-hidden rounded-[1.1rem] border border-white/15 bg-slate-950/60">
+                        <img
+                          src="/profit-calculator.png"
+                          alt="Profit calculator preview"
+                          className="h-full min-h-[7.5rem] w-full object-cover"
+                        />
                       </div>
                     </div>
                     <div className="rounded-[1.5rem] border border-white/10 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 p-4">
