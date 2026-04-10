@@ -5,11 +5,11 @@ export default function AboutPage() {
   return (
     <div className="page-shell">
       <div className="max-w-3xl mx-auto glass-card p-6 md:p-8">
-        <h1 className="text-3xl font-semibold text-slate-900 mb-6 tracking-tight">About Price Check App</h1>
+        <h1 className="text-3xl font-semibold text-slate-900 mb-6 tracking-tight">About Checkila</h1>
 
         <div className="space-y-5 text-slate-700 leading-7">
           <p>
-            Price Check App helps online sellers track Amazon and eBay prices, estimate profit, and
+            Checkila helps online sellers track Amazon and eBay prices, estimate profit, and
             react quickly when costs change.
           </p>
 
@@ -26,7 +26,7 @@ export default function AboutPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-slate-900 mb-2">Contact</h2>
-            <p>Support email: pricededector@gmail.com</p>
+            <p>Support email: checkila.app@gmail.com</p>
           </section>
         </div>
 

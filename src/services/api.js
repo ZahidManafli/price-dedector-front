@@ -17,6 +17,8 @@ api.interceptors.request.use((config) => {
   const isAuthOrPublic =
     url.startsWith('/auth') ||
     url.startsWith('/health') ||
+    url.startsWith('/settings/plans/public') ||
+    url.startsWith('/settings/subscription-requests') ||
     url.includes('/privacy') ||
     url.includes('/about');
 
@@ -88,6 +90,8 @@ export const settingsAPI = {
   getPreferences: () => api.get('/settings/preferences'),
   updatePreferences: (data) => api.put('/settings/preferences', data),
   getLimits: () => api.get('/settings/limits'),
+  getPublicPlans: () => api.get('/settings/plans/public'),
+  submitSubscriptionRequest: (data) => api.post('/settings/subscription-requests', data),
 };
 
 export const ebayAPI = {
@@ -145,6 +149,13 @@ export const adminAPI = {
   getStats: () => api.get('/admin/stats'),
   createUser: (data) => api.post('/admin/users', data),
   updateUserLimits: (id, data) => api.put(`/admin/users/${id}/limits`, data),
+  listPlans: () => api.get('/admin/plans'),
+  createPlan: (data) => api.post('/admin/plans', data),
+  updatePlan: (id, data) => api.put(`/admin/plans/${id}`, data),
+  listSubscriptionRequests: (status) =>
+    api.get('/admin/subscription-requests', { params: status ? { status } : undefined }),
+  approveSubscriptionRequest: (id, data) => api.post(`/admin/subscription-requests/${id}/approve`, data),
+  rejectSubscriptionRequest: (id, data) => api.post(`/admin/subscription-requests/${id}/reject`, data),
 };
 
 export default api;

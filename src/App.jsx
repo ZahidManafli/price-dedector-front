@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { useSidebar, SidebarProvider } from './context/SidebarContext';
 import Sidebar from './components/Sidebar';
 
 // Pages
@@ -23,6 +24,7 @@ import EbayCalculatorPage from './pages/EbayCalculatorPage';
 import DewisoPage from './pages/DewisoPage';
 import MarketAnalysisPage from './pages/MarketAnalysisPage';
 import MarketListingDetailPage from './pages/MarketListingDetailPage';
+import LandingPage from './pages/LandingPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -67,8 +69,9 @@ const AdminProtectedRoute = ({ children }) => {
   return children;
 };
 
-function App() {
+function AppContent() {
   const { isAuthenticated, loading } = useAuth();
+  const { isCollapsed } = useSidebar();
   const hasToken = typeof window !== 'undefined' ? !!localStorage.getItem('authToken') : false;
 
   if (loading) {
@@ -80,12 +83,13 @@ function App() {
   }
 
   return (
-    <Router>
-      <div className="flex">
-        {isAuthenticated && hasToken && <Sidebar />}
-        <main className={isAuthenticated && hasToken ? 'flex-1 ml-0 md:ml-64' : 'w-full'}>
+    <div className="flex h-screen bg-gray-50 dark:bg-slate-950">
+      {isAuthenticated && hasToken && <Sidebar />}
+      <main className={`flex-1 overflow-auto transition-all duration-300 ${isAuthenticated && hasToken ? '' : 'w-full'}`}>
+        <div className="min-h-screen">
           <Routes>
             {/* Public Routes */}
+            <Route path="/" element={<LandingPage />} />
             <Route
               path="/login"
               element={isAuthenticated && hasToken ? <Navigate to="/dashboard" replace /> : <LoginPage />}
@@ -232,11 +236,21 @@ function App() {
             />
 
             {/* Fallback */}
-            <Route path="/" element={<Navigate to={isAuthenticated && hasToken ? '/dashboard' : '/login'} replace />} />
+            <Route path="*" element={<Navigate to={isAuthenticated && hasToken ? '/dashboard' : '/'} replace />} />
           </Routes>
-        </main>
+        </div>
+      </main>
       </div>
-    </Router>
+    );
+}
+
+function App() {
+  return (
+    <SidebarProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </SidebarProvider>
   );
 }
 

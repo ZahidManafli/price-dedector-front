@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword, auth } from '../services/firebase';
-import { authAPI } from '../services/api';
+import { authAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import { useTheme } from '../context/ThemeContext';
+import Swal from 'sweetalert2';
+import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -14,6 +16,8 @@ export default function LoginPage() {
   });
   const [alert, setAlert] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [plans, setPlans] = useState([]);
+  const [registerOpen, setRegisterOpen] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -59,6 +63,26 @@ export default function LoginPage() {
     }
   };
 
+  const openRegister = async () => {
+    setRegisterOpen(true);
+    if (plans.length > 0) return;
+    try {
+      const response = await settingsAPI.getPublicPlans();
+      setPlans(response?.data?.plans || []);
+    } catch {
+      setPlans([]);
+    }
+  };
+
+  const onRequestSuccess = () => {
+    Swal.fire({
+      icon: 'success',
+      title: 'Request Sent',
+      text: 'Your request is seen. Admin will reach you soon.',
+      confirmButtonColor: '#2563eb',
+    });
+  };
+
   return (
     <div className={`min-h-screen flex items-center justify-center px-4 py-6 ${
       isDark
@@ -71,14 +95,16 @@ export default function LoginPage() {
           : 'bg-white border-slate-200'
       }`}>
         <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white text-3xl font-bold shadow-sm">
-            PC
-          </div>
+          <img
+            src="/logo-2.png"
+            alt="Checkila"
+            className="w-16 h-16 rounded-2xl object-cover mx-auto mb-4 shadow-sm border border-slate-300/40"
+          />
           <h1 className={`text-3xl font-semibold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
             Welcome back
           </h1>
           <p className={`${isDark ? 'text-slate-300' : 'text-slate-600'} mt-2`}>
-            Login to manage pricing and automation
+            Sign in to Checkila to manage pricing and automation
           </p>
         </div>
 
@@ -131,10 +157,25 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className={`text-center mt-6 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-          Don&apos;t have an account? Ask your admin to create access for you.
-        </p>
+        <div className={`mt-6 text-center text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+          <p>Don&apos;t have an account?</p>
+          <button
+            type="button"
+            onClick={openRegister}
+            className="mt-2 font-semibold text-blue-600 hover:text-blue-700"
+          >
+            Register
+          </button>
+        </div>
       </div>
+
+      <SubscriptionRequestModal
+        open={registerOpen}
+        onClose={() => setRegisterOpen(false)}
+        plans={plans}
+        lockPlan={false}
+        onSuccess={onRequestSuccess}
+      />
     </div>
   );
 }

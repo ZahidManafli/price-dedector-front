@@ -18,10 +18,8 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo/Brand */}
           <Link to="/dashboard" className="flex items-center gap-2 md:hidden">
-            <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold">
-              PC
-            </div>
-            <span className="font-semibold text-lg text-slate-900">Price Check</span>
+            <img src="/logo-2.png" alt="Checkila" className="w-8 h-8 rounded-lg object-cover" />
+            <span className="font-semibold text-lg text-slate-900">Checkila</span>
           </Link>
 
           {/* Right side */}

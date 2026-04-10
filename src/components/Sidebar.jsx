@@ -13,9 +13,12 @@ import {
   Calculator,
   Code2,
   BarChart3,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useSidebar } from '../context/SidebarContext';
 import { ebayAPI } from '../services/api';
 
 export default function Sidebar() {
@@ -23,6 +26,7 @@ export default function Sidebar() {
   const location = useLocation();
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { isCollapsed, toggleSidebar } = useSidebar();
   const [activeEbayLabel, setActiveEbayLabel] = useState(null);
 
   const links = [
@@ -70,86 +74,130 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 h-screen w-64 bg-gray-900 dark:bg-slate-950 text-white transform transition-transform duration-300 z-30 md:translate-x-0 ${
+        className={`fixed left-0 h-screen md:relative md:h-auto bg-gray-900 dark:bg-slate-950 text-white transition-all duration-300 z-30 md:z-auto flex flex-col ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:translate-x-0 ${
+          isCollapsed ? 'w-20' : 'w-64'
         }`}
       >
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-8">
-            <img src="/logo-2.png" alt="Logo" className="w-16 h-16 rounded-xl object-cover border border-slate-700/50" />
-            <div className="min-w-0">
-              <span className="block text-xl font-semibold">Price Check</span>
-              {activeEbayLabel ? (
-                <span className="block text-xs text-slate-300 truncate">
-                  Active eBay: <span className="font-medium text-slate-100">{activeEbayLabel}</span>
-                </span>
-              ) : (
-                <span className="block text-xs text-slate-400 truncate">Active eBay: —</span>
-              )}
+        <div className={`flex-shrink-0 flex items-center ${
+          isCollapsed ? 'justify-center px-2 py-6' : 'justify-between px-4 py-4'
+        }`}>
+          {!isCollapsed && (
+            <div className="flex items-center gap-3 w-full">
+              <img src="/logo-2.png" alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-slate-700/50 flex-shrink-0" />
+              <div className="min-w-0">
+                <span className="block text-lg font-semibold">Checkila</span>
+                {activeEbayLabel ? (
+                  <span className="block text-xs text-slate-300 truncate">
+                    eBay: <span className="font-medium text-slate-100">{activeEbayLabel}</span>
+                  </span>
+                ) : (
+                  <span className="block text-xs text-slate-400 truncate">eBay: —</span>
+                )}
+              </div>
             </div>
-          </div>
+          )}
+          {isCollapsed && (
+            <img src="/logo-2.png" alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-slate-700/50" />
+          )}
+          <button
+            onClick={toggleSidebar}
+            className="hidden md:flex items-center justify-center p-1 hover:bg-slate-800 rounded transition flex-shrink-0"
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </button>
+        </div>
 
-          <nav className="space-y-2">
+        <nav className="flex-1 overflow-y-auto" style={{ paddingLeft: isCollapsed ? '0.5rem' : '1rem', paddingRight: isCollapsed ? '0.5rem' : '1rem' }}>
+          <div className="space-y-2">
             {links.map((link) => (
-              // Icon component for current nav item.
               <Link
                 key={link.path}
                 to={link.path}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition ${
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl transition ${
+                  isCollapsed ? 'justify-center' : ''
+                } ${
                   isActive(link.path)
                     ? 'bg-blue-600 text-white'
                     : 'text-slate-300 hover:bg-slate-800'
                 }`}
+                title={isCollapsed ? link.label : ''}
               >
-                <link.icon size={16} />
-                <span>{link.label}</span>
+                <link.icon size={18} className="flex-shrink-0" />
+                {!isCollapsed && <span className="text-sm">{link.label}</span>}
               </Link>
             ))}
-          </nav>
-        </div>
+          </div>
+        </nav>
 
         {/* Profile footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center">
-              <User size={16} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium truncate">
-                {user?.displayName || user?.email || 'User'}
-              </p>
-              {user?.email && (
-                <p className="text-xs text-slate-400 truncate">{user.email}</p>
-              )}
-              <Link
-                to="/settings"
-                className="text-xs text-slate-300 hover:underline"
-                onClick={() => setIsOpen(false)}
+        <div className="flex-shrink-0 p-3 border-t border-slate-700">
+          {!isCollapsed ? (
+            <>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                  <User size={16} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {user?.displayName || user?.email || 'User'}
+                  </p>
+                  {user?.email && (
+                    <p className="text-xs text-slate-400 truncate">{user.email}</p>
+                  )}
+                  <Link
+                    to="/settings"
+                    className="text-xs text-slate-300 hover:underline"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Settings
+                  </Link>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={toggleTheme}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
+                  title={isDark ? 'Light mode' : 'Dark mode'}
+                >
+                  {isDark ? <Sun size={14} /> : <Moon size={14} />}
+                </button>
+                <button
+                  onClick={async () => {
+                    await logout();
+                    window.location.href = '/login';
+                  }}
+                  className="flex-1 flex items-center justify-center rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
+                  title="Logout"
+                >
+                  <LogOut size={14} />
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col gap-2 items-center">
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 transition"
+                title={isDark ? 'Light mode' : 'Dark mode'}
               >
-                Settings
-              </Link>
+                {isDark ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+              <button
+                onClick={async () => {
+                  await logout();
+                  window.location.href = '/login';
+                }}
+                className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 transition"
+                title="Logout"
+              >
+                <LogOut size={16} />
+              </button>
             </div>
-          </div>
-          <div className="mt-3 flex gap-2">
-            <button
-              onClick={toggleTheme}
-              className="flex-1 flex items-center justify-center gap-2 rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
-            >
-              {isDark ? <Sun size={14} /> : <Moon size={14} />}
-              {isDark ? 'Light' : 'Dark'}
-            </button>
-          </div>
-          <button
-            onClick={async () => {
-              await logout();
-              window.location.href = '/login';
-            }}
-            className="mt-3 w-full flex items-center justify-center gap-2 rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
-          >
-            <LogOut size={14} />
-            Logout
-          </button>
+          )}
         </div>
       </aside>
 
