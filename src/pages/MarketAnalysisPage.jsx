@@ -57,7 +57,7 @@ export default function MarketAnalysisPage() {
           });
         }
       } catch {
-        // Non-blocking: market analysis can still run without this initial UI hint.
+        // Non-blocking: Checkila Analysis can still run without this initial UI hint.
       }
     };
     loadLimits();
@@ -249,7 +249,7 @@ export default function MarketAnalysisPage() {
     <div className="page-shell space-y-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="page-title">Market Analysis</h1>
+          <h1 className="page-title">Checkila Analysis</h1>
           <p className="page-subtitle">
             Discover market listings with eBay Browse API and compare pricing opportunities before adding products.
           </p>

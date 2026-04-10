@@ -36,7 +36,7 @@ export default function Sidebar() {
     { label: 'Orders', path: '/orders', icon: Package },
     { label: 'Amazon Lookup', path: '/amazon-lookup', icon: Search },
      { label: 'eBay Calculator', path: '/ebay-calculator', icon: Calculator },
-    { label: 'Market Analysis', path: '/market-analysis', icon: BarChart3 },
+    { label: 'Checkila Analysis', path: '/market-analysis', icon: BarChart3 },
     { label: 'Dewiso', path: '/dewiso', icon: Code2 },
     { label: 'Settings', path: '/settings', icon: Settings },
     ...(user?.role === 'admin' ? [{ label: 'Admin Panel', path: '/admin', icon: ShieldCheck }] : []),

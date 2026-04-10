@@ -92,7 +92,7 @@ export default function ProductsPage() {
             onClick={() => navigate('/market-analysis')}
             className="w-full md:w-auto btn-secondary"
           >
-            Open Market Analysis
+            Open Checkila Analysis
           </button>
           <button
             onClick={() => {

@@ -367,7 +367,7 @@ export default function AdminPanelPage() {
                   value={createForm.marketAnalysisCreditsLimit}
                   onChange={(e) => setCreateForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))}
                   className="input-base"
-                  placeholder="Market analysis credits"
+                  placeholder="Checkila Analysis credits"
                   type="number"
                   min="0"
                 />
@@ -433,7 +433,7 @@ export default function AdminPanelPage() {
                           value={rowEdits.marketAnalysisCreditsLimit}
                           onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], marketAnalysisCreditsLimit: e.target.value } }))}
                           className="input-base sm:col-span-2"
-                          placeholder="Market analysis credits limit"
+                          placeholder="Checkila Analysis credits limit"
                           type="number"
                           min="0"
                         />
@@ -469,7 +469,7 @@ export default function AdminPanelPage() {
                                 }))
                               }
                             />
-                            Reset Market Analysis credits usage now
+                            Reset Checkila Analysis credits usage now
                           </label>
                         </div>
 
@@ -515,6 +515,15 @@ export default function AdminPanelPage() {
                       </div>
 
                       <p className="mt-2 text-xs text-slate-500">Plan: {req.planName || 'N/A'}</p>
+                      {(req.planId === 'custom' || req.planCategory === 'custom') ? (
+                        <div className="mt-2 rounded-lg border border-cyan-200 bg-cyan-50/70 p-2 text-xs text-slate-700 dark:border-cyan-900/40 dark:bg-cyan-900/20 dark:text-cyan-100">
+                          <p className="font-semibold">Custom requested limits</p>
+                          <p className="mt-1">
+                            Amazon/week: {req.requestedLimits?.amazonLookupLimitPerWeek ?? 'N/A'} | Products: {req.requestedLimits?.productsLimit ?? 'N/A'} | Checkila Analysis credits: {req.requestedLimits?.marketAnalysisCreditsLimit ?? 'N/A'} | eBay accounts: {req.requestedLimits?.ebayAccountsLimit ?? 'N/A'}
+                          </p>
+                          {req.customNote ? <p className="mt-1">Note: {req.customNote}</p> : null}
+                        </div>
+                      ) : null}
 
                       {isPending ? (
                         <div className="mt-3 grid grid-cols-1 md:grid-cols-[1fr_1fr_auto_auto] gap-2">
@@ -609,7 +618,7 @@ export default function AdminPanelPage() {
                   value={planForm.marketAnalysisCreditsLimit}
                   onChange={(e) => setPlanForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))}
                   className="input-base"
-                  placeholder="Market analysis credits"
+                  placeholder="Checkila Analysis credits"
                   type="number"
                   min="0"
                 />
@@ -648,7 +657,7 @@ export default function AdminPanelPage() {
                         <p className="text-sm font-semibold">{plan.name}</p>
                         <p className="text-xs text-slate-500">{plan.category} • {plan.price || 'no price'} • {plan.duration || 'no duration'}</p>
                         <p className="text-xs text-slate-500">Pricing: {plan.actualPrice ?? '-'} → {plan.discountedPrice ?? '-'} {plan.currency || 'AZN'}</p>
-                        <p className="mt-1 text-xs text-slate-500">Amazon/week: {plan.amazonLookupLimitPerWeek ?? 'unlimited'} | Products: {plan.productsLimit ?? 'unlimited'} | Market credits: {plan.marketAnalysisCreditsLimit ?? 'unlimited'} | eBay accounts: {plan.ebayAccountsLimit ?? 'unlimited'}</p>
+                        <p className="mt-1 text-xs text-slate-500">Amazon/week: {plan.amazonLookupLimitPerWeek ?? 'unlimited'} | Products: {plan.productsLimit ?? 'unlimited'} | Checkila Analysis credits: {plan.marketAnalysisCreditsLimit ?? 'unlimited'} | eBay accounts: {plan.ebayAccountsLimit ?? 'unlimited'}</p>
                       </div>
                       <button type="button" className="btn-secondary px-3 py-1.5" onClick={() => startEditPlan(plan)}>
                         Edit

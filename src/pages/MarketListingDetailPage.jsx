@@ -239,7 +239,7 @@ export default function MarketListingDetailPage() {
           className="btn-secondary flex items-center gap-2"
         >
           <ArrowLeft size={14} />
-          Back to Market Analysis
+          Back to Checkila Analysis
         </button>
         {detail?.itemWebUrl && (
           <a href={detail.itemWebUrl} target="_blank" rel="noreferrer" className="btn-primary flex items-center gap-2">

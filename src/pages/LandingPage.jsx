@@ -24,8 +24,8 @@ const featureCards = [
   },
   {
     icon: Radar,
-    title: 'Market analysis built in',
-    description: 'Use credits on fast market analysis workflows to validate opportunities before listing.',
+    title: 'Checkila Analysis built in',
+    description: 'Use credits on fast Checkila Analysis workflows to validate opportunities before listing.',
   },
   {
     icon: ShieldCheck,
@@ -36,14 +36,14 @@ const featureCards = [
 
 const heroStats = [
   { label: 'Amazon price tracking', value: 'Track products faster', icon: Globe2 },
-  { label: 'Market analysis', value: 'Credit-based intelligence', icon: BarChart3 },
+  { label: 'Checkila Analysis', value: 'Credit-based intelligence', icon: BarChart3 },
   { label: 'eBay account workflow', value: 'Built for multi-account use', icon: BadgeCheck },
 ];
 
 const workflowSteps = [
   {
     title: 'Discover',
-    description: 'Start from Amazon lookup, market analysis, or a product you already track.',
+    description: 'Start from Amazon lookup, Checkila Analysis, or a product you already track.',
   },
   {
     title: 'Decide',
@@ -61,7 +61,7 @@ const umimiPlans = [
     duration: '1 Week',
     price: '2 AZN',
     summary: 'A short starter plan for checking core workflows.',
-    features: ['Track up to 3 Amazon products', '1 Amazon lookup (total)', '100 credits for Market Analysis', 'Connect 1 eBay account'],
+    features: ['Track up to 3 Amazon products', '1 Amazon lookup (total)', '100 credits for Checkila Analysis', 'Connect 1 eBay account'],
     accent: 'from-cyan-400/25 to-blue-500/15',
     featured: false,
   },
@@ -70,7 +70,7 @@ const umimiPlans = [
     duration: 'Monthly',
     price: '12.99 AZN',
     summary: 'A practical plan for small sellers who need steady tracking.',
-    features: ['Track up to 20 Amazon products', '1 Amazon lookup per day', '500 credits for Market Analysis', 'Connect 1 eBay account', '24/7 Support'],
+    features: ['Track up to 20 Amazon products', '1 Amazon lookup per day', '500 credits for Checkila Analysis', 'Connect 1 eBay account', '24/7 Support'],
     accent: 'from-sky-400/25 to-indigo-500/15',
     featured: false,
   },
@@ -79,7 +79,7 @@ const umimiPlans = [
     duration: 'Monthly',
     price: '23.99 AZN',
     summary: 'A stronger plan for growing operations with heavier usage.',
-    features: ['Track up to 50 Amazon products', '2 Amazon lookups per day', '1,000 credits for Market Analysis', 'Connect up to 5 eBay accounts', '24/7 Support'],
+    features: ['Track up to 50 Amazon products', '2 Amazon lookups per day', '1,000 credits for Checkila Analysis', 'Connect up to 5 eBay accounts', '24/7 Support'],
     accent: 'from-cyan-400/35 to-blue-500/20',
     featured: true,
   },
@@ -88,7 +88,7 @@ const umimiPlans = [
     duration: 'Monthly',
     price: '37.99 AZN',
     summary: 'The highest-usage package for active teams and scaling sellers.',
-    features: ['Track up to 100 Amazon products', '3 Amazon lookups per day', '2,000 credits for Market Analysis', 'Connect up to 10 eBay accounts', '24/7 Support'],
+    features: ['Track up to 100 Amazon products', '3 Amazon lookups per day', '2,000 credits for Checkila Analysis', 'Connect up to 10 eBay accounts', '24/7 Support'],
     accent: 'from-amber-400/25 to-orange-500/15',
     featured: false,
   },
@@ -100,7 +100,7 @@ const analyticsPlans = [
     duration: 'Monthly',
     price: '7.99 AZN',
     summary: 'Best for focused analysis use without a large feature set.',
-    features: ['2,000 credits for Market Analysis'],
+    features: ['2,000 credits for Checkila Analysis'],
     accent: 'from-violet-400/20 to-slate-700/10',
     featured: false,
   },
@@ -109,7 +109,7 @@ const analyticsPlans = [
     duration: 'Monthly',
     price: '9.90 AZN',
     summary: 'A better fit for frequent analysis and conversion workflows.',
-    features: ['5,000 credits for Market Analysis', 'Access to Sell Similar feature'],
+    features: ['5,000 credits for Checkila Analysis', 'Access to Sell Similar feature'],
     accent: 'from-cyan-400/30 to-blue-500/15',
     featured: true,
   },
@@ -564,9 +564,19 @@ export default function LandingPage() {
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">Data Analytics Plans</p>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-                      For users who want market analysis credits and a focused analytics workflow.
+                      For users who want Checkila Analysis credits and a focused analytics workflow.
                     </p>
                   </div>
+                </div>
+
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={() => onSubscribePlan({ id: 'custom' })}
+                    className="rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20"
+                  >
+                    Request Custom Plan
+                  </button>
                 </div>
 
                 <div className="mt-6 grid gap-5 lg:grid-cols-2">

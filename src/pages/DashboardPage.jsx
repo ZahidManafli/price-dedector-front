@@ -661,7 +661,7 @@ export default function DashboardPage() {
               : 'bg-slate-200 text-slate-900 border-slate-300'
           }`}
         >
-          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Market Analysis Credits</p>
+          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Checkila Analysis Credits</p>
           <p className="mt-2 text-3xl font-bold">
             {marketCreditsLeft === null || marketCreditsLeft === undefined ? 'Unlimited' : marketCreditsLeft}
           </p>

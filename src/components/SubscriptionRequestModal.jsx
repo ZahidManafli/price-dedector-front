@@ -8,6 +8,11 @@ function initialForm(selectedPlanId = '') {
     email: '',
     phoneNumber: '',
     planId: selectedPlanId,
+    amazonLookupLimitPerWeek: '',
+    productsLimit: '',
+    marketAnalysisCreditsLimit: '',
+    ebayAccountsLimit: '',
+    customNote: '',
   };
 }
 
@@ -44,9 +49,42 @@ export default function SubscriptionRequestModal({
       return;
     }
 
+    const isCustomPlan = form.planId === 'custom';
+    if (isCustomPlan) {
+      const requiredNumbers = [
+        form.amazonLookupLimitPerWeek,
+        form.productsLimit,
+        form.marketAnalysisCreditsLimit,
+        form.ebayAccountsLimit,
+      ];
+      const hasInvalid = requiredNumbers.some((v) => v === '' || Number(v) < 0 || !Number.isFinite(Number(v)));
+      if (hasInvalid) {
+        setError('Custom plan requires Amazon lookup, products, Checkila Analysis credits, and eBay accounts (0 or more).');
+        return;
+      }
+    }
+
     try {
       setLoading(true);
-      await settingsAPI.submitSubscriptionRequest(form);
+      const payload = {
+        name: form.name,
+        surname: form.surname,
+        email: form.email,
+        phoneNumber: form.phoneNumber,
+        planId: form.planId,
+      };
+
+      if (isCustomPlan) {
+        payload.requestedLimits = {
+          amazonLookupLimitPerWeek: Number(form.amazonLookupLimitPerWeek),
+          productsLimit: Number(form.productsLimit),
+          marketAnalysisCreditsLimit: Number(form.marketAnalysisCreditsLimit),
+          ebayAccountsLimit: Number(form.ebayAccountsLimit),
+        };
+        payload.customNote = form.customNote?.trim() || '';
+      }
+
+      await settingsAPI.submitSubscriptionRequest(payload);
       onSuccess?.();
       onClose?.();
     } catch (err) {
@@ -121,7 +159,54 @@ export default function SubscriptionRequestModal({
                 {plan.name}
               </option>
             ))}
+            <option value="custom">Custom Plan (Request)</option>
           </select>
+
+          {form.planId === 'custom' ? (
+            <div className="space-y-3 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">Custom Plan Requirements</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <input
+                  type="number"
+                  min="0"
+                  value={form.amazonLookupLimitPerWeek}
+                  onChange={(e) => setForm((p) => ({ ...p, amazonLookupLimitPerWeek: e.target.value }))}
+                  placeholder="Amazon lookups / week"
+                  className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  value={form.productsLimit}
+                  onChange={(e) => setForm((p) => ({ ...p, productsLimit: e.target.value }))}
+                  placeholder="Products limit"
+                  className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  value={form.marketAnalysisCreditsLimit}
+                  onChange={(e) => setForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))}
+                  placeholder="Checkila Analysis credits"
+                  className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  value={form.ebayAccountsLimit}
+                  onChange={(e) => setForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))}
+                  placeholder="eBay accounts"
+                  className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+                />
+              </div>
+              <textarea
+                value={form.customNote}
+                onChange={(e) => setForm((p) => ({ ...p, customNote: e.target.value }))}
+                placeholder="Optional note (team size, usage patterns, extra needs, etc.)"
+                className="min-h-[84px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+              />
+            </div>
+          ) : null}
 
           {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
