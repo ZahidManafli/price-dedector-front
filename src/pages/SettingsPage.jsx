@@ -24,6 +24,7 @@ export default function SettingsPage() {
   });
   const [alert, setAlert] = useState(null);
   const [nameDrafts, setNameDrafts] = useState({});
+  const [limits, setLimits] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -32,6 +33,7 @@ export default function SettingsPage() {
           settingsAPI.getPreferences(),
           ebayAPI.getStatus(),
         ]);
+        const limitsRes = await settingsAPI.getLimits().catch(() => null);
         setPreferences((prev) => ({ ...prev, ...(prefRes.data || {}) }));
         const nextStatus = ebayRes.data || {};
         setEbayStatus(nextStatus);
@@ -40,6 +42,7 @@ export default function SettingsPage() {
           drafts[a.id] = a.connectionName || a.username || a.profileUserId || '';
         });
         setNameDrafts(drafts);
+        setLimits(limitsRes?.data || null);
       } catch (_error) {
         // Keep defaults if optional settings/status calls fail.
       }
@@ -56,6 +59,15 @@ export default function SettingsPage() {
   };
 
   const handleConnectEbay = async () => {
+    const remaining = limits?.ebayAccounts?.remaining;
+    if (remaining !== null && remaining !== undefined && remaining <= 0) {
+      setAlert({
+        type: 'warning',
+        message: 'Your eBay account connection limit is reached. Ask admin to increase your quota.',
+      });
+      return;
+    }
+
     try {
       setEbayLoading(true);
       const response = await ebayAPI.getConnectUrl();
@@ -112,6 +124,7 @@ export default function SettingsPage() {
       setEbayLoading(true);
       await ebayAPI.deleteAccount(ebayAccountId);
       const ebayRes = await ebayAPI.getStatus();
+      const limitsRes = await settingsAPI.getLimits().catch(() => null);
       const nextStatus = ebayRes.data || {};
       setEbayStatus(nextStatus);
       const drafts = {};
@@ -119,6 +132,7 @@ export default function SettingsPage() {
         drafts[a.id] = a.connectionName || a.username || a.profileUserId || '';
       });
       setNameDrafts(drafts);
+      setLimits(limitsRes?.data || limits);
       setAlert({ type: 'success', message: 'eBay account deleted' });
     } catch (error) {
       setAlert({
@@ -268,6 +282,21 @@ export default function SettingsPage() {
               </div>
 
               {/* Multi-account selector */}
+              <div className={`rounded-lg p-3 mb-3 ${
+                isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'
+              }`}>
+                <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  eBay account slots
+                </p>
+                <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  Connected: {limits?.ebayAccounts?.connected ?? (Array.isArray(ebayStatus.ebayAccounts) ? ebayStatus.ebayAccounts.filter((a) => !!a?.connected).length : 0)}
+                  {limits?.ebayAccounts?.limit != null ? ` / ${limits.ebayAccounts.limit}` : ' (unlimited)'}
+                </p>
+                <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  Remaining: {limits?.ebayAccounts?.remaining == null ? 'Unlimited' : limits.ebayAccounts.remaining}
+                </p>
+              </div>
+
               {Array.isArray(ebayStatus.ebayAccounts) && ebayStatus.ebayAccounts.length > 0 && (
                 <div className={`rounded-lg p-3 mb-3 ${
                   isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'
@@ -380,7 +409,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={handleConnectEbay}
-                    disabled={ebayLoading}
+                    disabled={ebayLoading || (limits?.ebayAccounts?.remaining != null && limits.ebayAccounts.remaining <= 0)}
                     className="rounded-xl bg-indigo-600 text-white px-5 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
                   >
                     {ebayLoading ? 'Connecting...' : 'Connect eBay'}
@@ -390,7 +419,7 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={handleConnectEbay}
-                      disabled={ebayLoading}
+                      disabled={ebayLoading || (limits?.ebayAccounts?.remaining != null && limits.ebayAccounts.remaining <= 0)}
                       className="rounded-xl bg-indigo-600 text-white px-5 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
                       title="Connect another eBay account (will be added to your saved accounts)"
                     >

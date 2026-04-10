@@ -16,6 +16,7 @@ function defaultEditForUser(u) {
     amazonLookupRequestLimitPerWeek: safeToString(u.amazonLookupRequestLimitPerWeek),
     productsLimit: safeToString(u.productsLimit),
     marketAnalysisCreditsLimit: safeToString(u.marketAnalysisCreditsLimit),
+    ebayAccountsLimit: safeToString(u.ebayAccountsLimit),
   };
 }
 
@@ -31,6 +32,7 @@ function defaultPlanForm() {
     amazonLookupLimitPerWeek: '',
     productsLimit: '',
     marketAnalysisCreditsLimit: '',
+    ebayAccountsLimit: '',
     featured: false,
     isActive: true,
   };
@@ -54,6 +56,7 @@ export default function AdminPanelPage() {
     amazonLookupRequestLimitPerWeek: '',
     productsLimit: '',
     marketAnalysisCreditsLimit: '',
+    ebayAccountsLimit: '',
   });
 
   const [edits, setEdits] = useState({});
@@ -120,6 +123,8 @@ export default function AdminPanelPage() {
           createForm.marketAnalysisCreditsLimit === ''
             ? null
             : Number(createForm.marketAnalysisCreditsLimit),
+        ebayAccountsLimit:
+          createForm.ebayAccountsLimit === '' ? null : Number(createForm.ebayAccountsLimit),
       });
 
       setCreateForm({
@@ -130,6 +135,7 @@ export default function AdminPanelPage() {
         amazonLookupRequestLimitPerWeek: '',
         productsLimit: '',
         marketAnalysisCreditsLimit: '',
+        ebayAccountsLimit: '',
       });
 
       await refreshData();
@@ -157,6 +163,8 @@ export default function AdminPanelPage() {
         productsLimit: uEdits.productsLimit === '' ? null : Number(uEdits.productsLimit),
         marketAnalysisCreditsLimit:
           uEdits.marketAnalysisCreditsLimit === '' ? null : Number(uEdits.marketAnalysisCreditsLimit),
+        ebayAccountsLimit:
+          uEdits.ebayAccountsLimit === '' ? null : Number(uEdits.ebayAccountsLimit),
         resetAmazonUsage: !!resetUsage[userId],
         resetMarketAnalysisUsage: !!resetUsage[`${userId}__marketAnalysis`],
       });
@@ -199,6 +207,8 @@ export default function AdminPanelPage() {
           planForm.marketAnalysisCreditsLimit === ''
             ? null
             : Number(planForm.marketAnalysisCreditsLimit),
+        ebayAccountsLimit:
+          planForm.ebayAccountsLimit === '' ? null : Number(planForm.ebayAccountsLimit),
         featured: !!planForm.featured,
         isActive: !!planForm.isActive,
       };
@@ -231,6 +241,7 @@ export default function AdminPanelPage() {
       amazonLookupLimitPerWeek: safeToString(plan.amazonLookupLimitPerWeek),
       productsLimit: safeToString(plan.productsLimit),
       marketAnalysisCreditsLimit: safeToString(plan.marketAnalysisCreditsLimit),
+      ebayAccountsLimit: safeToString(plan.ebayAccountsLimit),
       featured: !!plan.featured,
       isActive: plan.isActive !== false,
     });
@@ -351,6 +362,14 @@ export default function AdminPanelPage() {
                   type="number"
                   min="0"
                 />
+                <input
+                  value={createForm.ebayAccountsLimit}
+                  onChange={(e) => setCreateForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))}
+                  className="input-base"
+                  placeholder="eBay accounts limit"
+                  type="number"
+                  min="0"
+                />
 
                 <button type="submit" className="btn-primary w-full py-3 flex items-center justify-center gap-2">
                   <Users size={16} />
@@ -406,6 +425,15 @@ export default function AdminPanelPage() {
                           onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], marketAnalysisCreditsLimit: e.target.value } }))}
                           className="input-base sm:col-span-2"
                           placeholder="Market analysis credits limit"
+                          type="number"
+                          min="0"
+                        />
+
+                        <input
+                          value={rowEdits.ebayAccountsLimit}
+                          onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], ebayAccountsLimit: e.target.value } }))}
+                          className="input-base sm:col-span-2"
+                          placeholder="eBay accounts limit"
                           type="number"
                           min="0"
                         />
@@ -548,6 +576,14 @@ export default function AdminPanelPage() {
                   type="number"
                   min="0"
                 />
+                <input
+                  value={planForm.ebayAccountsLimit}
+                  onChange={(e) => setPlanForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))}
+                  className="input-base"
+                  placeholder="eBay accounts limit"
+                  type="number"
+                  min="0"
+                />
 
                 <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={planForm.featured} onChange={(e) => setPlanForm((p) => ({ ...p, featured: e.target.checked }))} /> Featured</label>
                 <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={planForm.isActive} onChange={(e) => setPlanForm((p) => ({ ...p, isActive: e.target.checked }))} /> Active</label>
@@ -574,7 +610,7 @@ export default function AdminPanelPage() {
                       <div>
                         <p className="text-sm font-semibold">{plan.name}</p>
                         <p className="text-xs text-slate-500">{plan.category} • {plan.price || 'no price'} • {plan.duration || 'no duration'}</p>
-                        <p className="mt-1 text-xs text-slate-500">Amazon/week: {plan.amazonLookupLimitPerWeek ?? 'unlimited'} | Products: {plan.productsLimit ?? 'unlimited'} | Market credits: {plan.marketAnalysisCreditsLimit ?? 'unlimited'}</p>
+                        <p className="mt-1 text-xs text-slate-500">Amazon/week: {plan.amazonLookupLimitPerWeek ?? 'unlimited'} | Products: {plan.productsLimit ?? 'unlimited'} | Market credits: {plan.marketAnalysisCreditsLimit ?? 'unlimited'} | eBay accounts: {plan.ebayAccountsLimit ?? 'unlimited'}</p>
                       </div>
                       <button type="button" className="btn-secondary px-3 py-1.5" onClick={() => startEditPlan(plan)}>
                         Edit
