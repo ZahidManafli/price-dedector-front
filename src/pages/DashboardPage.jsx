@@ -9,6 +9,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Gauge, LineChart, ShieldCheck, X } from 'lucide-react';
+import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 
 export default function DashboardPage() {
   const [products, setProducts] = useState([]);
@@ -30,6 +31,8 @@ export default function DashboardPage() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState(null);
   const [hideAnalyticsAccessAlert, setHideAnalyticsAccessAlert] = useState(false);
+  const [requestUpgradeOpen, setRequestUpgradeOpen] = useState(false);
+  const [publicPlans, setPublicPlans] = useState([]);
 
   useEffect(() => {
     const load = async () => {
@@ -172,6 +175,19 @@ export default function DashboardPage() {
   const marketCreditsLimit = limits?.marketAnalysis?.creditsLimit;
   const isProductQuotaReached =
     productsLeft !== null && productsLeft !== undefined && productsLeft <= 0;
+
+  const userPlan = limits?.plan || null;
+
+  const onOpenUpgradeRequest = async () => {
+    setRequestUpgradeOpen(true);
+    if (publicPlans.length > 0) return;
+    try {
+      const response = await settingsAPI.getPublicPlans();
+      setPublicPlans(response?.data?.plans || []);
+    } catch {
+      setPublicPlans([]);
+    }
+  };
 
   if (loading) return <LoadingSpinner />;
 
@@ -578,6 +594,30 @@ export default function DashboardPage() {
 
       <h1 className="page-title mb-5">Dashboard</h1>
 
+      <div className="mb-5">
+        <div className={`glass-card p-5 border ${isDark ? 'bg-slate-950 text-white border-slate-800' : 'bg-slate-100 text-slate-900 border-slate-300'}`}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Current Plan</p>
+              <p className="mt-1 text-2xl font-bold">{userPlan?.name || 'No active plan'}</p>
+              <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
+                Expires: {userPlan?.expiresAt ? new Date(userPlan.expiresAt).toLocaleDateString() : 'N/A'}
+              </p>
+              {userPlan?.isExpired ? (
+                <p className="mt-1 text-xs font-semibold text-amber-500">Plan expired. Request renewal or upgrade.</p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={onOpenUpgradeRequest}
+              className="btn-primary px-4 py-2 text-sm"
+            >
+              Request Plan Upgrade
+            </button>
+          </div>
+        </div>
+      </div>
+
       {user?.role === 'admin' && adminStats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
           <div className={`glass-card p-4 border ${isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-200 border-slate-300 text-slate-900'}`}>
@@ -714,6 +754,16 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <SubscriptionRequestModal
+        open={requestUpgradeOpen}
+        onClose={() => setRequestUpgradeOpen(false)}
+        plans={publicPlans}
+        lockPlan={false}
+        onSuccess={() => {
+          setAlert({ type: 'success', message: 'Upgrade request sent. Admin will review it.' });
+        }}
+      />
     </div>
   );
 }

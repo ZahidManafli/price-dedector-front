@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { adminAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen } from 'lucide-react';
+import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 function safeToString(v) {
@@ -66,6 +66,8 @@ export default function AdminPanelPage() {
   const [resetUsage, setResetUsage] = useState({});
   const [requestAction, setRequestAction] = useState({});
   const [planForm, setPlanForm] = useState(defaultPlanForm());
+  const [userSearch, setUserSearch] = useState('');
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
 
   const adminCount = useMemo(() => users.filter((u) => u.role === 'admin').length, [users]);
 
@@ -297,6 +299,97 @@ export default function AdminPanelPage() {
     [requests]
   );
 
+  const filteredUsers = useMemo(() => {
+    const q = userSearch.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter((u) => {
+      const name = String(u.name || '').toLowerCase();
+      const email = String(u.email || '').toLowerCase();
+      const plan = String(u.selectedPlanName || '').toLowerCase();
+      return name.includes(q) || email.includes(q) || plan.includes(q);
+    });
+  }, [users, userSearch]);
+
+  const allFilteredSelected =
+    filteredUsers.length > 0 && filteredUsers.every((u) => selectedUserIds.includes(u.id));
+
+  const toggleSelectUser = (userId) => {
+    setSelectedUserIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const toggleSelectAllFiltered = () => {
+    setSelectedUserIds((prev) => {
+      if (allFilteredSelected) {
+        return prev.filter((id) => !filteredUsers.some((u) => u.id === id));
+      }
+      const next = new Set(prev);
+      for (const u of filteredUsers) next.add(u.id);
+      return Array.from(next);
+    });
+  };
+
+  const onRefreshSubscriptions = async (all = false) => {
+    try {
+      setLoading(true);
+      await adminAPI.refreshSubscriptions(all ? { selectAll: true } : { userIds: selectedUserIds });
+      await refreshData();
+      setAlert({ type: 'success', message: 'Subscription period refreshed (+1 month) and usage reset.' });
+      if (!all) setSelectedUserIds([]);
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to refresh subscriptions' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onDeleteUsers = async (all = false) => {
+    const hasTarget = all || selectedUserIds.length > 0;
+    if (!hasTarget) {
+      setAlert({ type: 'warning', message: 'Select users first.' });
+      return;
+    }
+
+    const confirmed = window.confirm(
+      all
+        ? 'Are you sure you want to remove ALL users? This also removes their products.'
+        : 'Are you sure you want to remove selected users? This also removes their products.'
+    );
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      await adminAPI.deleteUsers(all ? { selectAll: true } : { userIds: selectedUserIds });
+      await refreshData();
+      setSelectedUserIds([]);
+      setAlert({ type: 'success', message: all ? 'All users removed.' : 'Selected users removed.' });
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to remove users' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onDeleteSingleUser = async (userId) => {
+    const confirmed = window.confirm(
+      'Are you sure you want to remove this user? This also removes their products.'
+    );
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      await adminAPI.deleteUsers({ userIds: [userId] });
+      await refreshData();
+      setSelectedUserIds((prev) => prev.filter((id) => id !== userId));
+      setAlert({ type: 'success', message: 'User removed.' });
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to remove user' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="page-shell">
       <div className="max-w-6xl mx-auto">
@@ -393,13 +486,82 @@ export default function AdminPanelPage() {
                 <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Users</h2>
               </div>
 
+              <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_auto_auto]">
+                <div className="relative">
+                  <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    className="input-base pl-9"
+                    placeholder="Search users by name, email, plan"
+                  />
+                </div>
+                <button type="button" onClick={toggleSelectAllFiltered} className="btn-secondary px-3 py-2 text-xs">
+                  {allFilteredSelected ? 'Unselect all' : 'Select filtered'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onRefreshSubscriptions(false)}
+                  disabled={selectedUserIds.length === 0}
+                  className="btn-primary px-3 py-2 text-xs inline-flex items-center gap-1.5 disabled:opacity-60"
+                >
+                  <RefreshCw size={13} /> Refresh +1 month
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDeleteUsers(false)}
+                  disabled={selectedUserIds.length === 0}
+                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                >
+                  Remove selected
+                </button>
+              </div>
+
+              <div className="mb-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => onRefreshSubscriptions(true)}
+                  className="btn-secondary px-3 py-2 text-xs"
+                >
+                  Refresh all users +1 month
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDeleteUsers(true)}
+                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100"
+                >
+                  Remove all users
+                </button>
+              </div>
+
               <div className="space-y-3">
-                {users.map((u) => {
+                {filteredUsers.map((u) => {
                   const rowEdits = edits[u.id] || defaultEditForUser(u);
                   return (
                     <div key={u.id} className={`border rounded-xl p-3 ${isDark ? 'bg-slate-950 border-slate-700' : 'bg-white border-slate-200'}`}>
-                      <div className="text-sm font-semibold">{u.name || 'User'} ({u.email})</div>
+                      <div className="flex items-start justify-between gap-2">
+                        <label className="flex items-start gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedUserIds.includes(u.id)}
+                            onChange={() => toggleSelectUser(u.id)}
+                            className="mt-0.5"
+                          />
+                          <span className="text-sm font-semibold">{u.name || 'User'} ({u.email})</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteSingleUser(u.id)}
+                          className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 inline-flex items-center gap-1"
+                          title="Remove user"
+                        >
+                          <Trash2 size={12} /> Remove
+                        </button>
+                      </div>
                       <div className="mt-1 text-xs text-slate-500">Plan: {u.selectedPlanName || 'Custom/none'}</div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        Expires: {u.planExpiresAt ? new Date(u.planExpiresAt).toLocaleDateString() : 'N/A'}
+                      </div>
 
                       <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <select
