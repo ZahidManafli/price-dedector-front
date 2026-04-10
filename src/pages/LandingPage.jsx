@@ -145,11 +145,11 @@ function PlanCard({ plan, onSubscribe }) {
 
   return (
     <article
-      className={`relative overflow-hidden rounded-3xl border p-5 shadow-lg backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-white/20 ${featuredClasses}`}
+      className={`relative flex h-full flex-col overflow-hidden rounded-3xl border p-5 shadow-lg backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-white/20 ${featuredClasses}`}
       style={{ animation: 'fadeIn 0.4s ease both' }}
     >
       <div className={`absolute inset-0 bg-gradient-to-br ${plan.accent} opacity-100`} />
-      <div className="relative z-10">
+      <div className="relative z-10 flex h-full flex-col">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h3 className="text-xl font-semibold text-white">{plan.name}</h3>
@@ -189,7 +189,7 @@ function PlanCard({ plan, onSubscribe }) {
 
         <p className="mt-3 min-h-[3rem] text-sm leading-6 text-slate-300">{plan.summary}</p>
 
-        <ul className="mt-5 space-y-3 text-sm text-slate-200">
+        <ul className="mt-5 flex-1 space-y-3 text-sm text-slate-200">
           {plan.features.map((feature) => (
             <li key={feature} className="flex items-start gap-3">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
@@ -215,10 +215,12 @@ function normalizePlan(raw = {}) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
+  const planName = raw.name || 'Plan';
+  const isAdvantagePlan = /advantage/i.test(planName);
 
   return {
     id: raw.id || fallbackId,
-    name: raw.name || 'Plan',
+    name: planName,
     duration: raw.duration || '',
     price: raw.price || '',
     actualPrice: raw.actualPrice ?? null,
@@ -232,6 +234,8 @@ function normalizePlan(raw = {}) {
     accent:
       raw.category === 'analytics'
         ? 'from-violet-400/20 to-slate-700/10'
+        : isAdvantagePlan
+        ? 'from-amber-300/35 to-yellow-500/20'
         : raw.featured
         ? 'from-cyan-400/35 to-blue-500/20'
         : 'from-sky-400/25 to-indigo-500/15',
@@ -385,7 +389,7 @@ export default function LandingPage() {
               <div className="relative rounded-[2rem] border border-white/10 bg-slate-900/80 p-4 shadow-2xl shadow-black/40 backdrop-blur-xl md:p-5">
                 <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-950/60">
                   <img
-                    src="/checkila-analysis.png"
+                    src="/analytic.jpg"
                     alt="Checkila Analysis preview"
                     className="h-full min-h-[28rem] w-full object-cover"
                   />
