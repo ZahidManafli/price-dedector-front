@@ -544,6 +544,16 @@ export default function LandingPage() {
                   </div>
                 </div>
 
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={() => onSubscribePlan({ id: 'custom' })}
+                    className="rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20"
+                  >
+                    Request Custom Plan
+                  </button>
+                </div>
+
                 <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
                   {subscriptionPlans.length === 0 ? (
                     <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-300">
