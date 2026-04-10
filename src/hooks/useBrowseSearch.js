@@ -139,6 +139,7 @@ export default function useBrowseSearch(initialParams = {}) {
   const [refinement, setRefinement] = useState(persisted.restored?.refinement || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [credits, setCredits] = useState(persisted.restored?.credits || null);
 
   const setParams = useCallback((updater) => {
     setParamsState((prev) => {
@@ -176,6 +177,7 @@ export default function useBrowseSearch(initialParams = {}) {
       setResults(Array.isArray(cached.results) ? cached.results : []);
       setTotal(Number(cached.total || 0));
       setRefinement(cached.refinement || null);
+      setCredits(cached.credits || null);
       setError(null);
       setParamsState(nextParams);
       persistState(nextParams, cache);
@@ -197,6 +199,7 @@ export default function useBrowseSearch(initialParams = {}) {
 
       const response = await browseAPI.search(requestParams);
       const payload = response?.data?.data || {};
+      const nextCredits = response?.data?.credits || null;
       const itemSummaries = Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : [];
       const normalized = itemSummaries.map(normalizeItem);
       const nextTotal = Number(payload?.total || 0);
@@ -205,6 +208,7 @@ export default function useBrowseSearch(initialParams = {}) {
       setResults(normalized);
       setTotal(nextTotal);
       setRefinement(nextRefinement);
+      setCredits(nextCredits);
       setParamsState(nextParams);
 
       setCache((prev) => {
@@ -214,6 +218,7 @@ export default function useBrowseSearch(initialParams = {}) {
             results: normalized,
             total: nextTotal,
             refinement: nextRefinement,
+            credits: nextCredits,
             savedAtMs: Date.now(),
           },
         });
@@ -251,5 +256,6 @@ export default function useBrowseSearch(initialParams = {}) {
     searchNow,
     clearCache,
     refreshFromEbay,
+    credits,
   };
 }

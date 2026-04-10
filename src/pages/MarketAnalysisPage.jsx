@@ -8,6 +8,7 @@ import MarketItemCard from '../components/MarketItemCard';
 import MarketComparePanel from '../components/MarketComparePanel';
 import useBrowseSearch from '../hooks/useBrowseSearch';
 import { formatCurrency } from '../utils/helpers';
+import { settingsAPI } from '../services/api';
 
 function median(values) {
   if (!values.length) return 0;
@@ -34,12 +35,48 @@ export default function MarketAnalysisPage() {
     searchNow,
     clearCache,
     refreshFromEbay,
+    credits,
   } = useBrowseSearch({
     fieldgroups: 'ASPECT_REFINEMENTS,MATCHING_ITEMS',
   });
   const [selectedIds, setSelectedIds] = useState([]);
   const [viewMode, setViewMode] = useState('list');
   const [sortConfig, setSortConfig] = useState({ key: 'marketCost', direction: 'desc' });
+  const [marketCreditsState, setMarketCreditsState] = useState(null);
+
+  useEffect(() => {
+    const loadLimits = async () => {
+      try {
+        const limitsRes = await settingsAPI.getLimits();
+        const market = limitsRes?.data?.marketAnalysis || null;
+        if (market) {
+          setMarketCreditsState({
+            limit: market.creditsLimit,
+            used: market.creditsUsed,
+            remaining: market.creditsRemaining,
+          });
+        }
+      } catch {
+        // Non-blocking: market analysis can still run without this initial UI hint.
+      }
+    };
+    loadLimits();
+  }, []);
+
+  useEffect(() => {
+    if (!credits) return;
+    setMarketCreditsState({
+      limit: credits.limit,
+      used: credits.used,
+      remaining: credits.remaining,
+    });
+  }, [credits]);
+
+  const searchCost = String(params.sellerUsername || '').trim() ? 2 : 1;
+
+  const runSearch = async (nextParams) => {
+    await searchNow(nextParams);
+  };
 
   useEffect(() => {
     const presetSearch = location.state?.presetSearch;
@@ -52,7 +89,7 @@ export default function MarketAnalysisPage() {
       offset: 0,
     };
     setParams(nextParams);
-    searchNow(nextParams);
+    runSearch(nextParams);
     navigate(location.pathname, { replace: true, state: null });
     // Run once per preset search handoff.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -173,7 +210,7 @@ export default function MarketAnalysisPage() {
       offset: 0,
     };
     setParams(nextParams);
-    searchNow(nextParams);
+    runSearch(nextParams);
   };
 
   const handleTitleSearch = (item) => {
@@ -187,7 +224,7 @@ export default function MarketAnalysisPage() {
       offset: 0,
     };
     setParams(nextParams);
-    searchNow(nextParams);
+    runSearch(nextParams);
   };
 
   const onNextPage = () => {
@@ -196,7 +233,7 @@ export default function MarketAnalysisPage() {
       offset: Number(params.offset || 0) + Number(params.limit || 24),
     };
     setParams(nextParams);
-    searchNow(nextParams);
+    runSearch(nextParams);
   };
 
   const onPrevPage = () => {
@@ -205,7 +242,7 @@ export default function MarketAnalysisPage() {
       offset: Math.max(0, Number(params.offset || 0) - Number(params.limit || 24)),
     };
     setParams(nextParams);
-    searchNow(nextParams);
+    runSearch(nextParams);
   };
 
   return (
@@ -257,8 +294,10 @@ export default function MarketAnalysisPage() {
       <MarketSearchBar
         params={params}
         onChange={setParams}
-        onSubmit={() => searchNow(params)}
+        onSubmit={() => runSearch(params)}
         disabled={loading}
+        marketCreditsRemaining={marketCreditsState?.remaining ?? null}
+        searchCost={searchCost}
       />
 
       <section className="grid grid-cols-2 md:grid-cols-6 gap-2">

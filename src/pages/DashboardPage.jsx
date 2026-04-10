@@ -167,6 +167,9 @@ export default function DashboardPage() {
   const productsUsed = limits?.products?.used ?? products.length;
   const productsLeft = limits?.products?.remaining;
   const lookupLeft = limits?.amazonLookup?.remainingThisWeek;
+  const marketCreditsLeft = limits?.marketAnalysis?.creditsRemaining;
+  const marketCreditsUsed = limits?.marketAnalysis?.creditsUsed;
+  const marketCreditsLimit = limits?.marketAnalysis?.creditsLimit;
   const isProductQuotaReached =
     productsLeft !== null && productsLeft !== undefined && productsLeft <= 0;
 
@@ -656,20 +659,19 @@ export default function DashboardPage() {
             isDark
               ? 'bg-slate-950 text-white border-slate-800'
               : 'bg-slate-200 text-slate-900 border-slate-300'
-          } relative overflow-hidden`}
+          }`}
         >
-          <div className="blur-[2px] opacity-70 select-none">
-            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Tracked products</p>
-            <p className="mt-2 text-2xl font-bold">{products.length}</p>
-            <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
-              Total products in your account
-            </p>
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center backdrop-blur-[2px] bg-slate-900/10 dark:bg-slate-950/20 pointer-events-none">
-            <span className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-              Available soon
-            </span>
-          </div>
+          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Market Analysis Credits</p>
+          <p className="mt-2 text-3xl font-bold">
+            {marketCreditsLeft === null || marketCreditsLeft === undefined ? 'Unlimited' : marketCreditsLeft}
+          </p>
+          <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
+            Used {marketCreditsUsed ?? 0}
+            {marketCreditsLimit != null ? ` / ${marketCreditsLimit}` : ''}
+          </p>
+          <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
+            Seller search costs 2 credits, other searches cost 1 credit.
+          </p>
         </div>
       </div>
 

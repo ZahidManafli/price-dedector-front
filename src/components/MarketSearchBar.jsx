@@ -22,7 +22,14 @@ const buyingOptions = [
   { value: 'BEST_OFFER', label: 'Best Offer' },
 ];
 
-export default function MarketSearchBar({ params, onChange, onSubmit, disabled }) {
+export default function MarketSearchBar({
+  params,
+  onChange,
+  onSubmit,
+  disabled,
+  marketCreditsRemaining,
+  searchCost,
+}) {
   const setValue = (key, value) => onChange((prev) => ({ ...prev, [key]: value }));
 
   return (
@@ -141,6 +148,10 @@ export default function MarketSearchBar({ params, onChange, onSubmit, disabled }
         <div className="md:col-span-2 flex justify-end">
           <button type="button" onClick={onSubmit} disabled={disabled} className="btn-primary w-full md:w-auto">
             Run Market Search
+            {typeof searchCost === 'number' ? ` (${searchCost} credit${searchCost > 1 ? 's' : ''})` : ''}
+            {marketCreditsRemaining !== null && marketCreditsRemaining !== undefined
+              ? ` • Remaining: ${marketCreditsRemaining}`
+              : ''}
           </button>
         </div>
       </div>
