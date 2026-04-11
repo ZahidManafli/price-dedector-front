@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCircle2, Link2, Mail, ShieldCheck, Users } from 'lucide-react';
-import { ebayAPI, settingsAPI } from '../services/api';
+import { authAPI, ebayAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
+import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { user } = useAuth();
   const [preferences, setPreferences] = useState({
     emailOnPriceChange: true,
     emailNotificationFrequency: 'instant',
   });
   const [loading, setLoading] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
   const [ebayLoading, setEbayLoading] = useState(false);
   const [ebayStatus, setEbayStatus] = useState({
     connected: false,
@@ -25,6 +29,12 @@ export default function SettingsPage() {
   const [alert, setAlert] = useState(null);
   const [nameDrafts, setNameDrafts] = useState({});
   const [limits, setLimits] = useState(null);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [requestModal, setRequestModal] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -56,6 +66,50 @@ export default function SettingsPage() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setAlert({ type: 'error', message: 'Please fill all password fields' });
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 8) {
+      setAlert({ type: 'error', message: 'New password must be at least 8 characters long' });
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setAlert({ type: 'error', message: 'New password and confirmation do not match' });
+      return;
+    }
+
+    try {
+      setPasswordSaving(true);
+      await authAPI.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setAlert({ type: 'success', message: 'Password updated successfully' });
+    } catch (error) {
+      setAlert({ type: 'error', message: error.response?.data?.error || 'Failed to change password' });
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
+  const openRequestModal = (requestType) => {
+    setRequestModal({
+      requestType,
+      title:
+        requestType === 'update_credits'
+          ? 'Request Credit Top-Up'
+          : 'Request Subscription Reset',
+      description:
+        requestType === 'update_credits'
+          ? 'Ask the admin team to add more credits to your account.'
+          : 'Ask the admin team to refresh your current subscription.',
+    });
   };
 
   const handleConnectEbay = async () => {
@@ -199,6 +253,80 @@ export default function SettingsPage() {
             />
           </div>
         )}
+
+        <div className="glass-card p-4 md:p-5 mb-6">
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <h2 className={`text-lg font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+              <ShieldCheck size={16} />
+              Account Security
+            </h2>
+            <div className="grid gap-3 md:grid-cols-3">
+              <input
+                type="password"
+                value={passwordForm.currentPassword}
+                onChange={(e) => setPasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
+                placeholder="Current password"
+                className="input-base"
+                disabled={passwordSaving}
+              />
+              <input
+                type="password"
+                value={passwordForm.newPassword}
+                onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
+                placeholder="New password"
+                className="input-base"
+                disabled={passwordSaving}
+              />
+              <input
+                type="password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                placeholder="Confirm new password"
+                className="input-base"
+                disabled={passwordSaving}
+              />
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={passwordSaving}
+                className="rounded-xl bg-indigo-600 text-white px-5 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
+              >
+                {passwordSaving ? 'Updating...' : 'Change Password'}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div className="glass-card p-4 md:p-5 mb-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className={`text-lg font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                <Mail size={16} />
+                Credit Requests
+              </h2>
+              <p className={`text-sm mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                Request more credits or ask the admin team to refresh your subscription.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => openRequestModal('update_credits')}
+                className="rounded-xl bg-emerald-600 text-white px-4 py-2.5 hover:bg-emerald-700 transition"
+              >
+                Request Credit Top-Up
+              </button>
+              <button
+                type="button"
+                onClick={() => openRequestModal('reset_credits')}
+                className="rounded-xl bg-slate-800 text-white px-4 py-2.5 hover:bg-slate-700 transition"
+              >
+                Request Subscription Reset
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div className="glass-card p-4 md:p-5">
           <form onSubmit={handleSave} className="space-y-5">
@@ -481,6 +609,21 @@ export default function SettingsPage() {
             </p>
           </div>
         </div>
+
+        <SubscriptionRequestModal
+          open={!!requestModal}
+          onClose={() => setRequestModal(null)}
+          requestType={requestModal?.requestType || 'subscription'}
+          title={requestModal?.title}
+          description={requestModal?.description}
+          defaultValues={{
+            name: user?.name || '',
+            surname: user?.surname || '',
+            email: user?.email || '',
+          }}
+          submitLabel={requestModal?.requestType === 'update_credits' ? 'Send Credit Request' : 'Send Reset Request'}
+          onSuccess={() => setAlert({ type: 'success', message: 'Request sent to admin' })}
+        />
       </div>
     </div>
   );

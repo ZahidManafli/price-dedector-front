@@ -17,7 +17,7 @@ api.interceptors.request.use((config) => {
     url.startsWith('/auth') ||
     url.startsWith('/health') ||
     url.startsWith('/settings/plans/public') ||
-    url.startsWith('/settings/subscription-requests') ||
+    url === '/settings/subscription-requests' ||
     url.includes('/privacy') ||
     url.includes('/about');
 
@@ -53,6 +53,8 @@ api.interceptors.response.use(
 export const authAPI = {
   signup: (email, password, name) => api.post('/auth/signup', { email, password, name }),
   login: (email, password) => api.post('/auth/login', { email, password }),
+  changePassword: (currentPassword, newPassword) =>
+    api.post('/auth/change-password', { currentPassword, newPassword }),
   logout: () => api.post('/auth/logout'),
   verifyToken: () => api.get('/auth/verify'),
 };
@@ -79,6 +81,8 @@ export const settingsAPI = {
   getLimits: () => api.get('/settings/limits'),
   getPublicPlans: () => api.get('/settings/plans/public'),
   submitSubscriptionRequest: (data) => api.post('/settings/subscription-requests', data),
+  submitUpdateCreditRequest: (data) => api.post('/settings/subscription-requests/update-credits', data),
+  submitResetCreditsRequest: (data) => api.post('/settings/subscription-requests/reset-credits', data),
 };
 
 export const ebayAPI = {

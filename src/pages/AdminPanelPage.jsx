@@ -671,6 +671,17 @@ export default function AdminPanelPage() {
                         </span>
                       </div>
 
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                          {(req.requestType || 'subscription').replace(/_/g, ' ')}
+                        </span>
+                        {req.requestType === 'update_credits' && req.requestedCredits != null ? (
+                          <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200">
+                            Credits: {req.requestedCredits}
+                          </span>
+                        ) : null}
+                      </div>
+
                       <p className="mt-2 text-xs text-slate-500">Plan: {req.planName || 'N/A'}</p>
                       {(req.planId === 'custom' || req.planCategory === 'custom') ? (
                         <div className="mt-2 rounded-lg border border-cyan-200 bg-cyan-50/70 p-2 text-xs text-slate-700 dark:border-cyan-900/40 dark:bg-cyan-900/20 dark:text-cyan-100">
