@@ -155,7 +155,14 @@ export default function ListingsPage() {
       const matchesStatus = statusFilter === 'ALL' || offer._status.toUpperCase() === statusFilter;
       return matchesQuery && matchesStatus;
     });
+    const statusPriority = (statusValue) => {
+      const s = String(statusValue || '').toUpperCase();
+      if (s.includes('ACTIVE')) return 0;
+      return 1;
+    };
     const compare = (a, b) => {
+      const activeDelta = statusPriority(a._status) - statusPriority(b._status);
+      if (activeDelta !== 0) return activeDelta;
       if (sortKey === 'title') return String(a._title || '').localeCompare(String(b._title || ''));
       if (sortKey === 'listingId') return String(a._id || '').localeCompare(String(b._id || ''));
       if (sortKey === 'price') return Number(a._priceValue ?? -1) - Number(b._priceValue ?? -1);
