@@ -57,10 +57,17 @@ export default function Sidebar() {
       }
     };
     load();
+
+    const handleEbayUpdated = () => {
+      load();
+    };
+
+    window.addEventListener('ebay:updated', handleEbayUpdated);
     return () => {
       cancelled = true;
+      window.removeEventListener('ebay:updated', handleEbayUpdated);
     };
-  }, []);
+  }, [user?.uid]);
 
   return (
     <>

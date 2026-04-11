@@ -260,15 +260,10 @@ export default function AdminPanelPage() {
 
   const onApproveRequest = async (requestId) => {
     const action = requestAction[requestId] || {};
-    if (!action.temporaryPassword || action.temporaryPassword.length < 6) {
-      setAlert({ type: 'warning', message: 'Temporary password is required (min 6 chars)' });
-      return;
-    }
 
     try {
       setLoading(true);
       await adminAPI.approveSubscriptionRequest(requestId, {
-        temporaryPassword: action.temporaryPassword,
         adminNote: action.adminNote || '',
       });
       await refreshData();
@@ -688,14 +683,7 @@ export default function AdminPanelPage() {
                       ) : null}
 
                       {isPending ? (
-                        <div className="mt-3 grid grid-cols-1 md:grid-cols-[1fr_1fr_auto_auto] gap-2">
-                          <input
-                            type="password"
-                            placeholder="Temporary password"
-                            value={action.temporaryPassword || ''}
-                            onChange={(e) => setRequestAction((prev) => ({ ...prev, [req.id]: { ...prev[req.id], temporaryPassword: e.target.value } }))}
-                            className="input-base"
-                          />
+                        <div className="mt-3 grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-2">
                           <input
                             type="text"
                             placeholder="Admin note (optional)"

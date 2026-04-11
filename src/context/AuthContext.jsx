@@ -3,8 +3,18 @@ import { authAPI } from '../services/api';
 
 export const AuthContext = createContext();
 
+function readStoredUser() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('authUser');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => readStoredUser());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -19,9 +29,20 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
+      const storedUser = readStoredUser();
+      if (storedUser) {
+        setUser(storedUser);
+      }
+
       try {
         const response = await authAPI.verifyToken();
-        setUser(response?.data?.user || null);
+        const verifiedUser = response?.data?.user || null;
+        setUser(verifiedUser);
+        if (verifiedUser) {
+          try {
+            localStorage.setItem('authUser', JSON.stringify(verifiedUser));
+          } catch {}
+        }
       } catch (err) {
         try {
           localStorage.removeItem('authToken');
@@ -36,6 +57,20 @@ export const AuthProvider = ({ children }) => {
 
     verifySession();
   }, []);
+
+  const setSession = (nextUser, nextToken) => {
+    try {
+      if (nextToken) {
+        localStorage.setItem('authToken', nextToken);
+      }
+      if (nextUser) {
+        localStorage.setItem('authUser', JSON.stringify(nextUser));
+      }
+    } catch {}
+    setUser(nextUser || null);
+    setError(null);
+    setLoading(false);
+  };
 
   const logout = async () => {
     setError(null);
@@ -56,6 +91,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     error,
     logout,
+    setSession,
     isAuthenticated: !!user,
   };
 

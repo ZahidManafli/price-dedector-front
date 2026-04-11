@@ -30,6 +30,9 @@ export default function EbayCallbackPage() {
 
       try {
         await ebayAPI.completeCallback(code, state);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('ebay:updated'));
+        }
         setSuccess(true);
         setAlert({ type: 'success', message: 'eBay account connected successfully' });
         setTimeout(() => navigate('/settings'), 1500);

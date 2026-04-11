@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { authAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import Swal from 'sweetalert2';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { setSession } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -45,13 +47,13 @@ export default function LoginPage() {
 
       localStorage.setItem('authToken', token);
       if (user) {
-        localStorage.setItem('authUser', JSON.stringify(user));
+        setSession(user, token);
       } else {
-        localStorage.removeItem('authUser');
+        setSession({ email: formData.email, role: 'user' }, token);
       }
 
       setAlert({ type: 'success', message: 'Login successful!' });
-      setTimeout(() => navigate('/dashboard'), 1000);
+      navigate('/dashboard', { replace: true });
     } catch (error) {
       const errorMessage =
         error?.response?.data?.message || error?.response?.data?.error || error.message || 'Login failed';
