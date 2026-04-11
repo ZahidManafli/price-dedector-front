@@ -5,6 +5,7 @@ import { buildAmazonProductUrl, extractAmazonAsin, formatCurrency, formatDate } 
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
 import { useTheme } from '../context/ThemeContext';
+import { Loader2 } from 'lucide-react';
 
 export default function ProductDetailPage() {
   const { isDark } = useTheme();
@@ -13,6 +14,7 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [compareLoading, setCompareLoading] = useState(false);
   const [alert, setAlert] = useState(null);
 
   useEffect(() => {
@@ -38,16 +40,20 @@ export default function ProductDetailPage() {
   };
 
   const handleCompare = async () => {
+    if (compareLoading) return;
     try {
-      const response = await productAPI.comparePrice(productId);
+      setCompareLoading(true);
+      await productAPI.comparePrice(productId);
       setAlert({
         type: 'success',
         message: 'Price comparison triggered. Check your email for updates!',
       });
       // Refresh product data
-      fetchProductDetails();
+      await fetchProductDetails();
     } catch (error) {
       setAlert({ type: 'error', message: 'Failed to compare prices' });
+    } finally {
+      setCompareLoading(false);
     }
   };
 
@@ -186,9 +192,11 @@ export default function ProductDetailPage() {
             <div className={`pt-4 border-t flex flex-wrap gap-3 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
               <button
                 onClick={handleCompare}
-                className="rounded-xl bg-emerald-600 text-white px-6 py-3 hover:bg-emerald-700 transition"
+                disabled={compareLoading}
+                className="rounded-xl bg-emerald-600 text-white px-6 py-3 hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
               >
-                Compare Prices Now
+                {compareLoading && <Loader2 size={16} className="animate-spin" />}
+                {compareLoading ? 'Comparing...' : 'Compare Prices Now'}
               </button>
               <button
                 onClick={() => navigate(`/edit-product/${productId}`)}
