@@ -16,15 +16,11 @@ export default function ListingsPage() {
   const [total, setTotal] = useState(undefined);
   const [page, setPage] = useState(0);
   const [limit] = useState(25);
-  const [paging, setPaging] = useState({ nextOffset: null });
-  const [pageOffsets, setPageOffsets] = useState({ 0: 0 });
   const [fetchingPage, setFetchingPage] = useState(false);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [sortKey, setSortKey] = useState('title');
   const [sortDir, setSortDir] = useState('asc');
-
-  const offset = useMemo(() => page * limit, [page, limit]);
 
   useEffect(() => {
     const init = async () => {
@@ -37,7 +33,7 @@ export default function ListingsPage() {
           setLoading(false);
           return;
         }
-        await loadPage(0);
+        await loadListings();
       } catch (err) {
         // If disconnected or forbidden, trigger connect modal gracefully
         setShowConnectModal(true);
@@ -49,24 +45,14 @@ export default function ListingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadPage = async (pageIndex) => {
+  const loadListings = async () => {
     try {
       setFetchingPage(true);
-      const requestOffset =
-        pageIndex === 0
-          ? 0
-          : pageOffsets[pageIndex] ?? (pageIndex === page + 1 ? paging.nextOffset : pageIndex * limit);
-      const res = await ebayAPI.getListings(requestOffset, limit);
+      const res = await ebayAPI.getListings(0, 200);
       const data = res?.data || {};
       setItems(data.items || []);
       setTotal(typeof data.total === 'number' ? data.total : undefined);
-      setPaging({ nextOffset: data.nextOffset ?? null, limit: data.limit, offset: data.offset });
-      setPageOffsets((prev) => ({
-        ...prev,
-        [pageIndex]: Number(data.offset ?? requestOffset ?? 0),
-        ...(data.nextOffset != null ? { [pageIndex + 1]: Number(data.nextOffset) } : {}),
-      }));
-      setPage(pageIndex);
+      setPage(0);
     } catch (err) {
       const msg = err?.response?.data?.error || 'Failed to load eBay listings';
       setError(msg);
@@ -74,6 +60,10 @@ export default function ListingsPage() {
       setFetchingPage(false);
     }
   };
+
+  useEffect(() => {
+    setPage(0);
+  }, [query, statusFilter, sortKey, sortDir]);
 
   const handleConnect = async () => {
     try {
@@ -88,7 +78,6 @@ export default function ListingsPage() {
   };
 
   const canPrev = page > 0;
-  const canNext = paging.nextOffset !== null;
   const normalizedItems = useMemo(
     () =>
       (items || []).map((offer) => {
@@ -174,6 +163,11 @@ export default function ListingsPage() {
     const sorted = [...base].sort(compare);
     return sortDir === 'desc' ? sorted.reverse() : sorted;
   }, [normalizedItems, query, statusFilter, sortKey, sortDir]);
+  const pagedItems = useMemo(() => {
+    const start = page * limit;
+    return filteredItems.slice(start, start + limit);
+  }, [filteredItems, page, limit]);
+  const canNext = (page + 1) * limit < filteredItems.length;
   const onSort = (key) => {
     setSortKey((prev) => {
       if (prev === key) {
@@ -343,7 +337,7 @@ export default function ListingsPage() {
                 </tr>
               </thead>
               <tbody className={`${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
-                {filteredItems.map((offer, idx) => {
+                {pagedItems.map((offer, idx) => {
                   const key = offer._id;
                   const title = offer._title;
                   const status = offer?._status || '-';
@@ -385,7 +379,7 @@ export default function ListingsPage() {
                     </React.Fragment>
                   );
                 })}
-                {filteredItems.length === 0 && (
+                {pagedItems.length === 0 && (
                   <tr>
                     <td colSpan={8} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       No listings found for current filters.
@@ -403,7 +397,7 @@ export default function ListingsPage() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => canPrev && loadPage(page - 1)}
+                onClick={() => canPrev && setPage((p) => Math.max(0, p - 1))}
                 disabled={!canPrev || fetchingPage}
                 className="btn-secondary"
               >
@@ -411,7 +405,7 @@ export default function ListingsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => canNext && loadPage(page + 1)}
+                onClick={() => canNext && setPage((p) => p + 1)}
                 disabled={!canNext || fetchingPage}
                 className="btn-secondary"
               >
