@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword, auth } from '../services/firebase';
 import { authAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import { useTheme } from '../context/ThemeContext';
@@ -36,27 +35,26 @@ export default function LoginPage() {
     try {
       setLoading(true);
 
-      // Sign in with Firebase
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
+      const response = await authAPI.login(formData.email, formData.password);
+      const token = response?.data?.token;
+      const user = response?.data?.user;
 
-      // Get token and store it
-      const token = await userCredential.user.getIdToken();
+      if (!token) {
+        throw new Error('Login failed: missing token');
+      }
+
       localStorage.setItem('authToken', token);
-
-      // Verify with backend
-      await authAPI.verifyToken();
+      if (user) {
+        localStorage.setItem('authUser', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('authUser');
+      }
 
       setAlert({ type: 'success', message: 'Login successful!' });
       setTimeout(() => navigate('/dashboard'), 1000);
     } catch (error) {
       const errorMessage =
-        error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password'
-          ? 'Invalid email or password'
-          : error.message || 'Login failed';
+        error?.response?.data?.message || error?.response?.data?.error || error.message || 'Login failed';
       setAlert({ type: 'error', message: errorMessage });
     } finally {
       setLoading(false);

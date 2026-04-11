@@ -28,9 +28,8 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-semibold text-slate-900 mb-2">3. Third-Party Services</h2>
             <p>
-              This app uses third-party providers (such as Firebase, Supabase, EmailJS, Amazon
-              scraping provider, and eBay APIs). Their services may process data necessary for app
-              features.
+              This app uses third-party providers for marketplace integrations, product lookup,
+              and email delivery. Their services may process data necessary for app features.
             </p>
           </section>
 

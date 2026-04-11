@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import {
-  createUserWithEmailAndPassword,
-  updateProfile,
-  signOut,
-  auth,
-} from '../services/firebase';
 import { authAPI } from '../services/api';
 import Alert from '../components/Alert';
 
@@ -48,32 +42,16 @@ export default function SignupPage() {
     try {
       setLoading(true);
 
-      // Create user in Firebase
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-
-      // Update profile with name
-      await updateProfile(userCredential.user, {
-        displayName: formData.name,
-      });
-
-      // Also notify backend
       await authAPI.signup(formData.email, formData.password, formData.name);
 
-      // Firebase signs in immediately after signup; sign out so user lands on login.
-      await signOut(auth);
       localStorage.removeItem('authToken');
+      localStorage.removeItem('authUser');
 
       setAlert({ type: 'success', message: 'Account created successfully! Please login.' });
       setTimeout(() => navigate('/login'), 1200);
     } catch (error) {
       const errorMessage =
-        error.code === 'auth/email-already-in-use'
-          ? 'Email already in use'
-          : error.message || 'Signup failed';
+        error?.response?.data?.message || error?.response?.data?.error || error.message || 'Signup failed';
       setAlert({ type: 'error', message: errorMessage });
     } finally {
       setLoading(false);

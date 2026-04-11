@@ -1,5 +1,4 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { auth, onAuthStateChanged, signOut } from '../services/firebase';
 import { authAPI } from '../services/api';
 
 export const AuthContext = createContext();
@@ -10,50 +9,46 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const verifySession = async () => {
       setError(null);
-      if (!currentUser) {
+
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      if (!token) {
         setUser(null);
         setLoading(false);
         return;
       }
 
-      setLoading(true);
-      setUser(currentUser);
-
       try {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-        if (!token) {
-          setLoading(false);
-          return;
-        }
-
         const response = await authAPI.verifyToken();
-        const verifiedUser = response?.data?.user;
-        if (verifiedUser) {
-          // Merge Firebase user fields with backend user profile (role/limits/etc).
-          setUser({ ...currentUser, ...verifiedUser });
-        }
+        setUser(response?.data?.user || null);
       } catch (err) {
-        // If verify fails, keep Firebase user so app can still operate with auth token checks.
-        console.warn('AuthContext verifyToken failed:', err);
+        try {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('authUser');
+        } catch {}
+        setUser(null);
+        setError(err?.response?.data?.message || err?.response?.data?.error || err.message || 'Session expired');
       } finally {
         setLoading(false);
       }
-    });
+    };
 
-    return () => unsubscribe();
+    verifySession();
   }, []);
 
   const logout = async () => {
+    setError(null);
     try {
-      setError(null);
-      await signOut(auth);
-      setUser(null);
-    } catch (err) {
-      setError(err.message);
-      console.error('Logout error:', err);
-    }
+      await authAPI.logout();
+    } catch {}
+
+    try {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('authUser');
+    } catch {}
+
+    setUser(null);
   };
 
   const value = {

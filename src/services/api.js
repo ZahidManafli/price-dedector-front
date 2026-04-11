@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { auth, signOut } from './firebase';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
@@ -23,12 +22,6 @@ api.interceptors.request.use((config) => {
     url.includes('/about');
 
   if (!token && !isAuthOrPublic) {
-    // Mirror logout when token missing
-    try {
-      if (auth?.currentUser) {
-        signOut(auth).catch(() => {});
-      }
-    } catch {}
     if (typeof window !== 'undefined') window.location.href = '/login';
     // Prevent request from going out
     return Promise.reject(new Error('No auth token present'));
@@ -48,13 +41,7 @@ api.interceptors.response.use(
     if (status === 401) {
       try {
         localStorage.removeItem('authToken');
-      } catch {}
-      // Mirror the explicit logout flow (Firebase signOut + redirect)
-      try {
-        if (auth?.currentUser) {
-          // Best-effort; do not block redirect on failure
-          signOut(auth).catch(() => {});
-        }
+        localStorage.removeItem('authUser');
       } catch {}
       if (typeof window !== 'undefined') window.location.href = '/login';
     }
