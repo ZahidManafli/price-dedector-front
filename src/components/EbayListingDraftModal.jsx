@@ -184,7 +184,7 @@ export default function EbayListingDraftModal({
                     {(draft.pictureUrls || []).map((url, idx) => (
                       <div key={`${url}-${idx}`} className="rounded-lg border border-slate-200 p-2 bg-white">
                         <div className="aspect-square rounded-md overflow-hidden border border-slate-100 bg-slate-50">
-                          <img src={url} alt={`Listing image ${idx + 1}`} className="w-full h-full object-contain" />
+                          <img src={"https://back.checkila.com/"+url} alt={`Listing image ${idx + 1}`} className="w-full h-full object-contain" />
                         </div>
                         <div className="mt-2 flex items-center justify-between gap-2">
                           <span className="text-xs text-slate-500">#{idx + 1}</span>
