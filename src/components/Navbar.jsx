@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 export default function Navbar() {
   const { user, logout } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
+  const displayName = [user?.name, user?.surname].filter(Boolean).join(' ').trim() || user?.fullName || user?.email || 'Account';
 
   const handleLogout = async () => {
     await logout();
@@ -25,7 +26,8 @@ export default function Navbar() {
           {/* Right side */}
           <div className="flex items-center gap-4 ml-auto">
             {/* User Info */}
-            <div className="hidden md:flex items-center gap-2 text-sm">
+            <div className="hidden md:flex flex-col items-end text-sm leading-tight">
+              <span className="font-medium text-slate-900">{displayName}</span>
               <span className="text-slate-600">{user?.email}</span>
             </div>
 
