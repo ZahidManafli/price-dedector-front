@@ -35,6 +35,12 @@ export default function SettingsPage() {
     confirmPassword: '',
   });
   const [requestModal, setRequestModal] = useState(null);
+  const [ebayTab, setEbayTab] = useState('overview');
+
+  const activeEbayAccount = Array.isArray(ebayStatus.ebayAccounts)
+    ? ebayStatus.ebayAccounts.find((acc) => acc.id && ebayStatus.activeEbayAccountId === acc.id) || ebayStatus.ebayAccounts[0] || null
+    : null;
+  const activeSellerSnapshot = activeEbayAccount?.sellerSnapshot || ebayStatus.sellerSnapshot || null;
 
   useEffect(() => {
     const load = async () => {
@@ -390,9 +396,38 @@ export default function SettingsPage() {
               <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                 Connect your eBay account to auto-update listing prices when Amazon prices change.
               </p>
-              <div className={`rounded-lg p-3 mb-3 ${
-                isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'
-              }`}>
+              <div className={`inline-flex rounded-xl p-1 mb-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-100 border border-slate-200'}`}>
+                <button
+                  type="button"
+                  onClick={() => setEbayTab('overview')}
+                  className={`px-3 py-1.5 text-sm rounded-lg transition ${
+                    ebayTab === 'overview'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : isDark
+                        ? 'text-slate-300 hover:text-slate-100'
+                        : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Connection
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEbayTab('details')}
+                  className={`px-3 py-1.5 text-sm rounded-lg transition ${
+                    ebayTab === 'details'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : isDark
+                        ? 'text-slate-300 hover:text-slate-100'
+                        : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Seller details
+                </button>
+              </div>
+              {ebayTab === 'overview' ? (
+                <div className={`rounded-lg p-3 mb-3 ${
+                  isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'
+                }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${ebayStatus.connected ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
@@ -565,6 +600,151 @@ export default function SettingsPage() {
                   </>
                 )}
               </div>
+              ) : (
+                <div className="space-y-4 mb-3">
+                  <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                          Seller snapshot
+                        </p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          Saved when the account connected. Reconnect to refresh this data.
+                        </p>
+                      </div>
+                      <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                        Fetched: {activeSellerSnapshot?.fetchedAt ? new Date(activeSellerSnapshot.fetchedAt).toLocaleString() : '—'}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                      <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-900/60' : 'bg-white'}`}>
+                        <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Connection</p>
+                        <p className={`mt-1 text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{activeEbayAccount?.connectionName || activeEbayAccount?.username || activeEbayAccount?.profileUserId || 'Unknown'}</p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Account ID: {activeEbayAccount?.tradingAccountId || activeEbayAccount?.profileUserId || activeEbayAccount?.accountId || '—'}</p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Environment: {activeEbayAccount?.environment || ebayStatus.environment || '—'}</p>
+                      </div>
+                      <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-900/60' : 'bg-white'}`}>
+                        <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Seller registration</p>
+                        <p className={`mt-1 text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                          {activeSellerSnapshot?.sellerRegistrationCompleted === true ? 'Completed' : activeSellerSnapshot?.sellerRegistrationCompleted === false ? 'Not completed' : 'Unknown'}
+                        </p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          Selling limit: {activeSellerSnapshot?.sellingLimit?.amount ? `${activeSellerSnapshot.sellingLimit.amount.value} ${activeSellerSnapshot.sellingLimit.amount.currency}` : '—'}
+                        </p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          Quantity limit: {activeSellerSnapshot?.sellingLimit?.quantity ?? '—'}
+                        </p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          Business policies: {activeEbayAccount?.userPreferencesSummary?.sellerProfileOptedIn ? 'Enabled' : activeEbayAccount?.userPreferencesSummary?.sellerProfileOptedIn === false ? 'Disabled' : 'Unknown'}
+                        </p>
+                      </div>
+                      <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-900/60' : 'bg-white'}`}>
+                        <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Policies</p>
+                        <p className={`mt-1 text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                          Custom: {activeSellerSnapshot?.policyCounts?.customPolicies ?? 0}
+                        </p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          Fulfillment: {activeSellerSnapshot?.policyCounts?.fulfillmentPolicies ?? 0} · Payment: {activeSellerSnapshot?.policyCounts?.paymentPolicies ?? 0}
+                        </p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          Return: {activeSellerSnapshot?.policyCounts?.returnPolicies ?? 0}
+                        </p>
+                      </div>
+                      <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-900/60' : 'bg-white'}`}>
+                        <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Rate tables</p>
+                        <p className={`mt-1 text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                          {activeSellerSnapshot?.policyCounts?.rateTables ?? 0}
+                        </p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          Marketplace: {activeSellerSnapshot?.marketplaceId || '—'}
+                        </p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          Country: {activeSellerSnapshot?.countryCode || 'All'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {Array.isArray(activeSellerSnapshot?.errors) && activeSellerSnapshot.errors.length > 0 && (
+                    <div className={`rounded-lg p-3 ${isDark ? 'bg-amber-950/30 border border-amber-800' : 'bg-amber-50 border border-amber-200'}`}>
+                      <p className={`text-sm font-semibold ${isDark ? 'text-amber-200' : 'text-amber-900'}`}>Partial snapshot warnings</p>
+                      <ul className={`mt-2 space-y-1 text-xs ${isDark ? 'text-amber-100' : 'text-amber-800'}`}>
+                        {activeSellerSnapshot.errors.map((err, index) => (
+                          <li key={`${err.resource || 'error'}-${index}`}>{err.resource}: {err.message}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {['customPolicies', 'fulfillmentPolicies', 'paymentPolicies', 'returnPolicies', 'rateTables'].map((section) => {
+                    const items = Array.isArray(activeSellerSnapshot?.[section]) ? activeSellerSnapshot[section] : [];
+                    const labels = {
+                      customPolicies: 'Custom policies',
+                      fulfillmentPolicies: 'Fulfillment policies',
+                      paymentPolicies: 'Payment policies',
+                      returnPolicies: 'Return policies',
+                      rateTables: 'Shipping rate tables',
+                    };
+                    return (
+                      <div key={section} className={`rounded-lg p-3 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'}`}>
+                        <p className={`text-sm font-semibold mb-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                          {labels[section]}
+                        </p>
+                        {items.length > 0 ? (
+                          <div className="grid gap-2 md:grid-cols-2">
+                            {items.map((item) => (
+                              <div key={item.customPolicyId || item.fulfillmentPolicyId || item.paymentPolicyId || item.returnPolicyId || item.rateTableId || item.name} className={`rounded-md p-3 ${isDark ? 'bg-slate-900/60' : 'bg-white'}`}>
+                                {section === 'customPolicies' && (
+                                  <>
+                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.label || item.name || 'Custom policy'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>ID: {item.customPolicyId || '—'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Type: {item.policyType || '—'}</p>
+                                  </>
+                                )}
+                                {section === 'fulfillmentPolicies' && (
+                                  <>
+                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.name || 'Fulfillment policy'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>ID: {item.fulfillmentPolicyId || '—'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Marketplace: {item.marketplaceId || '—'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Shipping options: {Array.isArray(item.shippingOptions) ? item.shippingOptions.length : 0}</p>
+                                  </>
+                                )}
+                                {section === 'paymentPolicies' && (
+                                  <>
+                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.name || 'Payment policy'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>ID: {item.paymentPolicyId || '—'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Description: {item.description || '—'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Methods: {Array.isArray(item.paymentMethods) ? item.paymentMethods.map((method) => method.paymentMethodType).filter(Boolean).join(', ') || '—' : '—'}</p>
+                                  </>
+                                )}
+                                {section === 'returnPolicies' && (
+                                  <>
+                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.name || 'Return policy'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>ID: {item.returnPolicyId || '—'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Returns accepted: {item.returnsAccepted ? 'Yes' : 'No'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Period: {item.returnPeriod?.value ? `${item.returnPeriod.value} ${item.returnPeriod.unit || ''}`.trim() : '—'}</p>
+                                  </>
+                                )}
+                                {section === 'rateTables' && (
+                                  <>
+                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.name || 'Rate table'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>ID: {item.rateTableId || '—'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Country: {item.countryCode || '—'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Locality: {item.locality || '—'}</p>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>No saved {labels[section].toLowerCase()} found for this account.</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Buttons */}
