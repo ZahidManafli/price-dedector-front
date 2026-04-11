@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { LayoutGrid, List, RefreshCw, Search, SearchCheck } from 'lucide-react';
+import { History, LayoutGrid, List, RefreshCw, Search, SearchCheck } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -449,6 +449,7 @@ export default function MarketAnalysisPage() {
                             {renderSortLabel('Sold Qty', 'soldQuantity')}
                           </button>
                         </th>
+                        <th className="text-left p-3">See History</th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('priceValue')} className="hover:underline">
                             {renderSortLabel('Item Price', 'priceValue')}
@@ -481,17 +482,17 @@ export default function MarketAnalysisPage() {
                           </td>
                           <td className="p-3 font-medium">{Number(item.sellerFeedback || 0)}</td>
                           <td className="p-3">{item.condition}</td>
-                          <td className="p-3 font-medium">
-                            <div className="flex items-center gap-2">
-                              <span>{Number(item.soldQuantity || 0)}</span>
-                              <button
-                                type="button"
-                                className="btn-secondary text-xs"
-                                onClick={() => openDetailsInNewTab(item)}
-                              >
-                                See history
-                              </button>
-                            </div>
+                          <td className="p-3 font-medium">{Number(item.soldQuantity || 0)}</td>
+                          <td className="p-3">
+                            <button
+                              type="button"
+                              className="btn-secondary inline-flex items-center justify-center"
+                              onClick={() => openDetailsInNewTab(item)}
+                              title="See history"
+                              aria-label="See history"
+                            >
+                              <History size={14} />
+                            </button>
                           </td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>
                           <td className="p-3">
