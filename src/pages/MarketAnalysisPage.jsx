@@ -78,6 +78,45 @@ export default function MarketAnalysisPage() {
     await searchNow(nextParams);
   };
 
+  const serializeSearchParams = (nextParams = {}) => {
+    const query = new URLSearchParams({ openSearch: '1' });
+    const assign = (key, value) => {
+      if (value === undefined || value === null) return;
+      if (typeof value === 'string' && value.trim() === '') return;
+      query.set(key, String(value));
+    };
+
+    assign('q', nextParams.q);
+    assign('categoryId', nextParams.categoryId);
+    assign('condition', nextParams.condition);
+    assign('minPrice', nextParams.minPrice);
+    assign('maxPrice', nextParams.maxPrice);
+    assign('sort', nextParams.sort);
+    assign('buyingOptions', nextParams.buyingOptions);
+    assign('sellerUsername', nextParams.sellerUsername);
+    assign('limit', nextParams.limit);
+    assign('offset', nextParams.offset);
+    if (nextParams.freeShipping === true) query.set('freeShipping', 'true');
+    return query;
+  };
+
+  const openSearchInNewTab = (nextParams) => {
+    const query = serializeSearchParams(nextParams);
+    window.open(`/market-analysis?${query.toString()}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const openDetailsInNewTab = (item) => {
+    const query = new URLSearchParams();
+    if (params.q) query.set('q', params.q);
+    if (params.categoryId) query.set('categoryId', params.categoryId);
+    if (params.sellerUsername) query.set('sellerUsername', params.sellerUsername);
+    window.open(
+      `/market-analysis/item/${encodeURIComponent(item.id)}${query.toString() ? `?${query.toString()}` : ''}`,
+      '_blank',
+      'noopener,noreferrer'
+    );
+  };
+
   useEffect(() => {
     const presetSearch = location.state?.presetSearch;
     if (!presetSearch) return;
@@ -94,6 +133,31 @@ export default function MarketAnalysisPage() {
     // Run once per preset search handoff.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
+
+  useEffect(() => {
+    const query = new URLSearchParams(location.search || '');
+    if (query.get('openSearch') !== '1') return;
+
+    const nextParams = {
+      ...params,
+      q: String(query.get('q') || '').trim(),
+      categoryId: String(query.get('categoryId') || '').trim(),
+      condition: String(query.get('condition') || params.condition || 'ALL').trim(),
+      minPrice: String(query.get('minPrice') || '').trim(),
+      maxPrice: String(query.get('maxPrice') || '').trim(),
+      sort: String(query.get('sort') || '').trim(),
+      buyingOptions: String(query.get('buyingOptions') || '').trim(),
+      sellerUsername: String(query.get('sellerUsername') || '').trim(),
+      freeShipping: query.get('freeShipping') === 'true',
+      limit: Math.max(1, Number(query.get('limit') || params.limit || 24)),
+      offset: Math.max(0, Number(query.get('offset') || 0)),
+    };
+
+    setParams(nextParams);
+    runSearch(nextParams);
+    // Execute once on new-tab handoff URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   const filteredResults = useMemo(() => {
     const seller = String(params.sellerUsername || '').trim().toLowerCase();
@@ -197,13 +261,10 @@ export default function MarketAnalysisPage() {
   const handleSellerClick = (sellerName) => {
     const nextParams = {
       ...params,
-      q: '',
-      categoryId: '0',
       sellerUsername: String(sellerName || '').trim(),
       offset: 0,
     };
-    setParams(nextParams);
-    runSearch(nextParams);
+    openSearchInNewTab(nextParams);
   };
 
   const handleTitleSearch = (item) => {
@@ -212,12 +273,9 @@ export default function MarketAnalysisPage() {
     const nextParams = {
       ...params,
       q: titleQuery,
-      categoryId: '',
-      sellerUsername: '',
       offset: 0,
     };
-    setParams(nextParams);
-    runSearch(nextParams);
+    openSearchInNewTab(nextParams);
   };
 
   const onNextPage = () => {
@@ -421,14 +479,30 @@ export default function MarketAnalysisPage() {
                           </td>
                           <td className="p-3 font-medium">{Number(item.sellerFeedback || 0)}</td>
                           <td className="p-3">{item.condition}</td>
-                          <td className="p-3 font-medium">{Number(item.soldQuantity || 0)}</td>
+                          <td className="p-3 font-medium">
+                            <div className="flex items-center gap-2">
+                              <span>{Number(item.soldQuantity || 0)}</span>
+                              <button
+                                type="button"
+                                className="btn-secondary text-xs"
+                                onClick={() => openDetailsInNewTab(item)}
+                              >
+                                See history
+                              </button>
+                            </div>
+                          </td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>
                           <td className="p-3">
                             <div className="flex gap-2">
                               <button type="button" className="btn-secondary" onClick={() => handleSelect(item)}>
                                 {selectedIds.includes(item.id) ? 'Selected' : 'Compare'}
                               </button>
-                              <button type="button" className="btn-secondary" onClick={() => handleTitleSearch(item)} title="Search this title">
+                              <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => handleTitleSearch(item)}
+                                title="Search this title in new tab"
+                              >
                                 <Search size={14} />
                               </button>
                               <button type="button" className="btn-primary" onClick={() => handleInspect(item)}>

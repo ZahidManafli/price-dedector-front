@@ -89,6 +89,11 @@ export default function OrdersPage() {
     if (v === 'NOT_STARTED') return isDark ? 'bg-amber-900/30 text-amber-300 border-amber-800' : 'bg-amber-50 text-amber-700 border-amber-200';
     return isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-100 text-slate-700 border-slate-200';
   };
+  const getShipmentLabel = (value) => {
+    const normalized = String(value || '').toUpperCase();
+    if (normalized === 'NOT_STARTED') return 'ORDER_CANCELLED';
+    return normalized || '-';
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -121,7 +126,7 @@ export default function OrdersPage() {
       const data = res?.data || {};
 
       if (data?.accessDenied) {
-        setError(data?.accessDeniedErrorMessage || 'eBay fulfillment access denied');
+        setError(data?.accessDeniedErrorMessage || 'eBay shipment access denied');
         setOrders([]);
         setNextOffset(null);
         setTotal(null);
@@ -193,7 +198,7 @@ export default function OrdersPage() {
             }`}
           >
             <p className={`${isDark ? 'text-slate-300' : 'text-slate-600'} mb-4`}>
-              Connect your eBay account to view your fulfillment orders.
+              Connect your eBay account to view your shipment orders.
             </p>
             <button type="button" onClick={handleConnect} className="btn-primary inline-flex items-center gap-2">
               <Link2 size={16} />
@@ -243,7 +248,7 @@ export default function OrdersPage() {
             <p className={`text-2xl font-bold ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{stats.paid}</p>
           </div>
           <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Fulfilled</p>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Shipped</p>
             <p className={`text-2xl font-bold ${isDark ? 'text-indigo-300' : 'text-indigo-700'}`}>{stats.fulfilled}</p>
           </div>
           <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
@@ -287,8 +292,8 @@ export default function OrdersPage() {
                   isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
                 }`}
               >
-                <option value="ALL">All fulfillment</option>
-                <option value="NOT_STARTED">NOT_STARTED</option>
+                <option value="ALL">All shipment</option>
+                <option value="NOT_STARTED">ORDER_CANCELLED</option>
                 <option value="FULFILLED">FULFILLED</option>
               </select>
             </label>
@@ -310,7 +315,7 @@ export default function OrdersPage() {
                     {sortLabel('payment', 'Payment')}
                   </th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    {sortLabel('fulfillment', 'Fulfillment')}
+                    {sortLabel('fulfillment', 'Shipment')}
                   </th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                     {sortLabel('total', 'Total')}
@@ -323,6 +328,7 @@ export default function OrdersPage() {
                   const id = order.orderId;
                   const payment = order.orderPaymentStatus || '-';
                   const fulfillment = order.orderFulfillmentStatus || '-';
+                  const shipmentLabel = getShipmentLabel(fulfillment);
                   const totalValue = order?.pricingSummary?.total?.value;
                   const totalCurrency = order?.pricingSummary?.total?.currency;
                   const buyer = order?.buyer?.username || '-';
@@ -339,7 +345,7 @@ export default function OrdersPage() {
                         </td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                           <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${getPill(fulfillment, 'fulfillment')}`}>
-                            {fulfillment}
+                            {shipmentLabel}
                           </span>
                         </td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>

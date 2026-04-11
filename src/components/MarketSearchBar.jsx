@@ -33,7 +33,13 @@ export default function MarketSearchBar({
   const setValue = (key, value) => onChange((prev) => ({ ...prev, [key]: value }));
 
   return (
-    <div className="glass-card p-4 md:p-5 fade-in">
+    <form
+      className="glass-card p-4 md:p-5 fade-in"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
+    >
       <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
         <div className="md:col-span-4">
           <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">Keyword</label>
@@ -146,7 +152,7 @@ export default function MarketSearchBar({
         </div>
 
         <div className="md:col-span-2 flex justify-end">
-          <button type="button" onClick={onSubmit} disabled={disabled} className="btn-primary w-full md:w-auto">
+          <button type="submit" disabled={disabled} className="btn-primary w-full md:w-auto">
             Run Checkila Analysis
             {typeof searchCost === 'number' ? ` (${searchCost} credit${searchCost > 1 ? 's' : ''})` : ''}
             {marketCreditsRemaining !== null && marketCreditsRemaining !== undefined
@@ -155,6 +161,6 @@ export default function MarketSearchBar({
           </button>
         </div>
       </div>
-    </div>
+    </form>
   );
 }

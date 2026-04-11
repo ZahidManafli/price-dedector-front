@@ -10,17 +10,45 @@ export default function OrderDetailPage() {
 
   const summary = useMemo(() => {
     if (!order) return {};
+    const fulfillmentRaw = String(order?.orderFulfillmentStatus || '').toUpperCase();
+    const shipmentStatus = fulfillmentRaw === 'NOT_STARTED' ? 'ORDER_CANCELLED' : (fulfillmentRaw || '-');
     return {
       id: order?.orderId || '-',
       buyer: order?.buyer?.username || '-',
       payment: order?.orderPaymentStatus || '-',
-      fulfillment: order?.orderFulfillmentStatus || '-',
+      shipment: shipmentStatus,
       total: order?.pricingSummary?.total?.value
         ? `${order.pricingSummary.total.value} ${order.pricingSummary.total.currency || ''}`.trim()
         : '-',
       created: order?.creationDate ? new Date(order.creationDate).toLocaleString() : '-',
       modified: order?.lastModifiedDate ? new Date(order.lastModifiedDate).toLocaleString() : '-',
       lineItems: order?.lineItems || [],
+    };
+  }, [order]);
+
+  const buyerDetails = useMemo(() => {
+    const buyer = order?.buyer || {};
+    const registration = buyer?.buyerRegistrationAddress || {};
+    const cancellation = order?.cancelStatus || order?.orderCancelStatus || order?.cancellation || {};
+    const cancelRequest =
+      (Array.isArray(cancellation?.cancelRequests) && cancellation.cancelRequests[0]) ||
+      (Array.isArray(cancellation?.cancellationRequests) && cancellation.cancellationRequests[0]) ||
+      {};
+
+    return {
+      email: buyer?.email || registration?.email || '-',
+      phone:
+        registration?.primaryPhone?.phoneNumber ||
+        registration?.secondaryPhone?.phoneNumber ||
+        buyer?.phoneNumber ||
+        '-',
+      productTitle: order?.lineItems?.[0]?.title || '-',
+      cancelReason: cancelRequest?.cancelReason || cancellation?.cancelReason || '-',
+      cancelInitiator: cancelRequest?.cancelInitiator || cancellation?.cancelInitiator || '-',
+      cancelRequestedDate:
+        cancelRequest?.cancelRequestedDate || cancellation?.cancelRequestedDate || cancellation?.requestDate || '-',
+      cancelCompletedDate:
+        cancelRequest?.cancelCompletedDate || cancellation?.cancelCompletedDate || cancellation?.completedDate || '-',
     };
   }, [order]);
 
@@ -97,6 +125,23 @@ export default function OrderDetailPage() {
             <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Buyer</p>
           </div>
           <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{summary.buyer}</p>
+          <p className={`text-xs mt-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Email: {buyerDetails.email}</p>
+          <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Phone: {buyerDetails.phone}</p>
+          <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+            Product title: {buyerDetails.productTitle}
+          </p>
+          <p className={`text-xs mt-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+            Cancel reason: {buyerDetails.cancelReason}
+          </p>
+          <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+            Cancel initiator: {buyerDetails.cancelInitiator}
+          </p>
+          <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+            Cancel requested: {buyerDetails.cancelRequestedDate}
+          </p>
+          <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+            Cancel completed: {buyerDetails.cancelCompletedDate}
+          </p>
         </div>
         <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
           <div className="flex items-center gap-2 mb-2">
@@ -108,9 +153,9 @@ export default function OrderDetailPage() {
         <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
           <div className="flex items-center gap-2 mb-2">
             <Truck size={15} />
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Fulfillment</p>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Shipment</p>
           </div>
-          <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{summary.fulfillment}</p>
+          <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{summary.shipment}</p>
         </div>
       </div>
 
