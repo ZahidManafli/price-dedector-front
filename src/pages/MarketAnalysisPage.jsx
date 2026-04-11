@@ -259,12 +259,14 @@ export default function MarketAnalysisPage() {
   };
 
   const handleSellerClick = (sellerName) => {
-    const nextParams = {
-      ...params,
-      sellerUsername: String(sellerName || '').trim(),
-      offset: 0,
-    };
-    openSearchInNewTab(nextParams);
+    const seller = String(sellerName || '').trim();
+    if (!seller) return;
+    const query = new URLSearchParams({
+      openSearch: '1',
+      sellerUsername: seller,
+      offset: '0',
+    });
+    window.open(`/market-analysis?${query.toString()}`, '_blank', 'noopener,noreferrer');
   };
 
   const handleTitleSearch = (item) => {
