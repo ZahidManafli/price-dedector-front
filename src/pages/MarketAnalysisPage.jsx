@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ExternalLink, LayoutGrid, List, RefreshCw, Search, SearchCheck } from 'lucide-react';
+import { History, LayoutGrid, List, RefreshCw, Search, SearchCheck } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -103,6 +103,22 @@ export default function MarketAnalysisPage() {
   const openSearchInNewTab = (nextParams) => {
     const query = serializeSearchParams(nextParams);
     window.open(`/market-analysis?${query.toString()}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const openDetailsInNewTab = (item) => {
+    const itemId = String(
+      item?.legacyId ||
+        item?.legacyItemId ||
+        item?.raw?.legacyItemId ||
+        item?.raw?.itemId ||
+        item?.id ||
+        ''
+    )
+      .trim()
+      .replace(/^v1\|/, '')
+      .replace(/\|0$/, '');
+    if (!itemId) return;
+    window.open(`https://www.ebay.com/bin/purchasehistory?item=${encodeURIComponent(itemId)}`, '_blank', 'noopener,noreferrer');
   };
 
   useEffect(() => {
@@ -472,17 +488,15 @@ export default function MarketAnalysisPage() {
                           <td className="p-3">{item.condition}</td>
                           <td className="p-3 font-medium">{Number(item.soldQuantity || 0)}</td>
                           <td className="p-3">
-                            <a
-                              href={`https://www.ebay.com/bin/purchasehistory?item=${encodeURIComponent(item.id)}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="btn-secondary inline-flex items-center gap-2"
+                            <button
+                              type="button"
+                              className="btn-secondary inline-flex items-center justify-center"
+                              onClick={() => openDetailsInNewTab(item)}
                               title="See history"
                               aria-label="See history"
                             >
-                              See selling history
-                              <ExternalLink size={14} />
-                            </a>
+                              <History size={14} />
+                            </button>
                           </td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>
                           <td className="p-3">
