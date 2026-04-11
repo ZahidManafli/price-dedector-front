@@ -12,12 +12,19 @@ import LoadingSpinner from '../components/LoadingSpinner';
 
 export function ProductFormModal({ productId = null, onClose, onSuccess }) {
   const isEditMode = Boolean(productId);
+  const profitOptions = {
+    taxRate: 0.06,
+    fvfRate: 0.136,
+    adRate: 0,
+    fixedFee: 0.3,
+  };
   const [formData, setFormData] = useState({
     productName: '',
     amazonAsin: '',
     ebayItemId: '',
     currentAmazonPrice: '',
     currentEbayPrice: '',
+    adRate: '',
     userEmail: '',
   });
   const [loading, setLoading] = useState(false);
@@ -65,13 +72,15 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
           ebayItemId: product.ebayItemId || '',
           currentAmazonPrice: product.currentAmazonPrice ?? '',
           currentEbayPrice: product.currentEbayPrice ?? '',
+          adRate: product.adRate ?? '',
           userEmail: product.userEmail || '',
         };
 
         setFormData(nextData);
-        setCalculatedProfit(
-          calculateProfit(nextData.currentEbayPrice, nextData.currentAmazonPrice)
-        );
+        setCalculatedProfit(calculateProfit(nextData.currentEbayPrice, nextData.currentAmazonPrice, {
+          ...profitOptions,
+          adRate: (parseFloat(nextData.adRate) || 0) / 100,
+        }));
         // Default account selection for edit: keep bound account if present, else active.
         const boundAccountId = product.ebayTradingAccountId || product.ebayAccountId || '';
         setSelectedEbayAccountId((prev) => prev || boundAccountId || activeEbayAccountId || '');
@@ -85,19 +94,19 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
     fetchProduct();
   }, [isEditMode, productId]);
 
+  useEffect(() => {
+    setCalculatedProfit(
+      calculateProfit(formData.currentEbayPrice, formData.currentAmazonPrice, {
+        ...profitOptions,
+        adRate: (parseFloat(formData.adRate) || 0) / 100,
+      })
+    );
+  }, [formData.currentAmazonPrice, formData.currentEbayPrice, formData.adRate]);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const nextValue = type === 'checkbox' ? checked : value;
     setFormData((prev) => ({ ...prev, [name]: nextValue }));
-
-    // Recalculate profit
-    if (name === 'currentAmazonPrice' || name === 'currentEbayPrice') {
-      const ebayPrice =
-        name === 'currentEbayPrice' ? nextValue : formData.currentEbayPrice;
-      const amazonRaw =
-        name === 'currentAmazonPrice' ? nextValue : formData.currentAmazonPrice;
-      setCalculatedProfit(calculateProfit(ebayPrice, amazonRaw));
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -138,6 +147,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       formDataObj.append('ebayItemId', String(formData.ebayItemId || '').trim());
       formDataObj.append('currentAmazonPrice', formData.currentAmazonPrice);
       formDataObj.append('currentEbayPrice', formData.currentEbayPrice);
+      formDataObj.append('adRate', formData.adRate || '0');
       formDataObj.append('userEmail', formData.userEmail);
       if (selectedEbayAccountId) {
         formDataObj.append('ebayAccountId', selectedEbayAccountId);
@@ -318,6 +328,26 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
             </div>
           </div>
 
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Ad rate (%)
+            </label>
+            <input
+              type="number"
+              name="adRate"
+              value={formData.adRate}
+              onChange={handleChange}
+              placeholder="4"
+              step="0.01"
+              min="0"
+              className="input-base"
+              disabled={loading}
+            />
+            <p className="text-xs text-slate-500 mt-1">
+              This is the promoted listing rate used in profit calculation.
+            </p>
+          </div>
+
           {/* Profit Preview */}
           {(formData.currentAmazonPrice || formData.currentEbayPrice) && (
             <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
@@ -326,7 +356,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
                 {formatCurrency(calculatedProfit)}
               </p>
               <p className="text-xs text-slate-500 mt-2">
-                Formula: SP - (PC + (SP×0.129) + (SP×0.029+0.30)) + 1.45
+                Formula: SP - PC - [(SP × (1 + 0.06)) × (0.136 + Ad rate)] - 0.30
               </p>
             </div>
           )}

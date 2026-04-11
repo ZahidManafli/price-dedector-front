@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { formatCurrency, calculateProfit } from '../utils/helpers';
+import { formatCurrency, calculateProfit, calculateRecommendedEbayPrice } from '../utils/helpers';
 import { Calculator, Sparkles, TrendingUp } from 'lucide-react';
 
 export default function EbayCalculatorPage() {
@@ -21,7 +21,7 @@ export default function EbayCalculatorPage() {
     const ad = (parseFloat(adRate) || 0) / 100;
     const fixed = parseFloat(fixedFee) || 0;
 
-    const denominator = 1 - fvf * (1 + tax) - ad;
+    const denominator = 1 - (1 + tax) * (fvf + ad);
     if (cost <= 0 || denominator <= 0) {
       return {
         cost,
@@ -32,8 +32,18 @@ export default function EbayCalculatorPage() {
       };
     }
 
-    const salePrice = (cost + profitTarget + fixed) / denominator;
-    const netProfit = calculateProfit(salePrice, cost);
+    const salePrice = calculateRecommendedEbayPrice(cost, profitTarget, {
+      taxRate: tax,
+      fvfRate: fvf,
+      adRate: ad,
+      fixedFee: fixed,
+    });
+    const netProfit = calculateProfit(salePrice, cost, {
+      taxRate: tax,
+      fvfRate: fvf,
+      adRate: ad,
+      fixedFee: fixed,
+    });
 
     return {
       cost,
@@ -153,7 +163,7 @@ export default function EbayCalculatorPage() {
                 <p className={`text-xs ${isDark ? 'text-indigo-200' : 'text-indigo-700'}`}>
                   <span className="font-semibold">Formula: </span>
                   <code className="font-mono">
-                    P_sale = (Cost_amazon + Profit_target + Fee_fixed) / (1 - (Rate_fvf x (1 + Rate_tax)) - Rate_ad)
+                    P_sale = (Cost_amazon + Profit_target + Fee_fixed) / (1 - (1 + Rate_tax) x (Rate_fvf + Rate_ad))
                   </code>
                 </p>
               </div>

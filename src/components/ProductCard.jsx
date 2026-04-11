@@ -18,7 +18,12 @@ import { useTheme } from '../context/ThemeContext';
 
 export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
   const { isDark } = useTheme();
-  const profit = calculateProfit(product.currentEbayPrice, product.currentAmazonPrice);
+  const profit = calculateProfit(product.currentEbayPrice, product.currentAmazonPrice, {
+    taxRate: 0.06,
+    fvfRate: 0.136,
+    adRate: (parseFloat(product.adRate) || 0) / 100,
+    fixedFee: 0.3,
+  });
   const profitColor = getProfitColor(profit);
   const images = (product.productImages && product.productImages.length > 0)
     ? product.productImages

@@ -87,7 +87,7 @@ export default function AmazonLookupPage() {
     const TAX_RATE = 0;
     const AD_RATE = 0;
     const FIXED_FEE = 0.25;
-    const denominator = 1 - FINAL_VALUE_FEE_RATE * (1 + TAX_RATE) - AD_RATE;
+    const denominator = 1 - (1 + TAX_RATE) * (FINAL_VALUE_FEE_RATE + AD_RATE);
     if (denominator <= 0) return { target: parsedTarget, cogs, ebayPrice: 0 };
 
     const ebayPrice = (cogs + parsedTarget + FIXED_FEE) / denominator;
