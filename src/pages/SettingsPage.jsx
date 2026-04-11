@@ -425,24 +425,25 @@ export default function SettingsPage() {
                 </button>
               </div>
               {ebayTab === 'overview' ? (
-                <div className={`rounded-lg p-3 mb-3 ${
-                  isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'
-                }`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${ebayStatus.connected ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
-                      {ebayStatus.connected && <CheckCircle2 size={14} />}
-                      {ebayStatus.connected ? 'Connected' : 'Not connected'}
-                    </span>
+                <>
+                  <div className={`rounded-lg p-3 mb-3 ${
+                    isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'
+                  }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${ebayStatus.connected ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
+                        {ebayStatus.connected && <CheckCircle2 size={14} />}
+                        {ebayStatus.connected ? 'Connected' : 'Not connected'}
+                      </span>
+                    </div>
+                    {/* Hide noisy environment text like 'sandbox' */}
                   </div>
-                  {/* Hide noisy environment text like 'sandbox' */}
+                  {ebayStatus.activeAccountLabel && (
+                    <p className={`text-sm mt-2 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                      Active account: <span className="font-medium">{ebayStatus.activeAccountLabel}</span>
+                    </p>
+                  )}
                 </div>
-                {ebayStatus.activeAccountLabel && (
-                  <p className={`text-sm mt-2 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                    Active account: <span className="font-medium">{ebayStatus.activeAccountLabel}</span>
-                  </p>
-                )}
-              </div>
 
               {/* Multi-account selector */}
               <div className={`rounded-lg p-3 mb-3 ${
@@ -567,39 +568,40 @@ export default function SettingsPage() {
                   </p>
                 </div>
               )}
-              <div className="flex gap-3">
-                {!ebayStatus.connected ? (
-                  <button
-                    type="button"
-                    onClick={handleConnectEbay}
-                    disabled={ebayLoading || (limits?.ebayAccounts?.remaining != null && limits.ebayAccounts.remaining <= 0)}
-                    className="rounded-xl bg-indigo-600 text-white px-5 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
-                  >
-                    {ebayLoading ? 'Connecting...' : 'Connect eBay'}
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleConnectEbay}
-                      disabled={ebayLoading || (limits?.ebayAccounts?.remaining != null && limits.ebayAccounts.remaining <= 0)}
-                      className="rounded-xl bg-indigo-600 text-white px-5 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
-                      title="Connect another eBay account (will be added to your saved accounts)"
-                    >
-                      {ebayLoading ? 'Connecting...' : 'Connect another eBay'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDisconnectEbay}
-                      disabled={ebayLoading}
-                      className="rounded-xl bg-red-600 text-white px-5 py-2.5 hover:bg-red-700 transition disabled:opacity-50"
-                      title="Disconnect the legacy single-account connection (kept for backward compatibility)"
-                    >
-                      {ebayLoading ? 'Disconnecting...' : 'Disconnect (legacy)'}
-                    </button>
-                  </>
-                )}
-              </div>
+                  <div className="flex gap-3">
+                    {!ebayStatus.connected ? (
+                      <button
+                        type="button"
+                        onClick={handleConnectEbay}
+                        disabled={ebayLoading || (limits?.ebayAccounts?.remaining != null && limits.ebayAccounts.remaining <= 0)}
+                        className="rounded-xl bg-indigo-600 text-white px-5 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
+                      >
+                        {ebayLoading ? 'Connecting...' : 'Connect eBay'}
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleConnectEbay}
+                          disabled={ebayLoading || (limits?.ebayAccounts?.remaining != null && limits.ebayAccounts.remaining <= 0)}
+                          className="rounded-xl bg-indigo-600 text-white px-5 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
+                          title="Connect another eBay account (will be added to your saved accounts)"
+                        >
+                          {ebayLoading ? 'Connecting...' : 'Connect another eBay'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleDisconnectEbay}
+                          disabled={ebayLoading}
+                          className="rounded-xl bg-red-600 text-white px-5 py-2.5 hover:bg-red-700 transition disabled:opacity-50"
+                          title="Disconnect the legacy single-account connection (kept for backward compatibility)"
+                        >
+                          {ebayLoading ? 'Disconnecting...' : 'Disconnect (legacy)'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </>
               ) : (
                 <div className="space-y-4 mb-3">
                   <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'}`}>
