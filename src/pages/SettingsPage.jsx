@@ -41,6 +41,8 @@ export default function SettingsPage() {
     ? ebayStatus.ebayAccounts.find((acc) => acc.id && ebayStatus.activeEbayAccountId === acc.id) || ebayStatus.ebayAccounts[0] || null
     : null;
   const activeSellerSnapshot = activeEbayAccount?.sellerSnapshot || ebayStatus.sellerSnapshot || null;
+  const activeTradingUserSummary = activeEbayAccount?.tradingUserSummary || null;
+  const activeTradingAccountSummary = activeEbayAccount?.tradingAccountSummary || null;
 
   useEffect(() => {
     const load = async () => {
@@ -640,6 +642,12 @@ export default function SettingsPage() {
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                           Business policies: {activeEbayAccount?.userPreferencesSummary?.sellerProfileOptedIn ? 'Enabled' : activeEbayAccount?.userPreferencesSummary?.sellerProfileOptedIn === false ? 'Disabled' : 'Unknown'}
                         </p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          eBay good standing: {activeTradingUserSummary?.ebayGoodStanding === true ? 'Yes' : activeTradingUserSummary?.ebayGoodStanding === false ? 'No' : 'Unknown'}
+                        </p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          Feedback: {activeTradingUserSummary?.feedbackScore ?? '—'} ({activeTradingUserSummary?.positiveFeedbackPercent ?? '—'}%)
+                        </p>
                       </div>
                       <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-900/60' : 'bg-white'}`}>
                         <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Policies</p>
@@ -663,6 +671,12 @@ export default function SettingsPage() {
                         </p>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                           Country: {activeSellerSnapshot?.countryCode || 'All'}
+                        </p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          Billing state: {activeTradingAccountSummary?.accountState || '—'}
+                        </p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          Invoice balance: {activeTradingAccountSummary?.invoiceBalance || '—'}
                         </p>
                       </div>
                     </div>
