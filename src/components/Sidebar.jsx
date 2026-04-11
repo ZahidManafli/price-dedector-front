@@ -25,6 +25,7 @@ export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
+  const displayName = [user?.name, user?.surname].filter(Boolean).join(' ').trim() || user?.fullName || user?.displayName || 'User';
   const { isDark, toggleTheme } = useTheme();
   const { isCollapsed, toggleSidebar } = useSidebar();
   const [activeEbayLabel, setActiveEbayLabel] = useState(null);
@@ -150,7 +151,7 @@ export default function Sidebar() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">
-                    {user?.displayName || user?.email || 'User'}
+                    {displayName}
                   </p>
                   {user?.email && (
                     <p className="text-xs text-slate-400 truncate">{user.email}</p>
