@@ -106,15 +106,9 @@ export default function MarketAnalysisPage() {
   };
 
   const openDetailsInNewTab = (item) => {
-    const query = new URLSearchParams();
-    if (params.q) query.set('q', params.q);
-    if (params.categoryId) query.set('categoryId', params.categoryId);
-    if (params.sellerUsername) query.set('sellerUsername', params.sellerUsername);
-    window.open(
-      `/market-analysis/item/${encodeURIComponent(item.id)}${query.toString() ? `?${query.toString()}` : ''}`,
-      '_blank',
-      'noopener,noreferrer'
-    );
+    const itemId = String(item?.id || '').trim();
+    if (!itemId) return;
+    window.open(`https://www.ebay.com/bin/purchasehistory?item=${encodeURIComponent(itemId)}`, '_blank', 'noopener,noreferrer');
   };
 
   useEffect(() => {
