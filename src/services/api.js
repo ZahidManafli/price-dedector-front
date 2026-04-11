@@ -64,7 +64,16 @@ export const productAPI = {
   getAll: () => api.get('/products'),
   getById: (id) => api.get(`/products/${id}`),
   create: (data) => api.post('/products', data, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+    const requestUrl = String(error?.config?.url || '');
+    const responseErrorMessage = String(error?.response?.data?.error || '').toLowerCase();
+    const isEbayReconnect401 =
+      status === 401 &&
+      (requestUrl.startsWith('/ebay') || requestUrl.includes('/ebay/')) &&
+      (responseErrorMessage.includes('ebay token expired') ||
+        responseErrorMessage.includes('please reconnect') ||
+        responseErrorMessage.includes('ebay account not connected'));
+
+    if (status === 401 && !isEbayReconnect401) {
   }),
   update: (id, data) => api.put(`/products/${id}`, data, {
     headers: { 'Content-Type': 'multipart/form-data' },
