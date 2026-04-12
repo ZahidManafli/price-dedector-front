@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from 'react';
 
+const BACKEND_BASE_URL = String(import.meta.env.VITE_BACKEND_URL || 'https://back.checkila.com').replace(/\/+$/, '');
+
+function normalizeImageUrl(url) {
+  const value = String(url || '').trim();
+  if (!value) return '';
+  if (/^https?:\/\//i.test(value)) return value;
+  if (value.startsWith('/uploads/')) return `${BACKEND_BASE_URL}${value}`;
+  return value;
+}
+
 export default function EbayListingDraftModal({
   isOpen,
   draft,
@@ -181,10 +191,12 @@ export default function EbayListingDraftModal({
                   <p className="text-sm text-slate-600">No images available.</p>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {(draft.pictureUrls || []).map((url, idx) => (
+                    {(draft.pictureUrls || []).map((url, idx) => {
+                      const imageUrl = normalizeImageUrl(url);
+                      return (
                       <div key={`${url}-${idx}`} className="rounded-lg border border-slate-200 p-2 bg-white">
                         <div className="aspect-square rounded-md overflow-hidden border border-slate-100 bg-slate-50">
-                          <img src={url} alt={`Listing image ${idx + 1}`} className="w-full h-full object-contain" />
+                          <img src={imageUrl} alt={`Listing image ${idx + 1}`} className="w-full h-full object-contain" />
                         </div>
                         <div className="mt-2 flex items-center justify-between gap-2">
                           <span className="text-xs text-slate-500">#{idx + 1}</span>
@@ -205,7 +217,8 @@ export default function EbayListingDraftModal({
                           </label>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
