@@ -203,12 +203,16 @@ export default function useBrowseSearch(initialParams = {}) {
         })
       );
 
+      // Fetch a larger result set once and paginate on the frontend.
+      requestParams.limit = 1000;
+      requestParams.offset = 0;
+
       const response = await browseAPI.search(requestParams);
       const payload = response?.data?.data || {};
       const nextCredits = response?.data?.credits || null;
       const itemSummaries = Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : [];
       const normalized = itemSummaries.map(normalizeItem);
-      const nextTotal = Number(payload?.total || 0);
+      const nextTotal = normalized.length;
       const nextRefinement = payload?.refinement || null;
 
       setResults(normalized);
