@@ -92,18 +92,6 @@ export default function EbayCalculatorPage() {
                   <input type="number" min="0" step="0.01" value={adRate} onChange={(e) => setAdRate(e.target.value)} className="input-base" />
                 </div>
               </div>
-
-              <div className={`rounded-xl border p-3 ${isDark ? 'border-indigo-900/60 bg-indigo-950/20' : 'border-indigo-100 bg-indigo-50'}`}>
-                <p className={`text-xs ${isDark ? 'text-indigo-200' : 'text-indigo-700'}`}>
-                  <span className="font-semibold">Formula: </span>
-                  <code className="font-mono">
-                    Profit = eBay_price - Amazon_cost - ((eBay_price x (1 + Rate_tax)) x (Rate_fvf + Rate_add)) - Fee_fixed
-                  </code>
-                </p>
-                <p className={`text-xs mt-2 ${isDark ? 'text-indigo-200' : 'text-indigo-700'}`}>
-                  Defaults used by existing logic: FVF 13.6%, Tax 6%, Fixed fee $0.30.
-                </p>
-              </div>
             </div>
           </div>
 
