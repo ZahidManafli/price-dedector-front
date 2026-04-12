@@ -102,7 +102,8 @@ export default function EbayListingDraftModal({
 
   const handleLocationSelect = (location) => {
     setSelectedLocation(location);
-    const key = location.merchantLocationKey || String(location.name || '');
+    // Use merchantLocationKey ONLY, NOT name or city (which are display names)
+    const key = String(location.merchantLocationKey || '').trim();
     setMerchantLocationKey(key);
   };
 
@@ -271,7 +272,7 @@ export default function EbayListingDraftModal({
                       value={merchantLocationKey}
                       onChange={(event) => setMerchantLocationKey(event.target.value)}
                       className="input-base text-sm"
-                      placeholder="warehouse-ny"
+                      placeholder="e.g. default-warehouse (not city name)"
                       disabled={submitting || updatingDraft}
                     />
                   )}
