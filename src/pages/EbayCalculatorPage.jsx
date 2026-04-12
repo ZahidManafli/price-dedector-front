@@ -8,18 +8,14 @@ export default function EbayCalculatorPage() {
 
   const [amazonCost, setAmazonCost] = useState('23.99');
   const [ebayPrice, setEbayPrice] = useState('29.99');
-  const [fvfRate, setFvfRate] = useState('12.9');
-  const [taxRate, setTaxRate] = useState('0');
   const [adRate, setAdRate] = useState('0');
-  const [fixedFee, setFixedFee] = useState('0.25');
 
   const parsed = useMemo(() => {
     const cost = parseFloat(amazonCost) || 0;
     const salePrice = parseFloat(ebayPrice) || 0;
-    const fvf = (parseFloat(fvfRate) || 0) / 100;
-    const tax = (parseFloat(taxRate) || 0) / 100;
     const ad = (parseFloat(adRate) || 0) / 100;
-    const fixed = parseFloat(fixedFee) || 0;
+    const tax = 0.06;
+    const fvf = 0.136;
 
     const denominator = 1 - (1 + tax) * (fvf + ad);
     if (cost <= 0 || salePrice <= 0 || denominator <= 0) {
@@ -32,10 +28,10 @@ export default function EbayCalculatorPage() {
     }
 
     const netProfit = calculateProfit(salePrice, cost, {
-      taxRate: tax,
-      fvfRate: fvf,
+      taxRate: 0.06,
+      fvfRate: 0.136,
       adRate: ad,
-      fixedFee: fixed,
+      fixedFee: 0.30,
     });
 
     return {
@@ -44,30 +40,7 @@ export default function EbayCalculatorPage() {
       denominator,
       netProfit,
     };
-  }, [amazonCost, ebayPrice, fvfRate, taxRate, adRate, fixedFee]);
-
-  const applyPreset = (preset) => {
-    if (preset === 'default') {
-      setFvfRate('12.9');
-      setTaxRate('0');
-      setAdRate('0');
-      setFixedFee('0.25');
-      return;
-    }
-    if (preset === 'promoted') {
-      setFvfRate('12.9');
-      setTaxRate('0');
-      setAdRate('4');
-      setFixedFee('0.25');
-      return;
-    }
-    if (preset === 'highTax') {
-      setFvfRate('12.9');
-      setTaxRate('6');
-      setAdRate('0');
-      setFixedFee('0.25');
-    }
-  };
+  }, [amazonCost, ebayPrice, adRate]);
 
   return (
     <div className="page-shell">
@@ -102,21 +75,10 @@ export default function EbayCalculatorPage() {
               <h2 className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                 Input Panel
               </h2>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={() => applyPreset('default')} className="btn-secondary text-xs px-3 py-1.5">
-                  Default
-                </button>
-                <button type="button" onClick={() => applyPreset('promoted')} className="btn-secondary text-xs px-3 py-1.5">
-                  Promoted
-                </button>
-                <button type="button" onClick={() => applyPreset('highTax')} className="btn-secondary text-xs px-3 py-1.5">
-                  High Tax
-                </button>
-              </div>
             </div>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1">Amazon cost (COGS)</label>
                   <input type="number" min="0" step="0.01" value={amazonCost} onChange={(e) => setAmazonCost(e.target.value)} className="input-base" />
@@ -125,29 +87,9 @@ export default function EbayCalculatorPage() {
                   <label className="block text-xs font-semibold text-slate-500 mb-1">eBay price</label>
                   <input type="number" min="0" step="0.01" value={ebayPrice} onChange={(e) => setEbayPrice(e.target.value)} className="input-base" />
                 </div>
-              </div>
-
-              <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-slate-50'}`}>
-                <p className={`text-xs font-semibold mb-3 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                  Fee Model
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">FVF rate (%)</label>
-                    <input type="number" min="0" step="0.01" value={fvfRate} onChange={(e) => setFvfRate(e.target.value)} className="input-base" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Tax on fees (%)</label>
-                    <input type="number" min="0" step="0.01" value={taxRate} onChange={(e) => setTaxRate(e.target.value)} className="input-base" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Add rate (%)</label>
-                    <input type="number" min="0" step="0.01" value={adRate} onChange={(e) => setAdRate(e.target.value)} className="input-base" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Fixed fee (USD)</label>
-                    <input type="number" min="0" step="0.01" value={fixedFee} onChange={(e) => setFixedFee(e.target.value)} className="input-base" />
-                  </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Add rate (%)</label>
+                  <input type="number" min="0" step="0.01" value={adRate} onChange={(e) => setAdRate(e.target.value)} className="input-base" />
                 </div>
               </div>
 
@@ -157,6 +99,9 @@ export default function EbayCalculatorPage() {
                   <code className="font-mono">
                     Profit = eBay_price - Amazon_cost - ((eBay_price x (1 + Rate_tax)) x (Rate_fvf + Rate_add)) - Fee_fixed
                   </code>
+                </p>
+                <p className={`text-xs mt-2 ${isDark ? 'text-indigo-200' : 'text-indigo-700'}`}>
+                  Defaults used by existing logic: FVF 13.6%, Tax 6%, Fixed fee $0.30.
                 </p>
               </div>
             </div>
