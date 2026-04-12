@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../services/api.js';
 
 const BACKEND_BASE_URL = String(import.meta.env.VITE_BACKEND_URL || 'https://back.checkila.com').replace(/\/+$/, '');
 
@@ -61,9 +61,7 @@ export default function EbayListingDraftModal({
     setLoadingLocations(true);
     setLocationsError('');
     try {
-      const response = await axios.get(`${BACKEND_BASE_URL}/ebay/locations`, {
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const response = await api.get('/ebay/locations');
       if (response.data?.locations) {
         const locationsList = Array.isArray(response.data.locations)
           ? response.data.locations
@@ -88,9 +86,7 @@ export default function EbayListingDraftModal({
   const fetchPolicies = async () => {
     setLoadingPolicies(true);
     try {
-      const response = await axios.get(`${BACKEND_BASE_URL}/ebay/policies`, {
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const response = await api.get('/ebay/policies');
       if (response.data?.policies) {
         const policiesList = Array.isArray(response.data.policies)
           ? response.data.policies
