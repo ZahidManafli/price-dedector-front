@@ -86,7 +86,7 @@ export default function EbayListingDraftModal({
   const fetchPolicies = async () => {
     setLoadingPolicies(true);
     try {
-      const response = await api.get('/ebay/policies');
+      const response = await api.get('/ebay/policies/stored');
       if (response.data?.policies) {
         const policiesList = Array.isArray(response.data.policies)
           ? response.data.policies
