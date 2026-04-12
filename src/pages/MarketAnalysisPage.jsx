@@ -8,7 +8,7 @@ import MarketItemCard from '../components/MarketItemCard';
 import MarketComparePanel from '../components/MarketComparePanel';
 import useBrowseSearch from '../hooks/useBrowseSearch';
 import { formatCurrency } from '../utils/helpers';
-import { ebayAPI, settingsAPI } from '../services/api';
+import { settingsAPI } from '../services/api';
 
 function median(values) {
   if (!values.length) return 0;
@@ -43,7 +43,6 @@ export default function MarketAnalysisPage() {
   const [viewMode, setViewMode] = useState('list');
   const [sortConfig, setSortConfig] = useState({ key: 'soldQuantity', direction: 'desc' });
   const [marketCreditsState, setMarketCreditsState] = useState(null);
-  const [migratingListingId, setMigratingListingId] = useState('');
 
   useEffect(() => {
     const loadLimits = async () => {
@@ -305,23 +304,15 @@ export default function MarketAnalysisPage() {
     return null;
   };
 
-  const handleSellSimilar = async (item) => {
+  const handleSellSimilar = (item) => {
     const listingId = resolveLegacyListingId(item);
     if (!listingId) {
       setError('Sell Similar requires a live numeric eBay listing ID (Item ID).');
       return;
     }
 
-    try {
-      setMigratingListingId(listingId);
-      await ebayAPI.sellSimilar(listingId);
-      setError(null);
-    } catch (err) {
-      const msg = err?.response?.data?.error || 'Failed to run Sell Similar';
-      setError(msg);
-    } finally {
-      setMigratingListingId('');
-    }
+    const url = `https://www.ebay.com/lstng?mode=SellLikeItem&itemId=${encodeURIComponent(listingId)}&sr=wn`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const onNextPage = () => {
@@ -559,9 +550,8 @@ export default function MarketAnalysisPage() {
                                 type="button"
                                 className="btn-secondary"
                                 onClick={() => handleSellSimilar(item)}
-                                disabled={migratingListingId === resolveLegacyListingId(item)}
                               >
-                                {migratingListingId === resolveLegacyListingId(item) ? 'Selling...' : 'Sell Similar'}
+                                Sell Similar
                               </button>
                             </div>
                           </td>

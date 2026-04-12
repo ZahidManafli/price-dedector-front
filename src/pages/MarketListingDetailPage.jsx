@@ -3,7 +3,7 @@ import { ArrowDownAZ, ArrowLeft, ArrowUpAZ, ExternalLink, LayoutGrid, List, Sear
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { browseAPI, ebayAPI } from '../services/api';
+import { browseAPI } from '../services/api';
 import { formatCurrency } from '../utils/helpers';
 
 function normalizeSummary(summary) {
@@ -42,7 +42,6 @@ export default function MarketListingDetailPage() {
   const [sellerLimit] = useState(12);
   const [sellerViewMode, setSellerViewMode] = useState('list');
   const [sellerSortConfig, setSellerSortConfig] = useState({ key: 'soldQuantity', direction: 'desc' });
-  const [migratingListingId, setMigratingListingId] = useState('');
 
   const backQuery = useMemo(() => {
     const q = searchParams.get('q') || '';
@@ -126,22 +125,15 @@ export default function MarketListingDetailPage() {
     return null;
   };
 
-  const handleSellSimilar = async (source) => {
+  const handleSellSimilar = (source) => {
     const listingId = resolveLegacyListingId(source);
     if (!listingId) {
       setError('Sell Similar requires a live numeric eBay listing ID (Item ID).');
       return;
     }
 
-    try {
-      setMigratingListingId(listingId);
-      await ebayAPI.sellSimilar(listingId);
-      setError(null);
-    } catch (err) {
-      setError(err?.response?.data?.error || 'Failed to run Sell Similar');
-    } finally {
-      setMigratingListingId('');
-    }
+    const url = `https://www.ebay.com/lstng?mode=SellLikeItem&itemId=${encodeURIComponent(listingId)}&sr=wn`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleLoadSellerListings = async (nextOffset = 0) => {
@@ -281,9 +273,8 @@ export default function MarketListingDetailPage() {
             type="button"
             className="btn-secondary"
             onClick={() => handleSellSimilar(detail)}
-            disabled={migratingListingId === resolveLegacyListingId(detail)}
           >
-            {migratingListingId === resolveLegacyListingId(detail) ? 'Selling...' : 'Sell Similar'}
+            Sell Similar
           </button>
           {detail?.itemWebUrl && (
             <a href={detail.itemWebUrl} target="_blank" rel="noreferrer" className="btn-primary flex items-center gap-2">
@@ -508,9 +499,8 @@ export default function MarketListingDetailPage() {
                                 type="button"
                                 className="btn-secondary"
                                 onClick={() => handleSellSimilar(item)}
-                                disabled={migratingListingId === resolveLegacyListingId(item)}
                               >
-                                {migratingListingId === resolveLegacyListingId(item) ? 'Selling...' : 'Sell Similar'}
+                                Sell Similar
                               </button>
                             </div>
                           </td>
