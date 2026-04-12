@@ -493,22 +493,6 @@ export default function MarketAnalysisPage() {
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-12 space-y-4">
           <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setViewMode('card')}
-              className={`btn-secondary flex items-center gap-1 ${viewMode === 'card' ? 'ring-2 ring-blue-300' : ''}`}
-            >
-              <LayoutGrid size={14} />
-              Card
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={`btn-secondary flex items-center gap-1 ${viewMode === 'list' ? 'ring-2 ring-blue-300' : ''}`}
-            >
-              <List size={14} />
-              List
-            </button>
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-950/70 px-3 py-2">
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-300 whitespace-nowrap">Profit calc</span>
               <input
@@ -542,6 +526,23 @@ export default function MarketAnalysisPage() {
                 {inlineProfit === null ? 'Profit —' : `Profit ${formatCurrency(inlineProfit)}`}
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setViewMode('card')}
+              className={`btn-secondary flex items-center gap-1 ${viewMode === 'card' ? 'ring-2 ring-blue-300' : ''}`}
+            >
+              <LayoutGrid size={14} />
+              Card
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`btn-secondary flex items-center gap-1 ${viewMode === 'list' ? 'ring-2 ring-blue-300' : ''}`}
+            >
+              <List size={14} />
+              List
+            </button>
+            
           </div>
 
           {loading ? (
