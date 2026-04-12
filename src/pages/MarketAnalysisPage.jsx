@@ -290,9 +290,6 @@ export default function MarketAnalysisPage() {
   const metrics = useMemo(() => {
     if (!filteredResults.length) {
       return {
-        totalListings: 0,
-        totalSoldCount: 0,
-        successPercentage: 0,
         averagePrice: 0,
         medianPrice: 0,
         minPrice: 0,
@@ -301,13 +298,8 @@ export default function MarketAnalysisPage() {
       };
     }
     const prices = filteredResults.map((r) => Number(r.priceValue || 0));
-    const totalSoldCount = filteredResults.reduce((sum, item) => sum + Number(item.soldQuantity || 0), 0);
-    const totalListings = filteredResults.length;
     const freeShippingCount = filteredResults.filter((r) => Number(r.shippingValue || 0) === 0).length;
     return {
-      totalListings,
-      totalSoldCount,
-      successPercentage: totalListings > 0 ? (totalSoldCount / totalListings) * 100 : 0,
       averagePrice: prices.reduce((sum, n) => sum + n, 0) / prices.length,
       medianPrice: median(prices),
       minPrice: Math.min(...prices),
@@ -315,13 +307,6 @@ export default function MarketAnalysisPage() {
       withFreeShipping: Math.round((freeShippingCount / filteredResults.length) * 100),
     };
   }, [filteredResults]);
-
-  const pageOffset = Math.max(0, Number(params.offset || 0));
-  const pageLimit = Math.max(1, Number(params.limit || 24));
-  const paginatedResults = useMemo(
-    () => sortedResults.slice(pageOffset, pageOffset + pageLimit),
-    [sortedResults, pageOffset, pageLimit]
-  );
 
   const handleSelect = (item) => {
     setSelectedIds((prev) => {
@@ -414,6 +399,7 @@ export default function MarketAnalysisPage() {
       offset: Number(params.offset || 0) + Number(params.limit || 24),
     };
     setParams(nextParams);
+    runSearch(nextParams);
   };
 
   const onPrevPage = () => {
@@ -422,6 +408,7 @@ export default function MarketAnalysisPage() {
       offset: Math.max(0, Number(params.offset || 0) - Number(params.limit || 24)),
     };
     setParams(nextParams);
+    runSearch(nextParams);
   };
 
   return (
@@ -481,22 +468,10 @@ export default function MarketAnalysisPage() {
         recentTitles={recentSearches.titles}
       />
 
-      <section className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-2">
+      <section className="grid grid-cols-2 md:grid-cols-5 gap-2">
         <div className="glass-card p-3">
           <p className="text-xs text-slate-500 dark:text-slate-300">Results</p>
           <p className="text-lg font-semibold">{filteredResults.length || 0}</p>
-        </div>
-        <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">Total Listings</p>
-          <p className="text-lg font-semibold">{metrics.totalListings}</p>
-        </div>
-        <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">Total Sold Count</p>
-          <p className="text-lg font-semibold">{metrics.totalSoldCount}</p>
-        </div>
-        <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">Success %</p>
-          <p className="text-lg font-semibold">{metrics.successPercentage.toFixed(1)}%</p>
         </div>
         <div className="glass-card p-3">
           <p className="text-xs text-slate-500 dark:text-slate-300">Average Item</p>
@@ -584,7 +559,7 @@ export default function MarketAnalysisPage() {
             <>
               {viewMode === 'card' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {paginatedResults.map((item) => (
+                  {sortedResults.map((item) => (
                     <MarketItemCard
                       key={item.id}
                       item={item}
@@ -633,7 +608,7 @@ export default function MarketAnalysisPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedResults.map((item) => (
+                      {sortedResults.map((item) => (
                         <tr key={item.id} className="border-b border-slate-100 dark:border-slate-800">
                           <td className="p-3">
                             <div className="w-12 h-12 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
@@ -715,7 +690,7 @@ export default function MarketAnalysisPage() {
 
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm text-slate-500 dark:text-slate-300">
-                  Showing {paginatedResults.length} of {sortedResults.length} result(s)
+                  Showing {sortedResults.length} result(s)
                 </p>
                 <div className="flex gap-2">
                   <button type="button" className="btn-secondary" onClick={onPrevPage} disabled={params.offset <= 0}>
@@ -725,7 +700,7 @@ export default function MarketAnalysisPage() {
                     type="button"
                     className="btn-secondary"
                     onClick={onNextPage}
-                    disabled={pageOffset + pageLimit >= sortedResults.length}
+                    disabled={params.offset + params.limit >= (total || 0)}
                   >
                     Next
                   </button>
