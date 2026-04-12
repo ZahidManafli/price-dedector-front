@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ebayAPI } from '../services/api';
 import Alert from '../components/Alert';
-import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal } from 'lucide-react';
+import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 export default function ListingsPage() {
@@ -21,6 +21,7 @@ export default function ListingsPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [sortKey, setSortKey] = useState('title');
   const [sortDir, setSortDir] = useState('asc');
+  const [deletingListingId, setDeletingListingId] = useState('');
 
   useEffect(() => {
     const init = async () => {
@@ -58,6 +59,24 @@ export default function ListingsPage() {
       setError(msg);
     } finally {
       setFetchingPage(false);
+    }
+  };
+
+  const handleDeleteListing = async (listingId) => {
+    const id = String(listingId || '').trim();
+    if (!id) return;
+    const ok = window.confirm('Delete this listing from eBay?');
+    if (!ok) return;
+
+    try {
+      setDeletingListingId(id);
+      await ebayAPI.deleteListing(id);
+      await loadListings();
+    } catch (err) {
+      const msg = err?.response?.data?.error || 'Failed to delete listing';
+      setError(msg);
+    } finally {
+      setDeletingListingId('');
     }
   };
 
@@ -363,17 +382,33 @@ export default function ListingsPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              navigate(`/listings/${encodeURIComponent(String(listingId))}`, {
-                                state: { listing: offer },
-                              })
-                            }
-                            className={`inline-flex items-center gap-1 ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`}
-                          >
-                            Details
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                navigate(`/listings/${encodeURIComponent(String(listingId))}`, {
+                                  state: { listing: offer },
+                                })
+                              }
+                              className={`inline-flex items-center gap-1 ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`}
+                            >
+                              Details
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteListing(listingId)}
+                              disabled={deletingListingId === String(listingId)}
+                              className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors ${
+                                isDark
+                                  ? 'border-red-900/50 text-red-300 hover:bg-red-950/40'
+                                  : 'border-red-200 text-red-700 hover:bg-red-50'
+                              }`}
+                              title="Delete listing"
+                            >
+                              <Trash2 size={14} />
+                              {deletingListingId === String(listingId) ? 'Deleting' : 'Delete'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     </React.Fragment>

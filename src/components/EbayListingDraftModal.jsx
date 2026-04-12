@@ -36,6 +36,14 @@ export default function EbayListingDraftModal({
   const [loadingLocations, setLoadingLocations] = useState(false);
   const [loadingPolicies, setLoadingPolicies] = useState(false);
   const [locationsError, setLocationsError] = useState('');
+  const [newLocationKey, setNewLocationKey] = useState('');
+  const [newLocationName, setNewLocationName] = useState('');
+  const [newLocationCity, setNewLocationCity] = useState('');
+  const [newLocationState, setNewLocationState] = useState('');
+  const [newLocationPostalCode, setNewLocationPostalCode] = useState('');
+  const [newLocationCountry, setNewLocationCountry] = useState('US');
+  const [creatingLocation, setCreatingLocation] = useState(false);
+  const [createLocationError, setCreateLocationError] = useState('');
 
   useEffect(() => {
     if (!isOpen) {
@@ -70,9 +78,16 @@ export default function EbayListingDraftModal({
 
         // Auto-select first location if available and none selected yet
         if (locationsList.length > 0 && !merchantLocationKey) {
-          const firstKey = locationsList[0].merchantLocationKey;
+          const firstKey = String(locationsList[0].merchantLocationKey || '').trim();
           setMerchantLocationKey(firstKey);
           setSelectedLocation(locationsList[0]);
+        } else if (merchantLocationKey) {
+          const matched = locationsList.find(
+            (loc) => String(loc.merchantLocationKey || '').trim() === String(merchantLocationKey || '').trim()
+          );
+          if (matched) {
+            setSelectedLocation(matched);
+          }
         }
       }
     } catch (err) {
@@ -105,6 +120,39 @@ export default function EbayListingDraftModal({
     // Use merchantLocationKey ONLY, NOT name or city (which are display names)
     const key = String(location.merchantLocationKey || '').trim();
     setMerchantLocationKey(key);
+  };
+
+  const handleCreateLocation = async () => {
+    const merchantLocationKeyValue = String(newLocationKey || '').trim();
+    if (!merchantLocationKeyValue) return;
+
+    setCreatingLocation(true);
+    setCreateLocationError('');
+    try {
+      await api.post('/ebay/locations', {
+        merchantLocationKey: merchantLocationKeyValue,
+        name: String(newLocationName || merchantLocationKeyValue).trim(),
+        city: String(newLocationCity || '').trim(),
+        stateOrProvince: String(newLocationState || '').trim(),
+        postalCode: String(newLocationPostalCode || '').trim(),
+        country: String(newLocationCountry || 'US').trim() || 'US',
+        locationTypes: ['WAREHOUSE'],
+      });
+
+      setMerchantLocationKey(merchantLocationKeyValue);
+      setNewLocationKey('');
+      setNewLocationName('');
+      setNewLocationCity('');
+      setNewLocationState('');
+      setNewLocationPostalCode('');
+      setNewLocationCountry('US');
+      await fetchLocations();
+    } catch (err) {
+      console.error('Failed to create merchant location:', err);
+      setCreateLocationError(err?.response?.data?.error || err?.message || 'Failed to create location');
+    } finally {
+      setCreatingLocation(false);
+    }
   };
 
   const readFileAsDataUrl = (file) =>
@@ -221,6 +269,72 @@ export default function EbayListingDraftModal({
                   {locationsError ? (
                     <p className="text-xs text-amber-600 mb-2">{locationsError}</p>
                   ) : null}
+                  <div className="mb-3 rounded-lg border border-dashed border-slate-300 bg-white p-3 space-y-2">
+                    <p className="text-xs font-semibold text-slate-700">Create new merchant location</p>
+                    {createLocationError ? (
+                      <p className="text-xs text-red-600">{createLocationError}</p>
+                    ) : null}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={newLocationKey}
+                        onChange={(event) => setNewLocationKey(event.target.value)}
+                        className="input-base text-sm"
+                        placeholder="merchantLocationKey e.g. default-warehouse"
+                        disabled={submitting || updatingDraft || creatingLocation}
+                      />
+                      <input
+                        type="text"
+                        value={newLocationName}
+                        onChange={(event) => setNewLocationName(event.target.value)}
+                        className="input-base text-sm"
+                        placeholder="Location name"
+                        disabled={submitting || updatingDraft || creatingLocation}
+                      />
+                      <input
+                        type="text"
+                        value={newLocationCity}
+                        onChange={(event) => setNewLocationCity(event.target.value)}
+                        className="input-base text-sm"
+                        placeholder="City"
+                        disabled={submitting || updatingDraft || creatingLocation}
+                      />
+                      <input
+                        type="text"
+                        value={newLocationState}
+                        onChange={(event) => setNewLocationState(event.target.value)}
+                        className="input-base text-sm"
+                        placeholder="State / Province"
+                        disabled={submitting || updatingDraft || creatingLocation}
+                      />
+                      <input
+                        type="text"
+                        value={newLocationPostalCode}
+                        onChange={(event) => setNewLocationPostalCode(event.target.value)}
+                        className="input-base text-sm"
+                        placeholder="Postal Code"
+                        disabled={submitting || updatingDraft || creatingLocation}
+                      />
+                      <input
+                        type="text"
+                        value={newLocationCountry}
+                        onChange={(event) => setNewLocationCountry(event.target.value)}
+                        className="input-base text-sm"
+                        placeholder="Country code, e.g. US"
+                        disabled={submitting || updatingDraft || creatingLocation}
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        className="btn-secondary text-sm px-3 py-1"
+                        onClick={handleCreateLocation}
+                        disabled={submitting || updatingDraft || creatingLocation || !String(newLocationKey || '').trim()}
+                      >
+                        {creatingLocation ? 'Creating...' : 'Create location'}
+                      </button>
+                    </div>
+                  </div>
                   {loadingLocations ? (
                     <p className="text-xs text-slate-500 mb-2">Loading locations...</p>
                   ) : locations.length > 0 ? (

@@ -96,6 +96,7 @@ export const ebayAPI = {
   deleteAccount: (ebayAccountId) => api.delete(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}`),
   disconnect: () => api.delete('/ebay/disconnect'),
   getListings: (offset = 0, limit = 25) => api.get('/ebay/listings', { params: { offset, limit } }),
+  deleteListing: (listingId) => api.delete(`/ebay/listings/${encodeURIComponent(listingId)}`),
   updateListing: (listingId, payload) => api.patch(`/ebay/listings/${listingId}`, payload),
   createListingDraft: (payload) => api.post('/ebay/listing/draft', payload),
   updateListingDraft: (draftId, payload) => api.patch(`/ebay/listing/draft/${encodeURIComponent(draftId)}`, payload),
