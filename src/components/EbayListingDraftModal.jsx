@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
 const BACKEND_BASE_URL = String(import.meta.env.VITE_BACKEND_URL || 'https://back.checkila.com').replace(/\/+$/, '');
 
@@ -28,6 +29,13 @@ export default function EbayListingDraftModal({
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [merchantLocationKey, setMerchantLocationKey] = useState('');
+  const [locations, setLocations] = useState([]);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [policies, setPolicies] = useState([]);
+  const [selectedPolicy, setSelectedPolicy] = useState('');
+  const [loadingLocations, setLoadingLocations] = useState(false);
+  const [loadingPolicies, setLoadingPolicies] = useState(false);
+  const [locationsError, setLocationsError] = useState('');
 
   useEffect(() => {
     if (!isOpen) {
@@ -41,6 +49,66 @@ export default function EbayListingDraftModal({
     setPrice(draft?.price != null ? String(draft.price) : '');
     setMerchantLocationKey(String(draft?.merchantLocationKey || ''));
   }, [draft?.title, draft?.description, draft?.price, draft?.merchantLocationKey]);
+
+  // Fetch locations when modal opens
+  useEffect(() => {
+    if (isOpen && locations.length === 0 && !loadingLocations) {
+      fetchLocations();
+    }
+  }, [isOpen]);
+
+  const fetchLocations = async () => {
+    setLoadingLocations(true);
+    setLocationsError('');
+    try {
+      const response = await axios.get(`${BACKEND_BASE_URL}/ebay/locations`, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.data?.locations) {
+        const locationsList = Array.isArray(response.data.locations)
+          ? response.data.locations
+          : response.data.locations.locations || [];
+        setLocations(locationsList);
+
+        // Auto-select first location if available and none selected yet
+        if (locationsList.length > 0 && !merchantLocationKey) {
+          const firstKey = locationsList[0].merchantLocationKey;
+          setMerchantLocationKey(firstKey);
+          setSelectedLocation(locationsList[0]);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch locations:', err);
+      setLocationsError('Could not load merchant locations. Enter manually.');
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  const fetchPolicies = async () => {
+    setLoadingPolicies(true);
+    try {
+      const response = await axios.get(`${BACKEND_BASE_URL}/ebay/policies`, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.data?.policies) {
+        const policiesList = Array.isArray(response.data.policies)
+          ? response.data.policies
+          : response.data.policies.policies || [];
+        setPolicies(policiesList);
+      }
+    } catch (err) {
+      console.error('Failed to fetch policies:', err);
+    } finally {
+      setLoadingPolicies(false);
+    }
+  };
+
+  const handleLocationSelect = (location) => {
+    setSelectedLocation(location);
+    const key = location.merchantLocationKey || String(location.name || '');
+    setMerchantLocationKey(key);
+  };
 
   const readFileAsDataUrl = (file) =>
     new Promise((resolve, reject) => {
@@ -152,17 +220,75 @@ export default function EbayListingDraftModal({
                   </div>
                 </div>
                 <div className="mt-3">
-                  <p className="text-xs text-slate-500 mb-1">Merchant Location Key (required)</p>
-                  <input
-                    type="text"
-                    value={merchantLocationKey}
-                    onChange={(event) => setMerchantLocationKey(event.target.value)}
-                    className="input-base text-sm"
-                    placeholder="warehouse-ny"
-                    disabled={submitting || updatingDraft}
-                  />
+                  <p className="text-xs text-slate-500 mb-2">Merchant Location (required)</p>
+                  {locationsError ? (
+                    <p className="text-xs text-amber-600 mb-2">{locationsError}</p>
+                  ) : null}
+                  {loadingLocations ? (
+                    <p className="text-xs text-slate-500 mb-2">Loading locations...</p>
+                  ) : locations.length > 0 ? (
+                    <div className="mb-3">
+                      <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-200 rounded-lg p-2 bg-white">
+                        {locations.map((loc) => (
+                          <label
+                            key={loc.merchantLocationKey}
+                            className={`block p-2 rounded cursor-pointer text-sm border transition-colors ${
+                              merchantLocationKey === loc.merchantLocationKey
+                                ? 'bg-blue-50 border-blue-300'
+                                : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="location"
+                              value={loc.merchantLocationKey}
+                              checked={merchantLocationKey === loc.merchantLocationKey}
+                              onChange={() => handleLocationSelect(loc)}
+                              disabled={submitting || updatingDraft}
+                              className="mr-2"
+                            />
+                            <span className="font-medium">{loc.name}</span>
+                            {loc.location?.address?.city && (
+                              <span className="text-xs text-slate-600">
+                                {' '}
+                                ({loc.location.address.city}, {loc.location.address.stateOrProvince})
+                              </span>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                      {selectedLocation && (
+                        <div className="mt-2 p-2 rounded-lg border border-emerald-200 bg-emerald-50 text-xs text-emerald-700">
+                          <p className="font-semibold">{selectedLocation.name}</p>
+                          {selectedLocation.location?.address && (
+                            <p className="text-xs">
+                              {selectedLocation.location.address.addressLine1}
+                              {selectedLocation.location.address.city && ` • ${selectedLocation.location.address.city}`}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      value={merchantLocationKey}
+                      onChange={(event) => setMerchantLocationKey(event.target.value)}
+                      className="input-base text-sm"
+                      placeholder="warehouse-ny"
+                      disabled={submitting || updatingDraft}
+                    />
+                  )}
                 </div>
-                <div className="mt-3 flex justify-end">
+                <div className="mt-3 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    className="btn-secondary text-sm px-3 py-1"
+                    onClick={fetchPolicies}
+                    disabled={submitting || updatingDraft || loadingPolicies}
+                  >
+                    {loadingPolicies ? 'Loading...' : 'View Policies'}
+                  </button>
                   <button
                     type="button"
                     className="btn-secondary"
@@ -229,6 +355,28 @@ export default function EbayListingDraftModal({
                   {draft.xmlPreview || ''}
                 </pre>
               </div>
+
+              {policies.length > 0 ? (
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 mb-2">Your eBay Policies</p>
+                  <div className="space-y-2">
+                    {policies.slice(0, 5).map((policy, idx) => (
+                      <div
+                        key={idx}
+                        className="rounded-lg border border-slate-200 p-2 bg-slate-50 text-xs"
+                      >
+                        <p className="font-semibold text-slate-800">{policy.name || policy.policyName}</p>
+                        <p className="text-slate-600">{policy.policyType}</p>
+                      </div>
+                    ))}
+                    {policies.length > 5 && (
+                      <p className="text-xs text-slate-500">
+                        +{policies.length - 5} more policies available
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : null}
 
               {error ? (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
