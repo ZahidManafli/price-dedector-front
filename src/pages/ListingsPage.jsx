@@ -62,15 +62,25 @@ export default function ListingsPage() {
     }
   };
 
-  const handleDeleteListing = async (listingId) => {
-    const id = String(listingId || '').trim();
-    if (!id) return;
+  const handleDeleteListing = async ({ ebayListingId = null, internalSku = null, offerId = null } = {}) => {
+    const rawEbayListingId = String(ebayListingId || '').trim();
+    const rawSku = String(internalSku || '').trim();
+    const rawOfferId = String(offerId || '').trim();
+    const deleteId = rawEbayListingId || rawSku || rawOfferId;
+    if (!deleteId) return;
+
+    const params = {
+      ...(rawOfferId ? { offerId: rawOfferId } : {}),
+      ...(rawSku ? { sku: rawSku } : {}),
+      ...(rawEbayListingId ? { ebayItemId: rawEbayListingId } : {}),
+    };
+
     const ok = window.confirm('Delete this listing from eBay?');
     if (!ok) return;
 
     try {
-      setDeletingListingId(id);
-      await ebayAPI.deleteListing(id);
+      setDeletingListingId(deleteId);
+      await ebayAPI.deleteListing(deleteId, params);
       await loadListings();
     } catch (err) {
       const msg = err?.response?.data?.error || 'Failed to delete listing';
@@ -360,7 +370,12 @@ export default function ListingsPage() {
                   const key = offer._id;
                   const title = offer._title;
                   const status = offer?._status || '-';
-                  const listingId = offer?.listingId || offer?.listing?.listingId || offer?.listing?.legacyItemId || offer?.sku || '-';
+                  const ebayListingId =
+                    String(offer?.listingId || offer?.listing?.listingId || offer?.listing?.legacyItemId || '').trim() || null;
+                  const internalSku = String(offer?.sku || offer?.listing?.sku || '').trim() || null;
+                  const offerId = String(offer?.offerId || '').trim() || null;
+                  const listingId = ebayListingId || internalSku || offerId || '-';
+                  const deleteKey = ebayListingId || internalSku || offerId || '';
                   return (
                     <React.Fragment key={`${key}-${idx}`}>
                       <tr className={`${isDark ? 'bg-slate-900' : 'bg-white'}`}>
@@ -396,8 +411,8 @@ export default function ListingsPage() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleDeleteListing(listingId)}
-                              disabled={deletingListingId === String(listingId)}
+                              onClick={() => handleDeleteListing({ ebayListingId, internalSku, offerId })}
+                              disabled={deleteKey && deletingListingId === deleteKey}
                               className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors ${
                                 isDark
                                   ? 'border-red-900/50 text-red-300 hover:bg-red-950/40'
@@ -406,7 +421,7 @@ export default function ListingsPage() {
                               title="Delete listing"
                             >
                               <Trash2 size={14} />
-                              {deletingListingId === String(listingId) ? 'Deleting' : 'Delete'}
+                              {deleteKey && deletingListingId === deleteKey ? 'Deleting' : 'Delete'}
                             </button>
                           </div>
                         </td>
