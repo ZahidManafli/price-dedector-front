@@ -370,11 +370,12 @@ export default function ListingsPage() {
                   const key = offer._id;
                   const title = offer._title;
                   const status = offer?._status || '-';
-                  const ebayListingId =
+                  const ebayCandidateId =
                     String(offer?.listingId || offer?.listing?.listingId || offer?.listing?.legacyItemId || '').trim() || null;
+                  const ebayListingId = ebayCandidateId && /^\d{9,15}$/.test(ebayCandidateId) ? ebayCandidateId : null;
                   const internalSku = String(offer?.sku || offer?.listing?.sku || '').trim() || null;
                   const offerId = String(offer?.offerId || '').trim() || null;
-                  const listingId = ebayListingId || internalSku || offerId || '-';
+                  const listingId = ebayListingId || internalSku || offerId || ebayCandidateId || '-';
                   const deleteKey = ebayListingId || internalSku || offerId || '';
                   return (
                     <React.Fragment key={`${key}-${idx}`}>
