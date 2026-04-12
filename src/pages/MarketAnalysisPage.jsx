@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { History, LayoutGrid, List, RefreshCw, Search, SearchCheck } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import MarketSearchBar from '../components/MarketSearchBar';
@@ -304,12 +305,25 @@ export default function MarketAnalysisPage() {
     return null;
   };
 
-  const handleSellSimilar = (item) => {
+  const handleSellSimilar = async (item) => {
     const listingId = resolveLegacyListingId(item);
     if (!listingId) {
       setError('Sell Similar requires a live numeric eBay listing ID (Item ID).');
       return;
     }
+
+    const result = await Swal.fire({
+      title: 'Open eBay Sell Similar?',
+      text: 'You are about to continue this action on eBay. For account safety and suspension prevention, please make sure your browser is currently using the correct eBay seller profile before proceeding.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Proceed to eBay',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      focusCancel: true,
+    });
+
+    if (!result.isConfirmed) return;
 
     const url = `https://www.ebay.com/lstng?mode=SellLikeItem&itemId=${encodeURIComponent(listingId)}&sr=wn`;
     window.open(url, '_blank', 'noopener,noreferrer');
