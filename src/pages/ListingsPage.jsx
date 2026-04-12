@@ -73,6 +73,7 @@ export default function ListingsPage() {
       ...(rawOfferId ? { offerId: rawOfferId } : {}),
       ...(rawSku ? { sku: rawSku } : {}),
       ...(rawEbayListingId ? { ebayItemId: rawEbayListingId } : {}),
+      ...(!rawEbayListingId ? { inventoryOnly: 'true' } : {}),
     };
 
     const ok = window.confirm('Delete this listing from eBay?');
