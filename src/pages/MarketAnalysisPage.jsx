@@ -8,7 +8,7 @@ import MarketSearchBar from '../components/MarketSearchBar';
 import MarketItemCard from '../components/MarketItemCard';
 import MarketComparePanel from '../components/MarketComparePanel';
 import useBrowseSearch from '../hooks/useBrowseSearch';
-import { countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
+import { calculateProfit, countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
 import { settingsAPI } from '../services/api';
 
 const RECENT_SEARCH_STORAGE_KEY = 'checkilaRecentSearches:v1';
@@ -63,6 +63,9 @@ export default function MarketAnalysisPage() {
   const [sortConfig, setSortConfig] = useState({ key: 'soldQuantity', direction: 'desc' });
   const [marketCreditsState, setMarketCreditsState] = useState(null);
   const [recentSearches, setRecentSearches] = useState(() => loadRecentSearches());
+  const [calcAmazonPrice, setCalcAmazonPrice] = useState('');
+  const [calcEbayPrice, setCalcEbayPrice] = useState('');
+  const [calcAdRate, setCalcAdRate] = useState('0');
 
   const saveRecentSearches = useCallback((nextValue) => {
     setRecentSearches(nextValue);
@@ -121,6 +124,16 @@ export default function MarketAnalysisPage() {
   }, [credits]);
 
   const searchCost = String(params.sellerUsername || '').trim() ? 2 : 1;
+
+  const inlineProfit = useMemo(() => {
+    const amazonPrice = Number.parseFloat(calcAmazonPrice);
+    const ebayPrice = Number.parseFloat(calcEbayPrice);
+    const adRate = Number.parseFloat(calcAdRate);
+    if (!Number.isFinite(amazonPrice) || !Number.isFinite(ebayPrice)) return null;
+    return calculateProfit(ebayPrice, amazonPrice, {
+      adRate: Number.isFinite(adRate) ? adRate / 100 : 0,
+    });
+  }, [calcAmazonPrice, calcEbayPrice, calcAdRate]);
 
   const runSearch = async (nextParams) => {
     rememberSearch(nextParams);
@@ -496,6 +509,39 @@ export default function MarketAnalysisPage() {
               <List size={14} />
               List
             </button>
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-950/70 px-3 py-2">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-300 whitespace-nowrap">Profit calc</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={calcAmazonPrice}
+                onChange={(e) => setCalcAmazonPrice(e.target.value)}
+                placeholder="Amazon"
+                className="input-base w-[96px] h-9 text-xs"
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={calcEbayPrice}
+                onChange={(e) => setCalcEbayPrice(e.target.value)}
+                placeholder="eBay"
+                className="input-base w-[96px] h-9 text-xs"
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={calcAdRate}
+                onChange={(e) => setCalcAdRate(e.target.value)}
+                placeholder="Add %"
+                className="input-base w-[88px] h-9 text-xs"
+              />
+              <div className="min-w-[88px] text-xs font-semibold text-slate-900 dark:text-slate-100">
+                {inlineProfit === null ? 'Profit —' : `Profit ${formatCurrency(inlineProfit)}`}
+              </div>
+            </div>
           </div>
 
           {loading ? (
