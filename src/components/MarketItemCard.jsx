@@ -1,8 +1,16 @@
 import React from 'react';
 import { ExternalLink, PlusCircle, Search } from 'lucide-react';
-import { formatCurrency } from '../utils/helpers';
+import { countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
+
+function openItemUrl(item) {
+  const url = String(item?.itemWebUrl || '').trim();
+  if (!url) return;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
 
 export default function MarketItemCard({ item, onSelect, onInspect, onSellerClick, onSearchTitle, isSelected }) {
+  const sellerFlag = countryCodeToFlagEmoji(item?.sellerCountryCode);
+
   return (
     <article className="glass-card p-3 flex flex-col gap-3">
       <div className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
@@ -16,7 +24,14 @@ export default function MarketItemCard({ item, onSelect, onInspect, onSellerClic
       </div>
 
       <div>
-        <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 line-clamp-1 min-h-[20px]">{item.title}</h4>
+        <button
+          type="button"
+          onClick={() => openItemUrl(item)}
+          className="text-left text-sm font-semibold text-slate-900 dark:text-slate-100 line-clamp-2 min-h-[20px] hover:underline"
+          title={item.itemWebUrl ? 'Open on eBay' : 'eBay link unavailable'}
+        >
+          {item.title}
+        </button>
         <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
           {item.condition} | Seller:{' '}
           <button
@@ -26,6 +41,7 @@ export default function MarketItemCard({ item, onSelect, onInspect, onSellerClic
           >
             {item.sellerName || 'Unknown'}
           </button>
+          {sellerFlag ? <span className="ml-2 align-middle">{sellerFlag}</span> : null}
         </p>
         <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
           Feedback score: <span className="font-semibold">{Number(item.sellerFeedback || 0)}</span>

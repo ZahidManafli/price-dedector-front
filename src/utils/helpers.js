@@ -71,6 +71,15 @@ export const formatDate = (date) => {
   }).format(dateObj);
 };
 
+export const countryCodeToFlagEmoji = (countryCode) => {
+  const code = String(countryCode || '').trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) return '';
+  return code
+    .split('')
+    .map((char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
+    .join('');
+};
+
 // Get profit status (profit, loss, neutral)
 export const getProfitStatus = (profit) => {
   if (profit > 0) return 'profit';

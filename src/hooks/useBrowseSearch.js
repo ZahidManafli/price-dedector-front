@@ -124,6 +124,12 @@ function normalizeItem(summary) {
     condition: summary?.condition || 'Unknown',
     sellerName: summary?.seller?.username || 'Unknown seller',
     sellerFeedback: Number(summary?.seller?.feedbackScore || 0),
+    sellerCountryCode:
+      summary?.itemLocation?.country ||
+      summary?.itemLocation?.countryCode ||
+      summary?.seller?.location?.country ||
+      summary?.seller?.countryCode ||
+      '',
     itemWebUrl: summary?.itemWebUrl || summary?.itemAffiliateWebUrl || '',
     raw: summary,
   };

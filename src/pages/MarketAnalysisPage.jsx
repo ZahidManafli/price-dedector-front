@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { History, LayoutGrid, List, RefreshCw, Search, SearchCheck } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -8,8 +8,26 @@ import MarketSearchBar from '../components/MarketSearchBar';
 import MarketItemCard from '../components/MarketItemCard';
 import MarketComparePanel from '../components/MarketComparePanel';
 import useBrowseSearch from '../hooks/useBrowseSearch';
-import { formatCurrency } from '../utils/helpers';
+import { countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
 import { settingsAPI } from '../services/api';
+
+const RECENT_SEARCH_STORAGE_KEY = 'checkilaRecentSearches:v1';
+const RECENT_SEARCH_LIMIT = 8;
+
+function loadRecentSearches() {
+  if (typeof window === 'undefined') return { sellers: [], titles: [] };
+  const raw = window.localStorage.getItem(RECENT_SEARCH_STORAGE_KEY);
+  if (!raw) return { sellers: [], titles: [] };
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      sellers: Array.isArray(parsed?.sellers) ? parsed.sellers.filter(Boolean) : [],
+      titles: Array.isArray(parsed?.titles) ? parsed.titles.filter(Boolean) : [],
+    };
+  } catch {
+    return { sellers: [], titles: [] };
+  }
+}
 
 function median(values) {
   if (!values.length) return 0;
@@ -44,6 +62,35 @@ export default function MarketAnalysisPage() {
   const [viewMode, setViewMode] = useState('list');
   const [sortConfig, setSortConfig] = useState({ key: 'soldQuantity', direction: 'desc' });
   const [marketCreditsState, setMarketCreditsState] = useState(null);
+  const [recentSearches, setRecentSearches] = useState(() => loadRecentSearches());
+
+  const saveRecentSearches = useCallback((nextValue) => {
+    setRecentSearches(nextValue);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(RECENT_SEARCH_STORAGE_KEY, JSON.stringify(nextValue));
+    }
+  }, []);
+
+  const rememberRecentValue = useCallback(
+    (key, value) => {
+      const normalized = String(value || '').trim();
+      if (!normalized) return;
+      const current = Array.isArray(recentSearches[key]) ? recentSearches[key] : [];
+      const nextList = [normalized, ...current.filter((entry) => entry !== normalized)].slice(0, RECENT_SEARCH_LIMIT);
+      saveRecentSearches({ ...recentSearches, [key]: nextList });
+    },
+    [recentSearches, saveRecentSearches]
+  );
+
+  const rememberSearch = useCallback(
+    (nextParams) => {
+      const seller = String(nextParams?.sellerUsername || '').trim();
+      const title = String(nextParams?.q || '').trim();
+      if (seller) rememberRecentValue('sellers', seller);
+      if (title) rememberRecentValue('titles', title);
+    },
+    [rememberRecentValue]
+  );
 
   useEffect(() => {
     const loadLimits = async () => {
@@ -76,6 +123,7 @@ export default function MarketAnalysisPage() {
   const searchCost = String(params.sellerUsername || '').trim() ? 2 : 1;
 
   const runSearch = async (nextParams) => {
+    rememberSearch(nextParams);
     await searchNow(nextParams);
   };
 
@@ -266,6 +314,7 @@ export default function MarketAnalysisPage() {
   const handleSellerClick = (sellerName) => {
     const seller = String(sellerName || '').trim();
     if (!seller) return;
+    rememberRecentValue('sellers', seller);
     const query = new URLSearchParams({
       openSearch: '1',
       sellerUsername: seller,
@@ -277,6 +326,7 @@ export default function MarketAnalysisPage() {
   const handleTitleSearch = (item) => {
     const titleQuery = String(item?.title || '').trim();
     if (!titleQuery) return;
+    rememberRecentValue('titles', titleQuery);
     const nextParams = {
       ...params,
       q: titleQuery,
@@ -400,6 +450,8 @@ export default function MarketAnalysisPage() {
         disabled={loading}
         marketCreditsRemaining={marketCreditsState?.remaining ?? null}
         searchCost={searchCost}
+        recentSellers={recentSearches.sellers}
+        recentTitles={recentSearches.titles}
       />
 
       <section className="grid grid-cols-2 md:grid-cols-5 gap-2">
@@ -519,7 +571,16 @@ export default function MarketAnalysisPage() {
                               )}
                             </div>
                           </td>
-                          <td className="p-3 max-w-[220px] truncate text-xs">{item.title}</td>
+                          <td className="p-3 max-w-[220px] truncate text-xs">
+                            <button
+                              type="button"
+                              onClick={() => item.itemWebUrl && window.open(item.itemWebUrl, '_blank', 'noopener,noreferrer')}
+                              className="text-left hover:underline"
+                              title={item.itemWebUrl ? 'Open on eBay' : 'eBay link unavailable'}
+                            >
+                              {item.title}
+                            </button>
+                          </td>
                           <td className="p-3">
                             <button
                               type="button"
@@ -528,6 +589,9 @@ export default function MarketAnalysisPage() {
                             >
                               {item.sellerName || 'Unknown'}
                             </button>
+                            {countryCodeToFlagEmoji(item.sellerCountryCode) ? (
+                              <span className="ml-2">{countryCodeToFlagEmoji(item.sellerCountryCode)}</span>
+                            ) : null}
                           </td>
                           <td className="p-3 font-medium">{Number(item.sellerFeedback || 0)}</td>
                           <td className="p-3">{item.condition}</td>

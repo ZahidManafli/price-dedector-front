@@ -29,6 +29,8 @@ export default function MarketSearchBar({
   disabled,
   marketCreditsRemaining,
   searchCost,
+  recentSellers = [],
+  recentTitles = [],
 }) {
   const setValue = (key, value) => onChange((prev) => ({ ...prev, [key]: value }));
 
@@ -47,8 +49,14 @@ export default function MarketSearchBar({
             className="input-base"
             placeholder="Search products (ex: drone, iphone, lego)"
             value={params.q}
+            list="recent-checkila-titles"
             onChange={(e) => setValue('q', e.target.value)}
           />
+          <datalist id="recent-checkila-titles">
+            {recentTitles.map((title) => (
+              <option key={title} value={title} />
+            ))}
+          </datalist>
         </div>
 
         <div className="md:col-span-2">
@@ -126,8 +134,14 @@ export default function MarketSearchBar({
             className="input-base"
             placeholder="seller username"
             value={params.sellerUsername || ''}
+            list="recent-checkila-sellers"
             onChange={(e) => setValue('sellerUsername', e.target.value)}
           />
+          <datalist id="recent-checkila-sellers">
+            {recentSellers.map((seller) => (
+              <option key={seller} value={seller} />
+            ))}
+          </datalist>
         </div>
 
         <div className="md:col-span-2">

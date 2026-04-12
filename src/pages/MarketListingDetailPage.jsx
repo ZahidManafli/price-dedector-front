@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowDownAZ, ArrowLeft, ArrowUpAZ, ExternalLink, LayoutGrid, List, Search, Store } from 'lucide-react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { browseAPI } from '../services/api';
-import { formatCurrency } from '../utils/helpers';
+import { countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
 
 function normalizeSummary(summary) {
   return {
@@ -104,6 +104,20 @@ export default function MarketListingDetailPage() {
     return fromParam;
   }, [detail, itemId]);
 
+  const sellerCountryFlag = countryCodeToFlagEmoji(
+    detail?.itemLocation?.country ||
+      detail?.itemLocation?.countryCode ||
+      detail?.seller?.location?.country ||
+      detail?.seller?.countryCode ||
+      ''
+  );
+
+  const openExternalItem = (url) => {
+    const next = String(url || '').trim();
+    if (!next) return;
+    window.open(next, '_blank', 'noopener,noreferrer');
+  };
+
   const resolveLegacyListingId = (source) => {
     const candidates = [
       source?.legacyItemId,
@@ -192,7 +206,7 @@ export default function MarketListingDetailPage() {
         presetSearch: {
           q: titleQuery,
           categoryId: '',
-          sellerUsername: '',
+          sellerUsername: String(detail?.seller?.username || '').trim(),
         },
       },
     });
@@ -307,7 +321,14 @@ export default function MarketListingDetailPage() {
         <>
           <section className="glass-card overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600/10 to-emerald-600/10 p-5 border-b border-slate-200 dark:border-slate-700">
-              <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 line-clamp-2">{detail.title}</h1>
+              <button
+                type="button"
+                onClick={() => openExternalItem(detail?.itemWebUrl)}
+                className="text-left text-xl font-semibold text-slate-900 dark:text-slate-100 line-clamp-2 hover:underline"
+                title={detail?.itemWebUrl ? 'Open on eBay' : 'eBay link unavailable'}
+              >
+                {detail.title}
+              </button>
               <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{detail.shortDescription || 'Detailed market listing insights'}</p>
             </div>
 
@@ -340,6 +361,7 @@ export default function MarketListingDetailPage() {
                   >
                     {detail?.seller?.username || 'Unknown seller'}
                   </button>
+                  {sellerCountryFlag ? <span className="ml-2 align-middle">{sellerCountryFlag}</span> : null}
                 </div>
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                   <p className="text-xs text-slate-500 dark:text-slate-300">Sold Count</p>
@@ -425,9 +447,8 @@ export default function MarketListingDetailPage() {
               sellerViewMode === 'card' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                   {sortedSellerListings.map((item) => (
-                    <Link
+                    <div
                       key={item.id}
-                      to={`/market-analysis/item/${encodeURIComponent(item.id)}?sellerUsername=${encodeURIComponent(detail?.seller?.username || '')}`}
                       className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 hover:border-blue-400 transition"
                     >
                       <div className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 mb-2">
@@ -437,7 +458,14 @@ export default function MarketListingDetailPage() {
                           <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">No image</div>
                         )}
                       </div>
-                      <h3 className="text-sm font-semibold line-clamp-1 text-slate-900 dark:text-slate-100">{item.title}</h3>
+                      <button
+                        type="button"
+                        onClick={() => openExternalItem(item.itemWebUrl)}
+                        className="text-left text-sm font-semibold line-clamp-2 text-slate-900 dark:text-slate-100 hover:underline"
+                        title={item.itemWebUrl ? 'Open on eBay' : 'eBay link unavailable'}
+                      >
+                        {item.title}
+                      </button>
                       <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">{item.condition}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
                         Sold Qty: <span className="font-semibold">{Number(item.soldQuantity || 0)}</span>
@@ -450,7 +478,7 @@ export default function MarketListingDetailPage() {
                           <Search size={14} />
                         </button>
                       </div>
-                    </Link>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -494,7 +522,16 @@ export default function MarketListingDetailPage() {
                               )}
                             </div>
                           </td>
-                          <td className="p-3 max-w-[220px] truncate text-xs">{item.title}</td>
+                          <td className="p-3 max-w-[220px] truncate text-xs">
+                            <button
+                              type="button"
+                              onClick={() => openExternalItem(item.itemWebUrl)}
+                              className="text-left hover:underline"
+                              title={item.itemWebUrl ? 'Open on eBay' : 'eBay link unavailable'}
+                            >
+                              {item.title}
+                            </button>
+                          </td>
                           <td className="p-3">{item.condition}</td>
                           <td className="p-3 font-medium">{Number(item.soldQuantity || 0)}</td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>

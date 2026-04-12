@@ -732,11 +732,12 @@ export default function AmazonLookupPage() {
                   <div className="flex flex-col sm:flex-row gap-2 justify-end">
                     <button
                       type="button"
-                      onClick={openListingModal}
+                      onClick={() => setAlert({ type: 'info', message: 'List on eBay is available soon.' })}
                       className="btn-primary"
-                      disabled={loading}
+                      disabled
+                      title="Available soon"
                     >
-                      List on eBay
+                      List on eBay - Available soon
                     </button>
                     <button
                       type="button"

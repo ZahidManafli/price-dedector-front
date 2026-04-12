@@ -7,6 +7,7 @@ export default function EbayCalculatorPage() {
   const { isDark } = useTheme();
 
   const [amazonCost, setAmazonCost] = useState('23.99');
+  const [ebayPrice, setEbayPrice] = useState('29.99');
   const [targetProfit, setTargetProfit] = useState('3.70');
   const [fvfRate, setFvfRate] = useState('12.9');
   const [taxRate, setTaxRate] = useState('0');
@@ -15,6 +16,7 @@ export default function EbayCalculatorPage() {
 
   const parsed = useMemo(() => {
     const cost = parseFloat(amazonCost) || 0;
+    const salePrice = parseFloat(ebayPrice) || 0;
     const profitTarget = parseFloat(targetProfit) || 0;
     const fvf = (parseFloat(fvfRate) || 0) / 100;
     const tax = (parseFloat(taxRate) || 0) / 100;
@@ -25,14 +27,16 @@ export default function EbayCalculatorPage() {
     if (cost <= 0 || denominator <= 0) {
       return {
         cost,
+        salePrice,
         profitTarget,
         denominator,
-        salePrice: 0,
         netProfit: 0,
+        recommendedSalePrice: 0,
+        recommendedNetProfit: 0,
       };
     }
 
-    const salePrice = calculateRecommendedEbayPrice(cost, profitTarget, {
+    const recommendedSalePrice = calculateRecommendedEbayPrice(cost, profitTarget, {
       taxRate: tax,
       fvfRate: fvf,
       adRate: ad,
@@ -44,15 +48,23 @@ export default function EbayCalculatorPage() {
       adRate: ad,
       fixedFee: fixed,
     });
+    const recommendedNetProfit = calculateProfit(recommendedSalePrice, cost, {
+      taxRate: tax,
+      fvfRate: fvf,
+      adRate: ad,
+      fixedFee: fixed,
+    });
 
     return {
       cost,
+      salePrice,
       profitTarget,
       denominator,
-      salePrice: Math.round(salePrice * 100) / 100,
       netProfit,
+      recommendedSalePrice: Math.round(recommendedSalePrice * 100) / 100,
+      recommendedNetProfit,
     };
-  }, [amazonCost, targetProfit, fvfRate, taxRate, adRate, fixedFee]);
+  }, [amazonCost, ebayPrice, targetProfit, fvfRate, taxRate, adRate, fixedFee]);
 
   const applyPreset = (preset) => {
     if (preset === 'default') {
@@ -130,6 +142,10 @@ export default function EbayCalculatorPage() {
                   <input type="number" min="0" step="0.01" value={amazonCost} onChange={(e) => setAmazonCost(e.target.value)} className="input-base" />
                 </div>
                 <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">eBay price</label>
+                  <input type="number" min="0" step="0.01" value={ebayPrice} onChange={(e) => setEbayPrice(e.target.value)} className="input-base" />
+                </div>
+                <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1">Target profit (USD)</label>
                   <input type="number" min="0" step="0.01" value={targetProfit} onChange={(e) => setTargetProfit(e.target.value)} className="input-base" />
                 </div>
@@ -149,7 +165,7 @@ export default function EbayCalculatorPage() {
                     <input type="number" min="0" step="0.01" value={taxRate} onChange={(e) => setTaxRate(e.target.value)} className="input-base" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Ad rate (%)</label>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Add rate (%)</label>
                     <input type="number" min="0" step="0.01" value={adRate} onChange={(e) => setAdRate(e.target.value)} className="input-base" />
                   </div>
                   <div>
@@ -163,7 +179,7 @@ export default function EbayCalculatorPage() {
                 <p className={`text-xs ${isDark ? 'text-indigo-200' : 'text-indigo-700'}`}>
                   <span className="font-semibold">Formula: </span>
                   <code className="font-mono">
-                    P_sale = (Cost_amazon + Profit_target + Fee_fixed) / (1 - (1 + Rate_tax) x (Rate_fvf + Rate_ad))
+                    P_sale = (Cost_amazon + Profit_target + Fee_fixed) / (1 - (1 + Rate_tax) x (Rate_fvf + Rate_add))
                   </code>
                 </p>
               </div>
@@ -178,16 +194,31 @@ export default function EbayCalculatorPage() {
 
               <div className="space-y-3">
                 <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
-                  <p className="text-xs text-slate-500">Recommended eBay Price</p>
+                  <p className="text-xs text-slate-500">Net Profit at entered eBay Price</p>
                   <p className={`text-3xl font-bold mt-1 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                    {parsed.salePrice > 0 ? formatCurrency(parsed.salePrice) : '—'}
+                    {parsed.salePrice > 0 ? formatCurrency(parsed.netProfit) : '—'}
                   </p>
                 </div>
 
                 <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
-                  <p className="text-xs text-slate-500">Estimated Net Profit</p>
+                  <p className="text-xs text-slate-500">Recommended eBay Price for Target Profit</p>
                   <p
                     className={`text-2xl font-bold mt-1 ${
+                      parsed.recommendedSalePrice > 0
+                        ? 'text-emerald-600'
+                        : 'text-slate-400'
+                    }`}
+                  >
+                    {parsed.recommendedSalePrice > 0 ? formatCurrency(parsed.recommendedSalePrice) : '—'}
+                  </p>
+                  <p className={`mt-1 text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+                    Profit at recommended price: {formatCurrency(parsed.recommendedNetProfit)}
+                  </p>
+                </div>
+
+                <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-50 bg-slate-50'}`}>
+                  <p className="text-xs text-slate-500">Current entered price</p>
+                  <p className={`text-2xl font-bold mt-1 ${
                       parsed.netProfit > 0
                         ? 'text-emerald-600'
                         : parsed.netProfit < 0
@@ -197,7 +228,10 @@ export default function EbayCalculatorPage() {
                         : 'text-slate-900'
                     }`}
                   >
-                    {formatCurrency(parsed.netProfit)}
+                    {formatCurrency(parsed.salePrice)}
+                  </p>
+                  <p className={`mt-1 text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+                    Net profit: {formatCurrency(parsed.netProfit)}
                   </p>
                 </div>
               </div>
