@@ -355,9 +355,6 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
               <p className={`text-2xl font-bold ${ calculatedProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(calculatedProfit)}
               </p>
-              <p className="text-xs text-slate-500 mt-2">
-                Formula: SP - PC - [(SP × (1 + 0.06)) × (0.136 + Ad rate)] - 0.30
-              </p>
             </div>
           )}
 
