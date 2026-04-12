@@ -8,7 +8,7 @@ import MarketItemCard from '../components/MarketItemCard';
 import MarketComparePanel from '../components/MarketComparePanel';
 import useBrowseSearch from '../hooks/useBrowseSearch';
 import { formatCurrency } from '../utils/helpers';
-import { settingsAPI } from '../services/api';
+import { ebayAPI, settingsAPI } from '../services/api';
 
 function median(values) {
   if (!values.length) return 0;
@@ -43,6 +43,7 @@ export default function MarketAnalysisPage() {
   const [viewMode, setViewMode] = useState('list');
   const [sortConfig, setSortConfig] = useState({ key: 'soldQuantity', direction: 'desc' });
   const [marketCreditsState, setMarketCreditsState] = useState(null);
+  const [migratingListingId, setMigratingListingId] = useState('');
 
   useEffect(() => {
     const loadLimits = async () => {
@@ -284,6 +285,45 @@ export default function MarketAnalysisPage() {
     openSearchInNewTab(nextParams);
   };
 
+  const resolveLegacyListingId = (item) => {
+    const candidates = [
+      item?.legacyId,
+      item?.raw?.legacyItemId,
+      item?.raw?.itemId,
+      item?.id,
+    ];
+
+    for (const candidate of candidates) {
+      const normalized = String(candidate || '')
+        .trim()
+        .replace(/^v1\|/, '')
+        .replace(/\|0$/, '');
+      if (/^\d{9,15}$/.test(normalized)) {
+        return normalized;
+      }
+    }
+    return null;
+  };
+
+  const handleSellSimilar = async (item) => {
+    const listingId = resolveLegacyListingId(item);
+    if (!listingId) {
+      setError('Sell Similar requires a live numeric eBay listing ID (Item ID).');
+      return;
+    }
+
+    try {
+      setMigratingListingId(listingId);
+      await ebayAPI.sellSimilar(listingId);
+      setError(null);
+    } catch (err) {
+      const msg = err?.response?.data?.error || 'Failed to run Sell Similar';
+      setError(msg);
+    } finally {
+      setMigratingListingId('');
+    }
+  };
+
   const onNextPage = () => {
     const nextParams = {
       ...params,
@@ -514,6 +554,14 @@ export default function MarketAnalysisPage() {
                               </button>
                               <button type="button" className="btn-primary" onClick={() => handleInspect(item)}>
                                 Details
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => handleSellSimilar(item)}
+                                disabled={migratingListingId === resolveLegacyListingId(item)}
+                              >
+                                {migratingListingId === resolveLegacyListingId(item) ? 'Selling...' : 'Sell Similar'}
                               </button>
                             </div>
                           </td>

@@ -3,7 +3,7 @@ import { ArrowDownAZ, ArrowLeft, ArrowUpAZ, ExternalLink, LayoutGrid, List, Sear
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { browseAPI } from '../services/api';
+import { browseAPI, ebayAPI } from '../services/api';
 import { formatCurrency } from '../utils/helpers';
 
 function normalizeSummary(summary) {
@@ -42,6 +42,7 @@ export default function MarketListingDetailPage() {
   const [sellerLimit] = useState(12);
   const [sellerViewMode, setSellerViewMode] = useState('list');
   const [sellerSortConfig, setSellerSortConfig] = useState({ key: 'soldQuantity', direction: 'desc' });
+  const [migratingListingId, setMigratingListingId] = useState('');
 
   const backQuery = useMemo(() => {
     const q = searchParams.get('q') || '';
@@ -102,6 +103,46 @@ export default function MarketListingDetailPage() {
     }
     return fromParam;
   }, [detail, itemId]);
+
+  const resolveLegacyListingId = (source) => {
+    const candidates = [
+      source?.legacyItemId,
+      source?.raw?.legacyItemId,
+      source?.itemId,
+      source?.raw?.itemId,
+      source?.id,
+      itemId,
+    ];
+
+    for (const candidate of candidates) {
+      const normalized = String(candidate || '')
+        .trim()
+        .replace(/^v1\|/, '')
+        .replace(/\|0$/, '');
+      if (/^\d{9,15}$/.test(normalized)) {
+        return normalized;
+      }
+    }
+    return null;
+  };
+
+  const handleSellSimilar = async (source) => {
+    const listingId = resolveLegacyListingId(source);
+    if (!listingId) {
+      setError('Sell Similar requires a live numeric eBay listing ID (Item ID).');
+      return;
+    }
+
+    try {
+      setMigratingListingId(listingId);
+      await ebayAPI.sellSimilar(listingId);
+      setError(null);
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Failed to run Sell Similar');
+    } finally {
+      setMigratingListingId('');
+    }
+  };
 
   const handleLoadSellerListings = async (nextOffset = 0) => {
     const sellerUsername = String(detail?.seller?.username || '').trim();
@@ -235,12 +276,22 @@ export default function MarketListingDetailPage() {
           <ArrowLeft size={14} />
           Back to Checkila Analysis
         </button>
-        {detail?.itemWebUrl && (
-          <a href={detail.itemWebUrl} target="_blank" rel="noreferrer" className="btn-primary flex items-center gap-2">
-            Open on eBay
-            <ExternalLink size={14} />
-          </a>
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => handleSellSimilar(detail)}
+            disabled={migratingListingId === resolveLegacyListingId(detail)}
+          >
+            {migratingListingId === resolveLegacyListingId(detail) ? 'Selling...' : 'Sell Similar'}
+          </button>
+          {detail?.itemWebUrl && (
+            <a href={detail.itemWebUrl} target="_blank" rel="noreferrer" className="btn-primary flex items-center gap-2">
+              Open on eBay
+              <ExternalLink size={14} />
+            </a>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -452,6 +503,14 @@ export default function MarketListingDetailPage() {
                               </Link>
                               <button type="button" className="btn-secondary" onClick={() => handleSearchItem(item)} title="Search this title">
                                 <Search size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => handleSellSimilar(item)}
+                                disabled={migratingListingId === resolveLegacyListingId(item)}
+                              >
+                                {migratingListingId === resolveLegacyListingId(item) ? 'Selling...' : 'Sell Similar'}
                               </button>
                             </div>
                           </td>
