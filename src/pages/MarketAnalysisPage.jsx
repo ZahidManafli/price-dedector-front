@@ -343,6 +343,7 @@ export default function MarketAnalysisPage() {
     const nextParams = {
       ...params,
       q: titleQuery,
+      sellerUsername: '',
       offset: 0,
     };
     openSearchInNewTab(nextParams);
