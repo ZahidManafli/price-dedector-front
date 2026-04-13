@@ -112,8 +112,11 @@ function trimCache(cache, maxEntries = 30) {
 }
 
 function normalizeItem(summary) {
+  const rawItemId = String(summary?.itemId || '').trim();
+  const normalizedId = rawItemId.replace(/^v1\|/, '').replace(/\|0$/, '');
+
   return {
-    id: summary?.itemId || '',
+    id: normalizedId || rawItemId,
     legacyId: summary?.legacyItemId || '',
     title: summary?.title || 'Untitled listing',
     imageUrl: summary?.image?.imageUrl || summary?.thumbnailImages?.[0]?.imageUrl || '',

@@ -225,6 +225,22 @@ export default function MarketAnalysisPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
 
+  const getResultKey = useCallback((item) => {
+    const rawId = String(item?.id || '').trim();
+    const normalizedId = rawId.replace(/^v1\|/, '').replace(/\|0$/, '');
+    const legacyId = String(item?.legacyId || item?.raw?.legacyItemId || '').trim();
+    const webUrl = String(item?.itemWebUrl || item?.raw?.itemWebUrl || '').trim();
+    const title = String(item?.title || '').trim();
+
+    if (normalizedId && normalizedId !== '0') return `id:${normalizedId}`;
+    if (legacyId) return `legacy:${legacyId}`;
+
+    const urlMatch = webUrl.match(/\/itm\/(?:[^/]+\/)?(\d{8,})/);
+    if (urlMatch?.[1]) return `url-id:${urlMatch[1]}`;
+
+    return `title:${title}:${Number(item?.priceValue || 0).toFixed(2)}`;
+  }, []);
+
   const filteredResults = useMemo(() => {
     const seller = String(params.sellerUsername || '').trim().toLowerCase();
     if (!seller) return results;
@@ -237,7 +253,14 @@ export default function MarketAnalysisPage() {
   }, [filteredResults, selectedIds]);
 
   const sortedResults = useMemo(() => {
-    const data = [...filteredResults];
+    const seen = new Set();
+    const data = filteredResults.filter((item) => {
+      const stableKey = getResultKey(item);
+      if (seen.has(stableKey)) return false;
+      seen.add(stableKey);
+      return true;
+    });
+
     const { key, direction } = sortConfig;
     if (!key) return data;
 
@@ -271,7 +294,7 @@ export default function MarketAnalysisPage() {
     });
 
     return data;
-  }, [filteredResults, sortConfig]);
+  }, [filteredResults, sortConfig, getResultKey]);
 
   const toggleSort = (key) => {
     setSortConfig((prev) => {
@@ -391,16 +414,6 @@ export default function MarketAnalysisPage() {
 
     const url = `https://www.ebay.com/lstng?mode=SellLikeItem&itemId=${encodeURIComponent(listingId)}&sr=wn`;
     window.open(url, '_blank', 'noopener,noreferrer');
-  };
-
-  const getResultKey = (item, index) => {
-    const id = String(item?.id || '').trim();
-    const legacyId = String(item?.legacyId || '').trim();
-    const webUrl = String(item?.itemWebUrl || '').trim();
-    if (id) return `id:${id}`;
-    if (legacyId) return `legacy:${legacyId}`;
-    if (webUrl) return `url:${webUrl}`;
-    return `fallback:${String(item?.title || '').trim()}:${index}`;
   };
 
   const onNextPage = () => {
