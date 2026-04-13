@@ -393,6 +393,16 @@ export default function MarketAnalysisPage() {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const getResultKey = (item, index) => {
+    const id = String(item?.id || '').trim();
+    const legacyId = String(item?.legacyId || '').trim();
+    const webUrl = String(item?.itemWebUrl || '').trim();
+    if (id) return `id:${id}`;
+    if (legacyId) return `legacy:${legacyId}`;
+    if (webUrl) return `url:${webUrl}`;
+    return `fallback:${String(item?.title || '').trim()}:${index}`;
+  };
+
   const onNextPage = () => {
     const nextParams = {
       ...params,
@@ -559,9 +569,9 @@ export default function MarketAnalysisPage() {
             <>
               {viewMode === 'card' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {sortedResults.map((item) => (
+                  {sortedResults.map((item, index) => (
                     <MarketItemCard
-                      key={item.id}
+                      key={getResultKey(item, index)}
                       item={item}
                       isSelected={selectedIds.includes(item.id)}
                       onSelect={handleSelect}
@@ -608,8 +618,8 @@ export default function MarketAnalysisPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {sortedResults.map((item) => (
-                        <tr key={item.id} className="border-b border-slate-100 dark:border-slate-800">
+                      {sortedResults.map((item, index) => (
+                        <tr key={getResultKey(item, index)} className="border-b border-slate-100 dark:border-slate-800">
                           <td className="p-3">
                             <div className="w-12 h-12 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                               {item.imageUrl ? (
