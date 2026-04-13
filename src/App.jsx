@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import { useAuth } from './context/AuthContext';
 import { useSidebar, SidebarProvider } from './context/SidebarContext';
 import Sidebar from './components/Sidebar';
@@ -249,6 +250,7 @@ function App() {
     <SidebarProvider>
       <Router>
         <AppContent />
+        <Analytics />
       </Router>
     </SidebarProvider>
   );
