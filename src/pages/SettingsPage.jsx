@@ -36,6 +36,7 @@ export default function SettingsPage() {
   });
   const [requestModal, setRequestModal] = useState(null);
   const [ebayTab, setEbayTab] = useState('overview');
+  const [settingsTab, setSettingsTab] = useState('overview');
 
   const activeEbayAccount = Array.isArray(ebayStatus.ebayAccounts)
     ? ebayStatus.ebayAccounts.find((acc) => acc.id && ebayStatus.activeEbayAccountId === acc.id) || ebayStatus.ebayAccounts[0] || null
@@ -43,6 +44,9 @@ export default function SettingsPage() {
   const activeSellerSnapshot = activeEbayAccount?.sellerSnapshot || ebayStatus.sellerSnapshot || null;
   const activeTradingUserSummary = activeEbayAccount?.tradingUserSummary || null;
   const activeTradingAccountSummary = activeEbayAccount?.tradingAccountSummary || null;
+  const connectedAccountsCount = Array.isArray(ebayStatus.ebayAccounts)
+    ? ebayStatus.ebayAccounts.filter((acc) => !!acc?.connected).length
+    : 0;
 
   useEffect(() => {
     const load = async () => {
@@ -249,8 +253,37 @@ export default function SettingsPage() {
 
   return (
     <div className="page-shell">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="page-title mb-8">Settings</h1>
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-6 glass-card p-5 md:p-6">
+          <h1 className="page-title mb-2">Settings Center</h1>
+          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+            Manage notifications, eBay integrations, account security, and subscription requests from one place.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {[
+              { id: 'overview', label: 'Overview' },
+              { id: 'notifications', label: 'Notifications' },
+              { id: 'ebay', label: 'eBay' },
+              { id: 'security', label: 'Security' },
+              { id: 'requests', label: 'Requests' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setSettingsTab(tab.id)}
+                className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${
+                  settingsTab === tab.id
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : isDark
+                      ? 'bg-slate-900 border border-slate-700 text-slate-200 hover:bg-slate-800'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {alert && (
           <div className="mb-6">
@@ -262,6 +295,49 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {settingsTab === 'overview' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
+            <div className="glass-card p-4">
+              <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Notifications</p>
+              <p className={`text-lg font-semibold mt-1 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                {preferences.emailOnPriceChange ? 'Enabled' : 'Disabled'}
+              </p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                Frequency: {preferences.emailNotificationFrequency || 'instant'}
+              </p>
+            </div>
+            <div className="glass-card p-4">
+              <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>eBay Accounts</p>
+              <p className={`text-lg font-semibold mt-1 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                {connectedAccountsCount}
+                {limits?.ebayAccounts?.limit != null ? ` / ${limits.ebayAccounts.limit}` : ''}
+              </p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                Remaining: {limits?.ebayAccounts?.remaining == null ? 'Unlimited' : limits.ebayAccounts.remaining}
+              </p>
+            </div>
+            <div className="glass-card p-4">
+              <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Active Connection</p>
+              <p className={`text-lg font-semibold mt-1 truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                {activeEbayAccount?.connectionName || activeEbayAccount?.username || 'Not connected'}
+              </p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                Environment: {ebayStatus.environment || '—'}
+              </p>
+            </div>
+            <div className="glass-card p-4">
+              <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Snapshot Status</p>
+              <p className={`text-lg font-semibold mt-1 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                {activeSellerSnapshot?.fetchedAt ? 'Ready' : 'Pending'}
+              </p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                {activeSellerSnapshot?.fetchedAt ? new Date(activeSellerSnapshot.fetchedAt).toLocaleString() : 'Reconnect eBay to fetch snapshot'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {settingsTab === 'security' && (
         <div className="glass-card p-4 md:p-5 mb-6">
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <h2 className={`text-lg font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
@@ -305,7 +381,9 @@ export default function SettingsPage() {
             </div>
           </form>
         </div>
+        )}
 
+        {settingsTab === 'requests' && (
         <div className="glass-card p-4 md:p-5 mb-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -335,10 +413,13 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+        )}
 
+        {(settingsTab === 'notifications' || settingsTab === 'ebay') && (
         <div className="glass-card p-4 md:p-5">
           <form onSubmit={handleSave} className="space-y-5">
             {/* Email Notifications */}
+            {settingsTab === 'notifications' && (
             <div className={`rounded-lg p-3 md:p-4 ${
               isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
             }`}>
@@ -384,8 +465,10 @@ export default function SettingsPage() {
                 </select>
               </div>
             </div>
+            )}
 
             {/* eBay Integration */}
+            {settingsTab === 'ebay' && (
             <div className={`rounded-lg p-3 md:p-4 ${
               isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
             }`}>
@@ -762,17 +845,20 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
+            )}
 
             {/* Buttons */}
             <div className={`pt-3 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
               <div className="flex gap-4">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-primary"
-                >
-                  {loading ? 'Saving...' : 'Save Settings'}
-                </button>
+                {settingsTab === 'notifications' && (
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn-primary"
+                  >
+                    {loading ? 'Saving...' : 'Save Settings'}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => navigate('/dashboard')}
@@ -784,7 +870,9 @@ export default function SettingsPage() {
             </div>
           </form>
         </div>
+        )}
 
+        {settingsTab === 'overview' && (
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="glass-card p-3">
             <p className={`text-sm font-medium flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
@@ -805,6 +893,7 @@ export default function SettingsPage() {
             </p>
           </div>
         </div>
+        )}
 
         <SubscriptionRequestModal
           open={!!requestModal}
