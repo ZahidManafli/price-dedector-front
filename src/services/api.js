@@ -152,6 +152,7 @@ export const adminAPI = {
     api.get('/admin/subscription-requests', { params: status ? { status } : undefined }),
   approveSubscriptionRequest: (id, data) => api.post(`/admin/subscription-requests/${id}/approve`, data),
   rejectSubscriptionRequest: (id, data) => api.post(`/admin/subscription-requests/${id}/reject`, data),
+  purgeSearchCache: (data) => api.post('/admin/search-cache/purge', data),
 };
 
 export default api;

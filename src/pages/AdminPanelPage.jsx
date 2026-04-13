@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { adminAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2 } from 'lucide-react';
+import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 function safeToString(v) {
@@ -68,6 +68,8 @@ export default function AdminPanelPage() {
   const [planForm, setPlanForm] = useState(defaultPlanForm());
   const [userSearch, setUserSearch] = useState('');
   const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [dangerWindow, setDangerWindow] = useState('3d');
+  const [dangerSubmitting, setDangerSubmitting] = useState(false);
 
   const adminCount = useMemo(() => users.filter((u) => u.role === 'admin').length, [users]);
 
@@ -385,6 +387,33 @@ export default function AdminPanelPage() {
     }
   };
 
+  const onPurgeSearchCache = async () => {
+    const labelMap = {
+      '3d': 'within 3 days',
+      '7d': 'within 7 days',
+      '1m': 'within 1 month',
+      '1y': 'within 1 year',
+      all: 'all search records',
+    };
+    const label = labelMap[dangerWindow] || dangerWindow;
+    const confirmed = window.confirm(`Delete ${label} from SQL? This cannot be undone.`);
+    if (!confirmed) return;
+
+    try {
+      setDangerSubmitting(true);
+      setAlert(null);
+      const response = await adminAPI.purgeSearchCache({ window: dangerWindow });
+      setAlert({
+        type: 'success',
+        message: response?.data?.message || 'Search cache deleted successfully',
+      });
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to delete search cache' });
+    } finally {
+      setDangerSubmitting(false);
+    }
+  };
+
   return (
     <div className="page-shell">
       <div className="max-w-6xl mx-auto">
@@ -418,6 +447,12 @@ export default function AdminPanelPage() {
             onClick={() => setActiveTab('plans')}
           >
             Plans
+          </button>
+          <button
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'danger' ? 'bg-red-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
+            onClick={() => setActiveTab('danger')}
+          >
+            Danger Zone
           </button>
         </div>
 
@@ -826,6 +861,53 @@ export default function AdminPanelPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!loading && activeTab === 'danger' && (
+          <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle size={18} className="text-red-600" />
+              <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                Danger Zone
+              </h2>
+            </div>
+
+            <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+              Delete searched records from SQL by age. This removes cached search data permanently.
+            </p>
+
+            <div className={`rounded-xl border p-4 ${isDark ? 'border-red-900 bg-red-950/20' : 'border-red-200 bg-red-50'}`}>
+              <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-red-200' : 'text-red-700'}`}>
+                Delete search records
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
+                <div>
+                  <select
+                    value={dangerWindow}
+                    onChange={(e) => setDangerWindow(e.target.value)}
+                    className="input-base"
+                  >
+                    <option value="3d">Within 3 days</option>
+                    <option value="7d">Within 7 days</option>
+                    <option value="1m">Within 1 month</option>
+                    <option value="1y">Within 1 year</option>
+                    <option value="all">All</option>
+                  </select>
+                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    This action deletes matching rows from <span className="font-semibold">ebay_search_cache</span>.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onPurgeSearchCache}
+                  disabled={dangerSubmitting}
+                  className="rounded-lg border border-red-600 bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                >
+                  {dangerSubmitting ? 'Deleting...' : 'Delete search data'}
+                </button>
               </div>
             </div>
           </div>
