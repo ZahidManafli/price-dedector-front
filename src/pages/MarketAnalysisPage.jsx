@@ -417,7 +417,7 @@ export default function MarketAnalysisPage() {
         <div>
           <h1 className="page-title">Checkila Analysis</h1>
           <p className="page-subtitle">
-            Discover market listings with eBay Browse API and compare pricing opportunities before adding products.
+            Discover market listings with Checkila Analysis and compare pricing opportunities before adding products.
           </p>
         </div>
         <button
