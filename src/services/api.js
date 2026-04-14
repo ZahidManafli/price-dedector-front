@@ -105,6 +105,13 @@ export const ebayAPI = {
   sellSimilar: (listingId) => api.post('/ebay/listing/sell-similar', { listingId }),
   getDashboardAnalytics: () => api.get('/ebay/analytics/dashboard'),
   getOrders: (offset = 0, limit = 25) => api.get('/ebay/orders', { params: { offset, limit } }),
+  getOrderTracking: (orderId) => api.get(`/ebay/orders/${encodeURIComponent(orderId)}/tracking`),
+  registerOrderTracking: (orderId, payload) =>
+    api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/register`, payload),
+  refreshOrderTracking: (orderId) =>
+    api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/refresh`),
+  uploadOrderTrackingToEbay: (orderId, payload) =>
+    api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/upload-ebay`, payload),
 };
 
 export const browseAPI = {
