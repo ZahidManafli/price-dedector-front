@@ -426,7 +426,8 @@ export default function OrderDetailPage() {
                   onChange={(e) => handleTrackingInput('destination_country_iso3', e.target.value.toUpperCase())}
                   className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
                   placeholder="e.g. USA"
-                </label>
+                />
+              </label>
               <label className="text-sm">
                 <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>destination_postal_code</span>
                 <input
