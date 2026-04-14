@@ -512,6 +512,15 @@ export default function OrderDetailPage() {
           {tracking ? (
             <div>
               <p className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                VDTrack Number: <span className="font-semibold">{tracking.vdtrackNumber || '-'}</span>
+              </p>
+              <p className={`text-sm mt-1 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                VDTrack Status: <span className="font-semibold">{tracking.vdtrackStatus || tracking.statusMessage || '-'}</span>
+              </p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Scraped page: {tracking.sourceUrl || (tracking.trackingNumber ? `https://www.vdtrack.com/tracker/${tracking.trackingNumber}` : '-')}
+              </p>
+              <p className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                 Status: <span className="font-semibold">{tracking.statusMessage || '-'}</span>
               </p>
               <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -522,7 +531,7 @@ export default function OrderDetailPage() {
               </p>
 
               <div className="mt-3 space-y-2 max-h-48 overflow-auto pr-1">
-                {(tracking.checkpoints || []).map((checkpoint, idx) => (
+                {(tracking.vdtrackCheckpoints?.length ? tracking.vdtrackCheckpoints : tracking.checkpoints || []).map((checkpoint, idx) => (
                   <div
                     key={`${checkpoint?.checkpoint_time || 'cp'}-${idx}`}
                     className={`rounded-lg border px-3 py-2 ${isDark ? 'border-slate-700 bg-slate-900/30' : 'border-slate-200 bg-slate-50'}`}
@@ -531,14 +540,14 @@ export default function OrderDetailPage() {
                       {checkpoint?.message || checkpoint?.tag || 'Checkpoint'}
                     </p>
                     <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                      {checkpoint?.checkpoint_time || checkpoint?.created_at || '-'}
+                      {checkpoint?.checkpoint_time || checkpoint?.created_at || checkpoint?.event_time || '-'}
                     </p>
                     <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                      {[checkpoint?.city, checkpoint?.state, checkpoint?.country_iso3].filter(Boolean).join(', ') || '-'}
+                      {[checkpoint?.location, checkpoint?.city, checkpoint?.state, checkpoint?.country_iso3].filter(Boolean).join(', ') || '-'}
                     </p>
                   </div>
                 ))}
-                {(!tracking.checkpoints || tracking.checkpoints.length === 0) && (
+                {(!(tracking.vdtrackCheckpoints?.length) && (!tracking.checkpoints || tracking.checkpoints.length === 0)) && (
                   <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No checkpoints yet.</p>
                 )}
               </div>
