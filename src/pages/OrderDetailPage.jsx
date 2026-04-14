@@ -384,58 +384,68 @@ export default function OrderDetailPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-          <label className="text-sm">
-            <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Amazon tracking number</span>
-            <input
-              value={trackingForm.amazonTrackingNumber}
-              onChange={(e) => handleTrackingInput('amazonTrackingNumber', e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-              placeholder="e.g. 1Z999AA10123456784"
-            />
-          </label>
-          <label className="text-sm">
-            <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>eBay order ID</span>
-            <input
-              value={trackingForm.ebayOrderId}
-              onChange={(e) => handleTrackingInput('ebayOrderId', e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-            />
-          </label>
-          <label className="text-sm">
-            <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>order_number</span>
-            <input
-              value={trackingForm.order_number}
-              onChange={(e) => handleTrackingInput('order_number', e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-            />
-          </label>
-          <label className="text-sm">
-            <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>destination_country_iso3</span>
-            <input
-              value={trackingForm.destination_country_iso3}
-              onChange={(e) => handleTrackingInput('destination_country_iso3', e.target.value.toUpperCase())}
-              className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-              placeholder="e.g. USA"
-            />
-          </label>
-          <label className="text-sm">
-            <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>destination_postal_code</span>
-            <input
-              value={trackingForm.destination_postal_code}
-              onChange={(e) => handleTrackingInput('destination_postal_code', e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-            />
-          </label>
-          <label className="text-sm">
-            <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Shipped date (for eBay upload)</span>
-            <input
-              value={trackingForm.shippedDate}
-              onChange={(e) => handleTrackingInput('shippedDate', e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-              placeholder="ISO8601 date-time"
-            />
-          </label>
+        <div className="space-y-3 mb-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label className="text-sm">
+              <span className={`block mb-1 font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>TBA Tracking Code</span>
+              <input
+                autoFocus
+                value={trackingForm.amazonTrackingNumber}
+                onChange={(e) => handleTrackingInput('amazonTrackingNumber', e.target.value)}
+                className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                placeholder="Paste your Amazon TBA code here"
+              />
+            </label>
+            <label className="text-sm">
+              <span className={`block mb-1 font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Order ID (Auto)</span>
+              <input
+                disabled
+                value={trackingForm.ebayOrderId}
+                className={`w-full rounded-lg border px-3 py-2 cursor-not-allowed ${isDark ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-slate-100 border-slate-300 text-slate-500'}`}
+              />
+            </label>
+          </div>
+
+          <details className={`rounded-lg border p-3 ${isDark ? 'border-slate-700 bg-slate-900/30' : 'border-slate-200 bg-slate-50'}`}>
+            <summary className={`cursor-pointer font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+              Advanced options (optional)
+            </summary>
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label className="text-sm">
+                <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>order_number</span>
+                <input
+                  value={trackingForm.order_number}
+                  onChange={(e) => handleTrackingInput('order_number', e.target.value)}
+                  className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                />
+              </label>
+              <label className="text-sm">
+                <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>destination_country_iso3</span>
+                <input
+                  value={trackingForm.destination_country_iso3}
+                  onChange={(e) => handleTrackingInput('destination_country_iso3', e.target.value.toUpperCase())}
+                  className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                  placeholder="e.g. USA"
+                </label>
+              <label className="text-sm">
+                <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>destination_postal_code</span>
+                <input
+                  value={trackingForm.destination_postal_code}
+                  onChange={(e) => handleTrackingInput('destination_postal_code', e.target.value)}
+                  className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                />
+              </label>
+              <label className="text-sm">
+                <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Shipped date (for eBay upload)</span>
+                <input
+                  value={trackingForm.shippedDate}
+                  onChange={(e) => handleTrackingInput('shippedDate', e.target.value)}
+                  className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                  placeholder="ISO8601 date-time"
+                />
+              </label>
+            </div>
+          </details>
         </div>
 
         <div className="mb-3">
