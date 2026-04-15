@@ -456,6 +456,7 @@ export default function MarketAnalysisPage() {
     rememberRecentValue('sellers', seller);
     const query = new URLSearchParams({
       openSearch: '1',
+      ...(String(params.q || '').trim() ? { q: String(params.q || '').trim() } : {}),
       sellerUsername: seller,
       offset: '0',
     });
