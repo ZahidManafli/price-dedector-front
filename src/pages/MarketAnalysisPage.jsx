@@ -69,10 +69,12 @@ export default function MarketAnalysisPage() {
   const [calcAdRate, setCalcAdRate] = useState('0');
   const [soldQuantityByKey, setSoldQuantityByKey] = useState({});
   const [soldLoadingByKey, setSoldLoadingByKey] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const MAX_PAGES = 2;
+  const DEFAULT_PAGE_LIMIT = 24;
+  const SELLER_ONLY_PAGE_LIMIT = 12;
 
   const saveRecentSearches = useCallback((nextValue) => {
-      const [currentPage, setCurrentPage] = useState(1);
-      const MAX_PAGES = 2;
     setRecentSearches(nextValue);
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(RECENT_SEARCH_STORAGE_KEY, JSON.stringify(nextValue));
@@ -141,11 +143,22 @@ export default function MarketAnalysisPage() {
   }, [calcAmazonPrice, calcEbayPrice, calcAdRate]);
 
   const runSearch = async (nextParams, { resetPage = true } = {}) => {
+    const seller = String(nextParams?.sellerUsername || '').trim();
+    const title = String(nextParams?.q || '').trim();
+    const enforcedLimit = seller && !title ? SELLER_ONLY_PAGE_LIMIT : DEFAULT_PAGE_LIMIT;
+    const rawOffset = resetPage ? 0 : Math.max(0, Number(nextParams?.offset || 0));
+    const normalizedParams = {
+      ...nextParams,
+      limit: enforcedLimit,
+      offset: Math.min(rawOffset, enforcedLimit),
+    };
+
     if (resetPage) {
       setCurrentPage(1);
     }
-    rememberSearch(nextParams);
-    await searchNow(nextParams);
+    setParams(normalizedParams);
+    rememberSearch(normalizedParams);
+    await searchNow(normalizedParams);
   };
 
   const serializeSearchParams = (nextParams = {}) => {
@@ -540,7 +553,6 @@ export default function MarketAnalysisPage() {
       ...params,
       offset: (nextPage - 1) * (Number(params.limit) || 24),
     };
-    setParams(nextParams);
     runSearch(nextParams, { resetPage: false });
   };
 
@@ -552,8 +564,7 @@ export default function MarketAnalysisPage() {
       ...params,
       offset: (prevPage - 1) * (Number(params.limit) || 24),
     };
-    setParams(nextParams);
-    runSearch(nextParams);
+    runSearch(nextParams, { resetPage: false });
   };
 
   return (
