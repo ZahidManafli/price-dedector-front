@@ -207,17 +207,37 @@ export default function MarketAnalysisPage() {
     const query = new URLSearchParams(location.search || '');
     if (query.get('openSearch') !== '1') return;
 
+    const qFromQuery = String(query.get('q') || '').trim();
+    const categoryFromQuery = String(query.get('categoryId') || '').trim();
+    const sellerFromQuery = String(query.get('sellerUsername') || '').trim();
+    const conditionFromQuery = String(query.get('condition') || '').trim();
+    const minPriceFromQuery = String(query.get('minPrice') || '').trim();
+    const maxPriceFromQuery = String(query.get('maxPrice') || '').trim();
+    const sortFromQuery = String(query.get('sort') || '').trim();
+    const buyingOptionsFromQuery = String(query.get('buyingOptions') || '').trim();
+    const freeShippingFromQuery = query.get('freeShipping') === 'true';
+    const isSellerOnlyHandoff =
+      !!sellerFromQuery &&
+      !qFromQuery &&
+      !categoryFromQuery &&
+      !conditionFromQuery &&
+      !minPriceFromQuery &&
+      !maxPriceFromQuery &&
+      !sortFromQuery &&
+      !buyingOptionsFromQuery &&
+      !freeShippingFromQuery;
+
     const nextParams = {
       ...params,
-      q: String(query.get('q') || '').trim(),
-      categoryId: String(query.get('categoryId') || '').trim(),
-      condition: String(query.get('condition') || params.condition || 'ALL').trim(),
-      minPrice: String(query.get('minPrice') || '').trim(),
-      maxPrice: String(query.get('maxPrice') || '').trim(),
-      sort: String(query.get('sort') || '').trim(),
-      buyingOptions: String(query.get('buyingOptions') || '').trim(),
-      sellerUsername: String(query.get('sellerUsername') || '').trim(),
-      freeShipping: query.get('freeShipping') === 'true',
+      q: isSellerOnlyHandoff ? '' : qFromQuery,
+      categoryId: isSellerOnlyHandoff ? '' : categoryFromQuery,
+      condition: isSellerOnlyHandoff ? 'ALL' : String(conditionFromQuery || params.condition || 'ALL').trim(),
+      minPrice: isSellerOnlyHandoff ? '' : minPriceFromQuery,
+      maxPrice: isSellerOnlyHandoff ? '' : maxPriceFromQuery,
+      sort: isSellerOnlyHandoff ? '' : sortFromQuery,
+      buyingOptions: isSellerOnlyHandoff ? '' : buyingOptionsFromQuery,
+      sellerUsername: sellerFromQuery,
+      freeShipping: isSellerOnlyHandoff ? false : freeShippingFromQuery,
       limit: Math.max(1, Number(query.get('limit') || params.limit || 24)),
       offset: Math.max(0, Number(query.get('offset') || 0)),
     };
