@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowDownAZ, ArrowLeft, ArrowUpAZ, ExternalLink, LayoutGrid, List, Search, Store } from 'lucide-react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
