@@ -69,8 +69,6 @@ export default function MarketAnalysisPage() {
   const [calcAdRate, setCalcAdRate] = useState('0');
   const [soldQuantityByKey, setSoldQuantityByKey] = useState({});
   const [soldLoadingByKey, setSoldLoadingByKey] = useState({});
-  const [currentPage, setCurrentPage] = useState(1);
-  const MAX_PAGES = 2;
 
   const saveRecentSearches = useCallback((nextValue) => {
     setRecentSearches(nextValue);
@@ -129,27 +127,6 @@ export default function MarketAnalysisPage() {
   }, [credits]);
 
   const searchCost = String(params.sellerUsername || '').trim() ? 2 : 1;
-  const isSellerOnlySearch =
-    String(params.sellerUsername || '').trim() !== '' && String(params.q || '').trim() === '';
-  const enforcedLimit = isSellerOnlySearch ? 12 : 24;
-
-  const normalizePaginationParams = useCallback(
-    (rawParams = {}, { resetPage = false } = {}) => {
-      const seller = String(rawParams?.sellerUsername || '').trim();
-      const queryText = String(rawParams?.q || '').trim();
-      const sellerOnly = seller !== '' && queryText === '';
-      const nextLimit = sellerOnly ? 12 : 24;
-      const rawOffset = resetPage ? 0 : Math.max(0, Number(rawParams?.offset || 0));
-      const maxOffset = (MAX_PAGES - 1) * nextLimit;
-
-      return {
-        ...rawParams,
-        limit: nextLimit,
-        offset: Math.min(rawOffset, maxOffset),
-      };
-    },
-    [MAX_PAGES]
-  );
 
   const inlineProfit = useMemo(() => {
     const amazonPrice = Number.parseFloat(calcAmazonPrice);
@@ -161,14 +138,9 @@ export default function MarketAnalysisPage() {
     });
   }, [calcAmazonPrice, calcEbayPrice, calcAdRate]);
 
-  const runSearch = async (nextParams, { resetPage = true } = {}) => {
-    const normalizedParams = normalizePaginationParams(nextParams, { resetPage });
-    if (resetPage) {
-      setCurrentPage(1);
-    }
-    setParams(normalizedParams);
-    rememberSearch(normalizedParams);
-    await searchNow(normalizedParams);
+  const runSearch = async (nextParams) => {
+    rememberSearch(nextParams);
+    await searchNow(nextParams);
   };
 
   const serializeSearchParams = (nextParams = {}) => {
@@ -224,7 +196,8 @@ export default function MarketAnalysisPage() {
       sellerUsername: String(presetSearch.sellerUsername || '').trim(),
       offset: 0,
     };
-    runSearch(nextParams, { resetPage: true });
+    setParams(nextParams);
+    runSearch(nextParams);
     navigate(location.pathname, { replace: true, state: null });
     // Run once per preset search handoff.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -249,7 +222,8 @@ export default function MarketAnalysisPage() {
       offset: Math.max(0, Number(query.get('offset') || 0)),
     };
 
-    runSearch(nextParams, { resetPage: true });
+    setParams(nextParams);
+    runSearch(nextParams);
     // Execute once on new-tab handoff URL.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
@@ -274,13 +248,6 @@ export default function MarketAnalysisPage() {
     setSoldQuantityByKey({});
     setSoldLoadingByKey({});
   }, [soldQuantityDeferred, params, results.length]);
-
-  useEffect(() => {
-    const limit = enforcedLimit;
-    const offset = Math.max(0, Number(params.offset || 0));
-    const derivedPage = Math.min(MAX_PAGES, Math.max(1, Math.floor(offset / limit) + 1));
-    setCurrentPage(derivedPage);
-  }, [enforcedLimit, params.offset]);
 
   useEffect(() => {
     if (!soldQuantityDeferred || !Array.isArray(results) || !results.length) return;
@@ -553,26 +520,21 @@ export default function MarketAnalysisPage() {
   };
 
   const onNextPage = () => {
-    if (currentPage >= MAX_PAGES) return;
-    if (Number(params.offset || 0) + enforcedLimit >= Number(total || 0)) return;
-    const nextPage = currentPage + 1;
-    setCurrentPage(nextPage);
     const nextParams = {
       ...params,
-      offset: (nextPage - 1) * enforcedLimit,
+      offset: Number(params.offset || 0) + Number(params.limit || 24),
     };
-    runSearch(nextParams, { resetPage: false });
+    setParams(nextParams);
+    runSearch(nextParams);
   };
 
   const onPrevPage = () => {
-    if (currentPage <= 1) return;
-    const prevPage = currentPage - 1;
-    setCurrentPage(prevPage);
     const nextParams = {
       ...params,
-      offset: (prevPage - 1) * enforcedLimit,
+      offset: Math.max(0, Number(params.offset || 0) - Number(params.limit || 24)),
     };
-    runSearch(nextParams, { resetPage: false });
+    setParams(nextParams);
+    runSearch(nextParams);
   };
 
   return (
@@ -867,14 +829,14 @@ export default function MarketAnalysisPage() {
                   Showing {sortedResults.length} result(s)
                 </p>
                 <div className="flex gap-2">
-                  <button type="button" className="btn-secondary" onClick={onPrevPage} disabled={currentPage <= 1}>
+                  <button type="button" className="btn-secondary" onClick={onPrevPage} disabled={params.offset <= 0}>
                     Previous
                   </button>
                   <button
                     type="button"
                     className="btn-secondary"
                     onClick={onNextPage}
-                    disabled={currentPage >= MAX_PAGES || Number(params.offset || 0) + enforcedLimit >= Number(total || 0)}
+                    disabled={params.offset + params.limit >= (total || 0)}
                   >
                     Next
                   </button>
