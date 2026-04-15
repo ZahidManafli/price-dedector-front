@@ -60,7 +60,10 @@ export default function MarketItemCard({ item, onSelect, onInspect, onSellerClic
       </div>
 
       <div className="rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/60 dark:bg-emerald-950/30 px-2 py-1 text-xs">
-        Sold quantity: <span className="font-semibold">{Number(item.soldQuantity || 0)}</span>
+        Sold quantity:{' '}
+        <span className="font-semibold">
+          {item?.soldLoading ? 'Loading...' : Number(item?.soldQuantity || 0)}
+        </span>
       </div>
 
       <div className="flex gap-2 mt-auto">

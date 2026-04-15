@@ -114,6 +114,9 @@ function trimCache(cache, maxEntries = 30) {
 function normalizeItem(summary) {
   const rawItemId = String(summary?.itemId || '').trim();
   const normalizedId = rawItemId.replace(/^v1\|/, '').replace(/\|0$/, '');
+  const soldRaw = summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity;
+  const soldQuantity =
+    soldRaw === null || soldRaw === undefined || soldRaw === '' ? null : Number(soldRaw || 0);
 
   return {
     id: normalizedId || rawItemId,
@@ -123,7 +126,7 @@ function normalizeItem(summary) {
     priceValue: Number(summary?.price?.value || 0),
     priceCurrency: summary?.price?.currency || 'USD',
     shippingValue: Number(summary?.shippingOptions?.[0]?.shippingCost?.value || 0),
-    soldQuantity: Number(summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity || 0),
+    soldQuantity: soldQuantity === null ? null : (Number.isFinite(soldQuantity) ? soldQuantity : 0),
     condition: summary?.condition || 'Unknown',
     sellerName: summary?.seller?.username || 'Unknown seller',
     sellerFeedback: Number(summary?.seller?.feedbackScore || 0),
@@ -149,6 +152,7 @@ export default function useBrowseSearch(initialParams = {}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [credits, setCredits] = useState(persisted.restored?.credits || null);
+  const [soldQuantityDeferred, setSoldQuantityDeferred] = useState(Boolean(persisted.restored?.soldQuantityDeferred));
 
   const setParams = useCallback((updater) => {
     setParamsState((prev) => {
@@ -187,6 +191,7 @@ export default function useBrowseSearch(initialParams = {}) {
       setTotal(Number(cached.total || 0));
       setRefinement(cached.refinement || null);
       setCredits(cached.credits || null);
+      setSoldQuantityDeferred(Boolean(cached.soldQuantityDeferred));
       setError(null);
       setParamsState(nextParams);
       persistState(nextParams, cache);
@@ -213,11 +218,13 @@ export default function useBrowseSearch(initialParams = {}) {
       const normalized = itemSummaries.map(normalizeItem);
       const nextTotal = Number(payload?.total || 0);
       const nextRefinement = payload?.refinement || null;
+      const nextSoldQuantityDeferred = Boolean(payload?.soldQuantityDeferred);
 
       setResults(normalized);
       setTotal(nextTotal);
       setRefinement(nextRefinement);
       setCredits(nextCredits);
+      setSoldQuantityDeferred(nextSoldQuantityDeferred);
       setParamsState(nextParams);
 
       setCache((prev) => {
@@ -228,6 +235,7 @@ export default function useBrowseSearch(initialParams = {}) {
             total: nextTotal,
             refinement: nextRefinement,
             credits: nextCredits,
+            soldQuantityDeferred: nextSoldQuantityDeferred,
             savedAtMs: Date.now(),
           },
         });
@@ -266,5 +274,6 @@ export default function useBrowseSearch(initialParams = {}) {
     clearCache,
     refreshFromEbay,
     credits,
+    soldQuantityDeferred,
   };
 }

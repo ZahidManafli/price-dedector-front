@@ -116,6 +116,7 @@ export const ebayAPI = {
 
 export const browseAPI = {
   search: (params = {}) => api.get('/ebay/browse/search', { params }),
+  getSoldQuantity: (payload) => api.post('/ebay/browse/sold-quantity', payload),
   getItem: (itemId, fieldgroups = '') =>
     api.get(`/ebay/browse/item/${encodeURIComponent(itemId)}`, {
       params: fieldgroups ? { fieldgroups } : undefined,

@@ -9,7 +9,7 @@ import MarketItemCard from '../components/MarketItemCard';
 import MarketComparePanel from '../components/MarketComparePanel';
 import useBrowseSearch from '../hooks/useBrowseSearch';
 import { calculateProfit, countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
-import { settingsAPI } from '../services/api';
+import { browseAPI, settingsAPI } from '../services/api';
 
 const RECENT_SEARCH_STORAGE_KEY = 'checkilaRecentSearches:v1';
 const RECENT_SEARCH_LIMIT = 8;
@@ -55,6 +55,7 @@ export default function MarketAnalysisPage() {
     clearCache,
     refreshFromEbay,
     credits,
+    soldQuantityDeferred,
   } = useBrowseSearch({
     fieldgroups: 'ASPECT_REFINEMENTS,MATCHING_ITEMS',
   });
@@ -66,6 +67,8 @@ export default function MarketAnalysisPage() {
   const [calcAmazonPrice, setCalcAmazonPrice] = useState('');
   const [calcEbayPrice, setCalcEbayPrice] = useState('');
   const [calcAdRate, setCalcAdRate] = useState('0');
+  const [soldQuantityByKey, setSoldQuantityByKey] = useState({});
+  const [soldLoadingByKey, setSoldLoadingByKey] = useState({});
 
   const saveRecentSearches = useCallback((nextValue) => {
     setRecentSearches(nextValue);
@@ -241,11 +244,100 @@ export default function MarketAnalysisPage() {
     return `title:${title}:${Number(item?.priceValue || 0).toFixed(2)}`;
   }, []);
 
+  useEffect(() => {
+    setSoldQuantityByKey({});
+    setSoldLoadingByKey({});
+  }, [soldQuantityDeferred, params, results.length]);
+
+  useEffect(() => {
+    if (!soldQuantityDeferred || !Array.isArray(results) || !results.length) return;
+
+    let cancelled = false;
+    const concurrency = 4;
+    const pending = [];
+
+    for (const item of results) {
+      const key = getResultKey(item);
+      if (!key) continue;
+      if (Object.prototype.hasOwnProperty.call(soldQuantityByKey, key)) continue;
+      pending.push({
+        key,
+        itemId: String(item?.raw?.itemId || item?.id || '').trim(),
+        legacyItemId: String(item?.legacyId || item?.raw?.legacyItemId || '').trim(),
+        itemWebUrl: String(item?.itemWebUrl || item?.raw?.itemWebUrl || '').trim(),
+      });
+    }
+
+    if (!pending.length) return;
+
+    setSoldLoadingByKey((prev) => {
+      const next = { ...prev };
+      for (const entry of pending) next[entry.key] = true;
+      return next;
+    });
+
+    const queue = [...pending];
+    const workers = Array.from({ length: Math.min(concurrency, queue.length) }, () =>
+      (async () => {
+        while (!cancelled && queue.length) {
+          const task = queue.shift();
+          if (!task) break;
+          try {
+            const response = await browseAPI.getSoldQuantity({
+              itemId: task.itemId,
+              legacyItemId: task.legacyItemId,
+              itemWebUrl: task.itemWebUrl,
+            });
+            const soldCount = Number(response?.data?.data?.soldCount || 0);
+            if (!cancelled) {
+              setSoldQuantityByKey((prev) => ({
+                ...prev,
+                [task.key]: Number.isFinite(soldCount) ? soldCount : 0,
+              }));
+            }
+          } catch {
+            if (!cancelled) {
+              setSoldQuantityByKey((prev) => ({
+                ...prev,
+                [task.key]: 0,
+              }));
+            }
+          } finally {
+            if (!cancelled) {
+              setSoldLoadingByKey((prev) => ({
+                ...prev,
+                [task.key]: false,
+              }));
+            }
+          }
+        }
+      })()
+    );
+
+    Promise.all(workers).catch(() => null);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [soldQuantityDeferred, results, getResultKey, soldQuantityByKey]);
+
+  const hydratedResults = useMemo(() => {
+    return (Array.isArray(results) ? results : []).map((item) => {
+      const key = getResultKey(item);
+      const hasOverride = Object.prototype.hasOwnProperty.call(soldQuantityByKey, key);
+      return {
+        ...item,
+        soldQuantity: hasOverride ? soldQuantityByKey[key] : item.soldQuantity,
+        soldLoading: Boolean(soldLoadingByKey[key]),
+      };
+    });
+  }, [results, soldQuantityByKey, soldLoadingByKey, getResultKey]);
+
   const filteredResults = useMemo(() => {
     const seller = String(params.sellerUsername || '').trim().toLowerCase();
-    if (!seller) return results;
-    return results.filter((item) => String(item.sellerName || '').toLowerCase().includes(seller));
-  }, [params.sellerUsername, results]);
+    if (!seller) return hydratedResults;
+    return hydratedResults.filter((item) => String(item.sellerName || '').toLowerCase().includes(seller));
+  }, [params.sellerUsername, hydratedResults]);
 
   const selectedItems = useMemo(() => {
     const map = new Map(filteredResults.map((item) => [item.id, item]));
@@ -666,7 +758,9 @@ export default function MarketAnalysisPage() {
                           </td>
                           <td className="p-3 font-medium">{Number(item.sellerFeedback || 0)}</td>
                           <td className="p-3">{item.condition}</td>
-                          <td className="p-3 font-medium">{Number(item.soldQuantity || 0)}</td>
+                          <td className="p-3 font-medium">
+                            {item?.soldLoading ? 'Loading...' : Number(item.soldQuantity || 0)}
+                          </td>
                           <td className="p-3">
                             <button
                               type="button"
