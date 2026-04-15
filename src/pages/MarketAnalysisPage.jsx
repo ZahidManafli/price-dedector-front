@@ -253,17 +253,33 @@ export default function MarketAnalysisPage() {
     if (!soldQuantityDeferred || !Array.isArray(results) || !results.length) return;
 
     let cancelled = false;
-    const concurrency = 4;
     const pending = [];
+
+    const toNumericItemId = (value) => {
+      const raw = String(value || '').trim();
+      if (!raw) return '';
+      if (/^\d{8,}$/.test(raw)) return raw;
+      const parts = raw.split('|');
+      if (parts.length >= 2 && /^\d{8,}$/.test(parts[1])) return parts[1];
+      const match = raw.match(/\/itm\/(?:[^/]+\/)?(\d{8,})/);
+      return match?.[1] ? String(match[1]) : '';
+    };
 
     for (const item of results) {
       const key = getResultKey(item);
       if (!key) continue;
       if (Object.prototype.hasOwnProperty.call(soldQuantityByKey, key)) continue;
+
+      const numericItemId =
+        toNumericItemId(item?.legacyId) ||
+        toNumericItemId(item?.raw?.legacyItemId) ||
+        toNumericItemId(item?.id) ||
+        toNumericItemId(item?.raw?.itemId);
+
       pending.push({
         key,
-        itemId: String(item?.raw?.itemId || item?.id || '').trim(),
-        legacyItemId: String(item?.legacyId || item?.raw?.legacyItemId || '').trim(),
+        itemId: numericItemId,
+        legacyItemId: numericItemId,
         itemWebUrl: String(item?.itemWebUrl || item?.raw?.itemWebUrl || '').trim(),
       });
     }
@@ -276,50 +292,44 @@ export default function MarketAnalysisPage() {
       return next;
     });
 
-    const queue = [...pending];
-    const workers = Array.from({ length: Math.min(concurrency, queue.length) }, () =>
-      (async () => {
-        while (!cancelled && queue.length) {
-          const task = queue.shift();
-          if (!task) break;
-          try {
-            const response = await browseAPI.getSoldQuantity({
-              itemId: task.itemId,
-              legacyItemId: task.legacyItemId,
-              itemWebUrl: task.itemWebUrl,
-            });
-            const soldCount = Number(response?.data?.data?.soldCount || 0);
-            if (!cancelled) {
-              setSoldQuantityByKey((prev) => ({
-                ...prev,
-                [task.key]: Number.isFinite(soldCount) ? soldCount : 0,
-              }));
-            }
-          } catch {
-            if (!cancelled) {
-              setSoldQuantityByKey((prev) => ({
-                ...prev,
-                [task.key]: 0,
-              }));
-            }
-          } finally {
-            if (!cancelled) {
-              setSoldLoadingByKey((prev) => ({
-                ...prev,
-                [task.key]: false,
-              }));
-            }
+    (async () => {
+      for (const task of pending) {
+        if (cancelled) break;
+        try {
+          const response = await browseAPI.getSoldQuantity({
+            itemId: task.itemId,
+            legacyItemId: task.legacyItemId,
+            itemWebUrl: task.itemWebUrl,
+          });
+          const soldCount = Number(response?.data?.data?.soldCount || 0);
+          if (!cancelled) {
+            setSoldQuantityByKey((prev) => ({
+              ...prev,
+              [task.key]: Number.isFinite(soldCount) ? soldCount : 0,
+            }));
+          }
+        } catch {
+          if (!cancelled) {
+            setSoldQuantityByKey((prev) => ({
+              ...prev,
+              [task.key]: 0,
+            }));
+          }
+        } finally {
+          if (!cancelled) {
+            setSoldLoadingByKey((prev) => ({
+              ...prev,
+              [task.key]: false,
+            }));
           }
         }
-      })()
-    );
-
-    Promise.all(workers).catch(() => null);
+      }
+    })().catch(() => null);
 
     return () => {
       cancelled = true;
     };
-  }, [soldQuantityDeferred, results, getResultKey, soldQuantityByKey]);
+  }, [soldQuantityDeferred, results, getResultKey]);
 
   const hydratedResults = useMemo(() => {
     return (Array.isArray(results) ? results : []).map((item) => {
