@@ -769,7 +769,15 @@ export default function MarketAnalysisPage() {
                           <td className="p-3 font-medium">{Number(item.sellerFeedback || 0)}</td>
                           <td className="p-3">{item.condition}</td>
                           <td className="p-3 font-medium">
-                            {item?.soldLoading ? 'Loading...' : Number(item.soldQuantity || 0)}
+                            {item?.soldLoading ? (
+                              <span
+                                className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent align-middle"
+                                aria-label="Loading sold quantity"
+                                title="Loading sold quantity"
+                              />
+                            ) : (
+                              Number(item.soldQuantity || 0)
+                            )}
                           </td>
                           <td className="p-3">
                             <button
