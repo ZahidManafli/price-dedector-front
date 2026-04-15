@@ -7,14 +7,32 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { browseAPI } from '../services/api';
 import { countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
 
+function normalizeSoldQuantity(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return Math.floor(parsed);
+}
+
+function normalizeNumericItemId(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (/^\d{8,}$/.test(raw)) return raw;
+  const parts = raw.split('|');
+  if (parts.length >= 2 && /^\d{8,}$/.test(parts[1])) return parts[1];
+  const match = raw.match(/\/itm\/(?:[^/]+\/)?(\d{8,})/);
+  return match?.[1] ? String(match[1]) : '';
+}
+
 function normalizeSummary(summary) {
   return {
     id: summary?.itemId || '',
+    legacyItemId: normalizeNumericItemId(summary?.legacyItemId || summary?.itemId),
     title: summary?.title || 'Untitled listing',
     imageUrl: summary?.image?.imageUrl || summary?.thumbnailImages?.[0]?.imageUrl || '',
     priceValue: Number(summary?.price?.value || 0),
     shippingValue: Number(summary?.shippingOptions?.[0]?.shippingCost?.value || 0),
-    soldQuantity: Number(summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity || 0),
+    soldQuantity: normalizeSoldQuantity(summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity),
     condition: summary?.condition || 'Unknown',
     itemWebUrl: summary?.itemWebUrl || summary?.itemAffiliateWebUrl || '',
   };
@@ -43,6 +61,9 @@ export default function MarketListingDetailPage() {
   const [sellerLimit] = useState(12);
   const [sellerViewMode, setSellerViewMode] = useState('list');
   const [sellerSortConfig, setSellerSortConfig] = useState({ key: 'soldQuantity', direction: 'desc' });
+  const [sellerSoldQuantityDeferred, setSellerSoldQuantityDeferred] = useState(false);
+  const [sellerPendingSoldItems, setSellerPendingSoldItems] = useState([]);
+  const [sellerSoldLoadingByItemId, setSellerSoldLoadingByItemId] = useState({});
 
   const backQuery = useMemo(() => {
     const q = searchParams.get('q') || '';
@@ -185,12 +206,20 @@ export default function MarketListingDetailPage() {
       const rows = Array.isArray(payload?.itemSummaries)
         ? payload.itemSummaries
         : [];
-      setSellerListings(rows.map(normalizeSummary));
+      const normalizedRows = rows.map(normalizeSummary);
+      const deferred = !!payload?.soldQuantityDeferred;
+      setSellerListings(normalizedRows);
+      setSellerSoldQuantityDeferred(deferred);
+      setSellerPendingSoldItems(deferred ? normalizedRows.filter((item) => item?.soldQuantity === null) : []);
+      setSellerSoldLoadingByItemId({});
       setSellerTotal(Number(payload?.total || 0));
       setSellerOffset(nextOffset);
     } catch (err) {
       setSellerError(err?.response?.data?.error || err?.message || 'Failed to load seller listings');
       setSellerListings([]);
+      setSellerSoldQuantityDeferred(false);
+      setSellerPendingSoldItems([]);
+      setSellerSoldLoadingByItemId({});
       setSellerTotal(0);
       setSellerOffset(0);
     } finally {
@@ -224,7 +253,7 @@ export default function MarketListingDetailPage() {
         case 'condition':
           return String(item.condition || '').toLowerCase();
         case 'soldQuantity':
-          return Number(item.soldQuantity || 0);
+          return item.soldQuantity === null ? -1 : Number(item.soldQuantity || 0);
         case 'priceValue':
           return Number(item.priceValue || 0);
         default:
@@ -280,6 +309,96 @@ export default function MarketListingDetailPage() {
     if (!detail?.seller?.username) return;
     handleLoadSellerListings(0);
   }, [detail?.seller?.username]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const hydrateDeferredSold = async () => {
+      if (!sellerSoldQuantityDeferred || !Array.isArray(sellerPendingSoldItems) || !sellerPendingSoldItems.length) {
+        return;
+      }
+
+      const loadingMap = {};
+      for (const item of sellerPendingSoldItems) {
+        if (!item?.id) continue;
+        loadingMap[item.id] = true;
+      }
+      if (Object.keys(loadingMap).length) {
+        setSellerSoldLoadingByItemId(loadingMap);
+      }
+
+      for (const item of sellerPendingSoldItems) {
+        if (cancelled) break;
+        const key = String(item?.id || '').trim();
+        const payload = {
+          itemId: normalizeNumericItemId(item?.id),
+          legacyItemId: normalizeNumericItemId(item?.legacyItemId),
+          itemWebUrl: String(item?.itemWebUrl || '').trim(),
+        };
+
+        if (!payload.itemId && !payload.legacyItemId && !payload.itemWebUrl) {
+          if (!cancelled && key) {
+            setSellerSoldLoadingByItemId((prev) => ({ ...prev, [key]: false }));
+          }
+          continue;
+        }
+
+        try {
+          const response = await browseAPI.getSoldQuantity(payload);
+          const soldCount = normalizeSoldQuantity(response?.data?.data?.soldCount);
+          if (!cancelled && key && soldCount !== null) {
+            setSellerListings((prev) =>
+              prev.map((row) =>
+                String(row?.id || '') === key
+                  ? {
+                      ...row,
+                      soldQuantity: soldCount,
+                    }
+                  : row
+              )
+            );
+          }
+        } catch {
+          // Ignore per-row sold failures and keep the row nullable.
+        } finally {
+          if (!cancelled && key) {
+            setSellerSoldLoadingByItemId((prev) => ({ ...prev, [key]: false }));
+          }
+        }
+      }
+
+      if (!cancelled) {
+        setSellerPendingSoldItems([]);
+        setSellerSoldQuantityDeferred(false);
+      }
+    };
+
+    hydrateDeferredSold();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sellerPendingSoldItems, sellerSoldQuantityDeferred]);
+
+  const renderSellerSoldValue = (item) => {
+    const key = String(item?.id || '').trim();
+    const isLoading = !!sellerSoldLoadingByItemId[key];
+    const soldQuantity = item?.soldQuantity;
+
+    if (soldQuantity !== null && soldQuantity !== undefined) {
+      return String(Number(soldQuantity));
+    }
+
+    if (isLoading || sellerSoldQuantityDeferred) {
+      return (
+        <span className="inline-flex items-center justify-center w-4 h-4" aria-label="Loading sold quantity">
+          <span className="w-3 h-3 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin" />
+        </span>
+      );
+    }
+
+    return '0';
+  };
 
   if (loading) {
     return <LoadingSpinner message="Loading listing details..." />;
@@ -468,7 +587,7 @@ export default function MarketListingDetailPage() {
                       </button>
                       <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">{item.condition}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
-                        Sold Qty: <span className="font-semibold">{Number(item.soldQuantity || 0)}</span>
+                        Sold Qty: <span className="font-semibold">{renderSellerSoldValue(item)}</span>
                       </p>
                       <div className="mt-2 flex items-center gap-2">
                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
@@ -533,7 +652,7 @@ export default function MarketListingDetailPage() {
                             </button>
                           </td>
                           <td className="p-3">{item.condition}</td>
-                          <td className="p-3 font-medium">{Number(item.soldQuantity || 0)}</td>
+                          <td className="p-3 font-medium">{renderSellerSoldValue(item)}</td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>
                           <td className="p-3">
                             <div className="flex gap-2">
