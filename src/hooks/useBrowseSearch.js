@@ -148,6 +148,19 @@ function forceDeferredSellerSold(items = []) {
   }));
 }
 
+function isPureSellerOnlySearch(params = {}) {
+  return (
+    String(params?.sellerUsername || '').trim() !== '' &&
+    String(params?.q || '').trim() === '' &&
+    String(params?.categoryId || '').trim() === '' &&
+    String(params?.condition || 'ALL').trim().toUpperCase() === 'ALL' &&
+    String(params?.minPrice || '').trim() === '' &&
+    String(params?.maxPrice || '').trim() === '' &&
+    String(params?.buyingOptions || '').trim() === '' &&
+    params?.freeShipping !== true
+  );
+}
+
 export default function useBrowseSearch(initialParams = {}) {
   const persisted = useMemo(() => loadPersistedState(initialParams), []);
 
@@ -194,7 +207,7 @@ export default function useBrowseSearch(initialParams = {}) {
     const cacheKey = buildCacheKey(nextParams);
     if (!force && cache[cacheKey]) {
       const cached = cache[cacheKey];
-      const sellerOnly = Boolean(String(nextParams.sellerUsername || '').trim());
+      const sellerOnly = isPureSellerOnlySearch(nextParams);
       const cachedDataSource = String(cached.dataSource || '').trim().toLowerCase();
       const shouldForceDeferredSold = sellerOnly && cachedDataSource !== 'sql';
       const cachedResults = Array.isArray(cached.results) ? cached.results : [];
@@ -228,7 +241,7 @@ export default function useBrowseSearch(initialParams = {}) {
       const nextCredits = response?.data?.credits || null;
       const itemSummaries = Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : [];
       const nextDataSource = String(payload?.dataSource || 'external').trim() || 'external';
-      const sellerOnly = Boolean(String(nextParams.sellerUsername || '').trim());
+      const sellerOnly = isPureSellerOnlySearch(nextParams);
       const shouldForceDeferredSold = sellerOnly && nextDataSource !== 'sql';
       const normalized = shouldForceDeferredSold
         ? forceDeferredSellerSold(itemSummaries.map(normalizeItem))
