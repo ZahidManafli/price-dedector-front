@@ -215,7 +215,7 @@ export default function MarketAnalysisPage() {
       offset: 0,
     };
     setParams(nextParams);
-    runSearch(nextParams, { resetPage: false });
+    runSearch(nextParams);
     navigate(location.pathname, { replace: true, state: null });
     // Run once per preset search handoff.
     // eslint-disable-next-line react-hooks/exhaustive-deps
