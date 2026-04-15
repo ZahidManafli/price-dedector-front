@@ -71,8 +71,7 @@ export default function MarketAnalysisPage() {
   const [soldLoadingByKey, setSoldLoadingByKey] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const MAX_PAGES = 2;
-  const DEFAULT_PAGE_LIMIT = 24;
-  const SELLER_ONLY_PAGE_LIMIT = 12;
+  const PAGE_LIMIT = 12;
 
   const saveRecentSearches = useCallback((nextValue) => {
     setRecentSearches(nextValue);
@@ -142,21 +141,12 @@ export default function MarketAnalysisPage() {
     });
   }, [calcAmazonPrice, calcEbayPrice, calcAdRate]);
 
-  const runSearch = async (nextParams, { resetPage = true } = {}) => {
-    const seller = String(nextParams?.sellerUsername || '').trim();
-    const title = String(nextParams?.q || '').trim();
-    const enforcedLimit = seller && !title ? SELLER_ONLY_PAGE_LIMIT : DEFAULT_PAGE_LIMIT;
-    const rawOffset = resetPage ? 0 : Math.max(0, Number(nextParams?.offset || 0));
+  const runSearch = async (nextParams) => {
     const normalizedParams = {
       ...nextParams,
-      limit: enforcedLimit,
-      offset: Math.min(rawOffset, enforcedLimit),
+      limit: PAGE_LIMIT,
+      offset: Math.min(Math.max(0, Number(nextParams?.offset || 0)), PAGE_LIMIT),
     };
-
-    if (resetPage) {
-      setCurrentPage(1);
-    }
-    setParams(normalizedParams);
     rememberSearch(normalizedParams);
     await searchNow(normalizedParams);
   };
@@ -266,13 +256,6 @@ export default function MarketAnalysisPage() {
     setSoldQuantityByKey({});
     setSoldLoadingByKey({});
   }, [soldQuantityDeferred, params, results.length]);
-
-  useEffect(() => {
-    const limit = Number(params.limit || 24) || 24;
-    const offset = Math.max(0, Number(params.offset || 0));
-    const derivedPage = Math.min(MAX_PAGES, Math.max(1, Math.floor(offset / limit) + 1));
-    setCurrentPage(derivedPage);
-  }, [params.limit, params.offset]);
 
   useEffect(() => {
     if (!soldQuantityDeferred || !Array.isArray(results) || !results.length) return;
@@ -546,26 +529,38 @@ export default function MarketAnalysisPage() {
 
   const onNextPage = () => {
     if (currentPage >= MAX_PAGES) return;
-    if (Number(params.offset || 0) + Number(params.limit || 24) >= Number(total || 0)) return;
-    const nextPage = currentPage + 1;
-    setCurrentPage(nextPage);
+    if (Number(params.offset || 0) + PAGE_LIMIT >= Number(total || 0)) return;
+    setCurrentPage((prev) => Math.min(MAX_PAGES, prev + 1));
     const nextParams = {
       ...params,
-      offset: (nextPage - 1) * (Number(params.limit) || 24),
+      limit: PAGE_LIMIT,
+      offset: Number(params.offset || 0) + PAGE_LIMIT,
     };
-    runSearch(nextParams, { resetPage: false });
+    runSearch(nextParams);
   };
 
   const onPrevPage = () => {
     if (currentPage <= 1) return;
-    const prevPage = currentPage - 1;
-    setCurrentPage(prevPage);
+    setCurrentPage((prev) => Math.max(1, prev - 1));
     const nextParams = {
       ...params,
-      offset: (prevPage - 1) * (Number(params.limit) || 24),
+      limit: PAGE_LIMIT,
+      offset: Math.max(0, Number(params.offset || 0) - PAGE_LIMIT),
     };
-    runSearch(nextParams, { resetPage: false });
+    runSearch(nextParams);
   };
+
+  useEffect(() => {
+    const offset = Math.max(0, Number(params.offset || 0));
+    const derivedPage = Math.min(MAX_PAGES, Math.max(1, Math.floor(offset / PAGE_LIMIT) + 1));
+    setCurrentPage(derivedPage);
+  }, [params.offset]);
+
+  useEffect(() => {
+    const offset = Math.max(0, Number(params.offset || 0));
+    const derivedPage = Math.min(MAX_PAGES, Math.max(1, Math.floor(offset / PAGE_LIMIT) + 1));
+    setCurrentPage(derivedPage);
+  }, [params.offset]);
 
   return (
     <div className="page-shell space-y-4">
@@ -859,14 +854,14 @@ export default function MarketAnalysisPage() {
                   Showing {sortedResults.length} result(s)
                 </p>
                 <div className="flex gap-2">
-                  <button type="button" className="btn-secondary" onClick={onPrevPage} disabled={currentPage <= 1}>
+                  <button type="button" className="btn-secondary" onClick={onPrevPage} disabled={params.offset <= 0}>
                     Previous
                   </button>
                   <button
                     type="button"
                     className="btn-secondary"
                     onClick={onNextPage}
-                    disabled={currentPage >= MAX_PAGES || Number(params.offset || 0) + Number(params.limit || 24) >= Number(total || 0)}
+                    disabled={params.offset + params.limit >= (total || 0)}
                   >
                     Next
                   </button>

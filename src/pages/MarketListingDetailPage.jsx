@@ -46,7 +46,6 @@ const sellerSortOptions = [
 ];
 
 export default function MarketListingDetailPage() {
-  const MAX_SELLER_PAGES = 2;
   const { itemId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -187,12 +186,6 @@ export default function MarketListingDetailPage() {
   };
 
   const handleLoadSellerListings = async (nextOffset = 0) => {
-    const safeNextOffset = Math.max(0, Number(nextOffset) || 0);
-    const maxOffset = (MAX_SELLER_PAGES - 1) * sellerLimit;
-    if (safeNextOffset > maxOffset) {
-      return;
-    }
-
     const sellerUsername = String(detail?.seller?.username || '').trim();
     if (!sellerUsername) {
       setSellerError('Seller username is not available for this listing.');
@@ -206,7 +199,7 @@ export default function MarketListingDetailPage() {
         categoryId: '0',
         sellerUsername,
         limit: sellerLimit,
-        offset: safeNextOffset,
+        offset: nextOffset,
         fieldgroups: 'EXTENDED',
       });
       const payload = response?.data?.data || {};
@@ -220,7 +213,7 @@ export default function MarketListingDetailPage() {
       setSellerPendingSoldItems(deferred ? normalizedRows.filter((item) => item?.soldQuantity === null) : []);
       setSellerSoldLoadingByItemId({});
       setSellerTotal(Number(payload?.total || 0));
-      setSellerOffset(safeNextOffset);
+      setSellerOffset(nextOffset);
     } catch (err) {
       setSellerError(err?.response?.data?.error || err?.message || 'Failed to load seller listings');
       setSellerListings([]);
@@ -706,7 +699,7 @@ export default function MarketListingDetailPage() {
                   type="button"
                   className="btn-secondary"
                   onClick={() => handleLoadSellerListings(sellerOffset + sellerLimit)}
-                  disabled={sellerLoading || sellerOffset + sellerLimit >= (sellerTotal || 0) || sellerOffset >= sellerLimit}
+                  disabled={sellerLoading || sellerOffset + sellerLimit >= (sellerTotal || 0)}
                 >
                   Next
                 </button>
