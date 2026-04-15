@@ -141,6 +141,13 @@ function normalizeItem(summary) {
   };
 }
 
+function forceDeferredSellerSold(items = []) {
+  return (Array.isArray(items) ? items : []).map((item) => ({
+    ...item,
+    soldQuantity: null,
+  }));
+}
+
 export default function useBrowseSearch(initialParams = {}) {
   const persisted = useMemo(() => loadPersistedState(initialParams), []);
 
@@ -187,11 +194,16 @@ export default function useBrowseSearch(initialParams = {}) {
     const cacheKey = buildCacheKey(nextParams);
     if (!force && cache[cacheKey]) {
       const cached = cache[cacheKey];
-      setResults(Array.isArray(cached.results) ? cached.results : []);
+      const sellerOnly = Boolean(String(nextParams.sellerUsername || '').trim());
+      const cachedDataSource = String(cached.dataSource || '').trim().toLowerCase();
+      const shouldForceDeferredSold = sellerOnly && cachedDataSource !== 'sql';
+      const cachedResults = Array.isArray(cached.results) ? cached.results : [];
+
+      setResults(shouldForceDeferredSold ? forceDeferredSellerSold(cachedResults) : cachedResults);
       setTotal(Number(cached.total || 0));
       setRefinement(cached.refinement || null);
       setCredits(cached.credits || null);
-      setSoldQuantityDeferred(Boolean(cached.soldQuantityDeferred));
+      setSoldQuantityDeferred(shouldForceDeferredSold ? true : Boolean(cached.soldQuantityDeferred));
       setError(null);
       setParamsState(nextParams);
       persistState(nextParams, cache);
@@ -215,10 +227,15 @@ export default function useBrowseSearch(initialParams = {}) {
       const payload = response?.data?.data || {};
       const nextCredits = response?.data?.credits || null;
       const itemSummaries = Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : [];
-      const normalized = itemSummaries.map(normalizeItem);
+      const nextDataSource = String(payload?.dataSource || 'external').trim() || 'external';
+      const sellerOnly = Boolean(String(nextParams.sellerUsername || '').trim());
+      const shouldForceDeferredSold = sellerOnly && nextDataSource !== 'sql';
+      const normalized = shouldForceDeferredSold
+        ? forceDeferredSellerSold(itemSummaries.map(normalizeItem))
+        : itemSummaries.map(normalizeItem);
       const nextTotal = Number(payload?.total || 0);
       const nextRefinement = payload?.refinement || null;
-      const nextSoldQuantityDeferred = Boolean(payload?.soldQuantityDeferred);
+      const nextSoldQuantityDeferred = shouldForceDeferredSold ? true : Boolean(payload?.soldQuantityDeferred);
 
       setResults(normalized);
       setTotal(nextTotal);
@@ -236,6 +253,7 @@ export default function useBrowseSearch(initialParams = {}) {
             refinement: nextRefinement,
             credits: nextCredits,
             soldQuantityDeferred: nextSoldQuantityDeferred,
+            dataSource: nextDataSource,
             savedAtMs: Date.now(),
           },
         });
