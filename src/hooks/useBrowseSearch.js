@@ -207,20 +207,28 @@ export default function useBrowseSearch(initialParams = {}) {
     const cacheKey = buildCacheKey(nextParams);
     if (!force && cache[cacheKey]) {
       const cached = cache[cacheKey];
-      const sellerOnly = isPureSellerOnlySearch(nextParams);
-      const cachedDataSource = String(cached.dataSource || '').trim().toLowerCase();
-      const shouldForceDeferredSold = sellerOnly && cachedDataSource !== 'sql';
-      const cachedResults = Array.isArray(cached.results) ? cached.results : [];
+      const sellerOnlySearch = isPureSellerOnlySearch(nextParams);
+      const cachedQueryKind = String(cached?.queryKind || '').trim().toLowerCase();
 
-      setResults(shouldForceDeferredSold ? forceDeferredSellerSold(cachedResults) : cachedResults);
-      setTotal(Number(cached.total || 0));
-      setRefinement(cached.refinement || null);
-      setCredits(cached.credits || null);
-      setSoldQuantityDeferred(shouldForceDeferredSold ? true : Boolean(cached.soldQuantityDeferred));
-      setError(null);
-      setParamsState(nextParams);
-      persistState(nextParams, cache);
-      return;
+      // Seller-click handoff may use cache only when the cached query is also pure seller-only.
+      if (sellerOnlySearch && cachedQueryKind !== 'seller_only') {
+        // Fall through to backend fetch.
+      } else {
+        const sellerOnly = sellerOnlySearch;
+        const cachedDataSource = String(cached.dataSource || '').trim().toLowerCase();
+        const shouldForceDeferredSold = sellerOnly && cachedDataSource !== 'sql';
+        const cachedResults = Array.isArray(cached.results) ? cached.results : [];
+
+        setResults(shouldForceDeferredSold ? forceDeferredSellerSold(cachedResults) : cachedResults);
+        setTotal(Number(cached.total || 0));
+        setRefinement(cached.refinement || null);
+        setCredits(cached.credits || null);
+        setSoldQuantityDeferred(shouldForceDeferredSold ? true : Boolean(cached.soldQuantityDeferred));
+        setError(null);
+        setParamsState(nextParams);
+        persistState(nextParams, cache);
+        return;
+      }
     }
 
     setLoading(true);
@@ -258,6 +266,7 @@ export default function useBrowseSearch(initialParams = {}) {
       setParamsState(nextParams);
 
       setCache((prev) => {
+        const sellerOnly = isPureSellerOnlySearch(nextParams);
         const nextCache = trimCache({
           ...prev,
           [cacheKey]: {
@@ -267,6 +276,7 @@ export default function useBrowseSearch(initialParams = {}) {
             credits: nextCredits,
             soldQuantityDeferred: nextSoldQuantityDeferred,
             dataSource: nextDataSource,
+            queryKind: sellerOnly ? 'seller_only' : 'general',
             savedAtMs: Date.now(),
           },
         });
