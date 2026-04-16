@@ -8,7 +8,7 @@ import MarketSearchBar from '../components/MarketSearchBar';
 import MarketItemCard from '../components/MarketItemCard';
 import MarketComparePanel from '../components/MarketComparePanel';
 import useBrowseSearch from '../hooks/useBrowseSearch';
-import { calculateProfit, countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
+import { calculateProfit, formatCurrency } from '../utils/helpers';
 import { browseAPI, settingsAPI } from '../services/api';
 
 const RECENT_SEARCH_STORAGE_KEY = 'checkilaRecentSearches:v1';
@@ -186,15 +186,26 @@ export default function MarketAnalysisPage() {
     window.open(`https://www.ebay.com/bin/purchasehistory?item=${encodeURIComponent(itemId)}`, '_blank', 'noopener,noreferrer');
   };
 
+  function getFlagUrl(countryCode) {
+    const code = String(countryCode || '').trim().toLowerCase();
+    if (!/^[a-z]{2}$/.test(code)) return '';
+    return `https://flagcdn.com/24x18/${code}.png`;
+  }
+
   const renderSellerCountryFlag = (countryCode) => {
-    const flag = countryCodeToFlagEmoji(countryCode);
-    if (!flag) return null;
+    const flagUrl = getFlagUrl(countryCode);
+    if (!flagUrl) return null;
 
     const label = String(countryCode || '').trim().toUpperCase();
     return (
-      <span className="ml-2 inline-flex items-center align-middle text-base" title={label} aria-label={`Seller country ${label}`}>
-        {flag}
-      </span>
+      <img
+        src={flagUrl}
+        alt={label ? `${label} flag` : 'Country flag'}
+        title={label}
+        aria-label={`Seller country ${label}`}
+        className="ml-2 inline-block align-middle h-[18px] w-6 rounded-[2px] border border-slate-200 dark:border-slate-700"
+        loading="lazy"
+      />
     );
   };
 
