@@ -288,7 +288,6 @@ export default function MarketAnalysisPage() {
   }, []);
 
   useEffect(() => {
-    setSoldQuantityByKey({});
     setSoldLoadingByKey({});
   }, [soldQuantityDeferred, params, results.length]);
 
