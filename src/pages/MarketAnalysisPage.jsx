@@ -266,7 +266,7 @@ export default function MarketAnalysisPage() {
     };
 
     setParams(nextParams);
-    runSearch(nextParams, { force: !isSellerOnlyHandoff });
+    runSearch(nextParams, { force: true });
     // Execute once on new-tab handoff URL.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
