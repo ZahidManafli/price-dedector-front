@@ -186,6 +186,18 @@ export default function MarketAnalysisPage() {
     window.open(`https://www.ebay.com/bin/purchasehistory?item=${encodeURIComponent(itemId)}`, '_blank', 'noopener,noreferrer');
   };
 
+  const renderSellerCountryFlag = (countryCode) => {
+    const flag = countryCodeToFlagEmoji(countryCode);
+    if (!flag) return null;
+
+    const label = String(countryCode || '').trim().toUpperCase();
+    return (
+      <span className="ml-2 inline-flex items-center align-middle text-base" title={label} aria-label={`Seller country ${label}`}>
+        {flag}
+      </span>
+    );
+  };
+
   useEffect(() => {
     const presetSearch = location.state?.presetSearch;
     if (!presetSearch) return;
@@ -783,9 +795,7 @@ export default function MarketAnalysisPage() {
                             >
                               {item.sellerName || 'Unknown'}
                             </button>
-                            {countryCodeToFlagEmoji(item.sellerCountryCode) ? (
-                              <span className="ml-2">{countryCodeToFlagEmoji(item.sellerCountryCode)}</span>
-                            ) : null}
+                            {renderSellerCountryFlag(item.sellerCountryCode)}
                           </td>
                           <td className="p-3 font-medium">{Number(item.sellerFeedback || 0)}</td>
                           <td className="p-3">{item.condition}</td>
