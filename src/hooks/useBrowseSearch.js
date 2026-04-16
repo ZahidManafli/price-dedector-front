@@ -332,6 +332,7 @@ export default function useBrowseSearch(initialParams = {}) {
   return {
     params,
     setParams,
+    setResults,
     results,
     total,
     refinement,

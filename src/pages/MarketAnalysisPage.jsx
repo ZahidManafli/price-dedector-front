@@ -51,6 +51,7 @@ export default function MarketAnalysisPage() {
     loading,
     error,
     setError,
+    setResults,
     searchNow,
     clearCache,
     refreshFromEbay,
@@ -348,6 +349,16 @@ export default function MarketAnalysisPage() {
           });
           const soldCount = Number(response?.data?.data?.soldCount || 0);
           if (!cancelled) {
+            setResults((prev) =>
+              prev.map((entry) =>
+                getResultKey(entry) === task.key
+                  ? {
+                      ...entry,
+                      soldQuantity: Number.isFinite(soldCount) ? soldCount : 0,
+                    }
+                  : entry
+              )
+            );
             setSoldQuantityByKey((prev) => ({
               ...prev,
               [task.key]: Number.isFinite(soldCount) ? soldCount : 0,
@@ -355,6 +366,16 @@ export default function MarketAnalysisPage() {
           }
         } catch {
           if (!cancelled) {
+            setResults((prev) =>
+              prev.map((entry) =>
+                getResultKey(entry) === task.key
+                  ? {
+                      ...entry,
+                      soldQuantity: 0,
+                    }
+                  : entry
+              )
+            );
             setSoldQuantityByKey((prev) => ({
               ...prev,
               [task.key]: 0,
