@@ -312,7 +312,9 @@ export default function MarketAnalysisPage() {
       const key = getResultKey(item);
       if (!key) continue;
       if (Object.prototype.hasOwnProperty.call(soldQuantityByKey, key)) continue;
-      if (item?.soldQuantity !== null && item?.soldQuantity !== undefined) continue;
+      const shouldRefetchSoldOnZero = item?.shouldRefetchSoldOnZero === true;
+      const hasKnownSoldQuantity = item?.soldQuantity !== null && item?.soldQuantity !== undefined;
+      if (hasKnownSoldQuantity && !shouldRefetchSoldOnZero) continue;
 
       const numericItemId =
         toNumericItemId(item?.legacyId) ||

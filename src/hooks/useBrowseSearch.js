@@ -111,7 +111,7 @@ function trimCache(cache, maxEntries = 30) {
   return Object.fromEntries(sorted.slice(0, maxEntries));
 }
 
-function normalizeItem(summary) {
+function normalizeItem(summary, { shouldRefetchSoldOnZero = false } = {}) {
   const rawItemId = String(summary?.itemId || '').trim();
   const normalizedId = rawItemId.replace(/^v1\|/, '').replace(/\|0$/, '');
   const soldRaw = summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity;
@@ -137,6 +137,7 @@ function normalizeItem(summary) {
       summary?.seller?.countryCode ||
       '',
     itemWebUrl: summary?.itemWebUrl || summary?.itemAffiliateWebUrl || '',
+    shouldRefetchSoldOnZero: Boolean(shouldRefetchSoldOnZero),
     raw: summary,
   };
 }
@@ -152,6 +153,19 @@ function isPureSellerOnlySearch(params = {}) {
   return (
     String(params?.sellerUsername || '').trim() !== '' &&
     String(params?.q || '').trim() === '' &&
+    String(params?.categoryId || '').trim() === '' &&
+    String(params?.condition || 'ALL').trim().toUpperCase() === 'ALL' &&
+    String(params?.minPrice || '').trim() === '' &&
+    String(params?.maxPrice || '').trim() === '' &&
+    String(params?.buyingOptions || '').trim() === '' &&
+    params?.freeShipping !== true
+  );
+}
+
+function isPureTitleOnlySearch(params = {}) {
+  return (
+    String(params?.q || '').trim() !== '' &&
+    String(params?.sellerUsername || '').trim() === '' &&
     String(params?.categoryId || '').trim() === '' &&
     String(params?.condition || 'ALL').trim().toUpperCase() === 'ALL' &&
     String(params?.minPrice || '').trim() === '' &&
@@ -218,12 +232,16 @@ export default function useBrowseSearch(initialParams = {}) {
         const cachedDataSource = String(cached.dataSource || '').trim().toLowerCase();
         const shouldForceDeferredSold = sellerOnly && cachedDataSource !== 'sql';
         const cachedResults = Array.isArray(cached.results) ? cached.results : [];
+        const shouldRefetchZeroSold = cachedResults.some((item) => item?.shouldRefetchSoldOnZero === true);
+        const nextSoldQuantityDeferred = shouldForceDeferredSold
+          ? true
+          : (Boolean(cached.soldQuantityDeferred) || shouldRefetchZeroSold);
 
         setResults(shouldForceDeferredSold ? forceDeferredSellerSold(cachedResults) : cachedResults);
         setTotal(Number(cached.total || 0));
         setRefinement(cached.refinement || null);
         setCredits(cached.credits || null);
-        setSoldQuantityDeferred(shouldForceDeferredSold ? true : Boolean(cached.soldQuantityDeferred));
+        setSoldQuantityDeferred(nextSoldQuantityDeferred);
         setError(null);
         setParamsState(nextParams);
         persistState(nextParams, cache);
@@ -250,15 +268,25 @@ export default function useBrowseSearch(initialParams = {}) {
       const itemSummaries = Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : [];
       const nextDataSource = String(payload?.dataSource || 'external').trim() || 'external';
       const sellerOnly = isPureSellerOnlySearch(nextParams);
+      const titleOnly = isPureTitleOnlySearch(nextParams);
       const shouldForceDeferredSold = sellerOnly && nextDataSource !== 'sql';
-      const normalized = shouldForceDeferredSold
-        ? forceDeferredSellerSold(itemSummaries.map(normalizeItem))
-        : itemSummaries.map(normalizeItem);
+      const normalized = itemSummaries.map((summary) => {
+        const baseItem = normalizeItem(summary);
+        const shouldRefetchSoldOnZero = titleOnly && Number(baseItem?.soldQuantity || 0) === 0;
+        return {
+          ...baseItem,
+          shouldRefetchSoldOnZero,
+        };
+      });
+      const hydratedItems = shouldForceDeferredSold ? forceDeferredSellerSold(normalized) : normalized;
       const nextTotal = Number(payload?.total || 0);
       const nextRefinement = payload?.refinement || null;
-      const nextSoldQuantityDeferred = shouldForceDeferredSold ? true : Boolean(payload?.soldQuantityDeferred);
+      const hasZeroSoldRefetch = normalized.some((item) => item?.shouldRefetchSoldOnZero === true);
+      const nextSoldQuantityDeferred = shouldForceDeferredSold
+        ? true
+        : (Boolean(payload?.soldQuantityDeferred) || hasZeroSoldRefetch);
 
-      setResults(normalized);
+      setResults(hydratedItems);
       setTotal(nextTotal);
       setRefinement(nextRefinement);
       setCredits(nextCredits);
@@ -270,7 +298,7 @@ export default function useBrowseSearch(initialParams = {}) {
         const nextCache = trimCache({
           ...prev,
           [cacheKey]: {
-            results: normalized,
+            results: hydratedItems,
             total: nextTotal,
             refinement: nextRefinement,
             credits: nextCredits,
