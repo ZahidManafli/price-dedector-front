@@ -2,14 +2,23 @@ import React from 'react';
 import { ExternalLink, PlusCircle, Search } from 'lucide-react';
 import { countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
 
+const AMAZON_ICON_URL = 'https://www.amazon.com/favicon.ico';
+
 function openItemUrl(item) {
   const url = String(item?.itemWebUrl || '').trim();
   if (!url) return;
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
+function buildAmazonSearchUrlFromTitle(title) {
+  const query = String(title || '').trim();
+  if (!query) return '';
+  return `https://www.amazon.com/s?k=${encodeURIComponent(query)}`;
+}
+
 export default function MarketItemCard({ item, onSelect, onInspect, onSellerClick, onSearchTitle, isSelected }) {
   const sellerFlag = countryCodeToFlagEmoji(item?.sellerCountryCode);
+  const amazonSearchUrl = buildAmazonSearchUrlFromTitle(item?.title);
 
   return (
     <article className="glass-card p-3 flex flex-col gap-3">
@@ -85,6 +94,18 @@ export default function MarketItemCard({ item, onSelect, onInspect, onSellerClic
         <button type="button" onClick={() => onInspect(item)} className="btn-primary flex-1 text-xs">
           Details
         </button>
+        {amazonSearchUrl && (
+          <a
+            href={amazonSearchUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-secondary text-xs px-3"
+            title="Search on Amazon"
+            aria-label="Search on Amazon"
+          >
+            <img src={AMAZON_ICON_URL} alt="Amazon" className="h-3.5 w-3.5" loading="lazy" />
+          </a>
+        )}
         {item.itemWebUrl && (
           <a href={item.itemWebUrl} target="_blank" rel="noreferrer" className="btn-secondary text-xs px-3">
             <ExternalLink size={14} />

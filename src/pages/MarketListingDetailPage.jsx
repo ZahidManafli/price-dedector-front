@@ -44,6 +44,13 @@ const sellerSortOptions = [
   { value: 'condition', label: 'Condition' },
   { value: 'priceValue', label: 'Item Price' },
 ];
+const AMAZON_ICON_URL = 'https://www.amazon.com/favicon.ico';
+
+function buildAmazonSearchUrlFromTitle(title) {
+  const query = String(title || '').trim();
+  if (!query) return '';
+  return `https://www.amazon.com/s?k=${encodeURIComponent(query)}`;
+}
 
 export default function MarketListingDetailPage() {
   const { itemId } = useParams();
@@ -132,6 +139,7 @@ export default function MarketListingDetailPage() {
       detail?.seller?.countryCode ||
       ''
   );
+  const detailAmazonSearchUrl = buildAmazonSearchUrlFromTitle(detail?.title);
 
   const openExternalItem = (url) => {
     const next = String(url || '').trim();
@@ -423,6 +431,19 @@ export default function MarketListingDetailPage() {
           >
             Sell Similar
           </button>
+          {detailAmazonSearchUrl && (
+            <a
+              href={detailAmazonSearchUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-secondary flex items-center gap-2"
+              title="Search on Amazon"
+              aria-label="Search on Amazon"
+            >
+              <img src={AMAZON_ICON_URL} alt="Amazon" className="h-4 w-4" loading="lazy" />
+              Amazon
+            </a>
+          )}
           {detail?.itemWebUrl && (
             <a href={detail.itemWebUrl} target="_blank" rel="noreferrer" className="btn-primary flex items-center gap-2">
               Open on eBay
@@ -593,6 +614,18 @@ export default function MarketListingDetailPage() {
                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                           {formatCurrency(item.priceValue)}
                         </p>
+                        {buildAmazonSearchUrlFromTitle(item?.title) && (
+                          <a
+                            href={buildAmazonSearchUrlFromTitle(item?.title)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn-secondary text-xs px-2 py-1"
+                            title="Search on Amazon"
+                            aria-label="Search on Amazon"
+                          >
+                            <img src={AMAZON_ICON_URL} alt="Amazon" className="h-3.5 w-3.5" loading="lazy" />
+                          </a>
+                        )}
                         <button type="button" className="btn-secondary text-xs px-2 py-1" onClick={() => handleSearchItem(item)} title="Search this title">
                           <Search size={14} />
                         </button>
@@ -662,6 +695,18 @@ export default function MarketListingDetailPage() {
                               >
                                 Details
                               </Link>
+                              {buildAmazonSearchUrlFromTitle(item?.title) && (
+                                <a
+                                  href={buildAmazonSearchUrlFromTitle(item?.title)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="btn-secondary"
+                                  title="Search on Amazon"
+                                  aria-label="Search on Amazon"
+                                >
+                                  <img src={AMAZON_ICON_URL} alt="Amazon" className="h-3.5 w-3.5" loading="lazy" />
+                                </a>
+                              )}
                               <button type="button" className="btn-secondary" onClick={() => handleSearchItem(item)} title="Search this title">
                                 <Search size={14} />
                               </button>

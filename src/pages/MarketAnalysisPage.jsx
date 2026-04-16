@@ -13,6 +13,7 @@ import { browseAPI, settingsAPI } from '../services/api';
 
 const RECENT_SEARCH_STORAGE_KEY = 'checkilaRecentSearches:v1';
 const RECENT_SEARCH_LIMIT = 8;
+const AMAZON_ICON_URL = 'https://www.amazon.com/favicon.ico';
 
 function loadRecentSearches() {
   if (typeof window === 'undefined') return { sellers: [], titles: [] };
@@ -37,6 +38,12 @@ function median(values) {
     return (sorted[middle - 1] + sorted[middle]) / 2;
   }
   return sorted[middle];
+}
+
+function buildAmazonSearchUrlFromTitle(title) {
+  const query = String(title || '').trim();
+  if (!query) return '';
+  return `https://www.amazon.com/s?k=${encodeURIComponent(query)}`;
 }
 
 export default function MarketAnalysisPage() {
@@ -856,6 +863,9 @@ export default function MarketAnalysisPage() {
                           </td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>
                           <td className="p-3">
+                            {(() => {
+                              const amazonSearchUrl = buildAmazonSearchUrlFromTitle(item?.title);
+                              return (
                             <div className="flex gap-2">
                               <button type="button" className="btn-secondary" onClick={() => handleSelect(item)}>
                                 {selectedIds.includes(item.id) ? 'Selected' : 'Compare'}
@@ -871,6 +881,18 @@ export default function MarketAnalysisPage() {
                               <button type="button" className="btn-primary" onClick={() => handleInspect(item)}>
                                 Details
                               </button>
+                              {amazonSearchUrl && (
+                                <a
+                                  href={amazonSearchUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="btn-secondary"
+                                  title="Search on Amazon"
+                                  aria-label="Search on Amazon"
+                                >
+                                  <img src={AMAZON_ICON_URL} alt="Amazon" className="h-3.5 w-3.5" loading="lazy" />
+                                </a>
+                              )}
                               <button
                                 type="button"
                                 className="btn-secondary"
@@ -879,6 +901,8 @@ export default function MarketAnalysisPage() {
                                 Sell Similar
                               </button>
                             </div>
+                              );
+                            })()}
                           </td>
                         </tr>
                       ))}
