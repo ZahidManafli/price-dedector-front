@@ -138,9 +138,9 @@ export default function MarketAnalysisPage() {
     });
   }, [calcAmazonPrice, calcEbayPrice, calcAdRate]);
 
-  const runSearch = async (nextParams) => {
+  const runSearch = async (nextParams, { force = false } = {}) => {
     rememberSearch(nextParams);
-    await searchNow(nextParams);
+    await searchNow(nextParams, { force });
   };
 
   const serializeSearchParams = (nextParams = {}) => {
@@ -266,7 +266,7 @@ export default function MarketAnalysisPage() {
     };
 
     setParams(nextParams);
-    runSearch(nextParams);
+    runSearch(nextParams, { force: !isSellerOnlyHandoff });
     // Execute once on new-tab handoff URL.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
@@ -629,7 +629,7 @@ export default function MarketAnalysisPage() {
       <MarketSearchBar
         params={params}
         onChange={setParams}
-        onSubmit={() => runSearch(params)}
+        onSubmit={() => runSearch(params, { force: true })}
         disabled={loading}
         marketCreditsRemaining={marketCreditsState?.remaining ?? null}
         searchCost={searchCost}
