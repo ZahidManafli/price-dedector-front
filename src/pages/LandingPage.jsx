@@ -274,6 +274,11 @@ export default function LandingPage() {
     return apiAmazonMonitoringPlans.length > 0 ? apiAmazonMonitoringPlans : amazonMonitoringPlans;
   }, [planSource]);
 
+  const subscriptionVisiblePlans = useMemo(
+    () => planSource.filter((p) => p.category === 'subscription' && p.isActive !== false),
+    [planSource]
+  );
+
   const analyticsVisiblePlans = useMemo(
     () => planSource.filter((p) => p.category === 'analytics' && p.isActive !== false),
     [planSource]
@@ -522,6 +527,27 @@ export default function LandingPage() {
                     </div>
                   ) : (
                     amazonMonitoringVisiblePlans.map((plan) => (
+                      <PlanCard key={plan.id || plan.name} plan={plan} onSubscribe={onSubscribePlan} />
+                    ))
+                  )}
+                </div>
+
+                <div className="mt-12 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">Subscription Plans</p>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+                      General subscription plans for users who need broader access beyond Amazon monitoring.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
+                  {subscriptionVisiblePlans.length === 0 ? (
+                    <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-300">
+                      No subscription plans configured yet. Ask admin to add plans in Admin Panel.
+                    </div>
+                  ) : (
+                    subscriptionVisiblePlans.map((plan) => (
                       <PlanCard key={plan.id || plan.name} plan={plan} onSubscribe={onSubscribePlan} />
                     ))
                   )}
