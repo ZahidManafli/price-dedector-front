@@ -219,7 +219,12 @@ function normalizePlan(raw = {}) {
     currency: raw.currency || 'AZN',
     summary: raw.description || '',
     features: Array.isArray(raw.features) ? raw.features : [],
-    category: raw.category === 'analytics' ? 'analytics' : 'subscription',
+    category:
+      raw.category === 'analytics'
+        ? 'analytics'
+        : raw.category === 'amazon_monitoring'
+        ? 'amazon_monitoring'
+        : 'subscription',
     featured: !!raw.featured,
     isActive: raw.isActive !== false,
     accent:
@@ -264,9 +269,9 @@ export default function LandingPage() {
 
   const planSource = plans.length > 0 ? plans : amazonMonitoringPlans;
 
-  const subscriptionPlans = useMemo(() => {
-    const apiSubscriptionPlans = planSource.filter((p) => p.category === 'subscription' && p.isActive !== false);
-    return apiSubscriptionPlans.length > 0 ? apiSubscriptionPlans : amazonMonitoringPlans;
+  const amazonMonitoringVisiblePlans = useMemo(() => {
+    const apiAmazonMonitoringPlans = planSource.filter((p) => p.category === 'amazon_monitoring' && p.isActive !== false);
+    return apiAmazonMonitoringPlans.length > 0 ? apiAmazonMonitoringPlans : amazonMonitoringPlans;
   }, [planSource]);
 
   const analyticsVisiblePlans = useMemo(
@@ -511,12 +516,12 @@ export default function LandingPage() {
                 </div>
 
                 <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
-                  {subscriptionPlans.length === 0 ? (
+                  {amazonMonitoringVisiblePlans.length === 0 ? (
                     <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-300">
                       No Amazon monitoring plans configured yet. Ask admin to add plans in Admin Panel.
                     </div>
                   ) : (
-                    subscriptionPlans.map((plan) => (
+                    amazonMonitoringVisiblePlans.map((plan) => (
                       <PlanCard key={plan.id || plan.name} plan={plan} onSubscribe={onSubscribePlan} />
                     ))
                   )}
