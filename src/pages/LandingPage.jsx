@@ -53,40 +53,31 @@ const workflowSteps = [
   },
 ];
 
-const umimiPlans = [
+const amazonMonitoringPlans = [
   {
-    name: 'Trial Plan',
-    duration: '1 Week',
-    price: '2 AZN',
-    summary: 'A short starter plan for checking core workflows.',
-    features: ['Track up to 3 Amazon products', '1 Amazon lookup (total)', '100 credits for Checkila Analysis', 'Connect 1 eBay account'],
-    accent: 'from-cyan-400/25 to-blue-500/15',
-    featured: false,
-  },
-  {
-    name: 'Basic Plan',
+    name: 'Basic',
     duration: 'Monthly',
     price: '12.99 AZN',
-    summary: 'A practical plan for small sellers who need steady tracking.',
-    features: ['Track up to 20 Amazon products', '1 Amazon lookup per day', '500 credits for Checkila Analysis', 'Connect 1 eBay account', '24/7 Support'],
+    summary: 'Entry-level Amazon monitoring for small sellers who need steady tracking.',
+    features: ['Track up to 20 Amazon products', '1 Amazon lookup per day', 'Basic competitor monitoring', 'Email support'],
     accent: 'from-sky-400/25 to-indigo-500/15',
     featured: false,
   },
   {
-    name: 'Pro Plan',
+    name: 'Pro',
     duration: 'Monthly',
     price: '23.99 AZN',
-    summary: 'A stronger plan for growing operations with heavier usage.',
-    features: ['Track up to 50 Amazon products', '2 Amazon lookups per day', '1,000 credits for Checkila Analysis', 'Connect up to 5 eBay accounts', '24/7 Support'],
+    summary: 'A stronger Amazon monitoring plan for growing stores and heavier usage.',
+    features: ['Track up to 50 Amazon products', '2 Amazon lookups per day', 'Advanced competitor monitoring', 'Priority support'],
     accent: 'from-cyan-400/35 to-blue-500/20',
     featured: true,
   },
   {
-    name: 'Advantage Plan',
+    name: 'Advantage',
     duration: 'Monthly',
     price: '37.99 AZN',
-    summary: 'The highest-usage package for active teams and scaling sellers.',
-    features: ['Track up to 100 Amazon products', '3 Amazon lookups per day', '2,000 credits for Checkila Analysis', 'Connect up to 10 eBay accounts', '24/7 Support'],
+    summary: 'The highest Amazon monitoring tier for active teams and scaling sellers.',
+    features: ['Track up to 100 Amazon products', '3 Amazon lookups per day', 'Full market monitoring', 'Priority support'],
     accent: 'from-amber-400/25 to-orange-500/15',
     featured: false,
   },
@@ -271,12 +262,12 @@ export default function LandingPage() {
     };
   }, []);
 
-  const planSource = plans;
+  const planSource = plans.length > 0 ? plans : amazonMonitoringPlans;
 
-  const subscriptionPlans = useMemo(
-    () => planSource.filter((p) => p.category === 'subscription' && p.isActive !== false),
-    [planSource]
-  );
+  const subscriptionPlans = useMemo(() => {
+    const apiSubscriptionPlans = planSource.filter((p) => p.category === 'subscription' && p.isActive !== false);
+    return apiSubscriptionPlans.length > 0 ? apiSubscriptionPlans : amazonMonitoringPlans;
+  }, [planSource]);
 
   const analyticsVisiblePlans = useMemo(
     () => planSource.filter((p) => p.category === 'analytics' && p.isActive !== false),
@@ -467,8 +458,8 @@ export default function LandingPage() {
         <section id="plans" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
           <SectionHeader
             eyebrow="Our plans"
-            title="Flexible packages for tracking, analysis, and eBay scaling."
-            description="Choose between our general subscription plans or specialized data analytics packages."
+            title="Flexible Amazon monitoring tiers, plus data analytics packages."
+            description="Choose the Amazon monitoring tier that matches your volume, or switch to a dedicated analytics package."
             align="center"
           />
 
@@ -482,7 +473,7 @@ export default function LandingPage() {
                     : 'text-slate-300 hover:text-white'
                 }`}
               >
-                General Subscription Plans
+                Amazon Monitoring Plans
               </button>
               <button
                 onClick={() => setActiveTab('analytics')}
@@ -502,9 +493,9 @@ export default function LandingPage() {
               <div>
                 <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">General Subscription Plans</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">Amazon Monitoring Plans</p>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-                      Choose the package that matches your product count, daily lookup needs, and support requirements.
+                      Choose the plan that matches your product count, daily lookup needs, and monitoring depth.
                     </p>
                   </div>
                 </div>
@@ -522,7 +513,7 @@ export default function LandingPage() {
                 <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
                   {subscriptionPlans.length === 0 ? (
                     <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-300">
-                      No subscription plans configured yet. Ask admin to add plans in Admin Panel.
+                      No Amazon monitoring plans configured yet. Ask admin to add plans in Admin Panel.
                     </div>
                   ) : (
                     subscriptionPlans.map((plan) => (
