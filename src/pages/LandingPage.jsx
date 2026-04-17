@@ -468,8 +468,8 @@ export default function LandingPage() {
         <section id="plans" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
           <SectionHeader
             eyebrow="Our plans"
-            title="Flexible Amazon monitoring tiers, plus data analytics packages."
-            description="Choose the Amazon monitoring tier that matches your volume, or switch to a dedicated analytics package."
+            title="Flexible subscription plans, plus data analytics packages."
+            description="Choose the subscription plan that matches your workflow, or switch to a dedicated analytics package."
             align="center"
           />
 
@@ -483,7 +483,7 @@ export default function LandingPage() {
                     : 'text-slate-300 hover:text-white'
                 }`}
               >
-                Amazon Monitoring Plans
+                Subscription Plans
               </button>
               <button
                 onClick={() => setActiveTab('analytics')}
@@ -503,9 +503,9 @@ export default function LandingPage() {
               <div>
                 <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">Amazon Monitoring Plans</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">Subscription Plans</p>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-                      Choose the plan that matches your product count, daily lookup needs, and monitoring depth.
+                      Choose the plan that matches your product count, daily lookup needs, and access level.
                     </p>
                   </div>
                 </div>
@@ -521,12 +521,12 @@ export default function LandingPage() {
                 </div>
 
                 <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
-                  {amazonMonitoringVisiblePlans.length === 0 ? (
+                  {subscriptionVisiblePlans.length === 0 ? (
                     <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-300">
-                      No Amazon monitoring plans configured yet. Ask admin to add plans in Admin Panel.
+                      No subscription plans configured yet. Ask admin to add plans in Admin Panel.
                     </div>
                   ) : (
-                    amazonMonitoringVisiblePlans.map((plan) => (
+                    subscriptionVisiblePlans.map((plan) => (
                       <PlanCard key={plan.id || plan.name} plan={plan} onSubscribe={onSubscribePlan} />
                     ))
                   )}
@@ -534,20 +534,20 @@ export default function LandingPage() {
 
                 <div className="mt-12 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">Subscription Plans</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">Amazon Monitoring Plans</p>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-                      General subscription plans for users who need broader access beyond Amazon monitoring.
+                      Dedicated Amazon monitoring tiers for users who need product tracking and lookup controls.
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
-                  {subscriptionVisiblePlans.length === 0 ? (
+                  {amazonMonitoringVisiblePlans.length === 0 ? (
                     <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-300">
-                      No subscription plans configured yet. Ask admin to add plans in Admin Panel.
+                      No Amazon monitoring plans configured yet. Ask admin to add plans in Admin Panel.
                     </div>
                   ) : (
-                    subscriptionVisiblePlans.map((plan) => (
+                    amazonMonitoringVisiblePlans.map((plan) => (
                       <PlanCard key={plan.id || plan.name} plan={plan} onSubscribe={onSubscribePlan} />
                     ))
                   )}
