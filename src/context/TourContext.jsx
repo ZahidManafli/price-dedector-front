@@ -71,11 +71,13 @@ export function TourProvider({ children }) {
       setTourState({ ...localState, completed: true, skipped: false });
     } else if (backendTourState === 'skipped') {
       setTourState({ ...localState, completed: false, skipped: true });
+    } else if (backendShouldStart) {
+      setTourState({ ...localState, completed: false, skipped: false });
     } else {
       setTourState(localState);
     }
     startedRef.current = false;
-  }, [user?.uid, backendTourState]);
+  }, [user?.uid, backendTourState, backendShouldStart]);
 
   const syncBackendState = React.useCallback(async (state) => {
     try {
@@ -112,7 +114,7 @@ export function TourProvider({ children }) {
     ({ force = false } = {}) => {
       if (!steps.length) return false;
       if (!force && !backendShouldStart) return false;
-      if (!force && (tourState.completed || tourState.skipped)) return false;
+      if (!force && !backendShouldStart && (tourState.completed || tourState.skipped)) return false;
       setStepIndex(0);
       setPendingStepIndex(null);
       const firstRoute = steps[0]?.route || '/dashboard';
@@ -125,6 +127,36 @@ export function TourProvider({ children }) {
     },
     [steps, backendShouldStart, tourState.completed, tourState.skipped, location.pathname, navigate, syncBackendState]
   );
+
+  useEffect(() => {
+    if (!run || pendingStepIndex !== null) return;
+
+    const currentStep = steps[stepIndex];
+    if (!currentStep?.target) return;
+
+    const timer = window.setTimeout(() => {
+      const targetEl = document.querySelector(currentStep.target);
+      if (targetEl) return;
+
+      const nextIndex = stepIndex + 1;
+      if (nextIndex >= steps.length) {
+        completeTour();
+        return;
+      }
+
+      const nextStep = steps[nextIndex];
+      if (nextStep?.route && location.pathname !== nextStep.route) {
+        setRun(false);
+        setPendingStepIndex(nextIndex);
+        navigate(nextStep.route);
+        return;
+      }
+
+      setStepIndex(nextIndex);
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [run, stepIndex, steps, pendingStepIndex, location.pathname, navigate, completeTour]);
 
   const replayTour = React.useCallback(() => {
     const resetState = { completed: false, skipped: false };
