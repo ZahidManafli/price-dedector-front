@@ -39,12 +39,12 @@ export default function DashboardPage() {
       try {
         setLoading(true);
         const [productsRes, limitsRes, ebayRes] = await Promise.all([
-          productAPI.getAll(),
-          settingsAPI.getLimits(),
+          productAPI.getAll().catch(() => ({ data: [] })),
+          settingsAPI.getLimits().catch(() => null),
           ebayAPI.getStatus().catch(() => null),
         ]);
-        setProducts(productsRes.data || []);
-        setLimits(limitsRes.data || null);
+        setProducts(productsRes?.data || []);
+        setLimits(limitsRes?.data || null);
         const ebayData = ebayRes?.data || {};
         setEbayStatus(ebayData);
         if (ebayData?.connected) {
@@ -58,7 +58,7 @@ export default function DashboardPage() {
           setAdminStats(statsRes.data || null);
         }
       } catch {
-        setAlert({ type: 'error', message: 'Failed to load dashboard analytics' });
+        setAlert({ type: 'error', message: 'Failed to load dashboard data' });
       } finally {
         setLoading(false);
       }

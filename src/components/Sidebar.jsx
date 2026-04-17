@@ -15,6 +15,7 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -42,7 +43,7 @@ export default function Sidebar() {
     { label: 'Dewiso', path: '/dewiso', icon: Code2, tab: TAB_KEYS.DEWISO },
     { label: 'Settings', path: '/settings', icon: Settings, tab: TAB_KEYS.SETTINGS },
     ...(user?.role === 'admin' ? [{ label: 'Admin Panel', path: '/admin', icon: ShieldCheck, tab: TAB_KEYS.ADMIN }] : []),
-  ].filter((link) => hasTabAccess(link.tab));
+  ];
 
   const isActive = (path) => location.pathname === path;
 
@@ -121,24 +122,47 @@ export default function Sidebar() {
 
         <nav className="flex-1 overflow-y-auto" style={{ paddingLeft: isCollapsed ? '0.5rem' : '1rem', paddingRight: isCollapsed ? '0.5rem' : '1rem' }}>
           <div className="space-y-2">
-            {links.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 px-3 py-3 rounded-xl transition ${
-                  isCollapsed ? 'justify-center' : ''
-                } ${
-                  isActive(link.path)
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-300 hover:bg-slate-800'
-                }`}
-                title={isCollapsed ? link.label : ''}
-              >
-                <link.icon size={18} className="flex-shrink-0" />
-                {!isCollapsed && <span className="text-sm">{link.label}</span>}
-              </Link>
-            ))}
+            {links.map((link) => {
+              const canAccess = hasTabAccess(link.tab);
+              if (!canAccess) {
+                return (
+                  <div
+                    key={link.path}
+                    className={`flex items-center gap-3 px-3 py-3 rounded-xl transition opacity-55 cursor-not-allowed ${
+                      isCollapsed ? 'justify-center' : ''
+                    } text-slate-400 bg-slate-900/40 border border-slate-800`}
+                    title={isCollapsed ? `${link.label} (locked)` : ''}
+                  >
+                    <link.icon size={18} className="flex-shrink-0" />
+                    {!isCollapsed && (
+                      <>
+                        <span className="text-sm">{link.label}</span>
+                        <Lock size={12} className="ml-auto" />
+                      </>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setIsOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-3 rounded-xl transition ${
+                    isCollapsed ? 'justify-center' : ''
+                  } ${
+                    isActive(link.path)
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-300 hover:bg-slate-800'
+                  }`}
+                  title={isCollapsed ? link.label : ''}
+                >
+                  <link.icon size={18} className="flex-shrink-0" />
+                  {!isCollapsed && <span className="text-sm">{link.label}</span>}
+                </Link>
+              );
+            })}
           </div>
         </nav>
 
