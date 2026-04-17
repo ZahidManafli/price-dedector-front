@@ -573,6 +573,7 @@ export default function SettingsPage() {
                   <div className="flex gap-3">
                     {!ebayStatus.connected ? (
                       <button
+                        data-tour="settings-ebay-connect"
                         type="button"
                         onClick={handleConnectEbay}
                         disabled={ebayLoading || (limits?.ebayAccounts?.remaining != null && limits.ebayAccounts.remaining <= 0)}
@@ -583,6 +584,7 @@ export default function SettingsPage() {
                     ) : (
                       <>
                         <button
+                          data-tour="settings-ebay-connect"
                           type="button"
                           onClick={handleConnectEbay}
                           disabled={ebayLoading || (limits?.ebayAccounts?.remaining != null && limits.ebayAccounts.remaining <= 0)}

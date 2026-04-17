@@ -594,7 +594,7 @@ export default function DashboardPage() {
 
       <h1 className="page-title mb-5">Dashboard</h1>
 
-      <div className="mb-5">
+      <div className="mb-5" data-tour="dashboard-plan-card">
         <div className={`glass-card p-5 border ${isDark ? 'bg-slate-950 text-white border-slate-800' : 'bg-slate-100 text-slate-900 border-slate-300'}`}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -641,7 +641,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5" data-tour="dashboard-credit-cards">
         <div
           className={`glass-card p-5 border ${
             isDark

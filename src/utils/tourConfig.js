@@ -1,0 +1,117 @@
+import { TAB_KEYS } from './planAccess';
+
+export const TOUR_STORAGE_KEY = 'checkilaProductTour:v1';
+
+export const TOUR_STEPS = [
+  {
+    id: 'sidebar-nav',
+    target: '[data-tour="sidebar-nav"]',
+    title: 'Main Navigation',
+    content: 'This is your control center. You can move between dashboard, product tools, and settings from here.',
+    route: '/dashboard',
+    requiredTab: TAB_KEYS.DASHBOARD,
+  },
+  {
+    id: 'sidebar-dashboard',
+    target: '[data-tour="sidebar-dashboard"]',
+    title: 'Dashboard',
+    content: 'Start here to check your current plan and usage limits.',
+    route: '/dashboard',
+    requiredTab: TAB_KEYS.DASHBOARD,
+  },
+  {
+    id: 'dashboard-plan-card',
+    target: '[data-tour="dashboard-plan-card"]',
+    title: 'Your Current Plan',
+    content: 'This card shows your active plan and expiry date.',
+    route: '/dashboard',
+    requiredTab: TAB_KEYS.DASHBOARD,
+  },
+  {
+    id: 'dashboard-credit-cards',
+    target: '[data-tour="dashboard-credit-cards"]',
+    title: 'Usage and Credits',
+    content: 'Track product uploads, Amazon lookup credits, and Checkila Analysis credits here.',
+    route: '/dashboard',
+    requiredTab: TAB_KEYS.DASHBOARD,
+  },
+  {
+    id: 'sidebar-products',
+    target: '[data-tour="sidebar-products"]',
+    title: 'Products',
+    content: 'Open Products to manage tracked items.',
+    route: '/dashboard',
+    requiredTab: TAB_KEYS.PRODUCTS,
+  },
+  {
+    id: 'products-add-button',
+    target: '[data-tour="products-add-button"]',
+    title: 'Add Product',
+    content: 'Use this button to add your first product for tracking.',
+    route: '/products',
+    requiredTab: TAB_KEYS.PRODUCTS,
+  },
+  {
+    id: 'sidebar-amazon-lookup',
+    target: '[data-tour="sidebar-amazon-lookup"]',
+    title: 'Amazon Lookup',
+    content: 'Use Amazon Lookup to fetch product details and pricing quickly.',
+    route: '/products',
+    requiredTab: TAB_KEYS.AMAZON_LOOKUP,
+  },
+  {
+    id: 'amazon-lookup-search',
+    target: '[data-tour="amazon-lookup-search"]',
+    title: 'Lookup by ASIN',
+    content: 'Paste an ASIN and click Check to fetch product data.',
+    route: '/amazon-lookup',
+    requiredTab: TAB_KEYS.AMAZON_LOOKUP,
+  },
+  {
+    id: 'sidebar-market-analysis',
+    target: '[data-tour="sidebar-market-analysis"]',
+    title: 'Checkila Analysis',
+    content: 'Use Checkila Analysis to inspect market listings before listing products.',
+    route: '/amazon-lookup',
+    requiredTab: TAB_KEYS.MARKET_ANALYSIS,
+  },
+  {
+    id: 'market-analysis-search',
+    target: '[data-tour="market-analysis-search"]',
+    title: 'Search Market Listings',
+    content: 'Search by title or seller to analyze opportunities and compare prices.',
+    route: '/market-analysis',
+    requiredTab: TAB_KEYS.MARKET_ANALYSIS,
+  },
+  {
+    id: 'sidebar-settings',
+    target: '[data-tour="sidebar-settings"]',
+    title: 'Settings',
+    content: 'Manage account settings, notifications, and integrations here.',
+    route: '/market-analysis',
+    requiredTab: TAB_KEYS.SETTINGS,
+  },
+  {
+    id: 'settings-ebay-connect',
+    target: '[data-tour="settings-ebay-connect"]',
+    title: 'Connect eBay',
+    content: 'Connect your eBay account to enable listing and order workflow features.',
+    route: '/settings',
+    requiredTab: TAB_KEYS.SETTINGS,
+  },
+  {
+    id: 'tour-replay',
+    target: '[data-tour="tour-replay-button"]',
+    title: 'Replay Tour Anytime',
+    content: 'You can restart this onboarding tour anytime with this button.',
+    route: '/settings',
+    requiredTab: TAB_KEYS.DASHBOARD,
+  },
+];
+
+export function filterTourStepsByAccess(steps, hasTabAccess) {
+  return steps.filter((step) => {
+    if (!step.requiredTab) return true;
+    return hasTabAccess(step.requiredTab);
+  });
+}

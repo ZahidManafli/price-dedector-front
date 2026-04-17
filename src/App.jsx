@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { useAuth } from './context/AuthContext';
 import { useSidebar, SidebarProvider } from './context/SidebarContext';
 import Sidebar from './components/Sidebar';
+import { TourProvider } from './context/TourContext';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -254,8 +255,10 @@ function App() {
   return (
     <SidebarProvider>
       <Router>
-        <AppContent />
-        <Analytics />
+        <TourProvider>
+          <AppContent />
+          <Analytics />
+        </TourProvider>
       </Router>
     </SidebarProvider>
   );

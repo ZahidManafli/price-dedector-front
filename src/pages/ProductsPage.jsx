@@ -95,6 +95,7 @@ export default function ProductsPage() {
             Open Checkila Analysis
           </button>
           <button
+            data-tour="products-add-button"
             onClick={() => {
               if (isProductQuotaReached) {
                 setAlert({

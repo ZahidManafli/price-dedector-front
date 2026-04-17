@@ -369,7 +369,10 @@ export default function AmazonLookupPage() {
           </div>
         )}
 
-        <div className={`glass-card overflow-hidden relative ${isDark ? 'bg-slate-950 border-slate-800' : ''}`}>
+        <div
+          className={`glass-card overflow-hidden relative ${isDark ? 'bg-slate-950 border-slate-800' : ''}`}
+          data-tour="amazon-lookup-search"
+        >
           <div className="p-4 md:p-5 bg-gradient-to-r from-slate-900 to-blue-900 text-white">
             <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
               <div className="flex-1">

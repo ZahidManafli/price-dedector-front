@@ -15,6 +15,7 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
+  HelpCircle,
   Lock,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -22,6 +23,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useSidebar } from '../context/SidebarContext';
 import { ebayAPI } from '../services/api';
 import { TAB_KEYS } from '../utils/planAccess';
+import { useTour } from '../context/TourContext';
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,18 +32,19 @@ export default function Sidebar() {
   const displayName = [user?.name, user?.surname].filter(Boolean).join(' ').trim() || user?.fullName || user?.displayName || 'User';
   const { isDark, toggleTheme } = useTheme();
   const { isCollapsed, toggleSidebar } = useSidebar();
+  const { replayTour } = useTour();
   const [activeEbayLabel, setActiveEbayLabel] = useState(null);
 
   const links = [
-    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, tab: TAB_KEYS.DASHBOARD },
-    { label: 'Products', path: '/products', icon: Package, tab: TAB_KEYS.PRODUCTS },
+    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, tab: TAB_KEYS.DASHBOARD, tour: 'sidebar-dashboard' },
+    { label: 'Products', path: '/products', icon: Package, tab: TAB_KEYS.PRODUCTS, tour: 'sidebar-products' },
     { label: 'Listings', path: '/listings', icon: Package, tab: TAB_KEYS.LISTINGS },
     { label: 'Orders', path: '/orders', icon: Package, tab: TAB_KEYS.ORDERS },
-    { label: 'Amazon Lookup', path: '/amazon-lookup', icon: Search, tab: TAB_KEYS.AMAZON_LOOKUP },
+    { label: 'Amazon Lookup', path: '/amazon-lookup', icon: Search, tab: TAB_KEYS.AMAZON_LOOKUP, tour: 'sidebar-amazon-lookup' },
     { label: 'eBay Calculator', path: '/ebay-calculator', icon: Calculator, tab: TAB_KEYS.EBAY_CALCULATOR },
-    { label: 'Checkila Analysis', path: '/market-analysis', icon: BarChart3, tab: TAB_KEYS.MARKET_ANALYSIS },
+    { label: 'Checkila Analysis', path: '/market-analysis', icon: BarChart3, tab: TAB_KEYS.MARKET_ANALYSIS, tour: 'sidebar-market-analysis' },
     { label: 'Dewiso', path: '/dewiso', icon: Code2, tab: TAB_KEYS.DEWISO },
-    { label: 'Settings', path: '/settings', icon: Settings, tab: TAB_KEYS.SETTINGS },
+    { label: 'Settings', path: '/settings', icon: Settings, tab: TAB_KEYS.SETTINGS, tour: 'sidebar-settings' },
     ...(user?.role === 'admin' ? [{ label: 'Admin Panel', path: '/admin', icon: ShieldCheck, tab: TAB_KEYS.ADMIN }] : []),
   ];
 
@@ -120,7 +123,11 @@ export default function Sidebar() {
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto" style={{ paddingLeft: isCollapsed ? '0.5rem' : '1rem', paddingRight: isCollapsed ? '0.5rem' : '1rem' }}>
+        <nav
+          className="flex-1 overflow-y-auto"
+          data-tour="sidebar-nav"
+          style={{ paddingLeft: isCollapsed ? '0.5rem' : '1rem', paddingRight: isCollapsed ? '0.5rem' : '1rem' }}
+        >
           <div className="space-y-2">
             {links.map((link) => {
               const canAccess = hasTabAccess(link.tab);
@@ -128,6 +135,7 @@ export default function Sidebar() {
                 return (
                   <div
                     key={link.path}
+                    data-tour={link.tour || undefined}
                     className={`flex items-center gap-3 px-3 py-3 rounded-xl transition opacity-55 cursor-not-allowed ${
                       isCollapsed ? 'justify-center' : ''
                     } text-slate-400 bg-slate-900/40 border border-slate-800`}
@@ -147,6 +155,7 @@ export default function Sidebar() {
               return (
                 <Link
                   key={link.path}
+                  data-tour={link.tour || undefined}
                   to={link.path}
                   onClick={() => setIsOpen(false)}
                   className={`flex items-center gap-3 px-3 py-3 rounded-xl transition ${
@@ -201,6 +210,14 @@ export default function Sidebar() {
                   {isDark ? <Sun size={14} /> : <Moon size={14} />}
                 </button>
                 <button
+                  data-tour="tour-replay-button"
+                  onClick={replayTour}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
+                  title="Replay onboarding tour"
+                >
+                  <HelpCircle size={14} />
+                </button>
+                <button
                   onClick={async () => {
                     await logout();
                     window.location.href = '/login';
@@ -220,6 +237,14 @@ export default function Sidebar() {
                 title={isDark ? 'Light mode' : 'Dark mode'}
               >
                 {isDark ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+              <button
+                data-tour="tour-replay-button"
+                onClick={replayTour}
+                className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 transition"
+                title="Replay onboarding tour"
+              >
+                <HelpCircle size={16} />
               </button>
               <button
                 onClick={async () => {

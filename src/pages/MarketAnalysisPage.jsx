@@ -655,16 +655,18 @@ export default function MarketAnalysisPage() {
         />
       )}
 
-      <MarketSearchBar
-        params={params}
-        onChange={setParams}
-        onSubmit={() => runSearch(params, { force: true })}
-        disabled={loading}
-        marketCreditsRemaining={marketCreditsState?.remaining ?? null}
-        searchCost={searchCost}
-        recentSellers={recentSearches.sellers}
-        recentTitles={recentSearches.titles}
-      />
+      <div data-tour="market-analysis-search">
+        <MarketSearchBar
+          params={params}
+          onChange={setParams}
+          onSubmit={() => runSearch(params, { force: true })}
+          disabled={loading}
+          marketCreditsRemaining={marketCreditsState?.remaining ?? null}
+          searchCost={searchCost}
+          recentSellers={recentSearches.sellers}
+          recentTitles={recentSearches.titles}
+        />
+      </div>
 
       <section className="grid grid-cols-2 md:grid-cols-5 gap-2">
         <div className="glass-card p-3">
