@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { authAPI } from '../services/api';
+import { getAllowedTabs, hasTabAccess as checkTabAccess } from '../utils/planAccess';
 
 export const AuthContext = createContext();
 
@@ -93,6 +94,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     setSession,
     isAuthenticated: !!user,
+    allowedTabs: getAllowedTabs(user),
+    hasTabAccess: (tabKey) => checkTabAccess(user, tabKey),
   };
 
   return (

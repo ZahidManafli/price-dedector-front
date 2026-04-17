@@ -38,12 +38,17 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error?.response?.status;
+    const code = error?.response?.data?.code;
     if (status === 401) {
       try {
         localStorage.removeItem('authToken');
         localStorage.removeItem('authUser');
       } catch {}
       if (typeof window !== 'undefined') window.location.href = '/login';
+    } else if (status === 403 && code === 'PLAN_TAB_ACCESS_DENIED') {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
+        window.location.href = '/dashboard';
+      }
     }
     return Promise.reject(error);
   }

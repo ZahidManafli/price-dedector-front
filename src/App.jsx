@@ -26,10 +26,11 @@ import DewisoPage from './pages/DewisoPage';
 import MarketAnalysisPage from './pages/MarketAnalysisPage';
 import MarketListingDetailPage from './pages/MarketListingDetailPage';
 import LandingPage from './pages/LandingPage';
+import { TAB_KEYS } from './utils/planAccess';
 
 // Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, requiredTab = null }) => {
+  const { isAuthenticated, loading, hasTabAccess } = useAuth();
   const hasToken = typeof window !== 'undefined' ? !!localStorage.getItem('authToken') : false;
 
   if (loading) {
@@ -42,6 +43,10 @@ const ProtectedRoute = ({ children }) => {
 
   if (!(isAuthenticated && hasToken)) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (requiredTab && !hasTabAccess(requiredTab)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
@@ -110,7 +115,7 @@ function AppContent() {
             <Route
               path="/products"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.PRODUCTS}>
                   <ProductsPage />
                 </ProtectedRoute>
               }
@@ -118,7 +123,7 @@ function AppContent() {
             <Route
               path="/add-product"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.PRODUCTS}>
                   <ProductFormPage />
                 </ProtectedRoute>
               }
@@ -126,7 +131,7 @@ function AppContent() {
             <Route
               path="/edit-product/:productId"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.PRODUCTS}>
                   <ProductFormPage />
                 </ProtectedRoute>
               }
@@ -134,7 +139,7 @@ function AppContent() {
             <Route
               path="/product/:productId"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.PRODUCTS}>
                   <ProductDetailPage />
                 </ProtectedRoute>
               }
@@ -142,7 +147,7 @@ function AppContent() {
             <Route
               path="/settings"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.SETTINGS}>
                   <SettingsPage />
                 </ProtectedRoute>
               }
@@ -150,7 +155,7 @@ function AppContent() {
             <Route
               path="/ebay/callback"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.SETTINGS}>
                   <EbayCallbackPage />
                 </ProtectedRoute>
               }
@@ -158,7 +163,7 @@ function AppContent() {
             <Route
               path="/amazon-lookup"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.AMAZON_LOOKUP}>
                   <AmazonLookupPage />
                 </ProtectedRoute>
               }
@@ -166,7 +171,7 @@ function AppContent() {
             <Route
               path="/ebay-calculator"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.EBAY_CALCULATOR}>
                   <EbayCalculatorPage />
                 </ProtectedRoute>
               }
@@ -174,7 +179,7 @@ function AppContent() {
             <Route
               path="/market-analysis"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.MARKET_ANALYSIS}>
                   <MarketAnalysisPage />
                 </ProtectedRoute>
               }
@@ -182,7 +187,7 @@ function AppContent() {
             <Route
               path="/market-analysis/item/:itemId"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.MARKET_ANALYSIS}>
                   <MarketListingDetailPage />
                 </ProtectedRoute>
               }
@@ -190,7 +195,7 @@ function AppContent() {
             <Route
               path="/dewiso"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.DEWISO}>
                   <DewisoPage />
                 </ProtectedRoute>
               }
@@ -198,7 +203,7 @@ function AppContent() {
             <Route
               path="/listings"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.LISTINGS}>
                   <ListingsPage />
                 </ProtectedRoute>
               }
@@ -206,7 +211,7 @@ function AppContent() {
             <Route
               path="/orders"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.ORDERS}>
                   <OrdersPage />
                 </ProtectedRoute>
               }
@@ -214,7 +219,7 @@ function AppContent() {
             <Route
               path="/orders/:orderId"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.ORDERS}>
                   <OrderDetailPage />
                 </ProtectedRoute>
               }
@@ -222,7 +227,7 @@ function AppContent() {
             <Route
               path="/listings/:listingId"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.LISTINGS}>
                   <ListingDetailPage />
                 </ProtectedRoute>
               }

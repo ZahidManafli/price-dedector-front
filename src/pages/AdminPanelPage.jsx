@@ -4,6 +4,7 @@ import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { TAB_KEYS, USER_DEFAULT_ALLOWED_TABS } from '../utils/planAccess';
 
 function safeToString(v) {
   if (v === null || v === undefined) return '';
@@ -19,6 +20,17 @@ function defaultEditForUser(u) {
     ebayAccountsLimit: safeToString(u.ebayAccountsLimit),
   };
 }
+
+const PLAN_TAB_OPTIONS = [
+  { key: TAB_KEYS.PRODUCTS, label: 'Products' },
+  { key: TAB_KEYS.LISTINGS, label: 'Listings' },
+  { key: TAB_KEYS.ORDERS, label: 'Orders' },
+  { key: TAB_KEYS.AMAZON_LOOKUP, label: 'Amazon Lookup' },
+  { key: TAB_KEYS.EBAY_CALCULATOR, label: 'eBay Calculator' },
+  { key: TAB_KEYS.MARKET_ANALYSIS, label: 'Checkila Analysis' },
+  { key: TAB_KEYS.DEWISO, label: 'Dewiso' },
+  { key: TAB_KEYS.SETTINGS, label: 'Settings' },
+];
 
 function defaultPlanForm() {
   return {
@@ -38,6 +50,7 @@ function defaultPlanForm() {
     ebayAccountsLimit: '',
     featured: false,
     isActive: true,
+    allowedTabs: [...USER_DEFAULT_ALLOWED_TABS.filter((key) => key !== TAB_KEYS.DASHBOARD)],
   };
 }
 
@@ -221,6 +234,7 @@ export default function AdminPanelPage() {
           planForm.ebayAccountsLimit === '' ? null : Number(planForm.ebayAccountsLimit),
         featured: !!planForm.featured,
         isActive: !!planForm.isActive,
+        allowedTabs: planForm.allowedTabs,
       };
 
       if (planForm.id) {
@@ -243,7 +257,12 @@ export default function AdminPanelPage() {
     setPlanForm({
       id: plan.id,
       name: plan.name || '',
-      category: plan.category === 'analytics' ? 'analytics' : 'subscription',
+      category:
+        plan.category === 'analytics'
+          ? 'analytics'
+          : plan.category === 'amazon_monitoring'
+            ? 'amazon_monitoring'
+            : 'subscription',
       price: plan.price || '',
       actualPrice: safeToString(plan.actualPrice),
       discountedPrice: safeToString(plan.discountedPrice),
@@ -252,6 +271,9 @@ export default function AdminPanelPage() {
       description: plan.description || '',
       featuresText: Array.isArray(plan.features) ? plan.features.join('\n') : '',
       amazonLookupLimitPerWeek: safeToString(plan.amazonLookupLimitPerWeek),
+      allowedTabs: Array.isArray(plan.allowedTabs)
+        ? plan.allowedTabs.filter((key) => key !== TAB_KEYS.DASHBOARD)
+        : [...USER_DEFAULT_ALLOWED_TABS.filter((key) => key !== TAB_KEYS.DASHBOARD)],
       productsLimit: safeToString(plan.productsLimit),
       marketAnalysisCreditsLimit: safeToString(plan.marketAnalysisCreditsLimit),
       ebayAccountsLimit: safeToString(plan.ebayAccountsLimit),
@@ -770,6 +792,7 @@ export default function AdminPanelPage() {
                   <select value={planForm.category} onChange={(e) => setPlanForm((p) => ({ ...p, category: e.target.value }))} className="input-base">
                     <option value="subscription">subscription</option>
                     <option value="analytics">analytics</option>
+                    <option value="amazon_monitoring">amazon_monitoring</option>
                   </select>
                   <input value={planForm.price} onChange={(e) => setPlanForm((p) => ({ ...p, price: e.target.value }))} className="input-base" placeholder="Price" type="text" />
                 </div>
@@ -805,6 +828,33 @@ export default function AdminPanelPage() {
                 <input value={planForm.duration} onChange={(e) => setPlanForm((p) => ({ ...p, duration: e.target.value }))} className="input-base" placeholder="Duration" type="text" />
                 <textarea value={planForm.description} onChange={(e) => setPlanForm((p) => ({ ...p, description: e.target.value }))} className="input-base min-h-[88px]" placeholder="Description" />
                 <textarea value={planForm.featuresText} onChange={(e) => setPlanForm((p) => ({ ...p, featuresText: e.target.value }))} className="input-base min-h-[110px]" placeholder="Features (one per line)" />
+
+                <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-slate-50'}`}>
+                  <p className="text-sm font-semibold mb-2">Visible tabs for this plan</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PLAN_TAB_OPTIONS.map((tab) => {
+                      const checked = planForm.allowedTabs.includes(tab.key);
+                      return (
+                        <label key={tab.key} className="text-xs flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) =>
+                              setPlanForm((prev) => ({
+                                ...prev,
+                                allowedTabs: e.target.checked
+                                  ? Array.from(new Set([...prev.allowedTabs, tab.key]))
+                                  : prev.allowedTabs.filter((item) => item !== tab.key),
+                              }))
+                            }
+                          />
+                          {tab.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-2 text-xs text-slate-500">Dashboard is always visible and used as redirect target.</p>
+                </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <input value={planForm.amazonLookupLimitPerWeek} onChange={(e) => setPlanForm((p) => ({ ...p, amazonLookupLimitPerWeek: e.target.value }))} className="input-base" placeholder="Amazon / week" type="number" min="0" />
@@ -854,6 +904,7 @@ export default function AdminPanelPage() {
                         <p className="text-xs text-slate-500">{plan.category} • {plan.price || 'no price'} • {plan.duration || 'no duration'}</p>
                         <p className="text-xs text-slate-500">Pricing: {plan.actualPrice ?? '-'} → {plan.discountedPrice ?? '-'} {plan.currency || 'AZN'}</p>
                         <p className="mt-1 text-xs text-slate-500">Amazon/week: {plan.amazonLookupLimitPerWeek ?? 'unlimited'} | Products: {plan.productsLimit ?? 'unlimited'} | Checkila Analysis credits: {plan.marketAnalysisCreditsLimit ?? 'unlimited'} | eBay accounts: {plan.ebayAccountsLimit ?? 'unlimited'}</p>
+                        <p className="mt-1 text-xs text-slate-500">Visible tabs: {Array.isArray(plan.allowedTabs) ? plan.allowedTabs.join(', ') : 'all default tabs'}</p>
                       </div>
                       <button type="button" className="btn-secondary px-3 py-1.5" onClick={() => startEditPlan(plan)}>
                         Edit

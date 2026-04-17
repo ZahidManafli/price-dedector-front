@@ -20,28 +20,29 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useSidebar } from '../context/SidebarContext';
 import { ebayAPI } from '../services/api';
+import { TAB_KEYS } from '../utils/planAccess';
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, hasTabAccess } = useAuth();
   const displayName = [user?.name, user?.surname].filter(Boolean).join(' ').trim() || user?.fullName || user?.displayName || 'User';
   const { isDark, toggleTheme } = useTheme();
   const { isCollapsed, toggleSidebar } = useSidebar();
   const [activeEbayLabel, setActiveEbayLabel] = useState(null);
 
   const links = [
-    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { label: 'Products', path: '/products', icon: Package },
-    { label: 'Listings', path: '/listings', icon: Package },
-    { label: 'Orders', path: '/orders', icon: Package },
-    { label: 'Amazon Lookup', path: '/amazon-lookup', icon: Search },
-     { label: 'eBay Calculator', path: '/ebay-calculator', icon: Calculator },
-    { label: 'Checkila Analysis', path: '/market-analysis', icon: BarChart3 },
-    { label: 'Dewiso', path: '/dewiso', icon: Code2 },
-    { label: 'Settings', path: '/settings', icon: Settings },
-    ...(user?.role === 'admin' ? [{ label: 'Admin Panel', path: '/admin', icon: ShieldCheck }] : []),
-  ];
+    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, tab: TAB_KEYS.DASHBOARD },
+    { label: 'Products', path: '/products', icon: Package, tab: TAB_KEYS.PRODUCTS },
+    { label: 'Listings', path: '/listings', icon: Package, tab: TAB_KEYS.LISTINGS },
+    { label: 'Orders', path: '/orders', icon: Package, tab: TAB_KEYS.ORDERS },
+    { label: 'Amazon Lookup', path: '/amazon-lookup', icon: Search, tab: TAB_KEYS.AMAZON_LOOKUP },
+    { label: 'eBay Calculator', path: '/ebay-calculator', icon: Calculator, tab: TAB_KEYS.EBAY_CALCULATOR },
+    { label: 'Checkila Analysis', path: '/market-analysis', icon: BarChart3, tab: TAB_KEYS.MARKET_ANALYSIS },
+    { label: 'Dewiso', path: '/dewiso', icon: Code2, tab: TAB_KEYS.DEWISO },
+    { label: 'Settings', path: '/settings', icon: Settings, tab: TAB_KEYS.SETTINGS },
+    ...(user?.role === 'admin' ? [{ label: 'Admin Panel', path: '/admin', icon: ShieldCheck, tab: TAB_KEYS.ADMIN }] : []),
+  ].filter((link) => hasTabAccess(link.tab));
 
   const isActive = (path) => location.pathname === path;
 
@@ -156,13 +157,15 @@ export default function Sidebar() {
                   {user?.email && (
                     <p className="text-xs text-slate-400 truncate">{user.email}</p>
                   )}
-                  <Link
-                    to="/settings"
-                    className="text-xs text-slate-300 hover:underline"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Settings
-                  </Link>
+                  {hasTabAccess(TAB_KEYS.SETTINGS) ? (
+                    <Link
+                      to="/settings"
+                      className="text-xs text-slate-300 hover:underline"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Settings
+                    </Link>
+                  ) : null}
                 </div>
               </div>
               <div className="flex gap-2">
