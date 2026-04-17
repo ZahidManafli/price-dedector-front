@@ -4,6 +4,7 @@ import { authAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useTour } from '../context/TourContext';
 import Swal from 'sweetalert2';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
   const { setSession } = useAuth();
+  const { startTour } = useTour();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -54,6 +56,9 @@ export default function LoginPage() {
 
       setAlert({ type: 'success', message: 'Login successful!' });
       navigate('/dashboard', { replace: true });
+      window.setTimeout(() => {
+        startTour({ force: false });
+      }, 250);
     } catch (error) {
       const errorMessage =
         error?.response?.data?.message || error?.response?.data?.error || error.message || 'Login failed';

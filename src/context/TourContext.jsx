@@ -89,8 +89,8 @@ export function TourProvider({ children }) {
 
   const startTour = React.useCallback(
     ({ force = false } = {}) => {
-      if (!steps.length) return;
-      if (!force && (tourState.completed || tourState.skipped)) return;
+      if (!steps.length) return false;
+      if (!force && (tourState.completed || tourState.skipped)) return false;
       setStepIndex(0);
       setPendingStepIndex(null);
       const firstRoute = steps[0]?.route || '/dashboard';
@@ -98,6 +98,7 @@ export function TourProvider({ children }) {
         navigate(firstRoute);
       }
       setRun(true);
+      return true;
     },
     [steps, tourState.completed, tourState.skipped, location.pathname, navigate]
   );
@@ -114,9 +115,11 @@ export function TourProvider({ children }) {
     if (authLoading || startedRef.current) return;
     if (!isAuthenticated || !hasToken) return;
     if (location.pathname === '/login') return;
-    startedRef.current = true;
-    startTour({ force: false });
-  }, [authLoading, isAuthenticated, location.pathname, startTour]);
+    const didStart = startTour({ force: false });
+    if (didStart || tourState.completed || tourState.skipped) {
+      startedRef.current = true;
+    }
+  }, [authLoading, isAuthenticated, location.pathname, startTour, tourState.completed, tourState.skipped]);
 
   useEffect(() => {
     if (pendingStepIndex === null) return;
