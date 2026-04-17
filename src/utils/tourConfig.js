@@ -10,6 +10,8 @@ export const TOUR_STEPS = [
     content: 'This is your control center. You can move between dashboard, product tools, and settings from here.',
     route: '/dashboard',
     requiredTab: TAB_KEYS.DASHBOARD,
+    placement: 'right-start',
+    buttons: ['skip', 'back', 'primary', 'close'],
   },
   {
     id: 'sidebar-dashboard',
@@ -18,6 +20,8 @@ export const TOUR_STEPS = [
     content: 'Start here to check your current plan and usage limits.',
     route: '/dashboard',
     requiredTab: TAB_KEYS.DASHBOARD,
+    placement: 'right-start',
+    buttons: ['skip', 'back', 'primary', 'close'],
   },
   {
     id: 'dashboard-plan-card',
@@ -26,6 +30,7 @@ export const TOUR_STEPS = [
     content: 'This card shows your active plan and expiry date.',
     route: '/dashboard',
     requiredTab: TAB_KEYS.DASHBOARD,
+    buttons: ['skip', 'back', 'primary', 'close'],
   },
   {
     id: 'dashboard-credit-cards',
@@ -34,6 +39,7 @@ export const TOUR_STEPS = [
     content: 'Track product uploads, Amazon lookup credits, and Checkila Analysis credits here.',
     route: '/dashboard',
     requiredTab: TAB_KEYS.DASHBOARD,
+    buttons: ['skip', 'back', 'primary', 'close'],
   },
   {
     id: 'sidebar-products',
@@ -42,6 +48,8 @@ export const TOUR_STEPS = [
     content: 'Open Products to manage tracked items.',
     route: '/dashboard',
     requiredTab: TAB_KEYS.PRODUCTS,
+    placement: 'right-start',
+    buttons: ['skip', 'back', 'primary', 'close'],
   },
   {
     id: 'products-add-button',
@@ -50,6 +58,7 @@ export const TOUR_STEPS = [
     content: 'Use this button to add your first product for tracking.',
     route: '/products',
     requiredTab: TAB_KEYS.PRODUCTS,
+    buttons: ['skip', 'back', 'primary', 'close'],
   },
   {
     id: 'sidebar-amazon-lookup',
@@ -58,6 +67,8 @@ export const TOUR_STEPS = [
     content: 'Use Amazon Lookup to fetch product details and pricing quickly.',
     route: '/products',
     requiredTab: TAB_KEYS.AMAZON_LOOKUP,
+    placement: 'right-start',
+    buttons: ['skip', 'back', 'primary', 'close'],
   },
   {
     id: 'amazon-lookup-search',
@@ -66,6 +77,7 @@ export const TOUR_STEPS = [
     content: 'Paste an ASIN and click Check to fetch product data.',
     route: '/amazon-lookup',
     requiredTab: TAB_KEYS.AMAZON_LOOKUP,
+    buttons: ['skip', 'back', 'primary', 'close'],
   },
   {
     id: 'sidebar-market-analysis',
@@ -74,6 +86,8 @@ export const TOUR_STEPS = [
     content: 'Use Checkila Analysis to inspect market listings before listing products.',
     route: '/amazon-lookup',
     requiredTab: TAB_KEYS.MARKET_ANALYSIS,
+    placement: 'right-start',
+    buttons: ['skip', 'back', 'primary', 'close'],
   },
   {
     id: 'market-analysis-search',
@@ -82,6 +96,7 @@ export const TOUR_STEPS = [
     content: 'Search by title or seller to analyze opportunities and compare prices.',
     route: '/market-analysis',
     requiredTab: TAB_KEYS.MARKET_ANALYSIS,
+    buttons: ['skip', 'back', 'primary', 'close'],
   },
   {
     id: 'sidebar-settings',
@@ -90,6 +105,8 @@ export const TOUR_STEPS = [
     content: 'Manage account settings, notifications, and integrations here.',
     route: '/market-analysis',
     requiredTab: TAB_KEYS.SETTINGS,
+    placement: 'right-start',
+    buttons: ['skip', 'back', 'primary', 'close'],
   },
   {
     id: 'settings-ebay-connect',
@@ -98,6 +115,7 @@ export const TOUR_STEPS = [
     content: 'Connect your eBay account to enable listing and order workflow features.',
     route: '/settings',
     requiredTab: TAB_KEYS.SETTINGS,
+    buttons: ['skip', 'back', 'primary', 'close'],
   },
   {
     id: 'tour-replay',
@@ -106,6 +124,7 @@ export const TOUR_STEPS = [
     content: 'You can restart this onboarding tour anytime with this button.',
     route: '/settings',
     requiredTab: TAB_KEYS.DASHBOARD,
+    buttons: ['skip', 'back', 'primary', 'close'],
   },
 ];
 

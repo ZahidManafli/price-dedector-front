@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useState 
 import { ACTIONS, EVENTS, Joyride, STATUS } from 'react-joyride';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import { authAPI } from '../services/api';
 import { TOUR_STORAGE_KEY, TOUR_STEPS, filterTourStepsByAccess } from '../utils/tourConfig';
 
 const TourContext = createContext(null);
@@ -61,10 +62,28 @@ export function TourProvider({ children }) {
     return filterTourStepsByAccess(TOUR_STEPS, hasTabAccess);
   }, [hasTabAccess]);
 
+  const backendTourState = String(user?.onboardingTour?.state || '').trim().toLowerCase();
+  const backendShouldStart = !!user?.onboardingTour?.shouldStart;
+
   useEffect(() => {
-    setTourState(readTourState(user?.uid || null));
+    const localState = readTourState(user?.uid || null);
+    if (backendTourState === 'completed') {
+      setTourState({ ...localState, completed: true, skipped: false });
+    } else if (backendTourState === 'skipped') {
+      setTourState({ ...localState, completed: false, skipped: true });
+    } else {
+      setTourState(localState);
+    }
     startedRef.current = false;
-  }, [user?.uid]);
+  }, [user?.uid, backendTourState]);
+
+  const syncBackendState = React.useCallback(async (state) => {
+    try {
+      await authAPI.updateOnboardingTourState(state);
+    } catch {
+      // Keep UI responsive even if network sync fails.
+    }
+  }, []);
 
   const stopTour = React.useCallback(() => {
     setRun(false);
@@ -75,21 +94,24 @@ export function TourProvider({ children }) {
     const nextState = { completed: true, skipped: false };
     setTourState(nextState);
     writeTourState(user?.uid || null, nextState);
+    syncBackendState('completed');
     setRun(false);
     setPendingStepIndex(null);
-  }, [user?.uid]);
+  }, [user?.uid, syncBackendState]);
 
   const skipTour = React.useCallback(() => {
     const nextState = { completed: false, skipped: true };
     setTourState(nextState);
     writeTourState(user?.uid || null, nextState);
+    syncBackendState('skipped');
     setRun(false);
     setPendingStepIndex(null);
-  }, [user?.uid]);
+  }, [user?.uid, syncBackendState]);
 
   const startTour = React.useCallback(
     ({ force = false } = {}) => {
       if (!steps.length) return false;
+      if (!force && !backendShouldStart) return false;
       if (!force && (tourState.completed || tourState.skipped)) return false;
       setStepIndex(0);
       setPendingStepIndex(null);
@@ -98,17 +120,19 @@ export function TourProvider({ children }) {
         navigate(firstRoute);
       }
       setRun(true);
+      syncBackendState('in_progress');
       return true;
     },
-    [steps, tourState.completed, tourState.skipped, location.pathname, navigate]
+    [steps, backendShouldStart, tourState.completed, tourState.skipped, location.pathname, navigate, syncBackendState]
   );
 
   const replayTour = React.useCallback(() => {
     const resetState = { completed: false, skipped: false };
     setTourState(resetState);
     writeTourState(user?.uid || null, resetState);
+    syncBackendState('in_progress');
     startTour({ force: true });
-  }, [startTour, user?.uid]);
+  }, [startTour, user?.uid, syncBackendState]);
 
   useEffect(() => {
     const hasToken = typeof window !== 'undefined' ? !!window.localStorage.getItem('authToken') : false;
@@ -200,7 +224,6 @@ export function TourProvider({ children }) {
         steps={steps}
         callback={handleJoyrideCallback}
         continuous={true}
-        showSkipButton={true}
         showProgress={true}
         disableCloseOnEsc={false}
         disableOverlayClose={true}

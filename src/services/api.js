@@ -60,6 +60,7 @@ export const authAPI = {
   login: (email, password) => api.post('/auth/login', { email, password }),
   changePassword: (currentPassword, newPassword) =>
     api.post('/auth/change-password', { currentPassword, newPassword }),
+  updateOnboardingTourState: (state) => api.post('/auth/onboarding-tour/state', { state }),
   logout: () => api.post('/auth/logout'),
   verifyToken: () => api.get('/auth/verify'),
 };
