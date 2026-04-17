@@ -11,6 +11,28 @@ function safeToString(v) {
   return String(v);
 }
 
+function formatPlanCategory(category) {
+  const normalized = String(category || 'subscription')
+    .trim()
+    .toLowerCase()
+    .replace(/[-\s]+/g, '_');
+
+  if (normalized === 'analytics' || normalized === 'analysis' || normalized === 'data_analytics') {
+    return 'analytics';
+  }
+  if (normalized === 'amazon_monitoring' || normalized === 'amazonmonitoring') {
+    return 'amazon monitoring';
+  }
+  if (normalized === 'custom') {
+    return 'custom';
+  }
+  return 'subscription';
+}
+
+function formatRequestTypeLabel(requestType) {
+  return String(requestType || 'subscription').replace(/_/g, ' ');
+}
+
 function defaultEditForUser(u) {
   return {
     role: u.role || 'user',
@@ -715,6 +737,8 @@ export default function AdminPanelPage() {
                 {requests.map((req) => {
                   const action = requestAction[req.id] || {};
                   const isPending = (req.status || 'pending') === 'pending';
+                  const requestTypeLabel = formatRequestTypeLabel(req.requestType);
+                  const planCategoryLabel = formatPlanCategory(req.planCategory);
 
                   return (
                     <div key={req.id} className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-white'}`}>
@@ -729,9 +753,20 @@ export default function AdminPanelPage() {
                       </div>
 
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                          {(req.requestType || 'subscription').replace(/_/g, ' ')}
-                        </span>
+                        {req.requestType === 'subscription' ? (
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                            {planCategoryLabel}
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                            {requestTypeLabel}
+                          </span>
+                        )}
+                        {req.requestType === 'subscription' ? (
+                          <span className="rounded-full bg-blue-100 px-2.5 py-1 font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
+                            {requestTypeLabel}
+                          </span>
+                        ) : null}
                         {req.requestType === 'update_credits' && req.requestedCredits != null ? (
                           <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200">
                             Credits: {req.requestedCredits}
@@ -739,7 +774,7 @@ export default function AdminPanelPage() {
                         ) : null}
                       </div>
 
-                      <p className="mt-2 text-xs text-slate-500">Plan: {req.planName || 'N/A'}</p>
+                      <p className="mt-2 text-xs text-slate-500">Plan: {req.planName || 'N/A'}{req.requestType === 'subscription' ? ` (${planCategoryLabel})` : ''}</p>
                       {(req.planId === 'custom' || req.planCategory === 'custom') ? (
                         <div className="mt-2 rounded-lg border border-cyan-200 bg-cyan-50/70 p-2 text-xs text-slate-700 dark:border-cyan-900/40 dark:bg-cyan-900/20 dark:text-cyan-100">
                           <p className="font-semibold">Custom requested limits</p>
