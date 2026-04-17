@@ -54,6 +54,7 @@ export function TourProvider({ children }) {
   const [run, setRun] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [pendingStepIndex, setPendingStepIndex] = useState(null);
+  const [autoStartRequested, setAutoStartRequested] = useState(false);
   const [tourState, setTourState] = useState({ completed: false, skipped: false });
 
   const startedRef = useRef(false);
@@ -69,12 +70,16 @@ export function TourProvider({ children }) {
     const localState = readTourState(user?.uid || null);
     if (backendTourState === 'completed') {
       setTourState({ ...localState, completed: true, skipped: false });
+      setAutoStartRequested(false);
     } else if (backendTourState === 'skipped') {
       setTourState({ ...localState, completed: false, skipped: true });
+      setAutoStartRequested(false);
     } else if (backendShouldStart) {
       setTourState({ ...localState, completed: false, skipped: false });
+      setAutoStartRequested(true);
     } else {
       setTourState(localState);
+      setAutoStartRequested(false);
     }
     startedRef.current = false;
   }, [user?.uid, backendTourState, backendShouldStart]);
@@ -170,12 +175,23 @@ export function TourProvider({ children }) {
     const hasToken = typeof window !== 'undefined' ? !!window.localStorage.getItem('authToken') : false;
     if (authLoading || startedRef.current) return;
     if (!isAuthenticated || !hasToken) return;
-    if (location.pathname === '/login') return;
+    if (!autoStartRequested) return;
+    if (tourState.completed || tourState.skipped) return;
+    if (location.pathname !== '/dashboard') return;
     const didStart = startTour({ force: false });
-    if (didStart || tourState.completed || tourState.skipped) {
+    if (didStart) {
       startedRef.current = true;
+      setAutoStartRequested(false);
     }
-  }, [authLoading, isAuthenticated, location.pathname, startTour, tourState.completed, tourState.skipped]);
+  }, [
+    authLoading,
+    isAuthenticated,
+    location.pathname,
+    startTour,
+    tourState.completed,
+    tourState.skipped,
+    autoStartRequested,
+  ]);
 
   useEffect(() => {
     if (pendingStepIndex === null) return;
