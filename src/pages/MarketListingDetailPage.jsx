@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowDownAZ, ArrowLeft, ArrowUpAZ, ExternalLink, LayoutGrid, List, Search, Store } from 'lucide-react';
+import { ArrowDownAZ, ArrowLeft, ArrowUpAZ, ExternalLink, History, LayoutGrid, List, Search, Store } from 'lucide-react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import Alert from '../components/Alert';
@@ -238,15 +238,35 @@ export default function MarketListingDetailPage() {
   const handleSearchItem = (item) => {
     const titleQuery = String(item?.title || '').trim();
     if (!titleQuery) return;
-    navigate('/market-analysis', {
-      state: {
-        presetSearch: {
-          q: titleQuery,
-          categoryId: '',
-          sellerUsername: String(detail?.seller?.username || '').trim(),
-        },
-      },
+
+    const query = new URLSearchParams({
+      openSearch: '1',
+      q: titleQuery,
+      offset: '0',
+      categoryId: '',
+      sellerUsername: '',
     });
+    window.open(`/market-analysis?${query.toString()}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const resolvePurchaseHistoryItemIdFromItem = (item) => {
+    const directLegacy = normalizeNumericItemId(item?.legacyItemId || item?.id);
+    if (directLegacy) return directLegacy;
+
+    const fromUrl = normalizeNumericItemId(item?.itemWebUrl || '');
+    if (fromUrl) return fromUrl;
+
+    return '';
+  };
+
+  const handleSellerItemHistory = (item) => {
+    const purchaseHistoryItemId = resolvePurchaseHistoryItemIdFromItem(item);
+    if (!purchaseHistoryItemId) return;
+    window.open(
+      `https://www.ebay.com/bin/purchasehistory?item=${encodeURIComponent(purchaseHistoryItemId)}`,
+      '_blank',
+      'noopener,noreferrer'
+    );
   };
 
   const sortedSellerListings = useMemo(() => {
@@ -626,6 +646,16 @@ export default function MarketListingDetailPage() {
                             <img src={AMAZON_ICON_URL} alt="Amazon" className="h-3.5 w-3.5" loading="lazy" />
                           </a>
                         )}
+                        <button
+                          type="button"
+                          className="btn-secondary text-xs px-2 py-1"
+                          onClick={() => handleSellerItemHistory(item)}
+                          title="See history"
+                          aria-label="See history"
+                          disabled={!resolvePurchaseHistoryItemIdFromItem(item)}
+                        >
+                          <History size={14} />
+                        </button>
                         <button type="button" className="btn-secondary text-xs px-2 py-1" onClick={() => handleSearchItem(item)} title="Search this title">
                           <Search size={14} />
                         </button>
@@ -707,6 +737,16 @@ export default function MarketListingDetailPage() {
                                   <img src={AMAZON_ICON_URL} alt="Amazon" className="h-3.5 w-3.5" loading="lazy" />
                                 </a>
                               )}
+                              <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => handleSellerItemHistory(item)}
+                                title="See history"
+                                aria-label="See history"
+                                disabled={!resolvePurchaseHistoryItemIdFromItem(item)}
+                              >
+                                <History size={14} />
+                              </button>
                               <button type="button" className="btn-secondary" onClick={() => handleSearchItem(item)} title="Search this title">
                                 <Search size={14} />
                               </button>
