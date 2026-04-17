@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ebayAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
@@ -25,6 +25,7 @@ export default function OrdersPage() {
   const [paymentFilter, setPaymentFilter] = useState('ALL');
   const [sortKey, setSortKey] = useState('orderId');
   const [sortDir, setSortDir] = useState('asc');
+  const ordersRequestRef = useRef(0);
 
   const canNext = nextOffset !== null;
   const offset = useMemo(() => page * limit, [page, limit]);
@@ -119,11 +120,20 @@ export default function OrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadPage = async (pageIndex) => {
+  const applyOrdersPayload = (data = {}, pageIndex = 0) => {
+    setOrders(data.orders || []);
+    setTotal(typeof data.total === 'number' ? data.total : null);
+    setNextOffset(data.nextOffset ?? null);
+    setPage(pageIndex);
+  };
+
+  const loadPage = async (pageIndex, { forceRefresh = false, silent = false } = {}) => {
+    const requestId = ++ordersRequestRef.current;
     try {
-      setFetchingPage(true);
-      const res = await ebayAPI.getOrders(pageIndex * limit, limit);
+      if (!silent) setFetchingPage(true);
+      const res = await ebayAPI.getOrders(pageIndex * limit, limit, forceRefresh ? { refresh: true } : undefined);
       const data = res?.data || {};
+      if (requestId !== ordersRequestRef.current) return;
 
       if (data?.accessDenied) {
         setError(data?.accessDeniedErrorMessage || 'eBay shipment access denied');
@@ -133,16 +143,31 @@ export default function OrdersPage() {
         return;
       }
 
-      setOrders(data.orders || []);
-      setTotal(typeof data.total === 'number' ? data.total : null);
-      setNextOffset(data.nextOffset ?? null);
-      setPage(pageIndex);
+      applyOrdersPayload(data, pageIndex);
+
+      if (data?.from_cache && !forceRefresh) {
+        ebayAPI
+          .getOrders(pageIndex * limit, limit, { refresh: true })
+          .then((refreshRes) => {
+            const refreshData = refreshRes?.data || {};
+            if (requestId !== ordersRequestRef.current) return;
+            if (refreshData?.accessDenied) return;
+            applyOrdersPayload(refreshData, pageIndex);
+          })
+          .catch((refreshErr) => {
+            const msg = refreshErr?.response?.data?.error || '';
+            if (msg) console.warn('Silent orders refresh failed:', msg);
+          });
+      }
     } catch (err) {
+      if (requestId !== ordersRequestRef.current) return;
       setError(err?.response?.data?.error || err?.message || 'Failed to load eBay orders');
       setOrders([]);
       setNextOffset(null);
     } finally {
-      setFetchingPage(false);
+      if (requestId === ordersRequestRef.current && !silent) {
+        setFetchingPage(false);
+      }
     }
   };
 

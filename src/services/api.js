@@ -95,7 +95,14 @@ export const ebayAPI = {
   disconnectAccount: (ebayAccountId) => api.patch(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}/disconnect`),
   deleteAccount: (ebayAccountId) => api.delete(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}`),
   disconnect: () => api.delete('/ebay/disconnect'),
-  getListings: (offset = 0, limit = 25) => api.get('/ebay/listings', { params: { offset, limit } }),
+  getListings: (offset = 0, limit = 25, options = {}) =>
+    api.get('/ebay/listings', {
+      params: {
+        offset,
+        limit,
+        ...(options?.refresh ? { refresh: 1 } : {}),
+      },
+    }),
   deleteListing: (listingId, params = {}) =>
     api.delete(`/ebay/listings/${encodeURIComponent(listingId)}`, { params }),
   updateListing: (listingId, payload) => api.patch(`/ebay/listings/${listingId}`, payload),
@@ -104,7 +111,14 @@ export const ebayAPI = {
   submitListingDraft: (draftId) => api.post('/ebay/listing/submit', { draftId }),
   sellSimilar: (listingId) => api.post('/ebay/listing/sell-similar', { listingId }),
   getDashboardAnalytics: () => api.get('/ebay/analytics/dashboard'),
-  getOrders: (offset = 0, limit = 25) => api.get('/ebay/orders', { params: { offset, limit } }),
+  getOrders: (offset = 0, limit = 25, options = {}) =>
+    api.get('/ebay/orders', {
+      params: {
+        offset,
+        limit,
+        ...(options?.refresh ? { refresh: 1 } : {}),
+      },
+    }),
   getOrderTracking: (orderId) => api.get(`/ebay/orders/${encodeURIComponent(orderId)}/tracking`),
   registerOrderTracking: (orderId, payload) =>
     api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/register`, payload),

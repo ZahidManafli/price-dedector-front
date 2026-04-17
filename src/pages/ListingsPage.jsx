@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ebayAPI } from '../services/api';
 import Alert from '../components/Alert';
@@ -22,6 +22,7 @@ export default function ListingsPage() {
   const [sortKey, setSortKey] = useState('title');
   const [sortDir, setSortDir] = useState('asc');
   const [deletingListingId, setDeletingListingId] = useState('');
+  const listingsRequestRef = useRef(0);
 
   useEffect(() => {
     const init = async () => {
@@ -46,19 +47,42 @@ export default function ListingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadListings = async () => {
+  const applyListingsPayload = (data = {}, pageIndex = 0) => {
+    setItems(data.items || []);
+    setTotal(typeof data.total === 'number' ? data.total : undefined);
+    setPage(pageIndex);
+  };
+
+  const loadListings = async ({ forceRefresh = false } = {}) => {
+    const requestId = ++listingsRequestRef.current;
     try {
       setFetchingPage(true);
-      const res = await ebayAPI.getListings(0, 200);
+      const res = await ebayAPI.getListings(0, 200, forceRefresh ? { refresh: true } : undefined);
       const data = res?.data || {};
-      setItems(data.items || []);
-      setTotal(typeof data.total === 'number' ? data.total : undefined);
-      setPage(0);
+      if (requestId !== listingsRequestRef.current) return;
+      applyListingsPayload(data, 0);
+
+      if (data?.from_cache && !forceRefresh) {
+        ebayAPI
+          .getListings(0, 200, { refresh: true })
+          .then((refreshRes) => {
+            const refreshData = refreshRes?.data || {};
+            if (requestId !== listingsRequestRef.current) return;
+            applyListingsPayload(refreshData, 0);
+          })
+          .catch((refreshErr) => {
+            const msg = refreshErr?.response?.data?.error || '';
+            if (msg) console.warn('Silent listings refresh failed:', msg);
+          });
+      }
     } catch (err) {
+      if (requestId !== listingsRequestRef.current) return;
       const msg = err?.response?.data?.error || 'Failed to load eBay listings';
       setError(msg);
     } finally {
-      setFetchingPage(false);
+      if (requestId === listingsRequestRef.current) {
+        setFetchingPage(false);
+      }
     }
   };
 
@@ -82,7 +106,7 @@ export default function ListingsPage() {
     try {
       setDeletingListingId(deleteId);
       await ebayAPI.deleteListing(deleteId, params);
-      await loadListings();
+      await loadListings({ forceRefresh: true });
     } catch (err) {
       const msg = err?.response?.data?.error || 'Failed to delete listing';
       setError(msg);
