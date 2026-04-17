@@ -208,6 +208,10 @@ function normalizePlan(raw = {}) {
     .replace(/(^-|-$)/g, '');
   const planName = raw.name || 'Plan';
   const isAdvantagePlan = /advantage/i.test(planName);
+  const normalizedCategory = String(raw.category || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[-\s]+/g, '_');
 
   return {
     id: raw.id || fallbackId,
@@ -220,15 +224,15 @@ function normalizePlan(raw = {}) {
     summary: raw.description || '',
     features: Array.isArray(raw.features) ? raw.features : [],
     category:
-      raw.category === 'analytics'
+      normalizedCategory === 'analytics' || normalizedCategory === 'analysis' || normalizedCategory === 'data_analytics'
         ? 'analytics'
-        : raw.category === 'amazon_monitoring'
+        : normalizedCategory === 'amazon_monitoring' || normalizedCategory === 'amazonmonitoring'
         ? 'amazon_monitoring'
         : 'subscription',
     featured: !!raw.featured,
     isActive: raw.isActive !== false,
     accent:
-      raw.category === 'analytics'
+      normalizedCategory === 'analytics' || normalizedCategory === 'analysis' || normalizedCategory === 'data_analytics'
         ? 'from-violet-400/20 to-slate-700/10'
         : isAdvantagePlan
         ? 'from-amber-300/35 to-yellow-500/20'
