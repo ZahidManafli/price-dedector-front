@@ -254,7 +254,7 @@ export function TourProvider({ children }) {
         run={run}
         stepIndex={stepIndex}
         steps={steps}
-        callback={handleJoyrideCallback}
+        onEvent={handleJoyrideCallback}
         continuous={true}
         showProgress={true}
         disableCloseOnEsc={false}
