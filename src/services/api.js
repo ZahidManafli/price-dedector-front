@@ -163,6 +163,10 @@ export const amazonAPI = {
 export const dewisoAPI = {
   getHistory: (limit = 20) => api.get('/dewiso/history', { params: { limit } }),
   saveHistory: (payload) => api.post('/dewiso/history', payload),
+  uploadImages: (formData) =>
+    api.post('/dewiso/images/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 };
 
 // Admin APIs

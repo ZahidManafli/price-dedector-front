@@ -223,6 +223,8 @@ export default function DewisoPage() {
   const [selectedHistoryId, setSelectedHistoryId] = useState(null);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState([]);
   const [alert, setAlert] = useState(null);
 
   useEffect(() => {
@@ -280,7 +282,7 @@ export default function DewisoPage() {
         name: templateName || 'Untitled Dewiso Template',
         mode: layout,
         html: generatedHtml,
-        meta: { navBg, navText, contentBg, contentText },
+        meta: { navBg, navText, contentBg, contentText, images: uploadedImages },
       };
       const res = await dewisoAPI.saveHistory(payload);
       const nextId = res?.data?.id || selectedHistoryId;
@@ -305,6 +307,65 @@ export default function DewisoPage() {
       setNavText(item.meta.navText || '#ffffff');
       setContentBg(item.meta.contentBg || '#F5F5F5');
       setContentText(item.meta.contentText || '#000000');
+      setUploadedImages(Array.isArray(item.meta.images) ? item.meta.images : []);
+    } else {
+      setUploadedImages([]);
+    }
+  };
+
+  const handleImageUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    try {
+      setUploadingImages(true);
+      const formData = new FormData();
+      files.forEach((file) => formData.append('images', file));
+      if (selectedHistoryId) {
+        formData.append('templateId', selectedHistoryId);
+      }
+
+      const res = await dewisoAPI.uploadImages(formData);
+      const items = Array.isArray(res?.data?.items) ? res.data.items : [];
+      const summary = res?.data?.summary || {};
+
+      if (items.length) {
+        setUploadedImages((prev) => {
+          const merged = [...prev, ...items];
+          const seen = new Set();
+          return merged.filter((img) => {
+            const key = `${img?.localUrl || ''}|${img?.ebayUrl || ''}|${img?.fileName || ''}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+        });
+      }
+
+      if (summary.failedCount > 0 || summary.localOnlyCount > 0) {
+        setAlert({
+          type: 'warning',
+          message: `Uploaded ${summary.uploadedCount || 0}/${summary.total || items.length} to eBay. Some images were saved locally only.`,
+        });
+      } else {
+        setAlert({ type: 'success', message: `Uploaded ${summary.uploadedCount || items.length} image(s) to server and eBay` });
+      }
+    } catch (error) {
+      setAlert({ type: 'error', message: error.response?.data?.error || 'Failed to upload Dewiso images' });
+    } finally {
+      setUploadingImages(false);
+      event.target.value = '';
+    }
+  };
+
+  const copyText = async (value) => {
+    const text = String(value || '').trim();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setAlert({ type: 'success', message: 'Copied link to clipboard' });
+    } catch {
+      setAlert({ type: 'warning', message: 'Could not copy link automatically' });
     }
   };
 
@@ -342,6 +403,17 @@ export default function DewisoPage() {
                 Upload HTML file
                 <input type="file" accept=".html,.htm,text/html" className="hidden" onChange={handleUploadHtmlFile} />
               </label>
+              <label className="btn-secondary cursor-pointer">
+                {uploadingImages ? 'Uploading images...' : 'Upload Images'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  disabled={uploadingImages}
+                />
+              </label>
               <button
                 type="button"
                 className="btn-secondary"
@@ -360,6 +432,58 @@ export default function DewisoPage() {
               onChange={(e) => setOwnHtml(e.target.value)}
               placeholder="Paste your own HTML here..."
             />
+
+            <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
+              <p className={`text-sm font-semibold mb-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                Uploaded Images (Server + eBay Links)
+              </p>
+              {uploadedImages.length === 0 ? (
+                <p className="text-xs text-slate-500">No uploaded images yet.</p>
+              ) : (
+                <div className="space-y-2 max-h-52 overflow-auto pr-1">
+                  {uploadedImages.map((img, idx) => (
+                    <div
+                      key={`${img?.localUrl || ''}-${img?.ebayUrl || ''}-${idx}`}
+                      className={`rounded-lg border p-2 ${isDark ? 'border-slate-700 bg-slate-900/70' : 'border-slate-200 bg-white'}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <img
+                          src={img?.localUrl || ''}
+                          alt={img?.fileName || `image-${idx + 1}`}
+                          className="h-12 w-12 rounded object-cover border border-slate-300/30"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-xs font-semibold truncate ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                            {img?.fileName || `Image ${idx + 1}`}
+                          </p>
+                          <p className="text-[11px] text-slate-500 truncate">Local: {img?.localUrl || '-'}</p>
+                          <p className="text-[11px] text-slate-500 truncate">eBay: {img?.ebayUrl || '-'}</p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span
+                              className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                img?.status === 'uploaded'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : img?.status === 'local_only'
+                                  ? 'bg-amber-100 text-amber-700'
+                                  : 'bg-rose-100 text-rose-700'
+                              }`}
+                            >
+                              {img?.status || 'unknown'}
+                            </span>
+                            {img?.ebayUrl ? (
+                              <button type="button" className="text-[11px] text-indigo-500 hover:underline" onClick={() => copyText(img.ebayUrl)}>
+                                Copy eBay link
+                              </button>
+                            ) : null}
+                          </div>
+                          {img?.error ? <p className="text-[11px] text-rose-500 mt-1">{img.error}</p> : null}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="mt-4">

@@ -104,22 +104,13 @@ export default function EbayCalculatorPage() {
               <div className="space-y-3">
                 <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
                   <p className="text-xs text-slate-500">Estimated Profit</p>
-                  <p className={`text-3xl font-bold mt-1 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  <p className={`text-3xl font-bold mt-1 ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
                     {parsed.salePrice > 0 ? formatCurrency(parsed.netProfit) : '—'}
                   </p>
                 </div>
                 <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-50 bg-slate-50'}`}>
                   <p className="text-xs text-slate-500">Current entered price</p>
-                  <p className={`text-2xl font-bold mt-1 ${
-                      parsed.netProfit > 0
-                        ? 'text-emerald-600'
-                        : parsed.netProfit < 0
-                        ? 'text-rose-600'
-                        : isDark
-                        ? 'text-slate-100'
-                        : 'text-slate-900'
-                    }`}
-                  >
+                  <p className="text-2xl font-bold mt-1 text-white">
                     {formatCurrency(parsed.salePrice)}
                   </p>
                   <p className={`mt-1 text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
