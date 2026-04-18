@@ -112,6 +112,11 @@ export const ebayAPI = {
   deleteListing: (listingId, params = {}) =>
     api.delete(`/ebay/listings/${encodeURIComponent(listingId)}`, { params }),
   updateListing: (listingId, payload) => api.patch(`/ebay/listings/${listingId}`, payload),
+  getListingAutoStockRule: (listingId) => api.get(`/ebay/listings/${encodeURIComponent(listingId)}/auto-stock`),
+  saveListingAutoStockRule: (listingId, payload) =>
+    api.put(`/ebay/listings/${encodeURIComponent(listingId)}/auto-stock`, payload),
+  deleteListingAutoStockRule: (listingId) =>
+    api.delete(`/ebay/listings/${encodeURIComponent(listingId)}/auto-stock`),
   createListingDraft: (payload) => api.post('/ebay/listing/draft', payload),
   updateListingDraft: (draftId, payload) => api.patch(`/ebay/listing/draft/${encodeURIComponent(draftId)}`, payload),
   submitListingDraft: (draftId) => api.post('/ebay/listing/submit', { draftId }),

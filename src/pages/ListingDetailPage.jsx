@@ -16,6 +16,10 @@ export default function ListingDetailPage() {
   const [saveTitleLoading, setSaveTitleLoading] = useState(false);
   const [savePriceLoading, setSavePriceLoading] = useState(false);
   const [saveQtyLoading, setSaveQtyLoading] = useState(false);
+  const [autoStockEnabled, setAutoStockEnabled] = useState(false);
+  const [autoStockQuantity, setAutoStockQuantity] = useState('');
+  const [autoStockLoading, setAutoStockLoading] = useState(false);
+  const [autoStockSaving, setAutoStockSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState('');
 
@@ -36,6 +40,7 @@ export default function ListingDetailPage() {
       source: listing?._source || listing?.source || '-',
     };
   }, [listing]);
+  const listingId = keyFacts.listingId;
 
   const meta = useMemo(() => {
     if (!listing) return {};
@@ -157,6 +162,40 @@ export default function ListingDetailPage() {
     setQuantityDraft(stockCount !== '' && stockCount != null ? String(stockCount) : '');
   }, [listing, trading?.currentPrice, stockCount]);
 
+  useEffect(() => {
+    if (!listingId || listingId === '-') return;
+
+    let active = true;
+    setAutoStockLoading(true);
+
+    ebayAPI
+      .getListingAutoStockRule(listingId)
+      .then((response) => {
+        if (!active) return;
+        const rule = response?.data?.data || null;
+        if (rule) {
+          setAutoStockEnabled(Boolean(rule.isEnabled));
+          setAutoStockQuantity(rule.assignedQuantity != null ? String(rule.assignedQuantity) : '');
+        } else {
+          setAutoStockEnabled(false);
+          setAutoStockQuantity('');
+        }
+      })
+      .catch((err) => {
+        if (!active) return;
+        if (err?.response?.status !== 404) {
+          setSaveError(err?.response?.data?.error || err?.message || 'Failed to load auto stock rule.');
+        }
+      })
+      .finally(() => {
+        if (active) setAutoStockLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [listingId]);
+
   const handleUpdateTitle = async () => {
     const listingId = keyFacts.listingId;
     if (!listingId || listingId === '-') return;
@@ -225,7 +264,6 @@ export default function ListingDetailPage() {
   };
 
   const handleUpdateQuantity = async () => {
-    const listingId = keyFacts.listingId;
     if (!listingId || listingId === '-') return;
     const parsedStock = Number(quantityDraft);
     if (!Number.isInteger(parsedStock) || parsedStock < 0) {
@@ -260,6 +298,67 @@ export default function ListingDetailPage() {
       setSaveError(err?.response?.data?.error || err?.message || 'Failed to update stock count.');
     } finally {
       setSaveQtyLoading(false);
+    }
+  };
+
+  const handleSaveAutoStockRule = async () => {
+    if (!listingId || listingId === '-') return;
+    const parsedAutoStock = Number(autoStockQuantity);
+    if (!Number.isInteger(parsedAutoStock) || parsedAutoStock <= 0) {
+      setSaveError('Enter a valid auto stock count greater than 0.');
+      setSaveSuccess('');
+      return;
+    }
+
+    setAutoStockSaving(true);
+    setSaveError('');
+    setSaveSuccess('');
+    try {
+      const response = await ebayAPI.saveListingAutoStockRule(listingId, {
+        enabled: true,
+        assignedQuantity: parsedAutoStock,
+      });
+      const rule = response?.data?.data || null;
+      setAutoStockEnabled(true);
+      setAutoStockQuantity(rule?.assignedQuantity != null ? String(rule.assignedQuantity) : String(parsedAutoStock));
+      setSaveSuccess('Auto stock rule saved successfully.');
+    } catch (err) {
+      setSaveError(err?.response?.data?.error || err?.message || 'Failed to save auto stock rule.');
+    } finally {
+      setAutoStockSaving(false);
+    }
+  };
+
+  const handleAutoStockToggle = async (event) => {
+    const nextEnabled = event.target.checked;
+    setSaveError('');
+    setSaveSuccess('');
+
+    if (nextEnabled) {
+      setAutoStockEnabled(true);
+      if (!autoStockQuantity) {
+        setAutoStockQuantity(quantityDraft !== '' ? String(quantityDraft) : '1');
+      }
+      return;
+    }
+
+    if (!listingId || listingId === '-') {
+      setAutoStockEnabled(false);
+      setAutoStockQuantity('');
+      return;
+    }
+
+    setAutoStockSaving(true);
+    try {
+      await ebayAPI.deleteListingAutoStockRule(listingId);
+      setAutoStockEnabled(false);
+      setAutoStockQuantity('');
+      setSaveSuccess('Auto stock rule removed.');
+    } catch (err) {
+      setAutoStockEnabled(true);
+      setSaveError(err?.response?.data?.error || err?.message || 'Failed to remove auto stock rule.');
+    } finally {
+      setAutoStockSaving(false);
     }
   };
 
@@ -458,6 +557,53 @@ export default function ListingDetailPage() {
                   >
                     {saveQtyLoading ? 'Updating stock count...' : 'Update stock count'}
                   </button>
+                </div>
+                <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-950/40' : 'border-slate-200 bg-white'}`}>
+                  <label className={`flex items-center gap-2 text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                    <input
+                      type="checkbox"
+                      checked={autoStockEnabled}
+                      onChange={handleAutoStockToggle}
+                      disabled={autoStockSaving || autoStockLoading}
+                      className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    Auto stock
+                  </label>
+                  <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    If this listing reaches 0, the cron restores it to the quantity you assign here.
+                  </p>
+                  {autoStockEnabled ? (
+                    <div className="mt-3">
+                      <label className={`block text-xs mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                        Auto stock count
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={autoStockQuantity}
+                        onChange={(e) => setAutoStockQuantity(e.target.value)}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm ${
+                          isDark
+                            ? 'bg-slate-900 border-slate-700 text-slate-100'
+                            : 'bg-white border-slate-300 text-slate-900'
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveAutoStockRule}
+                        disabled={autoStockSaving}
+                        className="btn-secondary mt-2"
+                      >
+                        {autoStockSaving ? 'Saving auto stock...' : 'Save auto stock'}
+                      </button>
+                    </div>
+                  ) : null}
+                  {autoStockLoading ? (
+                    <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Loading auto stock rule...
+                    </p>
+                  ) : null}
                 </div>
               </div>
               {saveError ? (
