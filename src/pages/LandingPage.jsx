@@ -13,6 +13,7 @@ import {
 import Swal from 'sweetalert2';
 import { settingsAPI } from '../services/api';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
+import PartnersSection from '../components/PartnersSection';
 
 const featureCards = [
   {
@@ -403,6 +404,8 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        <PartnersSection />
 
         <section id="features" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
           <SectionHeader

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { adminAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
+import PartnersManagement from '../components/PartnersManagement';
 import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { TAB_KEYS, USER_DEFAULT_ALLOWED_TABS } from '../utils/planAccess';
@@ -493,6 +494,12 @@ export default function AdminPanelPage() {
             Plans
           </button>
           <button
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'partners' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
+            onClick={() => setActiveTab('partners')}
+          >
+            Partners
+          </button>
+          <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'danger' ? 'bg-red-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
             onClick={() => setActiveTab('danger')}
           >
@@ -949,6 +956,12 @@ export default function AdminPanelPage() {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {!loading && activeTab === 'partners' && (
+          <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
+            <PartnersManagement />
           </div>
         )}
 

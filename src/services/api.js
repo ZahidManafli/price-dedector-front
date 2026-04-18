@@ -183,4 +183,31 @@ export const adminAPI = {
   purgeSearchCache: (data) => api.post('/admin/search-cache/purge', data),
 };
 
+// Partners APIs
+export const partnerAPI = {
+  getPublic: () => api.get('/api/partners/public'),
+  getAll: () => api.get('/api/partners'),
+  getById: (id) => api.get(`/api/partners/${id}`),
+  create: (data) => {
+    const formData = new FormData();
+    formData.append('name', data.name);
+    if (data.display_order !== undefined) formData.append('display_order', data.display_order);
+    if (data.logo) formData.append('logo', data.logo);
+    return api.post('/api/partners', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  update: (id, data) => {
+    const formData = new FormData();
+    if (data.name) formData.append('name', data.name);
+    if (data.display_order !== undefined) formData.append('display_order', data.display_order);
+    if (data.logo) formData.append('logo', data.logo);
+    return api.put(`/api/partners/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  delete: (id) => api.delete(`/api/partners/${id}`),
+  toggleStatus: (id, is_active) => api.patch(`/api/partners/${id}/status`, { is_active }),
+};
+
 export default api;

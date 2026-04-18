@@ -9,6 +9,7 @@ export const TAB_KEYS = {
   DEWISO: 'dewiso',
   SETTINGS: 'settings',
   ADMIN: 'admin',
+  PARTNERS: 'partners',
 };
 
 export const USER_DEFAULT_ALLOWED_TABS = [
@@ -40,6 +41,7 @@ const TAB_ALIASES = {
   dewiso: TAB_KEYS.DEWISO,
   settings: TAB_KEYS.SETTINGS,
   admin: TAB_KEYS.ADMIN,
+  partners: TAB_KEYS.PARTNERS,
 };
 
 export function normalizeTabKey(value) {
