@@ -12,7 +12,7 @@ function PartnersSection() {
         setLoading(true);
         setError(null);
         const res = await partnerAPI.getPublic();
-        setPartners(res.data || []);
+        setPartners(res.data.data || []);
       } catch (err) {
         console.error('Error loading partners:', err);
         setError('Failed to load partners');

@@ -26,7 +26,7 @@ export default function PartnersManagement() {
     try {
       setLoading(true);
       const res = await partnerAPI.getAll();
-      setPartners(res.data || []);
+      setPartners(res.data.data || []);
       setAlert(null);
     } catch (error) {
       console.error('Error loading partners:', error);
