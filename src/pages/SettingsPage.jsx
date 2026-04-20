@@ -36,6 +36,7 @@ export default function SettingsPage() {
   });
   const [requestModal, setRequestModal] = useState(null);
   const [ebayTab, setEbayTab] = useState('overview');
+  const [settingsTab, setSettingsTab] = useState('security');
 
   const activeEbayAccount = Array.isArray(ebayStatus.ebayAccounts)
     ? ebayStatus.ebayAccounts.find((acc) => acc.id && ebayStatus.activeEbayAccountId === acc.id) || ebayStatus.ebayAccounts[0] || null
@@ -247,6 +248,14 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSettingsSubmit = (e) => {
+    if (settingsTab === 'notifications') {
+      handleSave(e);
+      return;
+    }
+    e.preventDefault();
+  };
+
   return (
     <div className="page-shell">
       <div className="max-w-2xl mx-auto">
@@ -262,6 +271,33 @@ export default function SettingsPage() {
           </div>
         )}
 
+        <div className={`mb-6 rounded-xl p-1 border ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+            {[
+              { id: 'security', label: 'Account Security' },
+              { id: 'plans', label: 'Subscription & Credits' },
+              { id: 'ebay', label: 'eBay Connections' },
+              { id: 'notifications', label: 'Notifications' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setSettingsTab(tab.id)}
+                className={`px-3 py-2 text-sm rounded-lg transition ${
+                  settingsTab === tab.id
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : isDark
+                      ? 'text-slate-300 hover:text-slate-100'
+                      : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {settingsTab === 'security' && (
         <div className="glass-card p-4 md:p-5 mb-6">
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <h2 className={`text-lg font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
@@ -305,7 +341,9 @@ export default function SettingsPage() {
             </div>
           </form>
         </div>
+        )}
 
+        {settingsTab === 'plans' && (
         <div className="glass-card p-4 md:p-5 mb-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -335,10 +373,13 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+        )}
 
+        {(settingsTab === 'notifications' || settingsTab === 'ebay') && (
         <div className="glass-card p-4 md:p-5">
-          <form onSubmit={handleSave} className="space-y-5">
+          <form onSubmit={handleSettingsSubmit} className="space-y-5">
             {/* Email Notifications */}
+            {settingsTab === 'notifications' && (
             <div className={`rounded-lg p-3 md:p-4 ${
               isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
             }`}>
@@ -384,8 +425,10 @@ export default function SettingsPage() {
                 </select>
               </div>
             </div>
+            )}
 
             {/* eBay Integration */}
+            {settingsTab === 'ebay' && (
             <div className={`rounded-lg p-3 md:p-4 ${
               isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
             }`}>
@@ -764,17 +807,20 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
+            )}
 
             {/* Buttons */}
             <div className={`pt-3 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
               <div className="flex gap-4">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-primary"
-                >
-                  {loading ? 'Saving...' : 'Save Settings'}
-                </button>
+                {settingsTab === 'notifications' && (
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn-primary"
+                  >
+                    {loading ? 'Saving...' : 'Save Settings'}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => navigate('/dashboard')}
@@ -786,6 +832,7 @@ export default function SettingsPage() {
             </div>
           </form>
         </div>
+        )}
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="glass-card p-3">
