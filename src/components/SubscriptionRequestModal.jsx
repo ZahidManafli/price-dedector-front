@@ -87,10 +87,15 @@ export default function SubscriptionRequestModal({
   const isCreditTopUpRequest = requestType === 'update_credits';
   const isResetRequest = requestType === 'reset_credits';
 
+  const hasPrefilledName = String(defaultValues?.name || '').trim().length > 0;
+  const hasPrefilledSurname = String(defaultValues?.surname || '').trim().length > 0;
+  const hasPrefilledEmail = String(defaultValues?.email || '').trim().length > 0;
+  const hasPrefilledPhone = String(defaultValues?.phoneNumber || '').trim().length > 0;
+
   React.useEffect(() => {
     setForm(initialForm(selectedPlanId, requestType, defaultValues));
     setError('');
-  }, [selectedPlanId, open, requestType]);
+  }, [selectedPlanId, open, requestType, defaultValues]);
 
   if (!open) return null;
 
@@ -216,37 +221,45 @@ export default function SubscriptionRequestModal({
           {isSubscriptionRequest ? (
             <>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                  placeholder="Name"
-                  className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-                />
-                <input
-                  type="text"
-                  value={form.surname}
-                  onChange={(e) => setForm((p) => ({ ...p, surname: e.target.value }))}
-                  placeholder="Surname"
-                  className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-                />
+                {!hasPrefilledName ? (
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                    placeholder="Name"
+                    className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+                  />
+                ) : null}
+                {!hasPrefilledSurname ? (
+                  <input
+                    type="text"
+                    value={form.surname}
+                    onChange={(e) => setForm((p) => ({ ...p, surname: e.target.value }))}
+                    placeholder="Surname"
+                    className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+                  />
+                ) : null}
               </div>
 
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                placeholder="Email"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-              />
+              {!hasPrefilledEmail ? (
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                  placeholder="Email"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+                />
+              ) : null}
 
-              <input
-                type="tel"
-                value={form.phoneNumber}
-                onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))}
-                placeholder="Phone Number"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-              />
+              {!hasPrefilledPhone ? (
+                <input
+                  type="tel"
+                  value={form.phoneNumber}
+                  onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))}
+                  placeholder="Phone Number"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+                />
+              ) : null}
 
               <select
                 value={form.planId}

@@ -760,6 +760,12 @@ export default function DashboardPage() {
         onClose={() => setRequestUpgradeOpen(false)}
         plans={publicPlans}
         lockPlan={false}
+        defaultValues={{
+          name: user?.name || '',
+          surname: user?.surname || user?.lastName || '',
+          email: user?.email || '',
+          phoneNumber: user?.phoneNumber || user?.phone || '',
+        }}
         onSuccess={() => {
           setAlert({ type: 'success', message: 'Upgrade request sent. Admin will review it.' });
         }}

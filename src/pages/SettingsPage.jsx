@@ -865,6 +865,7 @@ export default function SettingsPage() {
             name: user?.name || '',
             surname: user?.surname || '',
             email: user?.email || '',
+            phoneNumber: user?.phoneNumber || user?.phone || '',
           }}
           submitLabel={requestModal?.requestType === 'update_credits' ? 'Send Credit Request' : 'Send Reset Request'}
           onSuccess={() => setAlert({ type: 'success', message: 'Request sent to admin' })}
