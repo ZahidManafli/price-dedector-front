@@ -52,7 +52,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-semibold text-slate-900 mb-2">6. Contact</h2>
             <p>
-              For privacy requests, contact: <span className="font-medium">checkila.app@gmail.com</span>
+              For privacy requests, contact: <span className="font-medium">checkilanotify@gmail.com</span>
             </p>
           </section>
         </div>

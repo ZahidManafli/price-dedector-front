@@ -26,7 +26,7 @@ export default function AboutPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-slate-900 mb-2">Contact</h2>
-            <p>Support email: checkila.app@gmail.com</p>
+            <p>Support email: checkilanotify@gmail.com</p>
           </section>
         </div>
 
