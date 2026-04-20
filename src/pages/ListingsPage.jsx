@@ -132,6 +132,16 @@ export default function ListingsPage() {
   };
 
   const canPrev = page > 0;
+
+  const parseNumberish = (value) => {
+    if (value === null || value === undefined || value === '') return null;
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+    const cleaned = String(value).replace(/[^\d.-]/g, '');
+    if (!cleaned) return null;
+    const parsed = Number(cleaned);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
   const normalizedItems = useMemo(
     () =>
       (items || []).map((offer) => {
@@ -152,8 +162,8 @@ export default function ListingsPage() {
             const q = getText('Quantity');
             const s = getText('SellingStatus > QuantitySold');
             const pics = getAllText('PictureDetails > PictureURL');
-            rawQuantity = q !== '' ? Number(q) : null;
-            rawSold = s !== '' ? Number(s) : null;
+            rawQuantity = parseNumberish(q);
+            rawSold = parseNumberish(s);
             rawThumb = pics[0] || '';
           } catch {
             rawQuantity = null;
@@ -162,15 +172,20 @@ export default function ListingsPage() {
           }
         }
         const fallbackQuantity =
-          typeof offer?.availableQuantity === 'number'
-            ? offer.availableQuantity
-            : offer?.quantity ?? offer?.availability?.shipToLocationAvailability?.quantity ?? null;
-        const soldCount = rawSold != null ? rawSold : 0;
+          parseNumberish(offer?.availableQuantity) ??
+          parseNumberish(offer?.quantity) ??
+          parseNumberish(offer?.availability?.shipToLocationAvailability?.quantity) ??
+          null;
+        const soldCount =
+          rawSold ??
+          parseNumberish(offer?.quantitySold) ??
+          parseNumberish(offer?.sellingStatus?.quantitySold) ??
+          0;
         const stockCount =
           rawQuantity != null
-            ? Math.max(0, Number(rawQuantity) - Number(soldCount || 0))
+            ? Math.max(0, rawQuantity - Number(soldCount || 0))
             : fallbackQuantity;
-        const priceNumber = Number(offer?.pricingSummary?.price?.value);
+        const priceNumber = parseNumberish(offer?.pricingSummary?.price?.value);
         return {
           ...offer,
           _id: id,
@@ -182,7 +197,7 @@ export default function ListingsPage() {
             offer?.pricingSummary?.price?.value != null
               ? `${offer.pricingSummary.price.value} ${offer.pricingSummary.price.currency || ''}`.trim()
               : '-',
-          _priceValue: Number.isFinite(priceNumber) ? priceNumber : null,
+          _priceValue: priceNumber,
           _thumb: rawThumb,
         };
       }),
@@ -198,19 +213,20 @@ export default function ListingsPage() {
       const matchesStatus = statusFilter === 'ALL' || offer._status.toUpperCase() === statusFilter;
       return matchesQuery && matchesStatus;
     });
-    const statusPriority = (statusValue) => {
-      const s = String(statusValue || '').toUpperCase();
-      if (s.includes('ACTIVE')) return 0;
-      return 1;
+    const compareNullableNumber = (left, right) => {
+      const a = Number.isFinite(left) ? left : null;
+      const b = Number.isFinite(right) ? right : null;
+      if (a === null && b === null) return 0;
+      if (a === null) return 1;
+      if (b === null) return -1;
+      return a - b;
     };
     const compare = (a, b) => {
-      const activeDelta = statusPriority(a._status) - statusPriority(b._status);
-      if (activeDelta !== 0) return activeDelta;
       if (sortKey === 'title') return String(a._title || '').localeCompare(String(b._title || ''));
       if (sortKey === 'listingId') return String(a._id || '').localeCompare(String(b._id || ''));
-      if (sortKey === 'price') return Number(a._priceValue ?? -1) - Number(b._priceValue ?? -1);
-      if (sortKey === 'quantity') return Number(a._stock ?? -1) - Number(b._stock ?? -1);
-      if (sortKey === 'sold') return Number(a._sold ?? -1) - Number(b._sold ?? -1);
+      if (sortKey === 'price') return compareNullableNumber(a._priceValue, b._priceValue);
+      if (sortKey === 'quantity') return compareNullableNumber(a._stock, b._stock);
+      if (sortKey === 'sold') return compareNullableNumber(a._sold, b._sold);
       if (sortKey === 'status') return String(a._status || '').localeCompare(String(b._status || ''));
       return 0;
     };
