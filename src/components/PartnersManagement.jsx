@@ -12,7 +12,7 @@ export default function PartnersManagement() {
   const [alert, setAlert] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ name: '', display_order: 0 });
+  const [formData, setFormData] = useState({ name: '', website_url: '', display_order: 0 });
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,7 +37,7 @@ export default function PartnersManagement() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', display_order: 0 });
+    setFormData({ name: '', website_url: '', display_order: 0 });
     setSelectedFile(null);
     setEditingId(null);
     setShowForm(false);
@@ -48,6 +48,7 @@ export default function PartnersManagement() {
     setEditingId(partner.id);
     setFormData({
       name: partner.name,
+      website_url: partner.website_url || '',
       display_order: partner.display_order || 0,
     });
     setShowForm(true);
@@ -77,6 +78,7 @@ export default function PartnersManagement() {
     try {
       const data = {
         name: formData.name.trim(),
+        website_url: String(formData.website_url || '').trim(),
         display_order: Number(formData.display_order) || 0,
         ...(selectedFile && { logo: selectedFile }),
       };
@@ -174,6 +176,19 @@ export default function PartnersManagement() {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className={`w-full px-4 py-2 rounded-lg border ${borderClass} ${isDark ? 'bg-slate-800 text-white' : 'bg-white'}`}
                 placeholder="Enter partner name"
+              />
+            </div>
+
+            <div>
+              <label className={`block text-sm font-medium ${textClass} mb-1`}>
+                Website URL
+              </label>
+              <input
+                type="url"
+                value={formData.website_url}
+                onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
+                className={`w-full px-4 py-2 rounded-lg border ${borderClass} ${isDark ? 'bg-slate-800 text-white' : 'bg-white'}`}
+                placeholder="https://example.com"
               />
             </div>
 

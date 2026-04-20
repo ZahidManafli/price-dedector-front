@@ -47,15 +47,18 @@ function PartnersSection() {
         {/* Partners Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 items-center justify-center">
           {partners.map((partner) => (
-            <div
+            <a
               key={partner.id}
+              href={partner.website_url || undefined}
+              target={partner.website_url ? '_blank' : undefined}
+              rel={partner.website_url ? 'noreferrer noopener' : undefined}
               className="flex items-center justify-center p-6 rounded-lg border border-slate-800 bg-slate-900/40 backdrop-blur hover:border-cyan-300/30 hover:bg-slate-900/60 transition-all duration-300 group"
             >
               {partner.logo_url ? (
                 <img
                   src={partner.logo_url}
                   alt={partner.name}
-                  className="max-h-16 max-w-full object-contain grayscale group-hover:grayscale-0 transition-all duration-300"
+                  className="max-h-16 max-w-full object-contain cursor-pointer transition-all duration-300"
                   title={partner.name}
                 />
               ) : (
@@ -63,7 +66,7 @@ function PartnersSection() {
                   <span className="text-sm font-medium text-slate-400">{partner.name}</span>
                 </div>
               )}
-            </div>
+            </a>
           ))}
         </div>
       </div>

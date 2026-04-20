@@ -207,6 +207,7 @@ export const partnerAPI = {
   create: (data) => {
     const formData = new FormData();
     formData.append('name', data.name);
+    if (data.website_url !== undefined) formData.append('website_url', data.website_url);
     if (data.display_order !== undefined) formData.append('display_order', data.display_order);
     if (data.logo) formData.append('logo', data.logo);
     return api.post('/api/partners', formData, {
@@ -216,6 +217,7 @@ export const partnerAPI = {
   update: (id, data) => {
     const formData = new FormData();
     if (data.name) formData.append('name', data.name);
+    if (data.website_url !== undefined) formData.append('website_url', data.website_url);
     if (data.display_order !== undefined) formData.append('display_order', data.display_order);
     if (data.logo) formData.append('logo', data.logo);
     return api.put(`/api/partners/${id}`, formData, {
