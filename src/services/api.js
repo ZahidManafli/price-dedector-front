@@ -18,6 +18,9 @@ api.interceptors.request.use((config) => {
     url.startsWith('/health') ||
     url.startsWith('/settings/plans/public') ||
     url === '/settings/subscription-requests' ||
+    url.startsWith('/settings/subscription-requests/update-credits') ||
+    url.startsWith('/settings/subscription-requests/reset-credits') ||
+    url.startsWith('/api/partners/public') ||
     url.includes('/privacy') ||
     url.includes('/about');
 
