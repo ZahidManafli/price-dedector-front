@@ -1,6 +1,38 @@
 import React, { useMemo, useState } from 'react';
 import { settingsAPI } from '../services/api';
 
+function toHumanText(value = '') {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  return raw
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .split(' ')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function formatPlanCategory(category = '') {
+  const normalized = String(category || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_');
+
+  if (normalized === 'amazon_monitoring' || normalized === 'amazonmonitoring') return 'Amazon Monitoring';
+  if (normalized === 'analytics' || normalized === 'analysis' || normalized === 'data_analytics') return 'Data Analytics';
+  if (normalized === 'subscription') return 'Subscription';
+  if (normalized === 'custom') return 'Custom';
+  return toHumanText(normalized || 'subscription');
+}
+
+function formatPlanName(name = '') {
+  const raw = String(name || '').trim();
+  if (!raw) return 'Plan';
+  // Keep existing proper names, but normalize technical keys like amazon_monitoring.
+  if (raw.includes('_') || raw.includes('-')) return toHumanText(raw);
+  return raw;
+}
+
 function initialForm(selectedPlanId = '', requestType = 'subscription', defaultValues = {}) {
   return {
     name: defaultValues.name || '',
@@ -35,9 +67,20 @@ export default function SubscriptionRequestModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const availablePlans = useMemo(
-    () => plans.filter((p) => p && p.isActive !== false),
-    [plans]
+  const availablePlans = useMemo(() => {
+    const deduped = new Map();
+    (plans || []).forEach((plan) => {
+      if (!plan || plan.isActive === false) return;
+      const id = String(plan.id || '').trim();
+      if (!id) return;
+      if (!deduped.has(id)) deduped.set(id, plan);
+    });
+    return [...deduped.values()];
+  }, [plans]);
+
+  const selectedPlan = useMemo(
+    () => availablePlans.find((plan) => String(plan?.id || '') === String(form.planId || '')) || null,
+    [availablePlans, form.planId]
   );
 
   const isSubscriptionRequest = requestType === 'subscription';
@@ -214,11 +257,17 @@ export default function SubscriptionRequestModal({
                 <option value="">Select plan</option>
                 {availablePlans.map((plan) => (
                   <option key={plan.id} value={plan.id}>
-                    {plan.name}
+                    {formatPlanName(plan.name)} ({formatPlanCategory(plan.category)})
                   </option>
                 ))}
                 <option value="custom">Custom Plan (Request)</option>
               </select>
+
+              {selectedPlan ? (
+                <p className="text-xs text-slate-300">
+                  Selected category: <span className="font-semibold">{formatPlanCategory(selectedPlan.category)}</span>
+                </p>
+              ) : null}
 
               {form.planId === 'custom' ? (
                 <div className="space-y-3 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-3">
