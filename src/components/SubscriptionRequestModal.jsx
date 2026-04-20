@@ -67,6 +67,26 @@ export default function SubscriptionRequestModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const defaultValuesSignature = useMemo(
+    () =>
+      [
+        String(defaultValues?.name || '').trim(),
+        String(defaultValues?.surname || '').trim(),
+        String(defaultValues?.email || '').trim(),
+        String(defaultValues?.phoneNumber || '').trim(),
+        String(defaultValues?.requestedCredits || '').trim(),
+        String(defaultValues?.customNote || '').trim(),
+      ].join('::'),
+    [
+      defaultValues?.name,
+      defaultValues?.surname,
+      defaultValues?.email,
+      defaultValues?.phoneNumber,
+      defaultValues?.requestedCredits,
+      defaultValues?.customNote,
+    ]
+  );
+
   const availablePlans = useMemo(() => {
     const deduped = new Map();
     (plans || []).forEach((plan) => {
@@ -95,7 +115,7 @@ export default function SubscriptionRequestModal({
   React.useEffect(() => {
     setForm(initialForm(selectedPlanId, requestType, defaultValues));
     setError('');
-  }, [selectedPlanId, open, requestType, defaultValues]);
+  }, [selectedPlanId, open, requestType, defaultValuesSignature]);
 
   if (!open) return null;
 
