@@ -16,9 +16,8 @@ export default function OrdersPage() {
 
   const [orders, setOrders] = useState([]);
   const [page, setPage] = useState(0);
-  const [limit] = useState(25);
+  const [pageCursors, setPageCursors] = useState([null]);
   const [fetchingPage, setFetchingPage] = useState(false);
-  const [nextOffset, setNextOffset] = useState(null);
   const [total, setTotal] = useState(null);
   const [query, setQuery] = useState('');
   const [fulfillmentFilter, setFulfillmentFilter] = useState('ALL');
@@ -27,8 +26,7 @@ export default function OrdersPage() {
   const [sortDir, setSortDir] = useState('asc');
   const ordersRequestRef = useRef(0);
 
-  const canNext = nextOffset !== null;
-  const offset = useMemo(() => page * limit, [page, limit]);
+  const canNext = pageCursors[page + 1] != null;
   const filteredOrders = useMemo(() => {
     const base = (orders || []).filter((order) => {
       const q = query.trim().toLowerCase();
@@ -123,7 +121,13 @@ export default function OrdersPage() {
   const applyOrdersPayload = (data = {}, pageIndex = 0) => {
     setOrders(data.orders || []);
     setTotal(typeof data.total === 'number' ? data.total : null);
-    setNextOffset(data.nextOffset ?? null);
+    const nextHref = typeof data.next === 'string' && data.next.trim() ? data.next.trim() : null;
+    setPageCursors((prev) => {
+      const next = [...prev];
+      if (next[0] === undefined) next[0] = null;
+      next[pageIndex + 1] = nextHref;
+      return next;
+    });
     setPage(pageIndex);
   };
 
@@ -131,14 +135,22 @@ export default function OrdersPage() {
     const requestId = ++ordersRequestRef.current;
     try {
       if (!silent) setFetchingPage(true);
-      const res = await ebayAPI.getOrders(pageIndex * limit, limit, forceRefresh ? { refresh: true } : undefined);
+      const cursor = pageCursors[pageIndex] ?? null;
+      const res = await ebayAPI.getOrders({
+        ...(forceRefresh ? { refresh: true } : {}),
+        ...(cursor ? { next: cursor } : {}),
+      });
       const data = res?.data || {};
       if (requestId !== ordersRequestRef.current) return;
 
       if (data?.accessDenied) {
         setError(data?.accessDeniedErrorMessage || 'eBay shipment access denied');
         setOrders([]);
-        setNextOffset(null);
+        setPageCursors((prev) => {
+          const next = [...prev];
+          next[pageIndex + 1] = null;
+          return next;
+        });
         setTotal(null);
         return;
       }
@@ -147,7 +159,10 @@ export default function OrdersPage() {
 
       if (data?.from_cache && !forceRefresh) {
         ebayAPI
-          .getOrders(pageIndex * limit, limit, { refresh: true })
+          .getOrders({
+            refresh: true,
+            ...(cursor ? { next: cursor } : {}),
+          })
           .then((refreshRes) => {
             const refreshData = refreshRes?.data || {};
             if (requestId !== ordersRequestRef.current) return;
@@ -163,7 +178,11 @@ export default function OrdersPage() {
       if (requestId !== ordersRequestRef.current) return;
       setError(err?.response?.data?.error || err?.message || 'Failed to load eBay orders');
       setOrders([]);
-      setNextOffset(null);
+      setPageCursors((prev) => {
+        const next = [...prev];
+        next[pageIndex + 1] = null;
+        return next;
+      });
     } finally {
       if (requestId === ordersRequestRef.current && !silent) {
         setFetchingPage(false);

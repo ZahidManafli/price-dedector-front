@@ -122,14 +122,21 @@ export const ebayAPI = {
   submitListingDraft: (draftId) => api.post('/ebay/listing/submit', { draftId }),
   sellSimilar: (listingId) => api.post('/ebay/listing/sell-similar', { listingId }),
   getDashboardAnalytics: () => api.get('/ebay/analytics/dashboard'),
-  getOrders: (offset = 0, limit = 25, options = {}) =>
-    api.get('/ebay/orders', {
-      params: {
-        offset,
-        limit,
-        ...(options?.refresh ? { refresh: 1 } : {}),
-      },
-    }),
+  getOrders: (offsetOrOptions = 0, limit = 25, options = {}) => {
+    const usingOptionsOnly = typeof offsetOrOptions === 'object' && offsetOrOptions !== null;
+    const requestOptions = usingOptionsOnly ? offsetOrOptions : options;
+    const params = {
+      ...(requestOptions?.refresh ? { refresh: 1 } : {}),
+      ...(requestOptions?.next ? { next: requestOptions.next } : {}),
+    };
+
+    if (!requestOptions?.next && !usingOptionsOnly) {
+      params.offset = offsetOrOptions;
+      params.limit = limit;
+    }
+
+    return api.get('/ebay/orders', { params });
+  },
   getOrderTracking: (orderId) => api.get(`/ebay/orders/${encodeURIComponent(orderId)}/tracking`),
   registerOrderTracking: (orderId, payload) =>
     api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/register`, payload),
