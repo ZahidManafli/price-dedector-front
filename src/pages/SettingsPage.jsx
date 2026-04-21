@@ -882,8 +882,7 @@ export default function SettingsPage() {
                   Amazon Login
                 </h2>
                 <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  Connect your Amazon account. The login request starts from the frontend, the backend generates the Amazon
-                  authorization link and stores your refresh token securely in SQL.
+                  Connect your Amazon account.
                 </p>
 
                 <div
