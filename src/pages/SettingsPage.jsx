@@ -375,7 +375,7 @@ export default function SettingsPage() {
         </div>
         )}
 
-        {(settingsTab === 'notifications' || settingsTab === 'ebay') && (
+        {(settingsTab === 'notifications' || settingsTab === 'ebay' || settingsTab === 'amazon') && (
         <div className="glass-card p-4 md:p-5">
           <form onSubmit={handleSettingsSubmit} className="space-y-5">
             {/* Email Notifications */}
@@ -427,6 +427,36 @@ export default function SettingsPage() {
             </div>
             )}
 
+            {/* Amazon Integration */}
+            {settingsTab === 'amazon' && (
+            <div className={`rounded-lg p-3 md:p-4 ${
+              isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
+            }`}>
+              <h2 className={`text-lg font-semibold mb-2 flex items-center gap-2 ${
+                isDark ? 'text-slate-100' : 'text-slate-900'
+              }`}>
+                <Link2 size={16} />
+                Amazon Integration
+              </h2>
+              <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                Connect your Amazon account to enable order tracking and TBA tracking features.
+              </p>
+              <div className="flex items-center gap-4">
+                <a
+                  href="/api/amazon/login"
+                  className="rounded-xl bg-orange-600 text-white px-5 py-2.5 hover:bg-orange-700 transition text-sm font-semibold"
+                >
+                  {user?.amazonLwaLinked ? 'Amazon Connected' : 'Connect Amazon'}
+                </a>
+                {user?.amazonLwaLinked && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                    <CheckCircle2 size={14} /> Connected
+                  </span>
+                )}
+              </div>
+            </div>
+            )}
+
             {/* eBay Integration */}
             {settingsTab === 'ebay' && (
             <div className={`rounded-lg p-3 md:p-4 ${
@@ -452,12 +482,13 @@ export default function SettingsPage() {
                         ? 'text-slate-300 hover:text-slate-100'
                         : 'text-slate-600 hover:text-slate-900'
                   }`}
-                >
-                  Connection
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEbayTab('details')}
+                {[
+                  { id: 'security', label: 'Account Security' },
+                  { id: 'plans', label: 'Subscription & Credits' },
+                  { id: 'ebay', label: 'eBay Connections' },
+                  { id: 'amazon', label: 'Amazon Integration' },
+                  { id: 'notifications', label: 'Notifications' },
+                ].map((tab) => (
                   className={`px-3 py-1.5 text-sm rounded-lg transition ${
                     ebayTab === 'details'
                       ? 'bg-indigo-600 text-white shadow-sm'
