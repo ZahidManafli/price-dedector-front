@@ -432,7 +432,7 @@ export default function SettingsPage() {
         </div>
         )}
 
-        {(settingsTab === 'notifications' || settingsTab === 'ebay') && (
+        {(settingsTab === 'notifications' || settingsTab === 'ebay' || settingsTab === 'amazon') && (
         <div className="glass-card p-4 md:p-5">
           <form onSubmit={handleSettingsSubmit} className="space-y-5">
             {/* Email Notifications */}
