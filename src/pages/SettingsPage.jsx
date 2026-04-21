@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCircle2, Link2, Mail, ShieldCheck, Users } from 'lucide-react';
-import { authAPI, ebayAPI, settingsAPI } from '../services/api';
+import { amazonOAuthAPI, authAPI, ebayAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import { useAuth } from '../context/AuthContext';
@@ -18,6 +18,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [ebayLoading, setEbayLoading] = useState(false);
+  const [amazonLoading, setAmazonLoading] = useState(false);
   const [ebayStatus, setEbayStatus] = useState({
     connected: false,
     accountId: null,
@@ -25,6 +26,11 @@ export default function SettingsPage() {
     expiresAt: null,
     ebayAccounts: [],
     activeEbayAccountId: null,
+  });
+  const [amazonStatus, setAmazonStatus] = useState({
+    connected: false,
+    profile: null,
+    tokenExpiresAt: null,
   });
   const [alert, setAlert] = useState(null);
   const [nameDrafts, setNameDrafts] = useState({});
@@ -48,14 +54,16 @@ export default function SettingsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [prefRes, ebayRes] = await Promise.all([
+        const [prefRes, ebayRes, amazonRes] = await Promise.all([
           settingsAPI.getPreferences(),
           ebayAPI.getStatus(),
+          amazonOAuthAPI.getStatus().catch(() => ({ data: { connected: false } })),
         ]);
         const limitsRes = await settingsAPI.getLimits().catch(() => null);
         setPreferences((prev) => ({ ...prev, ...(prefRes.data || {}) }));
         const nextStatus = ebayRes.data || {};
         setEbayStatus(nextStatus);
+        setAmazonStatus(amazonRes?.data || { connected: false });
         const drafts = {};
         (nextStatus.ebayAccounts || []).forEach((a) => {
           drafts[a.id] = a.connectionName || a.username || a.profileUserId || '';
@@ -67,6 +75,20 @@ export default function SettingsPage() {
       }
     };
     load();
+  }, []);
+
+  useEffect(() => {
+    const onUpdated = async () => {
+      try {
+        const res = await amazonOAuthAPI.getStatus();
+        setAmazonStatus(res?.data || { connected: false });
+      } catch {}
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('amazon:updated', onUpdated);
+      return () => window.removeEventListener('amazon:updated', onUpdated);
+    }
+    return undefined;
   }, []);
 
   const handleChange = (e) => {
@@ -159,6 +181,40 @@ export default function SettingsPage() {
       });
     } finally {
       setEbayLoading(false);
+    }
+  };
+
+  const handleConnectAmazon = async () => {
+    try {
+      setAmazonLoading(true);
+      const response = await amazonOAuthAPI.getConnectUrl();
+      const authUrl = response?.data?.authUrl;
+      if (!authUrl) throw new Error('Missing Amazon auth URL');
+      window.location.href = authUrl;
+    } catch (error) {
+      setAlert({
+        type: 'error',
+        message: error.response?.data?.error || 'Failed to start Amazon connection',
+      });
+    } finally {
+      setAmazonLoading(false);
+    }
+  };
+
+  const handleDisconnectAmazon = async () => {
+    try {
+      setAmazonLoading(true);
+      await amazonOAuthAPI.disconnect();
+      const res = await amazonOAuthAPI.getStatus().catch(() => ({ data: { connected: false } }));
+      setAmazonStatus(res?.data || { connected: false });
+      setAlert({ type: 'success', message: 'Disconnected Amazon account' });
+    } catch (error) {
+      setAlert({
+        type: 'error',
+        message: error.response?.data?.error || 'Failed to disconnect Amazon',
+      });
+    } finally {
+      setAmazonLoading(false);
     }
   };
 
@@ -272,11 +328,12 @@ export default function SettingsPage() {
         )}
 
         <div className={`mb-6 rounded-xl p-1 border ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
             {[
               { id: 'security', label: 'Account Security' },
               { id: 'plans', label: 'Subscription & Credits' },
               { id: 'ebay', label: 'eBay Connections' },
+              { id: 'amazon', label: 'Amazon Login' },
               { id: 'notifications', label: 'Notifications' },
             ].map((tab) => (
               <button
@@ -807,6 +864,73 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
+            )}
+
+            {/* Amazon OAuth */}
+            {settingsTab === 'amazon' && (
+              <div
+                className={`rounded-lg p-3 md:p-4 ${
+                  isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
+                }`}
+              >
+                <h2
+                  className={`text-lg font-semibold mb-2 flex items-center gap-2 ${
+                    isDark ? 'text-slate-100' : 'text-slate-900'
+                  }`}
+                >
+                  <Link2 size={16} />
+                  Amazon Login
+                </h2>
+                <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  Connect your Amazon account. The login request starts from the frontend, the backend generates the Amazon
+                  authorization link and stores your refresh token securely in SQL.
+                </p>
+
+                <div
+                  className={`rounded-lg p-3 mb-3 ${
+                    isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        amazonStatus.connected ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {amazonStatus.connected && <CheckCircle2 size={14} />}
+                      {amazonStatus.connected ? 'Connected' : 'Not connected'}
+                    </span>
+
+                    {!amazonStatus.connected ? (
+                      <button type="button" onClick={handleConnectAmazon} className="btn-primary" disabled={amazonLoading}>
+                        {amazonLoading ? 'Connecting...' : 'Connect Amazon'}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleDisconnectAmazon}
+                        className="btn-secondary"
+                        disabled={amazonLoading}
+                      >
+                        {amazonLoading ? 'Disconnecting...' : 'Disconnect'}
+                      </button>
+                    )}
+                  </div>
+
+                  {amazonStatus.connected && amazonStatus.profile && (
+                    <div className={`mt-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                      <div>
+                        Amazon user: <span className="font-medium">{amazonStatus.profile.name || amazonStatus.profile.email || 'Unknown'}</span>
+                      </div>
+                      {amazonStatus.profile.email && (
+                        <div className="text-xs mt-1 opacity-80">
+                          Email: <span className="font-medium">{amazonStatus.profile.email}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
 
             {/* Buttons */}

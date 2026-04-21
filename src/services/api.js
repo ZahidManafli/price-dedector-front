@@ -175,6 +175,15 @@ export const amazonAPI = {
   getHistory: (limit = 20) => api.get(`/amazon/history?limit=${limit}`),
 };
 
+// Amazon OAuth (Login with Amazon)
+export const amazonOAuthAPI = {
+  getConnectUrl: () => api.get('/amazon/oauth/connect'),
+  completeCallback: (code, state) => api.post('/amazon/oauth/callback', { code, state }),
+  getStatus: () => api.get('/amazon/oauth/status'),
+  disconnect: () => api.post('/amazon/oauth/disconnect'),
+  getAccessToken: () => api.post('/amazon/oauth/access-token'),
+};
+
 export const dewisoAPI = {
   getHistory: (limit = 20) => api.get('/dewiso/history', { params: { limit } }),
   saveHistory: (payload) => api.post('/dewiso/history', payload),

@@ -14,6 +14,7 @@ import ProductFormPage from './pages/ProductFormPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import SettingsPage from './pages/SettingsPage';
 import EbayCallbackPage from './pages/EbayCallbackPage';
+import AmazonCallbackPage from './pages/AmazonCallbackPage';
 import AmazonLookupPage from './pages/AmazonLookupPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 import PrivacyPage from './pages/PrivacyPage';
@@ -158,6 +159,14 @@ function AppContent() {
               element={
                 <ProtectedRoute requiredTab={TAB_KEYS.SETTINGS}>
                   <EbayCallbackPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/amazon/callback"
+              element={
+                <ProtectedRoute requiredTab={TAB_KEYS.SETTINGS}>
+                  <AmazonCallbackPage />
                 </ProtectedRoute>
               }
             />
