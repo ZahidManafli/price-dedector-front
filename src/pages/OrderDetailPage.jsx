@@ -28,7 +28,11 @@ export default function OrderDetailPage() {
   const summary = useMemo(() => {
     if (!order) return {};
     const fulfillmentRaw = String(order?.orderFulfillmentStatus || '').toUpperCase();
-    const shipmentStatus = fulfillmentRaw === 'NOT_STARTED' ? 'ORDER_CANCELLED' : (fulfillmentRaw || '-');
+    const cancellation = order?.cancelStatus || order?.orderCancelStatus || order?.cancellation || {};
+    const cancelState = String(cancellation?.cancelState || '').toUpperCase();
+    const isCancelled = cancelState === 'CANCELED' || cancelState === 'CANCELLED';
+    const shipmentStatus =
+      fulfillmentRaw === 'NOT_STARTED' && isCancelled ? 'ORDER_CANCELLED' : (fulfillmentRaw || '-');
     return {
       id: order?.orderId || '-',
       buyer: order?.buyer?.username || '-',

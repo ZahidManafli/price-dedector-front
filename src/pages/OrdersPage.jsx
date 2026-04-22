@@ -9,6 +9,19 @@ export default function OrdersPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
 
+  const isOrderCancelled = (order) => {
+    const cancellation = order?.cancelStatus || order?.orderCancelStatus || order?.cancellation || {};
+    const cancelState = String(cancellation?.cancelState || '').toUpperCase();
+    // eBay uses "CANCELED" (US spelling) in the payload; accept both just in case.
+    return cancelState === 'CANCELED' || cancelState === 'CANCELLED';
+  };
+
+  const getDerivedShipmentStatus = (order) => {
+    const fulfillmentRaw = String(order?.orderFulfillmentStatus || '').toUpperCase();
+    if (fulfillmentRaw === 'NOT_STARTED' && isOrderCancelled(order)) return 'ORDER_CANCELLED';
+    return fulfillmentRaw || '-';
+  };
+
   const [loading, setLoading] = useState(true);
   const [ebayStatus, setEbayStatus] = useState({ connected: false });
   const [showConnectModal, setShowConnectModal] = useState(false);
@@ -36,7 +49,7 @@ export default function OrdersPage() {
         String(order?.buyer?.username || '').toLowerCase().includes(q) ||
         String(order?.lineItems?.[0]?.title || '').toLowerCase().includes(q);
       const matchFulfillment =
-        fulfillmentFilter === 'ALL' || String(order?.orderFulfillmentStatus || '') === fulfillmentFilter;
+        fulfillmentFilter === 'ALL' || getDerivedShipmentStatus(order) === String(fulfillmentFilter || '').toUpperCase();
       const matchPayment = paymentFilter === 'ALL' || String(order?.orderPaymentStatus || '') === paymentFilter;
       return matchQuery && matchFulfillment && matchPayment;
     });
@@ -46,7 +59,7 @@ export default function OrdersPage() {
         return String(a?.orderPaymentStatus || '').localeCompare(String(b?.orderPaymentStatus || ''));
       }
       if (sortKey === 'fulfillment') {
-        return String(a?.orderFulfillmentStatus || '').localeCompare(String(b?.orderFulfillmentStatus || ''));
+        return getDerivedShipmentStatus(a).localeCompare(getDerivedShipmentStatus(b));
       }
       if (sortKey === 'total') {
         return Number(a?.pricingSummary?.total?.value ?? -1) - Number(b?.pricingSummary?.total?.value ?? -1);
@@ -84,14 +97,10 @@ export default function OrdersPage() {
       if (v.includes('REFUND')) return isDark ? 'bg-rose-900/30 text-rose-300 border-rose-800' : 'bg-rose-50 text-rose-700 border-rose-200';
       if (v === 'PAID') return isDark ? 'bg-emerald-900/30 text-emerald-300 border-emerald-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200';
     }
+    if (v === 'ORDER_CANCELLED') return isDark ? 'bg-rose-900/30 text-rose-300 border-rose-800' : 'bg-rose-50 text-rose-700 border-rose-200';
     if (v === 'FULFILLED') return isDark ? 'bg-emerald-900/30 text-emerald-300 border-emerald-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200';
     if (v === 'NOT_STARTED') return isDark ? 'bg-amber-900/30 text-amber-300 border-amber-800' : 'bg-amber-50 text-amber-700 border-amber-200';
     return isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-100 text-slate-700 border-slate-200';
-  };
-  const getShipmentLabel = (value) => {
-    const normalized = String(value || '').toUpperCase();
-    if (normalized === 'NOT_STARTED') return 'ORDER_CANCELLED';
-    return normalized || '-';
   };
 
   useEffect(() => {
@@ -337,7 +346,8 @@ export default function OrdersPage() {
                 }`}
               >
                 <option value="ALL">All shipment</option>
-                <option value="NOT_STARTED">ORDER_CANCELLED</option>
+                <option value="NOT_STARTED">NOT_STARTED</option>
+                <option value="ORDER_CANCELLED">ORDER_CANCELLED</option>
                 <option value="FULFILLED">FULFILLED</option>
               </select>
             </label>
@@ -371,8 +381,7 @@ export default function OrdersPage() {
                 {filteredOrders.map((order) => {
                   const id = order.orderId;
                   const payment = order.orderPaymentStatus || '-';
-                  const fulfillment = order.orderFulfillmentStatus || '-';
-                  const shipmentLabel = getShipmentLabel(fulfillment);
+                  const shipmentStatus = getDerivedShipmentStatus(order);
                   const totalValue = order?.pricingSummary?.total?.value;
                   const totalCurrency = order?.pricingSummary?.total?.currency;
                   const buyer = order?.buyer?.username || '-';
@@ -388,8 +397,8 @@ export default function OrdersPage() {
                           </span>
                         </td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${getPill(fulfillment, 'fulfillment')}`}>
-                            {shipmentLabel}
+                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${getPill(shipmentStatus, 'fulfillment')}`}>
+                            {shipmentStatus}
                           </span>
                         </td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
