@@ -18,6 +18,8 @@ export default function DashboardPage() {
   const [ebayRateLimits, setEbayRateLimits] = useState(null);
   const [ebayRateLimitsLoading, setEbayRateLimitsLoading] = useState(false);
   const [ebayRateLimitsError, setEbayRateLimitsError] = useState(null);
+  const [rateLimitQuery, setRateLimitQuery] = useState('');
+  const [openAllRateLimitGroups, setOpenAllRateLimitGroups] = useState(false);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -248,6 +250,46 @@ export default function DashboardPage() {
     const score = (row) => (String(row.resourceName || '') === 'developer.analytics.app_rate_limit' ? 0 : 1);
     return rows.sort((a, b) => score(a) - score(b));
   }, [ebayRateLimits]);
+
+  const groupedRateLimits = useMemo(() => {
+    const q = String(rateLimitQuery || '').trim().toLowerCase();
+    const rows = q
+      ? rateLimitRows.filter((r) => String(r.resourceName || '').toLowerCase().includes(q))
+      : rateLimitRows;
+
+    const groups = new Map();
+    for (const r of rows) {
+      const groupKey = `${r.apiContext}::${r.apiName}::${r.apiVersion}`;
+      const label = `${r.apiContext || '—'} / ${r.apiName || '—'} / ${r.apiVersion || '—'}`;
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, {
+          key: groupKey,
+          label,
+          rows: [],
+        });
+      }
+      groups.get(groupKey).rows.push(r);
+    }
+
+    const computeMaxUsedPct = (group) => {
+      let max = 0;
+      for (const row of group.rows) {
+        const rate = row.rate;
+        if (!rate?.limit) continue;
+        const used = Math.max(0, Number(rate.limit) - Number(rate.remaining ?? 0));
+        const pct = (used / Number(rate.limit)) * 100;
+        if (Number.isFinite(pct)) max = Math.max(max, pct);
+      }
+      return max;
+    };
+
+    const list = Array.from(groups.values());
+    // Prioritize the developer.analytics app_rate_limit group at top.
+    const score = (g) => (g.label.toLowerCase().includes('developer / analytics') ? 0 : 1);
+    return list
+      .map((g) => ({ ...g, maxUsedPct: computeMaxUsedPct(g) }))
+      .sort((a, b) => score(a) - score(b) || b.maxUsedPct - a.maxUsedPct || a.label.localeCompare(b.label));
+  }, [rateLimitRows, rateLimitQuery]);
 
   const RateLimitCard = ({ row }) => {
     const rate = row.rate;
@@ -834,26 +876,91 @@ export default function DashboardPage() {
             </button>
           </div>
 
+          <div className="flex flex-col md:flex-row md:items-center gap-3 mb-3">
+            <div className="flex-1">
+              <div className="relative">
+                <input
+                  value={rateLimitQuery}
+                  onChange={(e) => setRateLimitQuery(e.target.value)}
+                  placeholder="Filter by resource name (e.g. sell.inventory, buy.browse, developer.analytics...)"
+                  className={`w-full rounded-xl px-4 py-2 text-sm border outline-none transition ${
+                    isDark
+                      ? 'bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-indigo-500'
+                      : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-indigo-500'
+                  }`}
+                />
+              </div>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Showing {rateLimitQuery.trim() ? 'filtered' : 'all'} resources: {rateLimitQuery.trim() ? groupedRateLimits.reduce((s, g) => s + g.rows.length, 0) : rateLimitRows.length}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setOpenAllRateLimitGroups((v) => !v)}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                isDark
+                  ? 'bg-slate-900/60 border border-slate-700 text-slate-100 hover:bg-slate-900'
+                  : 'bg-white border border-slate-200 text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              {openAllRateLimitGroups ? 'Collapse all' : 'Expand all'}
+            </button>
+          </div>
+
           {ebayRateLimitsError && (
             <div className="mb-3">
               <Alert type="error" message={ebayRateLimitsError} onClose={() => setEbayRateLimitsError(null)} />
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {(rateLimitRows.length ? rateLimitRows : []).slice(0, 9).map((row) => (
-              <RateLimitCard key={row.key} row={row} />
-            ))}
-            {rateLimitRows.length === 0 && (
-              <div
-                className={`rounded-2xl border p-5 ${
-                  isDark ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-700'
-                }`}
-              >
-                No rate-limit data returned yet.
-              </div>
-            )}
-          </div>
+          {rateLimitRows.length === 0 ? (
+            <div
+              className={`rounded-2xl border p-5 ${
+                isDark ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-700'
+              }`}
+            >
+              No rate-limit data returned yet.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {groupedRateLimits.map((group, idx) => {
+                const isOpen = openAllRateLimitGroups || idx === 0;
+                return (
+                  <details
+                    key={group.key}
+                    open={isOpen}
+                    className={`rounded-2xl border ${
+                      isDark ? 'bg-slate-950 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-900'
+                    }`}
+                  >
+                    <summary className={`cursor-pointer select-none px-4 py-3 flex items-center justify-between gap-3 ${
+                      isDark ? 'hover:bg-slate-900/40' : 'hover:bg-slate-50'
+                    }`}>
+                      <div className="min-w-0">
+                        <p className="font-semibold truncate">{group.label}</p>
+                        <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                          Resources: {group.rows.length} • Max used: {group.maxUsedPct.toFixed(0)}%
+                        </p>
+                      </div>
+                      <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-1 text-xs border ${
+                        isDark ? 'border-slate-700 bg-slate-900/50 text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-700'
+                      }`}>
+                        {group.rows.length}
+                      </span>
+                    </summary>
+                    <div className="px-4 pb-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {group.rows.map((row) => (
+                          <RateLimitCard key={row.key} row={row} />
+                        ))}
+                      </div>
+                    </div>
+                  </details>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
