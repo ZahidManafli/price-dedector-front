@@ -204,8 +204,6 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading) return <LoadingSpinner />;
-
   const rateLimitRows = useMemo(() => {
     const groups = Array.isArray(ebayRateLimits?.rateLimits) ? ebayRateLimits.rateLimits : [];
     const rows = [];
@@ -347,6 +345,8 @@ export default function DashboardPage() {
       </div>
     );
   };
+
+  if (loading) return <LoadingSpinner />;
 
   return (
     <div className="page-shell">
