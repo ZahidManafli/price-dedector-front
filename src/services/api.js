@@ -98,7 +98,6 @@ export const ebayAPI = {
   getConnectUrl: () => api.get('/ebay/connect'),
   completeCallback: (code, state) => api.post('/ebay/callback', { code, state }),
   getStatus: () => api.get('/ebay/status'),
-  getShippingFulfillments: (hrefs) => api.post('/ebay/orders/shipping-fulfillment', { hrefs }),
   setActiveAccount: (ebayAccountId) => api.patch('/ebay/active-account', { ebayAccountId }),
   setAccountName: (ebayAccountId, connectionName) =>
     api.patch(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}/name`, { connectionName }),

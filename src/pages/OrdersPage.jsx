@@ -22,18 +22,12 @@ export default function OrdersPage() {
     return fulfillmentRaw || '-';
   };
 
-  const orderFulfillmentHrefs = (order) => {
-    const hrefs = Array.isArray(order?.fulfillmentHrefs) ? order.fulfillmentHrefs : [];
-    return hrefs.map((h) => String(h || '').trim()).filter(Boolean);
-  };
-
   const [loading, setLoading] = useState(true);
   const [ebayStatus, setEbayStatus] = useState({ connected: false });
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [error, setError] = useState(null);
 
   const [orders, setOrders] = useState([]);
-  const [shippingLoadingByOrderId, setShippingLoadingByOrderId] = useState({});
   const [page, setPage] = useState(0);
   const [pageCursors, setPageCursors] = useState([null]);
   const [fetchingPage, setFetchingPage] = useState(false);
@@ -146,69 +140,6 @@ export default function OrdersPage() {
     setPage(pageIndex);
   };
 
-  const fetchShippingFulfillmentsForOrders = async (pageOrders = []) => {
-    const hrefs = [];
-    const hrefToOrderId = {};
-
-    (pageOrders || []).forEach((o) => {
-      const orderId = String(o?.orderId || '').trim();
-      const hs = orderFulfillmentHrefs(o);
-      if (!orderId || hs.length === 0) return;
-      hs.forEach((h) => {
-        hrefs.push(h);
-        if (!hrefToOrderId[h]) hrefToOrderId[h] = orderId;
-      });
-    });
-
-    const unique = Array.from(new Set(hrefs));
-    if (!unique.length) return;
-
-    // Mark loading per order
-    setShippingLoadingByOrderId((prev) => {
-      const next = { ...prev };
-      unique.forEach((h) => {
-        const oid = hrefToOrderId[h];
-        if (oid) next[oid] = true;
-      });
-      return next;
-    });
-
-    try {
-      const res = await ebayAPI.getShippingFulfillments(unique);
-      const results = Array.isArray(res?.data?.results) ? res.data.results : [];
-      const byHref = {};
-      results.forEach((r) => {
-        if (r?.href) byHref[String(r.href)] = r;
-      });
-
-      setOrders((prev) =>
-        (prev || []).map((o) => {
-          const hs = orderFulfillmentHrefs(o);
-          if (!hs.length) return o;
-          const shippingFulfillments = hs
-            .map((h) => byHref[h])
-            .filter((r) => r && r.ok && r.data)
-            .map((r) => r.data);
-          return {
-            ...o,
-            shippingFulfillments,
-          };
-        })
-      );
-    } catch (e) {
-      // Keep UI usable even if shipping fulfillment fetch fails.
-    } finally {
-      setShippingLoadingByOrderId((prev) => {
-        const next = { ...prev };
-        unique.forEach((h) => {
-          const oid = hrefToOrderId[h];
-          if (oid) next[oid] = false;
-        });
-        return next;
-      });
-    }
-  };
-
   const loadPage = async (pageIndex, { forceRefresh = false, silent = false } = {}) => {
     const requestId = ++ordersRequestRef.current;
     try {
@@ -234,7 +165,6 @@ export default function OrdersPage() {
       }
 
       applyOrdersPayload(data, pageIndex);
-      fetchShippingFulfillmentsForOrders(data?.orders || []);
 
       if (data?.from_cache && !forceRefresh) {
         ebayAPI
@@ -247,7 +177,6 @@ export default function OrdersPage() {
             if (requestId !== ordersRequestRef.current) return;
             if (refreshData?.accessDenied) return;
             applyOrdersPayload(refreshData, pageIndex);
-            fetchShippingFulfillmentsForOrders(refreshData?.orders || []);
           })
           .catch((refreshErr) => {
             const msg = refreshErr?.response?.data?.error || '';
@@ -453,7 +382,6 @@ export default function OrdersPage() {
                   const id = order.orderId;
                   const payment = order.orderPaymentStatus || '-';
                   const shipmentStatus = getDerivedShipmentStatus(order);
-                  const showShippingSpinner = !!shippingLoadingByOrderId[String(id)] && orderFulfillmentHrefs(order).length > 0;
                   const totalValue = order?.pricingSummary?.total?.value;
                   const totalCurrency = order?.pricingSummary?.total?.currency;
                   const buyer = order?.buyer?.username || '-';
@@ -469,8 +397,7 @@ export default function OrdersPage() {
                           </span>
                         </td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                          <span className={`inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs border ${getPill(shipmentStatus, 'fulfillment')}`}>
-                            {showShippingSpinner && <Loader2 size={14} className="animate-spin" />}
+                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${getPill(shipmentStatus, 'fulfillment')}`}>
                             {shipmentStatus}
                           </span>
                         </td>
