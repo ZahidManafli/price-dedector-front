@@ -6,6 +6,7 @@ import PartnersManagement from '../components/PartnersManagement';
 import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { TAB_KEYS, USER_DEFAULT_ALLOWED_TABS } from '../utils/planAccess';
+import * as XLSX from 'xlsx';
 
 function safeToString(v) {
   if (v === null || v === undefined) return '';
@@ -352,6 +353,38 @@ export default function AdminPanelPage() {
     });
   }, [users, userSearch]);
 
+  const exportUsersToExcel = () => {
+    const rows = (filteredUsers || []).map((u) => ({
+      ID: u.id || '',
+      Email: u.email || '',
+      Name: u.name || '',
+      Role: u.role || '',
+      UID: u.uid || '',
+      'Plan Name': u.selectedPlanName || '',
+      'Plan Activated At': u.planActivatedAt ? new Date(u.planActivatedAt).toISOString() : '',
+      'Plan Expires At': u.planExpiresAt ? new Date(u.planExpiresAt).toISOString() : '',
+      'Product Count': Number(u.productCount || 0),
+      'Amazon Lookup Limit / Week': u.amazonLookupRequestLimitPerWeek ?? '',
+      'Amazon Lookup Used This Week': u.amazonLookupRequestsUsedThisWeek ?? '',
+      'Amazon Lookup Reset At': u.amazonLookupRequestsResetAt || '',
+      'Products Limit': u.productsLimit ?? '',
+      'Market Analysis Credits Limit': u.marketAnalysisCreditsLimit ?? '',
+      'Market Analysis Credits Used': u.marketAnalysisCreditsUsed ?? '',
+      'eBay Accounts Limit': u.ebayAccountsLimit ?? '',
+      'eBay Connected Accounts': u.ebayConnectedAccounts ?? '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows, { skipHeader: false });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Users');
+
+    const date = new Date();
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    XLSX.writeFile(wb, `users_export_${y}-${m}-${d}.xlsx`);
+  };
+
   const allFilteredSelected =
     filteredUsers.length > 0 && filteredUsers.every((u) => selectedUserIds.includes(u.id));
 
@@ -567,7 +600,7 @@ export default function AdminPanelPage() {
                 <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Users</h2>
               </div>
 
-              <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_auto_auto]">
+              <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_auto_auto_auto]">
                 <div className="relative">
                   <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
@@ -579,6 +612,15 @@ export default function AdminPanelPage() {
                 </div>
                 <button type="button" onClick={toggleSelectAllFiltered} className="btn-secondary px-3 py-2 text-xs">
                   {allFilteredSelected ? 'Unselect all' : 'Select filtered'}
+                </button>
+                <button
+                  type="button"
+                  onClick={exportUsersToExcel}
+                  disabled={filteredUsers.length === 0}
+                  className="btn-secondary px-3 py-2 text-xs disabled:opacity-60"
+                  title="Exports the current filtered list"
+                >
+                  Export Excel
                 </button>
                 <button
                   type="button"
