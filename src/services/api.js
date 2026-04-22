@@ -197,6 +197,7 @@ export const dewisoAPI = {
 export const adminAPI = {
   listUsers: () => api.get('/admin/users'),
   getStats: () => api.get('/admin/stats'),
+  getEbayRateLimits: () => api.get('/admin/ebay/rate-limits'),
   createUser: (data) => api.post('/admin/users', data),
   updateUserLimits: (id, data) => api.put(`/admin/users/${id}/limits`, data),
   refreshSubscriptions: (data) => api.post('/admin/users/refresh-subscriptions', data),

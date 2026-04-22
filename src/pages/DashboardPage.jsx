@@ -15,6 +15,9 @@ export default function DashboardPage() {
   const [products, setProducts] = useState([]);
   const [limits, setLimits] = useState(null);
   const [adminStats, setAdminStats] = useState(null);
+  const [ebayRateLimits, setEbayRateLimits] = useState(null);
+  const [ebayRateLimitsLoading, setEbayRateLimitsLoading] = useState(false);
+  const [ebayRateLimitsError, setEbayRateLimitsError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -56,6 +59,18 @@ export default function DashboardPage() {
         if (user?.role === 'admin') {
           const statsRes = await adminAPI.getStats();
           setAdminStats(statsRes.data || null);
+          setEbayRateLimitsLoading(true);
+          adminAPI
+            .getEbayRateLimits()
+            .then((res) => {
+              setEbayRateLimits(res?.data || null);
+              setEbayRateLimitsError(null);
+            })
+            .catch((err) => {
+              setEbayRateLimits(null);
+              setEbayRateLimitsError(err?.response?.data?.error || err?.message || 'Failed to load eBay rate limits');
+            })
+            .finally(() => setEbayRateLimitsLoading(false));
         }
       } catch {
         setAlert({ type: 'error', message: 'Failed to load dashboard data' });
@@ -190,6 +205,148 @@ export default function DashboardPage() {
   };
 
   if (loading) return <LoadingSpinner />;
+
+  const rateLimitRows = useMemo(() => {
+    const groups = Array.isArray(ebayRateLimits?.rateLimits) ? ebayRateLimits.rateLimits : [];
+    const rows = [];
+    for (const g of groups) {
+      const apiContext = g?.apiContext || '';
+      const apiName = g?.apiName || '';
+      const apiVersion = g?.apiVersion || '';
+      const resources = Array.isArray(g?.resources) ? g.resources : [];
+      for (const r of resources) {
+        const resourceName = r?.name || '';
+        const rates = Array.isArray(r?.rates) ? r.rates : [];
+        if (rates.length === 0) {
+          rows.push({
+            key: `${apiContext}/${apiName}/${apiVersion}/${resourceName}/none`,
+            apiContext,
+            apiName,
+            apiVersion,
+            resourceName,
+            rate: null,
+          });
+          continue;
+        }
+        for (const rate of rates) {
+          rows.push({
+            key: `${apiContext}/${apiName}/${apiVersion}/${resourceName}/${rate?.timeWindow || '0'}`,
+            apiContext,
+            apiName,
+            apiVersion,
+            resourceName,
+            rate: {
+              count: Number(rate?.count || 0),
+              limit: Number(rate?.limit || 0),
+              remaining: Number(rate?.remaining || 0),
+              reset: rate?.reset || null,
+              timeWindow: Number(rate?.timeWindow || 0),
+            },
+          });
+        }
+      }
+    }
+    // Put the Developer Analytics rate limit card(s) first.
+    const score = (row) => (String(row.resourceName || '') === 'developer.analytics.app_rate_limit' ? 0 : 1);
+    return rows.sort((a, b) => score(a) - score(b));
+  }, [ebayRateLimits]);
+
+  const RateLimitCard = ({ row }) => {
+    const rate = row.rate;
+    const limit = rate?.limit || 0;
+    const remaining = rate?.remaining ?? null;
+    const used = remaining == null ? null : Math.max(0, limit - remaining);
+    const usedPct = limit > 0 && used != null ? Math.min(100, Math.max(0, (used / limit) * 100)) : null;
+    const resetText = rate?.reset ? new Date(rate.reset).toLocaleString() : '—';
+    const windowText = rate?.timeWindow ? `${Math.round(rate.timeWindow / 60)} min window` : '—';
+
+    const danger = usedPct != null && usedPct >= 85;
+    const warn = usedPct != null && usedPct >= 65 && usedPct < 85;
+    const accent = danger ? 'rose' : warn ? 'amber' : 'emerald';
+
+    const barClass =
+      accent === 'rose'
+        ? 'bg-rose-500'
+        : accent === 'amber'
+          ? 'bg-amber-500'
+          : 'bg-emerald-500';
+
+    return (
+      <div
+        className={`relative overflow-hidden rounded-2xl border p-4 ${
+          isDark ? 'bg-slate-950 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-900'
+        }`}
+      >
+        <div className="absolute inset-0 pointer-events-none">
+          <div className={`absolute -top-16 -right-16 h-44 w-44 rounded-full blur-2xl ${
+            accent === 'rose'
+              ? 'bg-rose-500/15'
+              : accent === 'amber'
+                ? 'bg-amber-500/15'
+                : 'bg-emerald-500/15'
+          }`} />
+          <div className="absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-indigo-500/10 blur-2xl" />
+        </div>
+
+        <div className="relative">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {row.apiContext} • {row.apiName} • {row.apiVersion}
+              </p>
+              <p className="mt-1 font-semibold truncate">{row.resourceName || '—'}</p>
+            </div>
+            {rate ? (
+              <span
+                className={`shrink-0 inline-flex items-center rounded-full px-2 py-1 text-xs border ${
+                  isDark ? 'border-slate-700 bg-slate-900/50 text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-700'
+                }`}
+              >
+                {windowText}
+              </span>
+            ) : (
+              <span
+                className={`shrink-0 inline-flex items-center rounded-full px-2 py-1 text-xs border ${
+                  isDark ? 'border-slate-700 bg-slate-900/50 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-600'
+                }`}
+              >
+                No usage data
+              </span>
+            )}
+          </div>
+
+          {rate && (
+            <>
+              <div className="mt-3">
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Remaining</p>
+                    <p className="text-2xl font-bold leading-tight">
+                      {remaining}
+                      <span className={`ml-2 text-sm font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                        / {limit}
+                      </span>
+                    </p>
+                  </div>
+                  <div className={`text-xs text-right ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                    <div>Used: {used}</div>
+                    <div>Reset: {resetText}</div>
+                  </div>
+                </div>
+
+                <div className={`mt-3 h-2.5 w-full rounded-full ${isDark ? 'bg-slate-900' : 'bg-slate-100'}`}>
+                  <div
+                    className={`h-2.5 rounded-full ${barClass}`}
+                    style={{ width: `${usedPct ?? 0}%` }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="page-shell">
@@ -637,6 +794,65 @@ export default function DashboardPage() {
           <div className={`glass-card p-4 border ${isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-200 border-slate-300 text-slate-900'}`}>
             <p className="text-xs opacity-80">Users reached Product quota</p>
             <p className="text-2xl font-bold mt-1">{adminStats.quotaReachedUsers?.products ?? 0}</p>
+          </div>
+        </div>
+      )}
+
+      {user?.role === 'admin' && (
+        <div className="mb-5">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Admin
+              </p>
+              <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                eBay API Rate Limits
+              </h2>
+              <p className={`text-sm mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                Live quotas from eBay Developer Analytics (application rate limits).
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setEbayRateLimitsLoading(true);
+                setEbayRateLimitsError(null);
+                adminAPI
+                  .getEbayRateLimits()
+                  .then((res) => setEbayRateLimits(res?.data || null))
+                  .catch((err) => setEbayRateLimitsError(err?.response?.data?.error || err?.message || 'Failed to refresh eBay rate limits'))
+                  .finally(() => setEbayRateLimitsLoading(false));
+              }}
+              disabled={ebayRateLimitsLoading}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${
+                isDark
+                  ? 'bg-slate-900/60 border border-slate-700 text-slate-100 hover:bg-slate-900'
+                  : 'bg-white border border-slate-200 text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              {ebayRateLimitsLoading ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
+
+          {ebayRateLimitsError && (
+            <div className="mb-3">
+              <Alert type="error" message={ebayRateLimitsError} onClose={() => setEbayRateLimitsError(null)} />
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {(rateLimitRows.length ? rateLimitRows : []).slice(0, 9).map((row) => (
+              <RateLimitCard key={row.key} row={row} />
+            ))}
+            {rateLimitRows.length === 0 && (
+              <div
+                className={`rounded-2xl border p-5 ${
+                  isDark ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-700'
+                }`}
+              >
+                No rate-limit data returned yet.
+              </div>
+            )}
           </div>
         </div>
       )}
