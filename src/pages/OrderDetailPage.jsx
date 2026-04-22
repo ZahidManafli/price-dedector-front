@@ -1,13 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { ArrowLeft, User, Receipt, Truck } from 'lucide-react';
+import { ArrowLeft, User, Receipt, Truck, Loader2 } from 'lucide-react';
 import { ebayAPI } from '../services/api';
 
 export default function OrderDetailPage() {
   const { isDark } = useTheme();
   const location = useLocation();
   const order = location?.state?.order || null;
+  const [orderWithShipping, setOrderWithShipping] = useState(order);
+  const [shippingLoading, setShippingLoading] = useState(false);
   const [tracking, setTracking] = useState(null);
   const [trackingError, setTrackingError] = useState('');
   const [trackingMessage, setTrackingMessage] = useState('');
@@ -26,31 +28,33 @@ export default function OrderDetailPage() {
   });
 
   const summary = useMemo(() => {
-    if (!order) return {};
-    const fulfillmentRaw = String(order?.orderFulfillmentStatus || '').toUpperCase();
-    const cancellation = order?.cancelStatus || order?.orderCancelStatus || order?.cancellation || {};
+    const currentOrder = orderWithShipping || order;
+    if (!currentOrder) return {};
+    const fulfillmentRaw = String(currentOrder?.orderFulfillmentStatus || '').toUpperCase();
+    const cancellation = currentOrder?.cancelStatus || currentOrder?.orderCancelStatus || currentOrder?.cancellation || {};
     const cancelState = String(cancellation?.cancelState || '').toUpperCase();
     const isCancelled = cancelState === 'CANCELED' || cancelState === 'CANCELLED';
     const shipmentStatus =
       fulfillmentRaw === 'NOT_STARTED' && isCancelled ? 'ORDER_CANCELLED' : (fulfillmentRaw || '-');
     return {
-      id: order?.orderId || '-',
-      buyer: order?.buyer?.username || '-',
-      payment: order?.orderPaymentStatus || '-',
+      id: currentOrder?.orderId || '-',
+      buyer: currentOrder?.buyer?.username || '-',
+      payment: currentOrder?.orderPaymentStatus || '-',
       shipment: shipmentStatus,
-      total: order?.pricingSummary?.total?.value
-        ? `${order.pricingSummary.total.value} ${order.pricingSummary.total.currency || ''}`.trim()
+      total: currentOrder?.pricingSummary?.total?.value
+        ? `${currentOrder.pricingSummary.total.value} ${currentOrder.pricingSummary.total.currency || ''}`.trim()
         : '-',
-      created: order?.creationDate ? new Date(order.creationDate).toLocaleString() : '-',
-      modified: order?.lastModifiedDate ? new Date(order.lastModifiedDate).toLocaleString() : '-',
-      lineItems: order?.lineItems || [],
+      created: currentOrder?.creationDate ? new Date(currentOrder.creationDate).toLocaleString() : '-',
+      modified: currentOrder?.lastModifiedDate ? new Date(currentOrder.lastModifiedDate).toLocaleString() : '-',
+      lineItems: currentOrder?.lineItems || [],
     };
-  }, [order]);
+  }, [order, orderWithShipping]);
 
   const buyerDetails = useMemo(() => {
-    const buyer = order?.buyer || {};
+    const currentOrder = orderWithShipping || order;
+    const buyer = currentOrder?.buyer || {};
     const registration = buyer?.buyerRegistrationAddress || {};
-    const cancellation = order?.cancelStatus || order?.orderCancelStatus || order?.cancellation || {};
+    const cancellation = currentOrder?.cancelStatus || currentOrder?.orderCancelStatus || currentOrder?.cancellation || {};
     const cancelRequest =
       (Array.isArray(cancellation?.cancelRequests) && cancellation.cancelRequests[0]) ||
       (Array.isArray(cancellation?.cancellationRequests) && cancellation.cancellationRequests[0]) ||
@@ -63,7 +67,7 @@ export default function OrderDetailPage() {
         registration?.secondaryPhone?.phoneNumber ||
         buyer?.phoneNumber ||
         '-',
-      productTitle: order?.lineItems?.[0]?.title || '-',
+      productTitle: currentOrder?.lineItems?.[0]?.title || '-',
       cancelReason: cancelRequest?.cancelReason || cancellation?.cancelReason || '-',
       cancelInitiator: cancelRequest?.cancelInitiator || cancellation?.cancelInitiator || '-',
       cancelRequestedDate:
@@ -71,11 +75,12 @@ export default function OrderDetailPage() {
       cancelCompletedDate:
         cancelRequest?.cancelCompletedDate || cancellation?.cancelCompletedDate || cancellation?.completedDate || '-',
     };
-  }, [order]);
+  }, [order, orderWithShipping]);
 
   const shipping = useMemo(() => {
-    const step = order?.fulfillmentStartInstructions?.[0]?.shippingStep;
-    const shipTo = step?.shipTo || order?.buyer?.buyerRegistrationAddress;
+    const currentOrder = orderWithShipping || order;
+    const step = currentOrder?.fulfillmentStartInstructions?.[0]?.shippingStep;
+    const shipTo = step?.shipTo || currentOrder?.buyer?.buyerRegistrationAddress;
     return {
       name: shipTo?.fullName || '',
       line1: shipTo?.contactAddress?.addressLine1 || '',
@@ -87,21 +92,22 @@ export default function OrderDetailPage() {
       phone: shipTo?.primaryPhone?.phoneNumber || shipTo?.secondaryPhone?.phoneNumber || '',
       service: step?.shippingServiceCode || '',
     };
-  }, [order]);
+  }, [order, orderWithShipping]);
 
   const paymentSummary = useMemo(() => {
-    const pay = order?.paymentSummary || {};
+    const currentOrder = orderWithShipping || order;
+    const pay = currentOrder?.paymentSummary || {};
     const firstPayment = (pay.payments || [])[0] || {};
     const firstRefund = (pay.refunds || [])[0] || {};
     return {
       totalDue: pay?.totalDueSeller?.value
         ? `${pay.totalDueSeller.value} ${pay.totalDueSeller.currency || ''}`.trim()
         : null,
-      fees: order?.totalMarketplaceFee?.value
-        ? `${order.totalMarketplaceFee.value} ${order.totalMarketplaceFee.currency || ''}`.trim()
+      fees: currentOrder?.totalMarketplaceFee?.value
+        ? `${currentOrder.totalMarketplaceFee.value} ${currentOrder.totalMarketplaceFee.currency || ''}`.trim()
         : null,
-      basis: order?.totalFeeBasisAmount?.value
-        ? `${order.totalFeeBasisAmount.value} ${order.totalFeeBasisAmount.currency || ''}`.trim()
+      basis: currentOrder?.totalFeeBasisAmount?.value
+        ? `${currentOrder.totalFeeBasisAmount.value} ${currentOrder.totalFeeBasisAmount.currency || ''}`.trim()
         : null,
       method: firstPayment?.paymentMethod || '',
       reference: firstPayment?.paymentReferenceId || '',
@@ -109,7 +115,34 @@ export default function OrderDetailPage() {
         ? `${firstRefund.amount.value} ${firstRefund.amount.currency || ''}`.trim()
         : null,
     };
-  }, [order]);
+  }, [order, orderWithShipping]);
+
+  useEffect(() => {
+    const currentOrder = orderWithShipping || order;
+    const hrefs = Array.isArray(currentOrder?.fulfillmentHrefs) ? currentOrder.fulfillmentHrefs : [];
+    const unique = Array.from(new Set(hrefs.map((h) => String(h || '').trim()).filter(Boolean)));
+    if (!unique.length) return;
+
+    const run = async () => {
+      try {
+        setShippingLoading(true);
+        const res = await ebayAPI.getShippingFulfillments(unique);
+        const results = Array.isArray(res?.data?.results) ? res.data.results : [];
+        const shippingFulfillments = results.filter((r) => r?.ok && r?.data).map((r) => r.data);
+        setOrderWithShipping((prev) => ({
+          ...(prev || currentOrder),
+          shippingFulfillments,
+        }));
+      } catch {
+        // ignore
+      } finally {
+        setShippingLoading(false);
+      }
+    };
+
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const selectedLineItemsPayload = useMemo(() => {
     return summary.lineItems
@@ -288,7 +321,10 @@ export default function OrderDetailPage() {
             <Truck size={15} />
             <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Shipment</p>
           </div>
-          <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{summary.shipment}</p>
+          <p className={`text-sm font-bold inline-flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+            {shippingLoading && <Loader2 size={16} className="animate-spin" />}
+            {summary.shipment}
+          </p>
         </div>
       </div>
 
