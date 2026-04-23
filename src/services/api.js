@@ -213,6 +213,8 @@ export const adminAPI = {
   approveSubscriptionRequest: (id, data) => api.post(`/admin/subscription-requests/${id}/approve`, data),
   rejectSubscriptionRequest: (id, data) => api.post(`/admin/subscription-requests/${id}/reject`, data),
   purgeSearchCache: (data) => api.post('/admin/search-cache/purge', data),
+  sendNotification: (data) => api.post('/admin/notifications/send', data),
+  listNotifications: () => api.get('/admin/notifications'),
 };
 
 // Partners APIs

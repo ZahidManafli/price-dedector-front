@@ -8,6 +8,7 @@ import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshC
 import { useTheme } from '../context/ThemeContext';
 import { TAB_KEYS, USER_DEFAULT_ALLOWED_TABS } from '../utils/planAccess';
 import * as XLSX from 'xlsx';
+import { NotificationsTab } from '../components/NotificationsTab';
 
 function safeToString(v) {
   if (v === null || v === undefined) return '';
@@ -114,10 +115,11 @@ export default function AdminPanelPage() {
   const adminCount = useMemo(() => users.filter((u) => u.role === 'admin').length, [users]);
 
   const refreshData = async () => {
-    const [usersRes, plansRes, requestsRes] = await Promise.all([
-      adminAPI.listUsers(),
-      adminAPI.listPlans(),
-      adminAPI.listSubscriptionRequests(),
+    const [usersRes, plansRes, requestsRes, notifRes] = await Promise.all([
+    adminAPI.listUsers(),
+    adminAPI.listPlans(),
+    adminAPI.listSubscriptionRequests(),
+    adminAPI.listNotifications(),
     ]);
 
     const usersList = usersRes?.data?.users || [];
@@ -128,6 +130,7 @@ export default function AdminPanelPage() {
     setEdits(editsMap);
     setPlans(plansRes?.data?.plans || []);
     setRequests(requestsRes?.data?.requests || []);
+    setNotifHistory(notifRes?.data?.notifications || []);
   };
 
   useEffect(() => {
@@ -144,6 +147,10 @@ export default function AdminPanelPage() {
     };
     load();
   }, []);
+
+  const [notifForm, setNotifForm] = useState({ header: '', message: '' });
+  const [notifHistory, setNotifHistory] = useState([]);
+  const [notifSending, setNotifSending] = useState(false);
 
   const onCreateUser = async (e) => {
     e.preventDefault();
@@ -546,6 +553,34 @@ export default function AdminPanelPage() {
     }
   };
 
+  const onSendNotification = async (e) => {
+    e.preventDefault();
+    setAlert(null);
+    if (!notifForm.header.trim()) {
+      setAlert({ type: 'warning', message: 'Notification header is required' });
+      return;
+    }
+    if (!notifForm.message.trim()) {
+      setAlert({ type: 'warning', message: 'Notification message is required' });
+      return;
+    }
+    try {
+      setNotifSending(true);
+      const res = await adminAPI.sendNotification({
+        header: notifForm.header.trim(),
+        message: notifForm.message.trim(),
+      });
+      setNotifForm({ header: '', message: '' });
+      setAlert({ type: 'success', message: res?.data?.message || 'Notification queued successfully' });
+      // Refresh history after a short delay to allow DB write
+      setTimeout(() => refreshData(), 1500);
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to send notification' });
+    } finally {
+      setNotifSending(false);
+    }
+  };
+
   return (
     <div className="page-shell">
       <div className="max-w-6xl mx-auto">
@@ -585,6 +620,12 @@ export default function AdminPanelPage() {
             onClick={() => setActiveTab('partners')}
           >
             Partners
+          </button>
+          <button
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'notifications' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
+            onClick={() => setActiveTab('notifications')}
+          >
+            Notifications
           </button>
           <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'danger' ? 'bg-red-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
@@ -1149,6 +1190,10 @@ export default function AdminPanelPage() {
           <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
             <PartnersManagement />
           </div>
+        )}
+
+        {!loading && activeTab === 'notifications' && (
+          <NotificationsTab />
         )}
 
         {!loading && activeTab === 'danger' && (
