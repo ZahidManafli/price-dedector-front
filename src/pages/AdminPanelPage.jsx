@@ -1193,7 +1193,14 @@ export default function AdminPanelPage() {
         )}
 
         {!loading && activeTab === 'notifications' && (
-          <NotificationsTab />
+          <NotificationsTab
+            isDark={isDark}
+            notifForm={notifForm}
+            setNotifForm={setNotifForm}
+            notifSending={notifSending}
+            onSendNotification={onSendNotification}
+            notifHistory={notifHistory}
+          />
         )}
 
         {!loading && activeTab === 'danger' && (
