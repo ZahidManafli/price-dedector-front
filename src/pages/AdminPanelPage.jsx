@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import Swal from 'sweetalert2';
 import { adminAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -85,6 +86,8 @@ export default function AdminPanelPage() {
   const [alert, setAlert] = useState(null);
 
   const [users, setUsers] = useState([]);
+  const [userBlockFilter, setUserBlockFilter] = useState('all'); // all | blocked | unblocked
+  const [ipModal, setIpModal] = useState({ open: false, user: null, ipHistory: [] });
   const [requests, setRequests] = useState([]);
   const [plans, setPlans] = useState([]);
 
@@ -344,14 +347,65 @@ export default function AdminPanelPage() {
 
   const filteredUsers = useMemo(() => {
     const q = userSearch.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter((u) => {
+    let list = users;
+    if (userBlockFilter === 'blocked') list = list.filter((u) => u.isBlocked);
+    if (userBlockFilter === 'unblocked') list = list.filter((u) => !u.isBlocked);
+    if (!q) return list;
+    return list.filter((u) => {
       const name = String(u.name || '').toLowerCase();
       const email = String(u.email || '').toLowerCase();
       const plan = String(u.selectedPlanName || '').toLowerCase();
       return name.includes(q) || email.includes(q) || plan.includes(q);
     });
-  }, [users, userSearch]);
+  }, [users, userSearch, userBlockFilter]);
+  const handleBlockUser = async (userId) => {
+    const { value: reason } = await Swal.fire({
+      title: 'Block user',
+      input: 'text',
+      inputLabel: 'Reason (optional)',
+      inputPlaceholder: 'Reason for blocking',
+      showCancelButton: true,
+      confirmButtonText: 'Block',
+      confirmButtonColor: '#dc2626',
+      inputValidator: (v) => v.length > 255 ? 'Reason too long' : undefined,
+    });
+    if (reason === undefined) return;
+    try {
+      setLoading(true);
+      await adminAPI.blockUser(userId, reason);
+      await refreshData();
+      setAlert({ type: 'success', message: 'User blocked.' });
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to block user' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnblockUser = async (userId) => {
+    try {
+      setLoading(true);
+      await adminAPI.unblockUser(userId);
+      await refreshData();
+      setAlert({ type: 'success', message: 'User unblocked.' });
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to unblock user' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleShowIpHistory = async (user) => {
+    try {
+      setLoading(true);
+      const res = await adminAPI.getUserIpHistory(user.id);
+      setIpModal({ open: true, user, ipHistory: res?.data?.ipHistory || [] });
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to load IP history' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const exportUsersToExcel = () => {
     const rows = (filteredUsers || []).map((u) => ({
@@ -600,7 +654,7 @@ export default function AdminPanelPage() {
                 <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Users</h2>
               </div>
 
-              <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_auto_auto_auto]">
+              <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_auto_auto_auto_auto]">
                 <div className="relative">
                   <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
@@ -618,6 +672,16 @@ export default function AdminPanelPage() {
                   onClick={exportUsersToExcel}
                   disabled={filteredUsers.length === 0}
                   className="btn-secondary px-3 py-2 text-xs disabled:opacity-60"
+                <select
+                  value={userBlockFilter}
+                  onChange={e => setUserBlockFilter(e.target.value)}
+                  className="input-base text-xs"
+                  style={{ minWidth: 120 }}
+                >
+                  <option value="all">All users</option>
+                  <option value="blocked">Blocked only</option>
+                  <option value="unblocked">Unblocked only</option>
+                </select>
                   title="Exports the current filtered list"
                 >
                   Export Excel
@@ -661,7 +725,7 @@ export default function AdminPanelPage() {
                 {filteredUsers.map((u) => {
                   const rowEdits = edits[u.id] || defaultEditForUser(u);
                   return (
-                    <div key={u.id} className={`border rounded-xl p-3 ${isDark ? 'bg-slate-950 border-slate-700' : 'bg-white border-slate-200'}`}>
+                    <div key={u.id} className={`border rounded-xl p-3 ${isDark ? 'bg-slate-950 border-slate-700' : 'bg-white border-slate-200'} ${u.isBlocked ? 'opacity-60' : ''}`}>
                       <div className="flex items-start justify-between gap-2">
                         <label className="flex items-start gap-2">
                           <input
@@ -671,15 +735,95 @@ export default function AdminPanelPage() {
                             className="mt-0.5"
                           />
                           <span className="text-sm font-semibold">{u.name || 'User'} ({u.email})</span>
+                          {u.isBlocked && (
+                            <span className="ml-2 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold">Blocked</span>
+                          )}
                         </label>
-                        <button
-                          type="button"
-                          onClick={() => onDeleteSingleUser(u.id)}
-                          className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 inline-flex items-center gap-1"
-                          title="Remove user"
-                        >
-                          <Trash2 size={12} /> Remove
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleShowIpHistory(u)}
+                            className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                            title="View IP history"
+                          >
+                            IPs
+                          </button>
+                          {u.isBlocked ? (
+                            <button
+                              type="button"
+                              onClick={() => handleUnblockUser(u.id)}
+                              className="rounded-lg border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 hover:bg-green-100"
+                              title="Unblock user"
+                            >
+                              Unblock
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleBlockUser(u.id)}
+                              className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
+                              title="Block user"
+                            >
+                              Block
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => onDeleteSingleUser(u.id)}
+                            className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 inline-flex items-center gap-1"
+                            title="Remove user"
+                          >
+                            <Trash2 size={12} /> Remove
+                          </button>
+                        </div>
+                            {/* IP History Modal */}
+                            {ipModal.open && (
+                              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                                <div className={`rounded-xl shadow-lg max-w-lg w-full bg-white dark:bg-slate-900 border p-6 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                                  <div className="flex items-center justify-between mb-4">
+                                    <div>
+                                      <div className="font-semibold text-lg">IP History for {ipModal.user?.email}</div>
+                                      {ipModal.user?.isBlocked && <div className="text-xs text-red-600 font-semibold">Blocked</div>}
+                                    </div>
+                                    <button className="text-xl font-bold" onClick={() => setIpModal({ open: false, user: null, ipHistory: [] })}>✕</button>
+                                  </div>
+                                  <div className="overflow-x-auto max-h-96">
+                                    <table className="w-full text-xs border">
+                                      <thead>
+                                        <tr className="bg-slate-100 dark:bg-slate-800">
+                                          <th className="p-2 border">IP</th>
+                                          <th className="p-2 border">Country</th>
+                                          <th className="p-2 border">City</th>
+                                          <th className="p-2 border">Region</th>
+                                          <th className="p-2 border">Timezone</th>
+                                          <th className="p-2 border">Device</th>
+                                          <th className="p-2 border">Model</th>
+                                          <th className="p-2 border">Date</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {ipModal.ipHistory.length === 0 ? (
+                                          <tr><td colSpan={8} className="text-center p-4">No IP history found.</td></tr>
+                                        ) : (
+                                          ipModal.ipHistory.map((row, idx) => (
+                                            <tr key={idx}>
+                                              <td className="border p-1">{row.ip}</td>
+                                              <td className="border p-1">{row.country}</td>
+                                              <td className="border p-1">{row.city}</td>
+                                              <td className="border p-1">{row.region}</td>
+                                              <td className="border p-1">{row.timezone}</td>
+                                              <td className="border p-1">{row.device}</td>
+                                              <td className="border p-1">{row.device_model}</td>
+                                              <td className="border p-1">{row.created_at ? new Date(row.created_at).toLocaleString() : ''}</td>
+                                            </tr>
+                                          ))
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                       </div>
                       <div className="mt-1 text-xs text-slate-500">Plan: {u.selectedPlanName || 'Custom/none'}</div>
                       <div className="mt-1 text-xs text-slate-500">

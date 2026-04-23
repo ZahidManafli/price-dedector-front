@@ -196,6 +196,9 @@ export const dewisoAPI = {
 // Admin APIs
 export const adminAPI = {
   listUsers: () => api.get('/admin/users'),
+  blockUser: (userId, reason) => api.post(`/admin/users/${userId}/block`, { block: true, reason }),
+  unblockUser: (userId) => api.post(`/admin/users/${userId}/block`, { block: false }),
+  getUserIpHistory: (userId) => api.get(`/admin/users/${userId}/ip-history`),
   getStats: () => api.get('/admin/stats'),
   getEbayRateLimits: () => api.get('/admin/ebay/rate-limits'),
   createUser: (data) => api.post('/admin/users', data),
