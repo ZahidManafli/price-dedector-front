@@ -672,6 +672,10 @@ export default function AdminPanelPage() {
                   onClick={exportUsersToExcel}
                   disabled={filteredUsers.length === 0}
                   className="btn-secondary px-3 py-2 text-xs disabled:opacity-60"
+                  title="Exports the current filtered list"
+                >
+                  Export Excel
+                </button>
                 <select
                   value={userBlockFilter}
                   onChange={e => setUserBlockFilter(e.target.value)}
@@ -682,10 +686,6 @@ export default function AdminPanelPage() {
                   <option value="blocked">Blocked only</option>
                   <option value="unblocked">Unblocked only</option>
                 </select>
-                  title="Exports the current filtered list"
-                >
-                  Export Excel
-                </button>
                 <button
                   type="button"
                   onClick={() => onRefreshSubscriptions(false)}
