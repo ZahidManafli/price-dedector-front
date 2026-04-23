@@ -44,6 +44,7 @@ function defaultEditForUser(u) {
     productsLimit: safeToString(u.productsLimit),
     marketAnalysisCreditsLimit: safeToString(u.marketAnalysisCreditsLimit),
     ebayAccountsLimit: safeToString(u.ebayAccountsLimit),
+    isUntouched: !!u.isUntouched,   // ✅ add this
   };
 }
 
@@ -221,6 +222,7 @@ export default function AdminPanelPage() {
           uEdits.ebayAccountsLimit === '' ? null : Number(uEdits.ebayAccountsLimit),
         resetAmazonUsage: !!resetUsage[userId],
         resetMarketAnalysisUsage: !!resetUsage[`${userId}__marketAnalysis`],
+        isUntouched: !!uEdits.isUntouched,   // ✅ add this
       });
 
       await refreshData();
@@ -779,6 +781,11 @@ export default function AdminPanelPage() {
                           {u.isBlocked && (
                             <span className="ml-2 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold">Blocked</span>
                           )}
+                          {u.isUntouched && (
+                            <span className="ml-2 px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
+                              Untouched
+                            </span>
+                          )}
                         </label>
                         <div className="flex gap-2">
                           <button
@@ -940,6 +947,20 @@ export default function AdminPanelPage() {
                               }
                             />
                             Reset Checkila Analysis credits usage now
+                          </label>
+                          <label className="text-xs flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={!!rowEdits.isUntouched}
+                              onChange={(e) =>
+                                setEdits((prev) => ({
+                                  ...prev,
+                                  [u.id]: { ...prev[u.id], isUntouched: e.target.checked },
+                                }))
+                              }
+                            />
+                            <span className="font-semibold text-purple-600">Untouched</span>
+                            <span className="text-slate-400">(unlimited IPs)</span>
                           </label>
                         </div>
 
