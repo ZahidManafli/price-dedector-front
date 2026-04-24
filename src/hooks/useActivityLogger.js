@@ -7,15 +7,19 @@ export function useActivityLogger() {
 
   const flush = useCallback(async () => {
     if (!queue.current.length) return;
+    const token = localStorage.getItem('authToken');
+    if (!token) {           // ✅ skip if not logged in
+      queue.current = [];
+      return;
+    }
     const batch = [...queue.current];
     queue.current = [];
-
-    // Send each log (or batch if you add a batch endpoint)
+  
     for (const log of batch) {
       try {
         await api.post('/activity/log', log);
       } catch {
-        // silent fail — never block UI
+        // silent fail
       }
     }
   }, []);

@@ -16,6 +16,7 @@ api.interceptors.request.use((config) => {
   const isAuthOrPublic =
     url.startsWith('/auth') ||
     url.startsWith('/health') ||
+    url.startsWith('/activity/log') ||
     url.startsWith('/settings/plans/public') ||
     url === '/settings/subscription-requests' ||
     url.startsWith('/settings/subscription-requests/update-credits') ||

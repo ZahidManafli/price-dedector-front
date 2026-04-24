@@ -6,17 +6,20 @@ export default function ActivityTracker() {
   const location = useLocation();
   const { log } = useActivityLogger();
 
-  // Track page/sidebar navigation
+  // ✅ Don't track unauthenticated users at all
+  const isAuthenticated = () => !!localStorage.getItem('authToken');
+
   useEffect(() => {
+    if (!isAuthenticated()) return;  // ✅ skip
     log('navigation.pageView', {
       category: 'navigation',
       payload: { path: location.pathname },
     });
   }, [location.pathname]);
 
-  // Track all clicks globally
   useEffect(() => {
     const handleClick = (e) => {
+      if (!isAuthenticated()) return;  // ✅ skip
       const target = e.target.closest('button, a, [data-track]');
       if (!target) return;
 
