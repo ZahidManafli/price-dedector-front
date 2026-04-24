@@ -215,6 +215,7 @@ export const adminAPI = {
   purgeSearchCache: (data) => api.post('/admin/search-cache/purge', data),
   sendNotification: (data) => api.post('/admin/notifications/send', data),
   listNotifications: () => api.get('/admin/notifications'),
+  getActivityLogs: (userId, limit) => api.get('/admin/activity-logs', { params: { userId, limit } }),
 };
 
 // Partners APIs
