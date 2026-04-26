@@ -10,6 +10,7 @@ import MarketComparePanel from '../components/MarketComparePanel';
 import useBrowseSearch from '../hooks/useBrowseSearch';
 import { calculateProfit, formatCurrency } from '../utils/helpers';
 import { browseAPI, settingsAPI } from '../services/api';
+import ListOnEbayModal from '../components/ListOnEbayModal';
 
 const RECENT_SEARCH_STORAGE_KEY = 'checkilaRecentSearches:v1';
 const RECENT_SEARCH_LIMIT = 8;
@@ -77,6 +78,7 @@ export default function MarketAnalysisPage() {
   const [calcAdRate, setCalcAdRate] = useState('0');
   const [soldQuantityByKey, setSoldQuantityByKey] = useState({});
   const [soldLoadingByKey, setSoldLoadingByKey] = useState({});
+  const [ebayListModal, setEbayListModal] = useState(null);
 
   const saveRecentSearches = useCallback((nextValue) => {
     setRecentSearches(nextValue);
@@ -902,6 +904,14 @@ export default function MarketAnalysisPage() {
                               >
                                 Sell Similar
                               </button>
+                              <button
+                                type="button"
+                                className="btn-primary"
+                                onClick={() => handleListOnEbay(item)}
+                                title="List this item on your eBay account"
+                              >
+                                List on eBay
+                              </button>
                             </div>
                               );
                             })()}
@@ -941,6 +951,13 @@ export default function MarketAnalysisPage() {
         onRemove={(id) => setSelectedIds((prev) => prev.filter((x) => x !== id))}
         onClear={() => setSelectedIds([])}
       />
+      {ebayListModal && (
+        <ListOnEbayModal
+          item={ebayListModal}
+          isDark={isDark}
+          onClose={() => setEbayListModal(null)}
+        />
+      )}
     </div>
   );
 }
