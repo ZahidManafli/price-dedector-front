@@ -11,6 +11,7 @@ import useBrowseSearch from '../hooks/useBrowseSearch';
 import { calculateProfit, formatCurrency } from '../utils/helpers';
 import { browseAPI, settingsAPI } from '../services/api';
 import ListOnEbayModal from '../components/ListOnEbayModal';
+import { useTheme } from '../context/ThemeContext';
 
 const RECENT_SEARCH_STORAGE_KEY = 'checkilaRecentSearches:v1';
 const RECENT_SEARCH_LIMIT = 8;
@@ -79,6 +80,7 @@ export default function MarketAnalysisPage() {
   const [soldQuantityByKey, setSoldQuantityByKey] = useState({});
   const [soldLoadingByKey, setSoldLoadingByKey] = useState({});
   const [ebayListModal, setEbayListModal] = useState(null);
+  const { isDark } = useTheme();
 
   // handleListOnEbay is called when user clicks "List on eBay" button for a specific item. It opens the ListOnEbayModal with the item details.
   const handleListOnEbay = (item) => {
@@ -959,6 +961,8 @@ export default function MarketAnalysisPage() {
       {ebayListModal && (
         <ListOnEbayModal
           item={ebayListModal}
+          // isDark is not defined in this component, you may want to determine the theme mode and pass it as a prop or remove it if not needed, how can i fix it?
+
           isDark={isDark}
           onClose={() => setEbayListModal(null)}
         />
