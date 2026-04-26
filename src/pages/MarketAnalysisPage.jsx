@@ -80,6 +80,11 @@ export default function MarketAnalysisPage() {
   const [soldLoadingByKey, setSoldLoadingByKey] = useState({});
   const [ebayListModal, setEbayListModal] = useState(null);
 
+  // handleListOnEbay is called when user clicks "List on eBay" button for a specific item. It opens the ListOnEbayModal with the item details.
+  const handleListOnEbay = (item) => {
+    setEbayListModal(item);
+  };
+
   const saveRecentSearches = useCallback((nextValue) => {
     setRecentSearches(nextValue);
     if (typeof window !== 'undefined') {
