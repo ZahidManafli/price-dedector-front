@@ -1,972 +1,1021 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { History, LayoutGrid, List, RefreshCw, Search, SearchCheck } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2';
-import Alert from '../components/Alert';
-import LoadingSpinner from '../components/LoadingSpinner';
-import MarketSearchBar from '../components/MarketSearchBar';
-import MarketItemCard from '../components/MarketItemCard';
-import MarketComparePanel from '../components/MarketComparePanel';
-import useBrowseSearch from '../hooks/useBrowseSearch';
-import { calculateProfit, formatCurrency } from '../utils/helpers';
-import { browseAPI, settingsAPI } from '../services/api';
-import ListOnEbayModal from '../components/ListOnEbayModal';
-import { useTheme } from '../context/ThemeContext';
+import React, { useState, useEffect, useRef } from 'react';
+import { ebayAPI, dewisoAPI } from '../services/api';
 
-const RECENT_SEARCH_STORAGE_KEY = 'checkilaRecentSearches:v1';
-const RECENT_SEARCH_LIMIT = 8;
-const AMAZON_ICON_URL = 'https://www.amazon.com/favicon.ico';
+const CONDITION_OPTIONS = [
+  { id: 1000, label: 'New' },
+  { id: 1500, label: 'New Other' },
+  { id: 2000, label: 'Certified Refurbished' },
+  { id: 2500, label: 'Seller Refurbished' },
+  { id: 3000, label: 'Used - Like New' },
+  { id: 4000, label: 'Used - Very Good' },
+  { id: 5000, label: 'Used - Good' },
+  { id: 6000, label: 'Used - Acceptable' },
+  { id: 7000, label: 'For Parts or Not Working' },
+];
 
-function loadRecentSearches() {
-  if (typeof window === 'undefined') return { sellers: [], titles: [] };
-  const raw = window.localStorage.getItem(RECENT_SEARCH_STORAGE_KEY);
-  if (!raw) return { sellers: [], titles: [] };
-  try {
-    const parsed = JSON.parse(raw);
-    return {
-      sellers: Array.isArray(parsed?.sellers) ? parsed.sellers.filter(Boolean) : [],
-      titles: Array.isArray(parsed?.titles) ? parsed.titles.filter(Boolean) : [],
-    };
-  } catch {
-    return { sellers: [], titles: [] };
-  }
-}
+// ─── ImageEditModal ────────────────────────────────────────────────────────────
+// Sub-modal that lets the user either paste a URL or upload a file from disk.
+// On confirm it calls back with { displayUrl, ebayUrl } so the parent can swap
+// both the preview src and the URL that gets sent to eBay.
+function ImageEditModal({ isDark, currentUrl, imageIndex, onConfirm, onClose }) {
+  const [tab, setTab] = useState('url'); // 'url' | 'upload'
+  const [urlInput, setUrlInput] = useState('');
+  const [file, setFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState(null);
+  const fileInputRef = useRef(null);
 
-function median(values) {
-  if (!values.length) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  if (sorted.length % 2 === 0) {
-    return (sorted[middle - 1] + sorted[middle]) / 2;
-  }
-  return sorted[middle];
-}
-
-function buildAmazonSearchUrlFromTitle(title) {
-  const query = String(title || '').trim();
-  if (!query) return '';
-  return `https://www.amazon.com/s?k=${encodeURIComponent(query)}`;
-}
-
-export default function MarketAnalysisPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const {
-    params,
-    setParams,
-    results,
-    total,
-    refinement,
-    loading,
-    error,
-    setError,
-    setResults,
-    searchNow,
-    clearCache,
-    refreshFromEbay,
-    credits,
-    soldQuantityDeferred,
-  } = useBrowseSearch({
-    fieldgroups: 'ASPECT_REFINEMENTS,MATCHING_ITEMS',
-  });
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [viewMode, setViewMode] = useState('list');
-  const [sortConfig, setSortConfig] = useState({ key: 'soldQuantity', direction: 'desc' });
-  const [marketCreditsState, setMarketCreditsState] = useState(null);
-  const [recentSearches, setRecentSearches] = useState(() => loadRecentSearches());
-  const [calcAmazonPrice, setCalcAmazonPrice] = useState('');
-  const [calcEbayPrice, setCalcEbayPrice] = useState('');
-  const [calcAdRate, setCalcAdRate] = useState('0');
-  const [soldQuantityByKey, setSoldQuantityByKey] = useState({});
-  const [soldLoadingByKey, setSoldLoadingByKey] = useState({});
-  const [ebayListModal, setEbayListModal] = useState(null);
-  const { isDark } = useTheme();
-
-  // handleListOnEbay is called when user clicks "List on eBay" button for a specific item. It opens the ListOnEbayModal with the item details.
-  const handleListOnEbay = (item) => {
-    setEbayListModal(item);
+  // When user picks a file — create an object URL for instant preview
+  const handleFileChange = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setFile(f);
+    setFilePreview(URL.createObjectURL(f));
+    setError(null);
   };
 
-  const saveRecentSearches = useCallback((nextValue) => {
-    setRecentSearches(nextValue);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(RECENT_SEARCH_STORAGE_KEY, JSON.stringify(nextValue));
-    }
-  }, []);
-
-  const rememberRecentValue = useCallback(
-    (key, value) => {
-      const normalized = String(value || '').trim();
-      if (!normalized) return;
-      const current = Array.isArray(recentSearches[key]) ? recentSearches[key] : [];
-      const nextList = [normalized, ...current.filter((entry) => entry !== normalized)].slice(0, RECENT_SEARCH_LIMIT);
-      saveRecentSearches({ ...recentSearches, [key]: nextList });
-    },
-    [recentSearches, saveRecentSearches]
-  );
-
-  const rememberSearch = useCallback(
-    (nextParams) => {
-      const seller = String(nextParams?.sellerUsername || '').trim();
-      const title = String(nextParams?.q || '').trim();
-      if (seller) rememberRecentValue('sellers', seller);
-      if (title) rememberRecentValue('titles', title);
-    },
-    [rememberRecentValue]
-  );
-
-  useEffect(() => {
-    const loadLimits = async () => {
-      try {
-        const limitsRes = await settingsAPI.getLimits();
-        const market = limitsRes?.data?.marketAnalysis || null;
-        if (market) {
-          setMarketCreditsState({
-            limit: market.creditsLimit,
-            used: market.creditsUsed,
-            remaining: market.creditsRemaining,
-          });
-        }
-      } catch {
-        // Non-blocking: Checkila Analysis can still run without this initial UI hint.
-      }
-    };
-    loadLimits();
-  }, []);
-
-  useEffect(() => {
-    if (!credits) return;
-    setMarketCreditsState({
-      limit: credits.limit,
-      used: credits.used,
-      remaining: credits.remaining,
-    });
-  }, [credits]);
-
-  const searchCost = String(params.sellerUsername || '').trim() ? 2 : 1;
-
-  const inlineProfit = useMemo(() => {
-    const amazonPrice = Number.parseFloat(calcAmazonPrice);
-    const ebayPrice = Number.parseFloat(calcEbayPrice);
-    const adRate = Number.parseFloat(calcAdRate);
-    if (!Number.isFinite(amazonPrice) || !Number.isFinite(ebayPrice)) return null;
-    return calculateProfit(ebayPrice, amazonPrice, {
-      adRate: Number.isFinite(adRate) ? adRate / 100 : 0,
-    });
-  }, [calcAmazonPrice, calcEbayPrice, calcAdRate]);
-
-  const runSearch = async (nextParams, { force = false } = {}) => {
-    rememberSearch(nextParams);
-    await searchNow(nextParams, { force });
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const f = e.dataTransfer.files?.[0];
+    if (!f) return;
+    setFile(f);
+    setFilePreview(URL.createObjectURL(f));
+    setError(null);
   };
 
-  const serializeSearchParams = (nextParams = {}) => {
-    const query = new URLSearchParams({ openSearch: '1' });
-    const assign = (key, value) => {
-      if (value === undefined || value === null) return;
-      if (typeof value === 'string' && value.trim() === '') return;
-      query.set(key, String(value));
-    };
+  const handleConfirm = async () => {
+    setError(null);
 
-    assign('q', nextParams.q);
-    assign('categoryId', nextParams.categoryId);
-    assign('condition', nextParams.condition);
-    assign('minPrice', nextParams.minPrice);
-    assign('maxPrice', nextParams.maxPrice);
-    assign('sort', nextParams.sort);
-    assign('buyingOptions', nextParams.buyingOptions);
-    assign('sellerUsername', nextParams.sellerUsername);
-    assign('limit', nextParams.limit);
-    assign('offset', nextParams.offset);
-    if (nextParams.freeShipping === true) query.set('freeShipping', 'true');
-    return query;
-  };
-
-  const openSearchInNewTab = (nextParams) => {
-    const query = serializeSearchParams(nextParams);
-    window.open(`/market-analysis?${query.toString()}`, '_blank', 'noopener,noreferrer');
-  };
-
-  const openDetailsInNewTab = (item) => {
-    const itemId = String(
-      item?.legacyId ||
-        item?.legacyItemId ||
-        item?.raw?.legacyItemId ||
-        item?.raw?.itemId ||
-        item?.id ||
-        ''
-    )
-      .trim()
-      .replace(/^v1\|/, '')
-      .replace(/\|0$/, '');
-    if (!itemId) return;
-    window.open(`https://www.ebay.com/bin/purchasehistory?item=${encodeURIComponent(itemId)}`, '_blank', 'noopener,noreferrer');
-  };
-
-  function getFlagUrl(countryCode) {
-    const code = String(countryCode || '').trim().toLowerCase();
-    if (!/^[a-z]{2}$/.test(code)) return '';
-    return `https://flagcdn.com/24x18/${code}.png`;
-  }
-
-  const renderSellerCountryFlag = (countryCode) => {
-    const flagUrl = getFlagUrl(countryCode);
-    if (!flagUrl) return null;
-
-    const label = String(countryCode || '').trim().toUpperCase();
-    return (
-      <img
-        src={flagUrl}
-        alt={label ? `${label} flag` : 'Country flag'}
-        title={label}
-        aria-label={`Seller country ${label}`}
-        className="ml-2 inline-block align-middle h-[18px] w-6 rounded-[2px] border border-slate-200 dark:border-slate-700"
-        loading="lazy"
-      />
-    );
-  };
-
-  useEffect(() => {
-    const presetSearch = location.state?.presetSearch;
-    if (!presetSearch) return;
-    const nextParams = {
-      ...params,
-      q: String(presetSearch.q || '').trim(),
-      categoryId: String(presetSearch.categoryId || ''),
-      sellerUsername: String(presetSearch.sellerUsername || '').trim(),
-      offset: 0,
-    };
-    setParams(nextParams);
-    runSearch(nextParams);
-    navigate(location.pathname, { replace: true, state: null });
-    // Run once per preset search handoff.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state]);
-
-  useEffect(() => {
-    const query = new URLSearchParams(location.search || '');
-    if (query.get('openSearch') !== '1') return;
-
-    const qFromQuery = String(query.get('q') || '').trim();
-    const categoryFromQuery = String(query.get('categoryId') || '').trim();
-    const sellerFromQuery = String(query.get('sellerUsername') || '').trim();
-    const conditionFromQuery = String(query.get('condition') || '').trim();
-    const minPriceFromQuery = String(query.get('minPrice') || '').trim();
-    const maxPriceFromQuery = String(query.get('maxPrice') || '').trim();
-    const sortFromQuery = String(query.get('sort') || '').trim();
-    const buyingOptionsFromQuery = String(query.get('buyingOptions') || '').trim();
-    const freeShippingFromQuery = query.get('freeShipping') === 'true';
-    const isSellerOnlyHandoff =
-      !!sellerFromQuery &&
-      !qFromQuery &&
-      !categoryFromQuery &&
-      !conditionFromQuery &&
-      !minPriceFromQuery &&
-      !maxPriceFromQuery &&
-      !sortFromQuery &&
-      !buyingOptionsFromQuery &&
-      !freeShippingFromQuery;
-
-    const nextParams = {
-      ...params,
-      q: isSellerOnlyHandoff ? '' : qFromQuery,
-      categoryId: isSellerOnlyHandoff ? '' : categoryFromQuery,
-      condition: isSellerOnlyHandoff ? 'ALL' : String(conditionFromQuery || params.condition || 'ALL').trim(),
-      minPrice: isSellerOnlyHandoff ? '' : minPriceFromQuery,
-      maxPrice: isSellerOnlyHandoff ? '' : maxPriceFromQuery,
-      sort: isSellerOnlyHandoff ? '' : sortFromQuery,
-      buyingOptions: isSellerOnlyHandoff ? '' : buyingOptionsFromQuery,
-      sellerUsername: sellerFromQuery,
-      freeShipping: isSellerOnlyHandoff ? false : freeShippingFromQuery,
-      limit: Math.max(1, Number(query.get('limit') || params.limit || 24)),
-      offset: Math.max(0, Number(query.get('offset') || 0)),
-    };
-
-    setParams(nextParams);
-    runSearch(nextParams, { force: true });
-    // Execute once on new-tab handoff URL.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.search]);
-
-  const getResultKey = useCallback((item) => {
-    const rawId = String(item?.id || '').trim();
-    const normalizedId = rawId.replace(/^v1\|/, '').replace(/\|0$/, '');
-    const legacyId = String(item?.legacyId || item?.raw?.legacyItemId || '').trim();
-    const webUrl = String(item?.itemWebUrl || item?.raw?.itemWebUrl || '').trim();
-    const title = String(item?.title || '').trim();
-
-    if (normalizedId && normalizedId !== '0') return `id:${normalizedId}`;
-    if (legacyId) return `legacy:${legacyId}`;
-
-    const urlMatch = webUrl.match(/\/itm\/(?:[^/]+\/)?(\d{8,})/);
-    if (urlMatch?.[1]) return `url-id:${urlMatch[1]}`;
-
-    return `title:${title}:${Number(item?.priceValue || 0).toFixed(2)}`;
-  }, []);
-
-  useEffect(() => {
-    setSoldLoadingByKey({});
-  }, [soldQuantityDeferred, params, results.length]);
-
-  useEffect(() => {
-    if (!soldQuantityDeferred || !Array.isArray(results) || !results.length) return;
-
-    let cancelled = false;
-    const pending = [];
-
-    const toNumericItemId = (value) => {
-      const raw = String(value || '').trim();
-      if (!raw) return '';
-      if (/^\d{8,}$/.test(raw)) return raw;
-      const parts = raw.split('|');
-      if (parts.length >= 2 && /^\d{8,}$/.test(parts[1])) return parts[1];
-      const match = raw.match(/\/itm\/(?:[^/]+\/)?(\d{8,})/);
-      return match?.[1] ? String(match[1]) : '';
-    };
-
-    for (const item of results) {
-      const key = getResultKey(item);
-      if (!key) continue;
-      if (Object.prototype.hasOwnProperty.call(soldQuantityByKey, key)) continue;
-      const shouldRefetchSoldOnZero = item?.shouldRefetchSoldOnZero === true;
-      const hasKnownSoldQuantity = item?.soldQuantity !== null && item?.soldQuantity !== undefined;
-      if (hasKnownSoldQuantity && !shouldRefetchSoldOnZero) continue;
-
-      const numericItemId =
-        toNumericItemId(item?.legacyId) ||
-        toNumericItemId(item?.raw?.legacyItemId) ||
-        toNumericItemId(item?.id) ||
-        toNumericItemId(item?.raw?.itemId);
-
-      pending.push({
-        key,
-        itemId: numericItemId,
-        legacyItemId: numericItemId,
-        itemWebUrl: String(item?.itemWebUrl || item?.raw?.itemWebUrl || '').trim(),
-      });
-    }
-
-    if (!pending.length) return;
-
-    setSoldLoadingByKey((prev) => {
-      const next = { ...prev };
-      for (const entry of pending) next[entry.key] = true;
-      return next;
-    });
-
-    (async () => {
-      for (const task of pending) {
-        if (cancelled) break;
-        try {
-          const response = await browseAPI.getSoldQuantity({
-            itemId: task.itemId,
-            legacyItemId: task.legacyItemId,
-            itemWebUrl: task.itemWebUrl,
-          });
-          const soldCount = Number(response?.data?.data?.soldCount || 0);
-          if (!cancelled) {
-            setResults((prev) =>
-              prev.map((entry) =>
-                getResultKey(entry) === task.key
-                  ? {
-                      ...entry,
-                      soldQuantity: Number.isFinite(soldCount) ? soldCount : 0,
-                    }
-                  : entry
-              )
-            );
-            setSoldQuantityByKey((prev) => ({
-              ...prev,
-              [task.key]: Number.isFinite(soldCount) ? soldCount : 0,
-            }));
-          }
-        } catch {
-          if (!cancelled) {
-            setResults((prev) =>
-              prev.map((entry) =>
-                getResultKey(entry) === task.key
-                  ? {
-                      ...entry,
-                      soldQuantity: 0,
-                    }
-                  : entry
-              )
-            );
-            setSoldQuantityByKey((prev) => ({
-              ...prev,
-              [task.key]: 0,
-            }));
-          }
-        } finally {
-          if (!cancelled) {
-            setSoldLoadingByKey((prev) => ({
-              ...prev,
-              [task.key]: false,
-            }));
-          }
-        }
-      }
-    })().catch(() => null);
-
-    return () => {
-      cancelled = true;
-    };
-  }, [soldQuantityDeferred, results, getResultKey]);
-
-  const hydratedResults = useMemo(() => {
-    return (Array.isArray(results) ? results : []).map((item) => {
-      const key = getResultKey(item);
-      const hasOverride = Object.prototype.hasOwnProperty.call(soldQuantityByKey, key);
-      return {
-        ...item,
-        soldQuantity: hasOverride ? soldQuantityByKey[key] : item.soldQuantity,
-        soldLoading: Boolean(soldLoadingByKey[key]),
-      };
-    });
-  }, [results, soldQuantityByKey, soldLoadingByKey, getResultKey]);
-
-  const filteredResults = useMemo(() => {
-    const seller = String(params.sellerUsername || '').trim().toLowerCase();
-    if (!seller) return hydratedResults;
-    return hydratedResults.filter((item) => String(item.sellerName || '').toLowerCase().includes(seller));
-  }, [params.sellerUsername, hydratedResults]);
-
-  const selectedItems = useMemo(() => {
-    const map = new Map(filteredResults.map((item) => [item.id, item]));
-    return selectedIds.map((id) => map.get(id)).filter(Boolean);
-  }, [filteredResults, selectedIds]);
-
-  const sortedResults = useMemo(() => {
-    const seen = new Set();
-    const data = filteredResults.filter((item) => {
-      const stableKey = getResultKey(item);
-      if (seen.has(stableKey)) return false;
-      seen.add(stableKey);
-      return true;
-    });
-
-    const { key, direction } = sortConfig;
-    if (!key) return data;
-
-    const getValue = (item) => {
-      switch (key) {
-        case 'title':
-          return String(item.title || '').toLowerCase();
-        case 'seller':
-          return String(item.sellerName || '').toLowerCase();
-        case 'condition':
-          return String(item.condition || '').toLowerCase();
-        case 'soldQuantity':
-          return Number(item.soldQuantity || 0);
-        case 'priceValue':
-          return Number(item.priceValue || 0);
-        default:
-          return '';
-      }
-    };
-
-    data.sort((a, b) => {
-      const av = getValue(a);
-      const bv = getValue(b);
-      let cmp = 0;
-      if (typeof av === 'number' && typeof bv === 'number') {
-        cmp = av - bv;
-      } else {
-        cmp = String(av).localeCompare(String(bv));
-      }
-      return direction === 'asc' ? cmp : -cmp;
-    });
-
-    return data;
-  }, [filteredResults, sortConfig, getResultKey]);
-
-  const toggleSort = (key) => {
-    setSortConfig((prev) => {
-      if (prev.key === key) {
-        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
-      }
-      return { key, direction: 'asc' };
-    });
-  };
-
-  const renderSortLabel = (label, key) => {
-    if (sortConfig.key !== key) return label;
-    return `${label} ${sortConfig.direction !== 'asc' ? '▲' : '▼'}`;
-  };
-
-  const metrics = useMemo(() => {
-    if (!filteredResults.length) {
-      return {
-        averagePrice: 0,
-        medianPrice: 0,
-        minPrice: 0,
-        maxPrice: 0,
-        withFreeShipping: 0,
-      };
-    }
-    const prices = filteredResults.map((r) => Number(r.priceValue || 0));
-    const freeShippingCount = filteredResults.filter((r) => Number(r.shippingValue || 0) === 0).length;
-    return {
-      averagePrice: prices.reduce((sum, n) => sum + n, 0) / prices.length,
-      medianPrice: median(prices),
-      minPrice: Math.min(...prices),
-      maxPrice: Math.max(...prices),
-      withFreeShipping: Math.round((freeShippingCount / filteredResults.length) * 100),
-    };
-  }, [filteredResults]);
-
-  const handleSelect = (item) => {
-    setSelectedIds((prev) => {
-      if (prev.includes(item.id)) return prev;
-      if (prev.length >= 5) return prev;
-      return [...prev, item.id];
-    });
-  };
-
-  const handleInspect = (item) => {
-    const query = new URLSearchParams();
-    if (params.q) query.set('q', params.q);
-    if (params.categoryId) query.set('categoryId', params.categoryId);
-    if (params.sellerUsername) query.set('sellerUsername', params.sellerUsername);
-    navigate(`/market-analysis/item/${encodeURIComponent(item.id)}${query.toString() ? `?${query.toString()}` : ''}`);
-  };
-
-  const handleSellerClick = (sellerName) => {
-    const seller = String(sellerName || '').trim();
-    if (!seller) return;
-    rememberRecentValue('sellers', seller);
-    const query = new URLSearchParams({
-      openSearch: '1',
-      sellerUsername: seller,
-      offset: '0',
-    });
-    window.open(`/market-analysis?${query.toString()}`, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleTitleSearch = (item) => {
-    const titleQuery = String(item?.title || '').trim();
-    if (!titleQuery) return;
-    rememberRecentValue('titles', titleQuery);
-    const nextParams = {
-      ...params,
-      q: titleQuery,
-      sellerUsername: '',
-      offset: 0,
-    };
-    openSearchInNewTab(nextParams);
-  };
-
-  const resolveLegacyListingId = (item) => {
-    const candidates = [
-      item?.legacyId,
-      item?.raw?.legacyItemId,
-      item?.raw?.itemId,
-      item?.id,
-    ];
-
-    for (const candidate of candidates) {
-      const normalized = String(candidate || '')
-        .trim()
-        .replace(/^v1\|/, '')
-        .replace(/\|0$/, '');
-      if (/^\d{9,15}$/.test(normalized)) {
-        return normalized;
-      }
-    }
-    return null;
-  };
-
-  const handleSellSimilar = async (item) => {
-    const listingId = resolveLegacyListingId(item);
-    if (!listingId) {
-      setError('Sell Similar requires a live numeric eBay listing ID (Item ID).');
+    // ── URL tab ──────────────────────────────────────────────────────────────
+    if (tab === 'url') {
+      const trimmed = urlInput.trim();
+      if (!trimmed) return setError('Please enter an image URL');
+      // For a plain URL we send it straight through — the backend will fetch &
+      // re-upload it to eBay the same way scrapeItemDetails does.
+      onConfirm({ displayUrl: trimmed, ebayUrl: trimmed });
       return;
     }
 
-    const result = await Swal.fire({
-      title: 'Open eBay Sell Similar?',
-      text: 'You are about to continue this action on eBay. For account safety and suspension prevention, please make sure your browser is currently using the correct eBay seller profile before proceeding.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Proceed to eBay',
-      cancelButtonText: 'Cancel',
-      reverseButtons: true,
-      focusCancel: true,
-    });
+    // ── Upload tab ───────────────────────────────────────────────────────────
+    if (!file) return setError('Please select an image file');
 
-    if (!result.isConfirmed) return;
+    try {
+      setUploading(true);
 
-    const url = `https://www.ebay.com/lstng?mode=SellLikeItem&itemId=${encodeURIComponent(listingId)}&sr=wn`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+      // Re-use the same dewiso /images/upload endpoint which:
+      //   1. Normalises the image
+      //   2. Uploads to Supabase storage (localUrl)
+      //   3. Re-uploads to eBay Picture Services (ebayUrl)
+      const formData = new FormData();
+      formData.append('images', file);
+      formData.append('templateId', `listing-image-edit-${Date.now()}`);
+
+      const res = await dewisoAPI.uploadImages(formData);
+      const items = res?.data?.items || [];
+      const first = items[0];
+
+      if (!first) throw new Error('Upload returned no items');
+      if (first.status === 'failed') throw new Error(first.error || 'Image upload failed');
+
+      // Prefer the eBay-hosted URL; fall back to the Supabase local URL so the
+      // user at least gets a preview even when eBay Picture Services is flaky.
+      const ebayUrl = first.ebayUrl || first.localUrl;
+      const displayUrl = first.localUrl || first.ebayUrl;
+
+      if (!ebayUrl) throw new Error('No eBay image URL returned — reconnect your eBay account');
+
+      onConfirm({ displayUrl, ebayUrl });
+    } catch (err) {
+      setError(err?.response?.data?.error || err?.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const onNextPage = () => {
-    const nextParams = {
-      ...params,
-      offset: Number(params.offset || 0) + Number(params.limit || 24),
-    };
-    setParams(nextParams);
-    runSearch(nextParams);
-  };
-
-  const onPrevPage = () => {
-    const nextParams = {
-      ...params,
-      offset: Math.max(0, Number(params.offset || 0) - Number(params.limit || 24)),
-    };
-    setParams(nextParams);
-    runSearch(nextParams);
-  };
+  // Style helpers (mirrors parent)
+  const overlay = 'fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4';
+  const card = `rounded-2xl border shadow-2xl w-full max-w-sm ${
+    isDark
+      ? 'bg-slate-900 border-slate-700 text-slate-100'
+      : 'bg-white border-slate-200 text-slate-900'
+  }`;
+  const tabBtn = (active) =>
+    `flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+      active
+        ? isDark
+          ? 'bg-blue-600 text-white'
+          : 'bg-blue-500 text-white'
+        : isDark
+          ? 'text-slate-400 hover:text-slate-200'
+          : 'text-slate-500 hover:text-slate-700'
+    }`;
+  const inputClass = `w-full rounded-lg border px-3 py-2 text-sm outline-none transition ${
+    isDark
+      ? 'bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-400 focus:border-blue-500'
+      : 'bg-white border-slate-300 text-slate-800 placeholder:text-slate-400 focus:border-blue-500'
+  }`;
 
   return (
-    <div className="page-shell space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="page-title">Checkila Analysis</h1>
-          <p className="page-subtitle">
-            Discover market listings with Checkila Analysis and compare pricing opportunities before adding products.
-          </p>
+    <div className={overlay}>
+      <div className={card}>
+        {/* Header */}
+        <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+          <div>
+            <h3 className="text-sm font-semibold">Edit Image {imageIndex + 1}</h3>
+            <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Replace with a URL or upload from your computer
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 text-xl font-bold leading-none"
+          >
+            ✕
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => searchNow(params)}
-          className="btn-secondary flex items-center gap-2"
-        >
-          <RefreshCw size={14} />
-          Refresh
-        </button>
-        <button
-          type="button"
-          onClick={() => refreshFromEbay(params)}
-          disabled={loading}
-          className="btn-secondary flex items-center gap-2"
-        >
-          <RefreshCw size={14} />
-          Refresh From eBay
-        </button>
-        <button
-          type="button"
-          onClick={clearCache}
-          className="btn-secondary flex items-center gap-2"
-        >
-          Clear Cache
-        </button>
-      </header>
 
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          autoClose={false}
-          actionLabel="Retry Search"
-          onAction={() => searchNow(params)}
-          onClose={() => setError(null)}
-        />
-      )}
-
-      <div data-tour="market-analysis-search">
-        <MarketSearchBar
-          params={params}
-          onChange={setParams}
-          onSubmit={() => runSearch(params, { force: true })}
-          disabled={loading}
-          marketCreditsRemaining={marketCreditsState?.remaining ?? null}
-          searchCost={searchCost}
-          recentSellers={recentSearches.sellers}
-          recentTitles={recentSearches.titles}
-        />
-      </div>
-
-      <section className="grid grid-cols-2 md:grid-cols-5 gap-2">
-        <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">Results</p>
-          <p className="text-lg font-semibold">{filteredResults.length || 0}</p>
-        </div>
-        <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">Average Item</p>
-          <p className="text-lg font-semibold">{formatCurrency(metrics.averagePrice)}</p>
-        </div>
-        <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">Median</p>
-          <p className="text-lg font-semibold">{formatCurrency(metrics.medianPrice)}</p>
-        </div>
-        <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">Range</p>
-          <p className="text-lg font-semibold">{formatCurrency(metrics.minPrice)} - {formatCurrency(metrics.maxPrice)}</p>
-        </div>
-        <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">Free Shipping</p>
-          <p className="text-lg font-semibold">{metrics.withFreeShipping}%</p>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-12 space-y-4">
-          <div className="flex justify-end gap-2">
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-950/70 px-3 py-2">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-300 whitespace-nowrap">Profit calc</span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={calcAmazonPrice}
-                onChange={(e) => setCalcAmazonPrice(e.target.value)}
-                placeholder="Amazon"
-                className="input-base w-[96px] h-9 text-xs"
+        <div className="p-5 space-y-4">
+          {/* Current image preview */}
+          {currentUrl && (
+            <div className={`rounded-xl overflow-hidden border aspect-video flex items-center justify-center ${
+              isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'
+            }`}>
+              <img
+                src={filePreview || currentUrl}
+                alt="Current"
+                className="max-h-36 object-contain"
               />
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={calcEbayPrice}
-                onChange={(e) => setCalcEbayPrice(e.target.value)}
-                placeholder="eBay"
-                className="input-base w-[96px] h-9 text-xs"
-              />
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={calcAdRate}
-                onChange={(e) => setCalcAdRate(e.target.value)}
-                placeholder="Add %"
-                className="input-base w-[88px] h-9 text-xs"
-              />
-              <div className="min-w-[88px] text-xs font-semibold text-slate-900 dark:text-slate-100">
-                {inlineProfit === null ? 'Profit —' : `Profit ${formatCurrency(inlineProfit)}`}
-              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setViewMode('card')}
-              className={`btn-secondary flex items-center gap-1 ${viewMode === 'card' ? 'ring-2 ring-blue-300' : ''}`}
-            >
-              <LayoutGrid size={14} />
-              Card
+          )}
+
+          {/* Tab switcher */}
+          <div className={`flex gap-1 p-1 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+            <button type="button" className={tabBtn(tab === 'url')} onClick={() => setTab('url')}>
+              🔗 Paste URL
             </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={`btn-secondary flex items-center gap-1 ${viewMode === 'list' ? 'ring-2 ring-blue-300' : ''}`}
-            >
-              <List size={14} />
-              List
+            <button type="button" className={tabBtn(tab === 'upload')} onClick={() => setTab('upload')}>
+              💻 Upload File
             </button>
-            
           </div>
 
-          {loading ? (
-            <LoadingSpinner message="Searching eBay marketplace listings..." />
-          ) : sortedResults.length === 0 ? (
-            <div className="glass-card p-10 text-center">
-              <SearchCheck size={28} className="mx-auto text-slate-400" />
-              <p className="mt-3 text-slate-600 dark:text-slate-300">
-                No listings found for your current filters.
+          {/* ── URL tab content ── */}
+          {tab === 'url' && (
+            <div className="space-y-2">
+              <label className={`block text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                Image URL
+              </label>
+              <input
+                type="url"
+                value={urlInput}
+                onChange={(e) => { setUrlInput(e.target.value); setError(null); }}
+                className={inputClass}
+                placeholder="https://example.com/image.jpg"
+              />
+              <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                The URL will be sent directly to eBay as the listing image.
               </p>
             </div>
-          ) : (
-            <>
-              {viewMode === 'card' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {sortedResults.map((item, index) => (
-                    <MarketItemCard
-                      key={getResultKey(item, index)}
-                      item={item}
-                      isSelected={selectedIds.includes(item.id)}
-                      onSelect={handleSelect}
-                      onInspect={handleInspect}
-                      onSellerClick={handleSellerClick}
-                      onSearchTitle={handleTitleSearch}
-                    />
-                  ))}
-                </div>
+          )}
+
+          {/* ── Upload tab content ── */}
+          {tab === 'upload' && (
+            <div className="space-y-2">
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`rounded-xl border-2 border-dashed p-6 text-center cursor-pointer transition-colors ${
+                  isDark
+                    ? 'border-slate-600 hover:border-blue-500 bg-slate-800/40'
+                    : 'border-slate-300 hover:border-blue-400 bg-slate-50'
+                }`}
+              >
+                {filePreview ? (
+                  <img src={filePreview} alt="Preview" className="mx-auto max-h-28 object-contain rounded-lg" />
+                ) : (
+                  <>
+                    <div className="text-2xl mb-2">📁</div>
+                    <p className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      Click or drag & drop an image
+                    </p>
+                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      JPG, PNG, WEBP · max 5 MB
+                    </p>
+                  </>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              {file && (
+                <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  📎 {file.name} ({(file.size / 1024).toFixed(0)} KB)
+                </p>
+              )}
+              <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                Image will be uploaded to eBay Picture Services and linked to your listing.
+              </p>
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <div className={`rounded-lg border px-3 py-2 text-xs ${
+              isDark
+                ? 'border-red-800 bg-red-950/30 text-red-400'
+                : 'border-red-200 bg-red-50 text-red-600'
+            }`}>
+              {error}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={uploading}
+              className="btn-secondary flex-1 py-2 text-sm disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirm}
+              disabled={uploading}
+              className="btn-primary flex-1 py-2 text-sm disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {uploading ? (
+                <>
+                  <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  Uploading…
+                </>
               ) : (
-                <div className="glass-card overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 dark:border-slate-700">
-                        <th className="text-left p-3">Image</th>
-                        <th className="text-left p-3">
-                          <button type="button" onClick={() => toggleSort('title')} className="hover:underline">
-                            {renderSortLabel('Title', 'title')}
-                          </button>
-                        </th>
-                        <th className="text-left p-3">
-                          <button type="button" onClick={() => toggleSort('seller')} className="hover:underline">
-                            {renderSortLabel('Seller', 'seller')}
-                          </button>
-                        </th>
-                        <th className="text-left p-3">Feedback Score</th>
-                        <th className="text-left p-3">
-                          <button type="button" onClick={() => toggleSort('condition')} className="hover:underline">
-                            {renderSortLabel('Condition', 'condition')}
-                          </button>
-                        </th>
-                        <th className="text-left p-3">
-                          <button type="button" onClick={() => toggleSort('soldQuantity')} className="hover:underline">
-                            {renderSortLabel('Sold Qty', 'soldQuantity')}
-                          </button>
-                        </th>
-                        <th className="text-left p-3">See History</th>
-                        <th className="text-left p-3">
-                          <button type="button" onClick={() => toggleSort('priceValue')} className="hover:underline">
-                            {renderSortLabel('Item Price', 'priceValue')}
-                          </button>
-                        </th>
-                        <th className="text-left p-3">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedResults.map((item, index) => (
-                        <tr key={getResultKey(item, index)} className="border-b border-slate-100 dark:border-slate-800">
-                          <td className="p-3">
-                            <div className="w-12 h-12 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                              {item.imageUrl ? (
-                                <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400">N/A</div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-3 max-w-[220px] truncate text-xs">
-                            <button
-                              type="button"
-                              onClick={() => item.itemWebUrl && window.open(item.itemWebUrl, '_blank', 'noopener,noreferrer')}
-                              className="text-left hover:underline"
-                              title={item.itemWebUrl ? 'Open on eBay' : 'eBay link unavailable'}
-                            >
-                              {item.title}
-                            </button>
-                          </td>
-                          <td className="p-3">
-                            <button
-                              type="button"
-                              onClick={() => handleSellerClick(item.sellerName)}
-                              className="text-blue-700 dark:text-blue-400 hover:underline"
-                            >
-                              {item.sellerName || 'Unknown'}
-                            </button>
-                            {renderSellerCountryFlag(item.sellerCountryCode)}
-                          </td>
-                          <td className="p-3 font-medium">{Number(item.sellerFeedback || 0)}</td>
-                          <td className="p-3">{item.condition}</td>
-                          <td className="p-3 font-medium">
-                            {item?.soldLoading ? (
-                              <span
-                                className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent align-middle"
-                                aria-label="Loading sold quantity"
-                                title="Loading sold quantity"
-                              />
-                            ) : (
-                              Number(item.soldQuantity || 0)
-                            )}
-                          </td>
-                          <td className="p-3">
-                            <button
-                              type="button"
-                              className="btn-secondary inline-flex items-center justify-center"
-                              onClick={() => openDetailsInNewTab(item)}
-                              title="See history"
-                              aria-label="See history"
-                            >
-                              <History size={14} />
-                            </button>
-                          </td>
-                          <td className="p-3">{formatCurrency(item.priceValue)}</td>
-                          <td className="p-3">
-                            {(() => {
-                              const amazonSearchUrl = buildAmazonSearchUrlFromTitle(item?.title);
-                              return (
-                            <div className="flex gap-2">
-                              <button type="button" className="btn-secondary" onClick={() => handleSelect(item)}>
-                                {selectedIds.includes(item.id) ? 'Selected' : 'Compare'}
-                              </button>
-                              <button
-                                type="button"
-                                className="btn-secondary"
-                                onClick={() => handleTitleSearch(item)}
-                                title="Search this title in new tab"
-                              >
-                                <Search size={14} />
-                              </button>
-                              <button type="button" className="btn-primary" onClick={() => handleInspect(item)}>
-                                Details
-                              </button>
-                              {amazonSearchUrl && (
-                                <a
-                                  href={amazonSearchUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="btn-secondary"
-                                  title="Search on Amazon"
-                                  aria-label="Search on Amazon"
-                                >
-                                  <img src={AMAZON_ICON_URL} alt="Amazon" className="h-3.5 w-3.5" loading="lazy" />
-                                </a>
-                              )}
-                              <button
-                                type="button"
-                                className="btn-secondary"
-                                onClick={() => handleSellSimilar(item)}
-                              >
-                                Sell Similar
-                              </button>
-                              <button
-                                type="button"
-                                className="btn-primary"
-                                onClick={() => handleListOnEbay(item)}
-                                title="List this item on your eBay account"
-                              >
-                                List on eBay
-                              </button>
-                            </div>
-                              );
-                            })()}
-                          </td>
-                        </tr>
+                'Apply'
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ListOnEbayModal ───────────────────────────────────────────────────────────
+export default function ListOnEbayModal({ item, onClose, isDark }) {
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    price: '',
+    quantity: '1',
+    categoryId: '',
+    conditionId: 1000,
+    freeShipping: true,
+    dispatchTimeMax: '3',
+    paymentPolicyId: '',
+    returnPolicyId: '',
+    fulfillmentPolicyId: '',
+  });
+
+  const [sellerPolicies, setSellerPolicies] = useState({
+    returnPolicies: [],
+    paymentPolicies: [],
+    fulfillmentPolicies: [],
+    businessPolicyIds: {},
+  });
+  const [loadingPolicies, setLoadingPolicies] = useState(false);
+
+  const [itemSpecifics, setItemSpecifics] = useState([]);
+  // displayUrls: what the user sees (may be Supabase URLs after upload)
+  const [displayUrls, setDisplayUrls] = useState([]);
+  // ebayUrls: what gets sent to eBay (eBay Picture Services URLs)
+  const [ebayUrls, setEbayUrls] = useState([]);
+  const [selectedImageIdx, setSelectedImageIdx] = useState(0);
+  const [loadingSpecifics, setLoadingSpecifics] = useState(false);
+
+  // Image edit sub-modal state
+  const [editingImageIdx, setEditingImageIdx] = useState(null); // null = closed
+
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+
+  // ── 1. Fetch seller policies ───────────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    async function loadPolicies() {
+      try {
+        setLoadingPolicies(true);
+        const res = await ebayAPI.getStatus();
+        if (cancelled) return;
+        const snapshot = res?.data?.sellerSnapshot || {};
+        if (snapshot.sellerRegistrationCompleted === false) {
+          setSellerPolicies({
+            returnPolicies: [],
+            paymentPolicies: [],
+            fulfillmentPolicies: [],
+            businessPolicyIds: snapshot.businessPolicyIds || {},
+          });
+          return;
+        }
+        setSellerPolicies({
+          returnPolicies: snapshot.returnPolicies || [],
+          paymentPolicies: snapshot.paymentPolicies || [],
+          fulfillmentPolicies: snapshot.fulfillmentPolicies || [],
+          businessPolicyIds: snapshot.businessPolicyIds || {},
+        });
+      } catch (err) {
+        console.error('[ListOnEbayModal] Failed to load seller policies:', err);
+      } finally {
+        if (!cancelled) setLoadingPolicies(false);
+      }
+    }
+    loadPolicies();
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── 2. Pre-fill form + scrape item details ────────────────────────────────
+  useEffect(() => {
+    if (!item) return;
+
+    setForm((prev) => ({
+      ...prev,
+      title: String(item.title || '').slice(0, 80),
+      description: String(item.description || item.title || ''),
+      price: item.priceValue ? String(Number(item.priceValue).toFixed(2)) : '',
+      categoryId: String(item.categoryId || item.raw?.categoryId || ''),
+    }));
+
+    if (Array.isArray(item.itemSpecifics) && item.itemSpecifics.length > 0) {
+      setItemSpecifics(item.itemSpecifics);
+    }
+
+    const itemUrl =
+      item.itemUrl ||
+      item.ebayUrl ||
+      item.url ||
+      item.raw?.itemWebUrl ||
+      item.raw?.itemUrl ||
+      (item.legacyItemId ? `https://www.ebay.com/itm/${item.legacyItemId}` : null) ||
+      (item.itemId ? `https://www.ebay.com/itm/${item.itemId}` : null);
+
+    // Initialise from item prop immediately so thumbnails show before scrape finishes
+    const upscale = (url) =>
+      String(url || '').replace(/\/s-l\d+(\.\w+)(\?.*)?$/, '/s-l1600$1$2');
+
+    const initialUrls = [];
+    if (item?.imageUrl) initialUrls.push(upscale(item.imageUrl));
+    if (Array.isArray(item?.additionalImages)) {
+      item.additionalImages.slice(0, 11).forEach((u) => initialUrls.push(upscale(u)));
+    }
+    if (initialUrls.length > 0) {
+      setDisplayUrls(initialUrls);
+      setEbayUrls(initialUrls); // original eBay URLs are already eBay-hosted
+    }
+
+    if (!itemUrl) return;
+
+    let cancelled = false;
+    setLoadingSpecifics(true);
+
+    ebayAPI
+      .scrapeItemDetails(itemUrl)
+      .then((res) => {
+        if (cancelled) return;
+        const data = res?.data || {};
+
+        if (data.categoryId) {
+          setForm((prev) => ({ ...prev, categoryId: String(data.categoryId) }));
+        }
+        if (Array.isArray(data.itemSpecifics) && data.itemSpecifics.length > 0) {
+          setItemSpecifics(data.itemSpecifics);
+        }
+        if (Array.isArray(data.pictureUrls) && data.pictureUrls.length > 0) {
+          setDisplayUrls(data.pictureUrls);
+          setEbayUrls(data.pictureUrls); // scraped URLs are already eBay-hosted
+          setSelectedImageIdx(0);
+        }
+      })
+      .catch((err) => {
+        console.warn('[ListOnEbayModal] scrapeItemDetails failed (non-fatal):', err?.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSpecifics(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [item]);
+
+  // ── 3. Auto-fill policy IDs ───────────────────────────────────────────────
+  useEffect(() => {
+    const bpIds = sellerPolicies.businessPolicyIds || {};
+    const paymentPolicyId =
+      bpIds.paymentPolicyId || sellerPolicies.paymentPolicies[0]?.paymentPolicyId || '';
+    const returnPolicyId =
+      bpIds.returnPolicyId || sellerPolicies.returnPolicies[0]?.returnPolicyId || '';
+    const fulfillmentPolicyId =
+      bpIds.shippingPolicyId || sellerPolicies.fulfillmentPolicies[0]?.fulfillmentPolicyId || '';
+    setForm((prev) => ({ ...prev, paymentPolicyId, returnPolicyId, fulfillmentPolicyId }));
+  }, [sellerPolicies]);
+
+  // ── Image edit callback ───────────────────────────────────────────────────
+  // Called by ImageEditModal when the user clicks Apply.
+  // Swaps both the display URL (for preview) and the eBay URL (for submission).
+  const handleImageEdited = ({ displayUrl, ebayUrl }) => {
+    const idx = editingImageIdx;
+    setDisplayUrls((prev) => {
+      const next = [...prev];
+      next[idx] = displayUrl;
+      return next;
+    });
+    setEbayUrls((prev) => {
+      const next = [...prev];
+      next[idx] = ebayUrl;
+      return next;
+    });
+    setEditingImageIdx(null);
+    setSelectedImageIdx(idx);
+  };
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setResult(null);
+
+    if (!form.title.trim()) return setError('Title is required');
+    if (!form.price || Number(form.price) <= 0) return setError('Price must be a positive number');
+    if (!form.categoryId.trim()) return setError('Category ID is required');
+
+    try {
+      setSubmitting(true);
+
+      // Use the ebayUrls array — these are eBay Picture Services URLs (or the
+      // original scraped eBay s-l1600 URLs). User-edited images have already
+      // been uploaded to eBay Picture Services and their eBay URL stored in
+      // ebayUrls[idx] by handleImageEdited.
+      const pictureUrlsHiRes = [...new Set(ebayUrls.filter(Boolean))];
+
+      const EXCLUDED_SPECIFICS = new Set(['condition', 'item condition']);
+      const itemSpecificsMap = {};
+      itemSpecifics.forEach(({ name, label, value }) => {
+        const key = name || label;
+        if (key && value && !EXCLUDED_SPECIFICS.has(String(key).toLowerCase().trim())) {
+          itemSpecificsMap[key] = value;
+        }
+      });
+
+      const res = await ebayAPI.quickList({
+        title: form.title.trim(),
+        description: form.description.trim() || form.title.trim(),
+        price: Number(form.price),
+        quantity: Math.max(1, Number(form.quantity) || 1),
+        categoryId: form.categoryId.trim(),
+        conditionId: Number(form.conditionId),
+        freeShipping: form.freeShipping,
+        dispatchTimeMax: Number(form.dispatchTimeMax) || 3,
+        currency: 'USD',
+        pictureUrls: pictureUrlsHiRes,
+        itemSpecifics: Object.keys(itemSpecificsMap).length > 0 ? itemSpecificsMap : null,
+        ...(form.paymentPolicyId ? { paymentPolicyId: form.paymentPolicyId } : {}),
+        ...(form.returnPolicyId ? { returnPolicyId: form.returnPolicyId } : {}),
+        ...(form.fulfillmentPolicyId ? { fulfillmentPolicyId: form.fulfillmentPolicyId } : {}),
+      });
+
+      setResult(res?.data || {});
+    } catch (err) {
+      setError(err?.response?.data?.error || err?.message || 'Failed to list on eBay');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // ── Style helpers ─────────────────────────────────────────────────────────
+  const base = isDark
+    ? 'bg-slate-900 border-slate-700 text-slate-100'
+    : 'bg-white border-slate-200 text-slate-900';
+
+  const inputClass = `w-full rounded-lg border px-3 py-2 text-sm outline-none transition ${
+    isDark
+      ? 'bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-400 focus:border-blue-500'
+      : 'bg-white border-slate-300 text-slate-800 placeholder:text-slate-400 focus:border-blue-500'
+  }`;
+
+  const labelClass = `block text-xs font-semibold mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`;
+  const divider = `border-t my-1 ${isDark ? 'border-slate-700/60' : 'border-slate-100'}`;
+  const sectionBox = `rounded-xl border p-4 space-y-3 ${
+    isDark ? 'border-slate-700 bg-slate-800/30' : 'border-slate-200 bg-slate-50'
+  }`;
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  return (
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className={`rounded-2xl border shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto ${base}`}>
+
+          {/* Header */}
+          <div className={`flex items-center justify-between p-5 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+            <div>
+              <h2 className="text-lg font-semibold">List on eBay</h2>
+              <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Using your active eBay account
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-600 text-xl font-bold leading-none"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* ── Success state ── */}
+          {result ? (
+            <div className="p-5 space-y-4">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30 p-4">
+                <p className="text-emerald-700 dark:text-emerald-400 font-semibold text-sm">
+                  ✅ Listed successfully!
+                </p>
+                <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Item ID: <span className="font-mono font-semibold">{result.itemId}</span>
+                </p>
+                {result.listingUrl && (
+                  <a
+                    href={result.listingUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block mt-2 text-xs text-blue-600 hover:underline font-medium"
+                  >
+                    View on eBay →
+                  </a>
+                )}
+                {result.warnings?.length > 0 && (
+                  <div className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+                    <p className="font-semibold">Warnings:</p>
+                    <ul className="list-disc list-inside mt-1 space-y-0.5">
+                      {result.warnings.map((w, i) => (
+                        <li key={i}>{w?.message || String(w)}</li>
                       ))}
-                    </tbody>
-                  </table>
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={onClose} className="btn-secondary flex-1 py-2">
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setResult(null); setError(null); }}
+                  className="btn-primary flex-1 py-2"
+                >
+                  List Another
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+
+              {/* ── Image gallery ── */}
+              {displayUrls.length > 0 && (
+                <div className={`rounded-xl border overflow-hidden ${
+                  isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'
+                }`}>
+                  {/* Main image + edit button */}
+                  <div className="relative w-full aspect-square bg-black/10 group">
+                    <img
+                      src={displayUrls[selectedImageIdx] || displayUrls[0]}
+                      alt={`Picture ${selectedImageIdx + 1} of ${displayUrls.length}`}
+                      className="w-full h-full object-contain"
+                      onError={(e) => { e.target.src = displayUrls[0]; }}
+                    />
+
+                    {/* Counter badge */}
+                    <span className={`absolute top-2 right-2 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      isDark ? 'bg-slate-900/80 text-slate-300' : 'bg-white/80 text-slate-600'
+                    }`}>
+                      {selectedImageIdx + 1} / {displayUrls.length}
+                    </span>
+
+                    {/* ✏️ Edit button — top-left, visible on hover */}
+                    <button
+                      type="button"
+                      onClick={() => setEditingImageIdx(selectedImageIdx)}
+                      title="Replace this image"
+                      className={`
+                        absolute top-2 left-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
+                        text-xs font-semibold shadow-md transition-all
+                        opacity-0 group-hover:opacity-100 focus:opacity-100
+                        ${isDark
+                          ? 'bg-slate-800/90 text-slate-200 hover:bg-blue-600 hover:text-white border border-slate-600 hover:border-blue-600'
+                          : 'bg-white/90 text-slate-700 hover:bg-blue-500 hover:text-white border border-slate-200 hover:border-blue-500'
+                        }
+                      `}
+                    >
+                      {/* Pen icon */}
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                      </svg>
+                      Edit
+                    </button>
+
+                    {/* Loading overlay */}
+                    {loadingSpecifics && displayUrls.length === 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <span className="text-xs text-white animate-pulse">Loading images…</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Thumbnail strip */}
+                  {displayUrls.length > 1 && (
+                    <div className={`flex gap-1.5 p-2 overflow-x-auto ${
+                      isDark ? 'bg-slate-900/40' : 'bg-white/60'
+                    }`}>
+                      {displayUrls.map((url, idx) => (
+                        <div key={idx} className="relative shrink-0 group/thumb">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedImageIdx(idx)}
+                            className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all block ${
+                              idx === selectedImageIdx
+                                ? 'border-blue-500 opacity-100 scale-105'
+                                : isDark
+                                  ? 'border-slate-700 opacity-60 hover:opacity-90'
+                                  : 'border-slate-200 opacity-60 hover:opacity-90'
+                            }`}
+                          >
+                            <img
+                              src={url}
+                              alt={`Thumbnail ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+
+                          {/* Small pen icon on each thumbnail */}
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setEditingImageIdx(idx); }}
+                            title={`Edit image ${idx + 1}`}
+                            className={`
+                              absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center
+                              shadow transition-all opacity-0 group-hover/thumb:opacity-100
+                              ${isDark
+                                ? 'bg-slate-700 text-slate-300 hover:bg-blue-600 hover:text-white'
+                                : 'bg-white text-slate-600 hover:bg-blue-500 hover:text-white border border-slate-200'
+                              }
+                            `}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Item title + price row */}
+                  <div className={`px-3 py-2 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                    <p className="text-xs font-semibold truncate">{item?.title}</p>
+                    <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Original price: ${Number(item?.priceValue || 0).toFixed(2)}
+                      {displayUrls.length > 1 && (
+                        <span className="ml-2 text-blue-400">{displayUrls.length} photos</span>
+                      )}
+                    </p>
+                  </div>
                 </div>
               )}
 
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm text-slate-500 dark:text-slate-300">
-                  Showing {sortedResults.length} result(s)
-                </p>
-                <div className="flex gap-2">
-                  <button type="button" className="btn-secondary" onClick={onPrevPage} disabled={params.offset <= 0}>
-                    Previous
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={onNextPage}
-                    disabled={params.offset + params.limit >= (total || 0)}
-                  >
-                    Next
-                  </button>
+              {/* Error */}
+              {error && (
+                <div className="rounded-xl border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30 p-3 text-sm text-red-600 dark:text-red-400">
+                  {error}
+                </div>
+              )}
+
+              {/* Title */}
+              <div>
+                <label className={labelClass}>
+                  Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="title"
+                  value={form.title}
+                  onChange={handleChange}
+                  className={inputClass}
+                  maxLength={80}
+                  placeholder="Listing title (max 80 chars)"
+                  disabled={submitting}
+                />
+                <p className="text-xs text-slate-400 mt-0.5">{form.title.length}/80</p>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className={labelClass}>Description</label>
+                <textarea
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  className={`${inputClass} min-h-[80px] resize-y`}
+                  placeholder="Item description"
+                  disabled={submitting}
+                />
+              </div>
+
+              {/* Price & Quantity */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>
+                    Price (USD) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="price"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={form.price}
+                    onChange={handleChange}
+                    className={inputClass}
+                    placeholder="0.00"
+                    disabled={submitting}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Quantity</label>
+                  <input
+                    name="quantity"
+                    type="number"
+                    min="1"
+                    value={form.quantity}
+                    onChange={handleChange}
+                    className={inputClass}
+                    placeholder="1"
+                    disabled={submitting}
+                  />
                 </div>
               </div>
-            </>
+
+              {/* Category ID */}
+              <div>
+                <label className={labelClass}>
+                  Category ID <span className="text-red-500">*</span>
+                  {loadingSpecifics && (
+                    <span className="ml-1.5 font-normal text-blue-400 text-xs animate-pulse">
+                      auto-detecting…
+                    </span>
+                  )}
+                </label>
+                <input
+                  name="categoryId"
+                  value={form.categoryId}
+                  onChange={handleChange}
+                  className={inputClass}
+                  placeholder="e.g. 43304"
+                  disabled={submitting}
+                />
+                <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  Auto-extracted from the listing's breadcrumb (leaf category)
+                </p>
+              </div>
+
+              {/* Condition */}
+              <div>
+                <label className={labelClass}>Condition</label>
+                <select
+                  name="conditionId"
+                  value={form.conditionId}
+                  onChange={handleChange}
+                  className={inputClass}
+                  disabled={submitting}
+                >
+                  {CONDITION_OPTIONS.map((c) => (
+                    <option key={c.id} value={c.id}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Shipping */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Dispatch Time (days)</label>
+                  <input
+                    name="dispatchTimeMax"
+                    type="number"
+                    min="0"
+                    max="30"
+                    value={form.dispatchTimeMax}
+                    onChange={handleChange}
+                    className={inputClass}
+                    disabled={submitting}
+                  />
+                </div>
+                <div className="flex items-end pb-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="freeShipping"
+                      checked={form.freeShipping}
+                      onChange={handleChange}
+                      disabled={submitting}
+                    />
+                    <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      Free Shipping
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div className={divider} />
+
+              {/* Seller Policies */}
+              <div className={sectionBox}>
+                <p className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  Seller Policies
+                  {loadingPolicies && (
+                    <span className="ml-1.5 font-normal text-blue-400 animate-pulse">loading…</span>
+                  )}
+                </p>
+
+                <div>
+                  <label className={labelClass}>Payment Policy</label>
+                  <select
+                    name="paymentPolicyId"
+                    value={form.paymentPolicyId}
+                    onChange={handleChange}
+                    className={inputClass}
+                    disabled={submitting || loadingPolicies}
+                  >
+                    <option value="">
+                      {sellerPolicies.paymentPolicies.length === 0
+                        ? 'No policies found — account default will apply'
+                        : 'Select Payment Policy'}
+                    </option>
+                    {sellerPolicies.paymentPolicies.map((p) => (
+                      <option key={p.paymentPolicyId} value={p.paymentPolicyId}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Return Policy</label>
+                  <select
+                    name="returnPolicyId"
+                    value={form.returnPolicyId}
+                    onChange={handleChange}
+                    className={inputClass}
+                    disabled={submitting || loadingPolicies}
+                  >
+                    <option value="">
+                      {sellerPolicies.returnPolicies.length === 0
+                        ? 'No policies found — account default will apply'
+                        : 'Select Return Policy'}
+                    </option>
+                    {sellerPolicies.returnPolicies.map((p) => (
+                      <option key={p.returnPolicyId} value={p.returnPolicyId}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Shipping Policy</label>
+                  <select
+                    name="fulfillmentPolicyId"
+                    value={form.fulfillmentPolicyId}
+                    onChange={handleChange}
+                    className={inputClass}
+                    disabled={submitting || loadingPolicies}
+                  >
+                    <option value="">
+                      {sellerPolicies.fulfillmentPolicies.length === 0
+                        ? 'No policies found — account default will apply'
+                        : 'Select Shipping Policy'}
+                    </option>
+                    {sellerPolicies.fulfillmentPolicies.map((p) => (
+                      <option key={p.fulfillmentPolicyId} value={p.fulfillmentPolicyId}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Item Specifics */}
+              {(loadingSpecifics || itemSpecifics.length > 0) && (
+                <>
+                  <div className={divider} />
+                  <div>
+                    <p className={`text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      Item Specifics
+                      {loadingSpecifics && (
+                        <span className="ml-1.5 font-normal text-blue-400 animate-pulse">fetching…</span>
+                      )}
+                    </p>
+
+                    {loadingSpecifics && itemSpecifics.length === 0 ? (
+                      <div className={`rounded-lg border px-3 py-2.5 text-xs ${
+                        isDark
+                          ? 'border-slate-700 bg-slate-800/40 text-slate-500'
+                          : 'border-slate-200 bg-slate-50 text-slate-400'
+                      }`}>
+                        Loading item specifics from listing…
+                      </div>
+                    ) : (
+                      <div className={`rounded-lg border overflow-hidden text-xs divide-y max-h-52 overflow-y-auto ${
+                        isDark ? 'border-slate-700 divide-slate-700' : 'border-slate-200 divide-slate-100'
+                      }`}>
+                        {itemSpecifics.map((spec, i) => {
+                          const specLabel = spec.name || spec.label || '';
+                          const specValue = spec.value || '';
+                          return (
+                            <div
+                              key={`${specLabel}-${i}`}
+                              className={`grid grid-cols-2 gap-3 px-3 py-1.5 ${
+                                isDark ? 'bg-slate-800/50' : i % 2 === 0 ? 'bg-white' : 'bg-slate-50'
+                              }`}
+                            >
+                              <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                {specLabel}
+                              </span>
+                              <span className={isDark ? 'text-slate-200' : 'text-slate-700'}>
+                                {specValue}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Warning */}
+              <div className={`rounded-xl border p-3 text-xs ${
+                isDark
+                  ? 'border-amber-800 bg-amber-950/20 text-amber-200'
+                  : 'border-amber-200 bg-amber-50 text-amber-700'
+              }`}>
+                ⚠️ This will create a <strong>live listing</strong> on your active eBay seller account immediately.
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={submitting}
+                  className="btn-secondary flex-1 py-2.5 disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="btn-primary flex-1 py-2.5 disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {submitting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                      Listing…
+                    </>
+                  ) : (
+                    'List on eBay'
+                  )}
+                </button>
+              </div>
+            </form>
           )}
         </div>
-      </section>
+      </div>
 
-      <MarketComparePanel
-        items={selectedItems}
-        onRemove={(id) => setSelectedIds((prev) => prev.filter((x) => x !== id))}
-        onClear={() => setSelectedIds([])}
-      />
-      {ebayListModal && (
-        <ListOnEbayModal
-          item={ebayListModal}
-          // isDark is not defined in this component, you may want to determine the theme mode and pass it as a prop or remove it if not needed, how can i fix it?
-
+      {/* ── Image Edit Sub-Modal ── */}
+      {editingImageIdx !== null && (
+        <ImageEditModal
           isDark={isDark}
-          onClose={() => setEbayListModal(null)}
+          currentUrl={displayUrls[editingImageIdx]}
+          imageIndex={editingImageIdx}
+          onConfirm={handleImageEdited}
+          onClose={() => setEditingImageIdx(null)}
         />
       )}
-    </div>
+    </>
   );
 }
