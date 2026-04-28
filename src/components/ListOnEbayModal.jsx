@@ -431,7 +431,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
             dispatchTimeMax: Number(form.dispatchTimeMax) || 3,
             currency: 'USD',
             pictureUrls: pictureUrlsHiRes,
-            itemSpecifics: Object.keys(itemSpecificsMap).length > 0 ? itemSpecificsMap : null,
+            itemSpecifics: Array.isArray(itemSpecifics) ? itemSpecifics : [],
             paymentPolicyId: form.paymentPolicyId,
             returnPolicyId: form.returnPolicyId,
             fulfillmentPolicyId: form.fulfillmentPolicyId,
