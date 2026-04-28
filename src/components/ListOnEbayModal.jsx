@@ -238,6 +238,29 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
     returnPolicyId: '',
     fulfillmentPolicyId: '',
   });
+  const MARKETPLACE_OPTIONS = [
+    { id: 'EBAY_US', label: 'United States', country: 'US' },
+    { id: 'EBAY_GB', label: 'United Kingdom', country: 'GB' },
+    { id: 'EBAY_DE', label: 'Germany', country: 'DE' },
+    { id: 'EBAY_AZ', label: 'Azerbaijan', country: 'AZ' },
+    // Add more as needed
+  ];
+    
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    price: '',
+    quantity: '1',
+    categoryId: '',
+    conditionId: 1000,
+    freeShipping: true,
+    dispatchTimeMax: '3',
+    paymentPolicyId: '',
+    returnPolicyId: '',
+    fulfillmentPolicyId: '',
+    marketplaceId: MARKETPLACE_OPTIONS[0].id,
+    country: MARKETPLACE_OPTIONS[0].country,
+  });
 
   const [sellerPolicies, setSellerPolicies] = useState({
     returnPolicies: [],
@@ -410,8 +433,17 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
   };
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+      const { name, value, type, checked } = e.target;
+      if (name === 'marketplaceId') {
+        const selected = MARKETPLACE_OPTIONS.find(opt => opt.id === value);
+        setForm((prev) => ({
+          ...prev,
+          marketplaceId: value,
+          country: selected ? selected.country : '',
+        }));
+      } else {
+        setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+      }
   };
 
   const handleSubmit = async (e) => {
@@ -485,6 +517,8 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
         ...(form.paymentPolicyId ? { paymentPolicyId: form.paymentPolicyId } : {}),
         ...(form.returnPolicyId ? { returnPolicyId: form.returnPolicyId } : {}),
         ...(form.fulfillmentPolicyId ? { fulfillmentPolicyId: form.fulfillmentPolicyId } : {}),
+        marketplaceId: form.marketplaceId,
+        country: form.country,
       });
 
       const listingResult = res?.data || {};
@@ -643,8 +677,18 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
               <div className={divider} />
 
               {/* Pricing & inventory */}
+              {/* Marketplace selection */}
               <div className={sectionBox}>
-                <p className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Pricing & Inventory</p>
+                <p className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Marketplace & Inventory</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Marketplace</label>
+                    <select name="marketplaceId" value={form.marketplaceId} onChange={handleChange} className={inputClass} disabled={submitting}>
+                      {MARKETPLACE_OPTIONS.map(opt => (
+                        <option key={opt.id} value={opt.id}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className={labelClass}>Price (USD) <span className="text-red-400">*</span></label>
