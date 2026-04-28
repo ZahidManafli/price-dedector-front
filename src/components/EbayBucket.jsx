@@ -19,15 +19,42 @@ import ListOnEbayModal from './ListOnEbayModal';
 // ─── useBucket hook ─────────────────────────────────────────────────────────────
 // Exposes bucket state + actions. Import this in MarketAnalysisPage and pass down.
 
+const BUCKET_STORAGE_KEY = 'checkilaEbayBucket:v1';
+const SUCCESSFUL_LISTINGS_KEY = 'checkilaEbayBucketSuccess:v1';
+
+function loadFromStorage(key, fallback) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+
+function saveToStorage(key, value) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {}
+}
+
 export function useBucket() {
-  const [items, setItems] = useState([]); // { id, item, scrapedData, addedAt }
-  const [successfulListings, setSuccessfulListings] = useState([]); // { itemId, listingUrl, title, addedAt }
+  const [items, setItems] = useState(() => loadFromStorage(BUCKET_STORAGE_KEY, []));
+  const [successfulListings, setSuccessfulListings] = useState(() => loadFromStorage(SUCCESSFUL_LISTINGS_KEY, []));
+
+  // Persist items to localStorage on change
+  React.useEffect(() => {
+    saveToStorage(BUCKET_STORAGE_KEY, items);
+  }, [items]);
+
+  React.useEffect(() => {
+    saveToStorage(SUCCESSFUL_LISTINGS_KEY, successfulListings);
+  }, [successfulListings]);
 
   const addToBucket = useCallback((item, scrapedData) => {
     setItems((prev) => {
       const exists = prev.find((b) => b.id === item.id);
       if (exists) {
-        // Update scraped data if already in bucket
         return prev.map((b) => b.id === item.id ? { ...b, scrapedData } : b);
       }
       return [
