@@ -1,6 +1,15 @@
-// Utility: Strip HTML tags (for safest fallback)
-function stripHtmlTags(str) {
-  return str.replace(/<[^>]*>?/gm, '');
+// Utility: Convert Markdown to plain text
+function markdownToPlainText(md) {
+  return String(md)
+    .replace(/\*\*(.*?)\*\*/g, '$1') // bold
+    .replace(/\*(.*?)\*/g, '$1') // italic
+    .replace(/#+\s?(.*)/g, '$1') // headings
+    .replace(/\n/g, ' ')
+    .replace(/!\[.*?\]\(.*?\)/g, '') // images
+    .replace(/\[.*?\]\(.*?\)/g, '') // links
+    .replace(/[`>\-]/g, '') // code, blockquote, lists
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 // Utility: Wrap in CDATA, removing any existing CDATA
@@ -239,8 +248,8 @@ export function BucketDrawer({
           itemSpecificsObj = scraped.itemSpecifics;
         }
 
-        // Wrap description in CDATA and strip HTML for safety
-        const safeDescription = wrapDescriptionCdata(stripHtmlTags(scraped.description || itm.title || ''));
+        // Convert Markdown to plain text and wrap in CDATA for safety
+        const safeDescription = wrapDescriptionCdata(markdownToPlainText(scraped.description || itm.title || ''));
 
         const payload = {
           title: scraped.title || itm.title || '',
