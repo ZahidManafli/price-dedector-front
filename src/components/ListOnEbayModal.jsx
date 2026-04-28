@@ -204,6 +204,8 @@ function ImageEditModal({ isDark, currentUrl, imageIndex, onConfirm, onClose }) 
  * @param {function} [onSuccess]     - Called with listing result on successful list
  */
 export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark, onSuccess, onUpdateItem }) {
+  // If scrapedOverride is present, we are editing a bucket item
+  const isEditBucketItem = !!scrapedOverride && typeof onUpdateItem === 'function';
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -402,6 +404,49 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
     if (!form.price || Number(form.price) <= 0) return setError('Price must be a positive number');
     if (!form.categoryId.trim()) return setError('Category ID is required');
 
+    if (isEditBucketItem) {
+      // Save changes to bucket item only
+      setSubmitting(true);
+      try {
+        const pictureUrlsHiRes = [...new Set(ebayUrls.filter(Boolean))];
+        const EXCLUDED_SPECIFICS = new Set(['condition', 'item condition']);
+        const itemSpecificsMap = {};
+        itemSpecifics.forEach(({ name, label, value }) => {
+          const key = name || label;
+          if (key && value && !EXCLUDED_SPECIFICS.has(String(key).toLowerCase().trim())) {
+            itemSpecificsMap[key] = value;
+          }
+        });
+        // Update bucket item scrapedData
+        onUpdateItem({
+          scrapedData: {
+            ...scrapedOverride,
+            title: form.title.trim(),
+            description: form.description.trim() || form.title.trim(),
+            price: Number(form.price),
+            quantity: Math.max(1, Number(form.quantity) || 1),
+            categoryId: form.categoryId.trim(),
+            conditionId: Number(form.conditionId),
+            freeShipping: form.freeShipping,
+            dispatchTimeMax: Number(form.dispatchTimeMax) || 3,
+            currency: 'USD',
+            pictureUrls: pictureUrlsHiRes,
+            itemSpecifics: Object.keys(itemSpecificsMap).length > 0 ? itemSpecificsMap : null,
+            paymentPolicyId: form.paymentPolicyId,
+            returnPolicyId: form.returnPolicyId,
+            fulfillmentPolicyId: form.fulfillmentPolicyId,
+          },
+        });
+        setSubmitting(false);
+        onClose();
+      } catch (err) {
+        setError(err?.message || 'Failed to save changes');
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    // Normal listing flow
     try {
       setSubmitting(true);
       const pictureUrlsHiRes = [...new Set(ebayUrls.filter(Boolean))];
@@ -681,25 +726,41 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
                 </>
               )}
 
-              {/* Warning */}
-              <div className={`rounded-xl border p-3 text-xs ${isDark ? 'border-amber-800 bg-amber-950/20 text-amber-200' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
-                ⚠️ This will create a <strong>live listing</strong> on your active eBay seller account immediately.
-              </div>
+              {/* Warning (only show in normal listing mode) */}
+              {!isEditBucketItem && (
+                <div className={`rounded-xl border p-3 text-xs ${isDark ? 'border-amber-800 bg-amber-950/20 text-amber-200' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
+                  ⚠️ This will create a <strong>live listing</strong> on your active eBay seller account immediately.
+                </div>
+              )}
 
               {/* Actions */}
               <div className="flex gap-2 pt-1">
                 <button type="button" onClick={onClose} disabled={submitting} className="btn-secondary flex-1 py-2.5 disabled:opacity-60">Cancel</button>
-                <button type="submit" disabled={submitting} className="btn-primary flex-1 py-2.5 disabled:opacity-60 flex items-center justify-center gap-2">
-                  {submitting ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                      </svg>
-                      Listing…
-                    </>
-                  ) : 'List on eBay'}
-                </button>
+                {isEditBucketItem ? (
+                  <button type="submit" disabled={submitting} className="btn-primary flex-1 py-2.5 disabled:opacity-60 flex items-center justify-center gap-2">
+                    {submitting ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                        </svg>
+                        Saving…
+                      </>
+                    ) : 'Save'}
+                  </button>
+                ) : (
+                  <button type="submit" disabled={submitting} className="btn-primary flex-1 py-2.5 disabled:opacity-60 flex items-center justify-center gap-2">
+                    {submitting ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                        </svg>
+                        Listing…
+                      </>
+                    ) : 'List on eBay'}
+                  </button>
+                )}
               </div>
             </form>
           )}
