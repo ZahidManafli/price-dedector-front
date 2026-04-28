@@ -149,6 +149,7 @@ export const ebayAPI = {
   uploadOrderTrackingToEbay: (orderId, payload) =>
     api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/upload-ebay`, payload),
   quickList: (data) => api.post('/ebay/quick-list', data),
+    scrapeItemDetails: (url) => api.post('/ebay/scrape-item-details', { url }),
 };
 
 export const browseAPI = {

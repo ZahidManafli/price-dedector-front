@@ -911,14 +911,14 @@ export default function MarketAnalysisPage() {
                               >
                                 Sell Similar
                               </button>
-                              {/* <button
+                              <button
                                 type="button"
                                 className="btn-primary"
                                 onClick={() => handleListOnEbay(item)}
                                 title="List this item on your eBay account"
                               >
                                 List on eBay
-                              </button> */}
+                              </button>
                             </div>
                               );
                             })()}

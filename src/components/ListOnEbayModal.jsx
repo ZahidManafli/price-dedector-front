@@ -13,6 +13,7 @@ const CONDITION_OPTIONS = [
   { id: 7000, label: 'For Parts or Not Working' },
 ];
 
+
 export default function ListOnEbayModal({ item, onClose, isDark }) {
   const [form, setForm] = useState({
     title: '',
@@ -27,8 +28,10 @@ export default function ListOnEbayModal({ item, onClose, isDark }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [scraped, setScraped] = useState({ categoryId: '', categoryName: '', itemSpecifics: [] });
+  const [scraping, setScraping] = useState(false);
 
-  // Pre-fill from market item
+  // Pre-fill from market item and scrape details
   useEffect(() => {
     if (!item) return;
     setForm((prev) => ({
@@ -38,6 +41,29 @@ export default function ListOnEbayModal({ item, onClose, isDark }) {
       price: item.priceValue ? String(Number(item.priceValue).toFixed(2)) : '',
       categoryId: String(item.categoryId || item.raw?.categoryId || ''),
     }));
+
+    // Scrape eBay item details if item.url exists
+    if (item.url) {
+      setScraping(true);
+      ebayAPI
+        .scrapeItemDetails(item.url)
+        .then((res) => {
+          setScraped({
+            categoryId: res.data.categoryId || '',
+            categoryName: res.data.categoryName || '',
+            itemSpecifics: Array.isArray(res.data.itemSpecifics) ? res.data.itemSpecifics : [],
+          });
+          // If categoryId not set, update form
+          setForm((prev) => ({
+            ...prev,
+            categoryId: prev.categoryId || res.data.categoryId || '',
+          }));
+        })
+        .catch(() => setScraped({ categoryId: '', categoryName: '', itemSpecifics: [] }))
+        .finally(() => setScraping(false));
+    } else {
+      setScraped({ categoryId: '', categoryName: '', itemSpecifics: [] });
+    }
   }, [item]);
 
   const handleChange = (e) => {
@@ -74,6 +100,7 @@ export default function ListOnEbayModal({ item, onClose, isDark }) {
         dispatchTimeMax: Number(form.dispatchTimeMax) || 3,
         currency: 'USD',
         pictureUrls,
+        itemSpecifics: scraped.itemSpecifics,
       });
 
       setResult(res?.data || {});
@@ -250,7 +277,7 @@ export default function ListOnEbayModal({ item, onClose, isDark }) {
               </div>
             </div>
 
-            {/* Category ID */}
+            {/* Category ID (auto-suggested) */}
             <div>
               <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                 Category ID <span className="text-red-500">*</span>
@@ -263,10 +290,31 @@ export default function ListOnEbayModal({ item, onClose, isDark }) {
                 value={form.categoryId}
                 onChange={handleChange}
                 className={inputClass}
-                placeholder="e.g. 9355"
-                disabled={submitting}
+                placeholder={scraping ? 'Scraping...' : (scraped.categoryId || 'e.g. 9355')}
+                disabled={submitting || scraping}
               />
+              {scraped.categoryName && (
+                <div className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Suggested: {scraped.categoryName} (ID: {scraped.categoryId})
+                </div>
+              )}
             </div>
+            {/* Item Specifics (scraped) */}
+            {scraped.itemSpecifics.length > 0 && (
+              <div>
+                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  Item Specifics (auto-extracted)
+                </label>
+                <ul className="text-xs space-y-1">
+                  {scraped.itemSpecifics.map((spec, i) => (
+                    <li key={i} className="flex gap-2">
+                      <span className="font-semibold min-w-[90px]">{spec.name}:</span>
+                      <span>{spec.value}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Condition */}
             <div>
@@ -357,4 +405,4 @@ export default function ListOnEbayModal({ item, onClose, isDark }) {
       </div>
     </div>
   );
-}
+};
