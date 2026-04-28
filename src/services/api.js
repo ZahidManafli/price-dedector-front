@@ -16,7 +16,6 @@ api.interceptors.request.use((config) => {
   const isAuthOrPublic =
     url.startsWith('/auth') ||
     url.startsWith('/health') ||
-    url.startsWith('/activity/log') ||
     url.startsWith('/settings/plans/public') ||
     url === '/settings/subscription-requests' ||
     url.startsWith('/settings/subscription-requests/update-credits') ||
@@ -148,8 +147,6 @@ export const ebayAPI = {
     api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/refresh`),
   uploadOrderTrackingToEbay: (orderId, payload) =>
     api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/upload-ebay`, payload),
-  quickList: (data) => api.post('/ebay/quick-list', data),
-    scrapeItemDetails: (url) => api.post('/ebay/scrape-item-details', { url }),
 };
 
 export const browseAPI = {
@@ -216,9 +213,6 @@ export const adminAPI = {
   approveSubscriptionRequest: (id, data) => api.post(`/admin/subscription-requests/${id}/approve`, data),
   rejectSubscriptionRequest: (id, data) => api.post(`/admin/subscription-requests/${id}/reject`, data),
   purgeSearchCache: (data) => api.post('/admin/search-cache/purge', data),
-  sendNotification: (data) => api.post('/admin/notifications/send', data),
-  listNotifications: () => api.get('/admin/notifications'),
-  getActivityLogs: (userId, limit) => api.get('/admin/activity-logs', { params: { userId, limit } }),
 };
 
 // Partners APIs
