@@ -38,8 +38,9 @@ export default function ListOnEbayModal({ item, onClose, isDark }) {
   });
   const [loadingPolicies, setLoadingPolicies] = useState(false);
 
-  // ── Item specifics (from fresh scrape) ───────────────────────────────────
+  // ── Item specifics + images (from fresh scrape) ────────────────────────────
   const [itemSpecifics, setItemSpecifics] = useState([]);
+  const [scrapedPictureUrls, setScrapedPictureUrls] = useState([]);
   const [loadingSpecifics, setLoadingSpecifics] = useState(false);
 
   // ── Submission ────────────────────────────────────────────────────────────
@@ -140,6 +141,11 @@ export default function ListOnEbayModal({ item, onClose, isDark }) {
         if (Array.isArray(data.itemSpecifics) && data.itemSpecifics.length > 0) {
           setItemSpecifics(data.itemSpecifics);
         }
+
+        // ── All listing images (upscaled to s-l1600 by the backend) ───────
+        if (Array.isArray(data.pictureUrls) && data.pictureUrls.length > 0) {
+          setScrapedPictureUrls(data.pictureUrls);
+        }
       })
       .catch((err) => {
         console.warn('[ListOnEbayModal] scrapeItemDetails failed (non-fatal):', err?.message);
@@ -192,10 +198,20 @@ export default function ListOnEbayModal({ item, onClose, isDark }) {
     try {
       setSubmitting(true);
 
-      const pictureUrls = [];
-      if (item?.imageUrl) pictureUrls.push(item.imageUrl);
-      if (Array.isArray(item?.additionalImages)) {
-        pictureUrls.push(...item.additionalImages.slice(0, 11));
+      // Prefer the full image set scraped from the listing grid (already
+      // upscaled to s-l1600 by the backend). Fall back to whatever the parent
+      // component passed in item.imageUrl / item.additionalImages.
+      const upscaleEbayUrl = (url) =>
+        String(url || '').replace(/\/s-l\d+(\.\w+)(\?.*)?$/, '/s-l1600$1$2');
+
+      let pictureUrls = [];
+      if (scrapedPictureUrls.length > 0) {
+        pictureUrls = scrapedPictureUrls; // already hi-res from backend
+      } else {
+        if (item?.imageUrl) pictureUrls.push(upscaleEbayUrl(item.imageUrl));
+        if (Array.isArray(item?.additionalImages)) {
+          item.additionalImages.slice(0, 11).forEach((u) => pictureUrls.push(upscaleEbayUrl(u)));
+        }
       }
 
       // Convert specifics array → key/value map that quick-list backend expects.
@@ -211,14 +227,9 @@ export default function ListOnEbayModal({ item, onClose, isDark }) {
         }
       });
 
-      // Upscale eBay image URLs to full-resolution (≥500 px required by eBay).
-      // eBay CDN URLs use a size suffix like /s-l64.jpg → swap to /s-l1600.jpg.
-      const upscaleEbayUrl = (url) =>
-        String(url || '').replace(/\/s-l\d+(\.\w+)(\?.*)?$/, '/s-l1600$1$2');
-
-      const pictureUrlsHiRes = pictureUrls
-        .map(upscaleEbayUrl)
-        .filter(Boolean);
+      // pictureUrls are already hi-res (backend upscales scraped URLs to s-l1600,
+      // fallback path above also upscales). Deduplicate and strip empty values.
+      const pictureUrlsHiRes = [...new Set(pictureUrls.filter(Boolean))];
 
       const res = await ebayAPI.quickList({
         title: form.title.trim(),
