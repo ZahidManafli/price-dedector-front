@@ -1,3 +1,13 @@
+// Utility: Strip HTML tags (for safest fallback)
+function stripHtmlTags(str) {
+  return str.replace(/<[^>]*>?/gm, '');
+}
+
+// Utility: Wrap in CDATA, removing any existing CDATA
+function wrapDescriptionCdata(desc) {
+  const cleaned = String(desc).replace(/<!\[CDATA\[|\]\]>/g, '');
+  return `<![CDATA[${cleaned}]]>`;
+}
 /**
  * EbayBucket.jsx
  *
@@ -229,9 +239,12 @@ export function BucketDrawer({
           itemSpecificsObj = scraped.itemSpecifics;
         }
 
+        // Wrap description in CDATA and strip HTML for safety
+        const safeDescription = wrapDescriptionCdata(stripHtmlTags(scraped.description || itm.title || ''));
+
         const payload = {
           title: scraped.title || itm.title || '',
-          description: scraped.description || itm.title || '',
+          description: safeDescription,
           price: scraped.price ?? itm.priceValue ?? 0,
           quantity: scraped.quantity ?? 1,
           categoryId: scraped.categoryId || '',
