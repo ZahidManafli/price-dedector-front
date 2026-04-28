@@ -821,7 +821,6 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
           )}
         </div>
       </div>
-
       {/* Image Edit Sub-Modal */}
       {editingImageIdx !== null && (
         <ImageEditModal
