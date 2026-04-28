@@ -198,12 +198,27 @@ export default function ListOnEbayModal({ item, onClose, isDark }) {
         pictureUrls.push(...item.additionalImages.slice(0, 11));
       }
 
-      // Convert specifics array → key/value map that quick-list backend expects
+      // Convert specifics array → key/value map that quick-list backend expects.
+      // Exclude "Condition" — it is controlled by the conditionId numeric field,
+      // not a free-text string. Sending the scraped verbose label causes eBay
+      // error 21919308 ("value too long, max 65 chars").
+      const EXCLUDED_SPECIFICS = new Set(['condition', 'item condition']);
       const itemSpecificsMap = {};
       itemSpecifics.forEach(({ name, label, value }) => {
         const key = name || label;
-        if (key && value) itemSpecificsMap[key] = value;
+        if (key && value && !EXCLUDED_SPECIFICS.has(String(key).toLowerCase().trim())) {
+          itemSpecificsMap[key] = value;
+        }
       });
+
+      // Upscale eBay image URLs to full-resolution (≥500 px required by eBay).
+      // eBay CDN URLs use a size suffix like /s-l64.jpg → swap to /s-l1600.jpg.
+      const upscaleEbayUrl = (url) =>
+        String(url || '').replace(/\/s-l\d+(\.\w+)(\?.*)?$/, '/s-l1600$1$2');
+
+      const pictureUrlsHiRes = pictureUrls
+        .map(upscaleEbayUrl)
+        .filter(Boolean);
 
       const res = await ebayAPI.quickList({
         title: form.title.trim(),
@@ -215,7 +230,7 @@ export default function ListOnEbayModal({ item, onClose, isDark }) {
         freeShipping: form.freeShipping,
         dispatchTimeMax: Number(form.dispatchTimeMax) || 3,
         currency: 'USD',
-        pictureUrls,
+        pictureUrls: pictureUrlsHiRes,
         itemSpecifics: Object.keys(itemSpecificsMap).length > 0 ? itemSpecificsMap : null,
         // Only include policy IDs when actually selected
         ...(form.paymentPolicyId ? { paymentPolicyId: form.paymentPolicyId } : {}),
