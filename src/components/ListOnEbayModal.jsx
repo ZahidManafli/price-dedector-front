@@ -409,34 +409,24 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
       setSubmitting(true);
       try {
         const pictureUrlsHiRes = [...new Set(ebayUrls.filter(Boolean))];
-        const EXCLUDED_SPECIFICS = new Set(['condition', 'item condition']);
-        const itemSpecificsMap = {};
-        itemSpecifics.forEach(({ name, label, value }) => {
-          const key = name || label;
-          if (key && value && !EXCLUDED_SPECIFICS.has(String(key).toLowerCase().trim())) {
-            itemSpecificsMap[key] = value;
-          }
-        });
-        // Update bucket item scrapedData
-        onUpdateItem({
-          scrapedData: {
-            ...scrapedOverride,
-            title: form.title.trim(),
-            description: form.description.trim() || form.title.trim(),
-            price: Number(form.price),
-            quantity: Math.max(1, Number(form.quantity) || 1),
-            categoryId: form.categoryId.trim(),
-            conditionId: Number(form.conditionId),
-            freeShipping: form.freeShipping,
-            dispatchTimeMax: Number(form.dispatchTimeMax) || 3,
-            currency: 'USD',
-            pictureUrls: pictureUrlsHiRes,
-            itemSpecifics: Array.isArray(itemSpecifics) ? itemSpecifics : [],
-            paymentPolicyId: form.paymentPolicyId,
-            returnPolicyId: form.returnPolicyId,
-            fulfillmentPolicyId: form.fulfillmentPolicyId,
-          },
-        });
+        // Always build a new scrapedData object, never mutate or spread scrapedOverride
+        const newScrapedData = {
+          title: form.title.trim(),
+          description: form.description.trim() || form.title.trim(),
+          price: Number(form.price),
+          quantity: Math.max(1, Number(form.quantity) || 1),
+          categoryId: form.categoryId.trim(),
+          conditionId: Number(form.conditionId),
+          freeShipping: form.freeShipping,
+          dispatchTimeMax: Number(form.dispatchTimeMax) || 3,
+          currency: 'USD',
+          pictureUrls: pictureUrlsHiRes,
+          itemSpecifics: Array.isArray(itemSpecifics) ? itemSpecifics.map(s => ({ ...s })) : [],
+          paymentPolicyId: form.paymentPolicyId,
+          returnPolicyId: form.returnPolicyId,
+          fulfillmentPolicyId: form.fulfillmentPolicyId,
+        };
+        onUpdateItem({ scrapedData: newScrapedData });
         setSubmitting(false);
         onClose();
       } catch (err) {
