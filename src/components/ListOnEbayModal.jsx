@@ -41,6 +41,7 @@ export default function ListOnEbayModal({ item, onClose, isDark }) {
   // ── Item specifics + images (from fresh scrape) ────────────────────────────
   const [itemSpecifics, setItemSpecifics] = useState([]);
   const [scrapedPictureUrls, setScrapedPictureUrls] = useState([]);
+  const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [loadingSpecifics, setLoadingSpecifics] = useState(false);
 
   // ── Submission ────────────────────────────────────────────────────────────
@@ -145,6 +146,7 @@ export default function ListOnEbayModal({ item, onClose, isDark }) {
         // ── All listing images (upscaled to s-l1600 by the backend) ───────
         if (Array.isArray(data.pictureUrls) && data.pictureUrls.length > 0) {
           setScrapedPictureUrls(data.pictureUrls);
+          setSelectedImageIdx(0); // reset to first image on new scrape
         }
       })
       .catch((err) => {
@@ -343,24 +345,82 @@ export default function ListOnEbayModal({ item, onClose, isDark }) {
         ) : (
           <form onSubmit={handleSubmit} className="p-5 space-y-4">
 
-            {/* Item preview */}
-            {item?.imageUrl && (
-              <div className={`flex items-center gap-3 p-3 rounded-xl border ${
-                isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'
-              }`}>
-                <img
-                  src={item.imageUrl}
-                  alt={item.title}
-                  className="w-14 h-14 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shrink-0"
-                />
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold truncate">{item.title}</p>
-                  <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Original price: ${Number(item.priceValue || 0).toFixed(2)}
-                  </p>
+            {/* ── Image gallery + item info ── */}
+            {(() => {
+              // Use scraped hi-res images when available, fall back to item.imageUrl
+              const displayImages = scrapedPictureUrls.length > 0
+                ? scrapedPictureUrls
+                : item?.imageUrl ? [item.imageUrl] : [];
+
+              if (displayImages.length === 0) return null;
+
+              return (
+                <div className={`rounded-xl border overflow-hidden ${
+                  isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'
+                }`}>
+                  {/* Main selected image */}
+                  <div className="relative w-full aspect-square bg-black/10">
+                    <img
+                      src={displayImages[selectedImageIdx] || displayImages[0]}
+                      alt={`Picture ${selectedImageIdx + 1} of ${displayImages.length}`}
+                      className="w-full h-full object-contain"
+                      onError={(e) => { e.target.src = displayImages[0]; }}
+                    />
+                    {/* Image counter badge */}
+                    <span className={`absolute top-2 right-2 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      isDark ? 'bg-slate-900/80 text-slate-300' : 'bg-white/80 text-slate-600'
+                    }`}>
+                      {selectedImageIdx + 1} / {displayImages.length}
+                    </span>
+                    {/* Loading indicator while scrape is in progress */}
+                    {loadingSpecifics && scrapedPictureUrls.length === 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <span className="text-xs text-white animate-pulse">Loading images…</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Thumbnail strip — only shown when there are multiple images */}
+                  {displayImages.length > 1 && (
+                    <div className={`flex gap-1.5 p-2 overflow-x-auto ${
+                      isDark ? 'bg-slate-900/40' : 'bg-white/60'
+                    }`}>
+                      {displayImages.map((url, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setSelectedImageIdx(idx)}
+                          className={`shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
+                            idx === selectedImageIdx
+                              ? 'border-blue-500 opacity-100 scale-105'
+                              : isDark
+                                ? 'border-slate-700 opacity-60 hover:opacity-90'
+                                : 'border-slate-200 opacity-60 hover:opacity-90'
+                          }`}
+                        >
+                          <img
+                            src={url}
+                            alt={`Thumbnail ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Item title + price row */}
+                  <div className={`px-3 py-2 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                    <p className="text-xs font-semibold truncate">{item?.title}</p>
+                    <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Original price: ${Number(item?.priceValue || 0).toFixed(2)}
+                      {displayImages.length > 1 && (
+                        <span className="ml-2 text-blue-400">{displayImages.length} photos</span>
+                      )}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Error */}
             {error && (
