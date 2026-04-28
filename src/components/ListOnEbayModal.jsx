@@ -203,7 +203,7 @@ function ImageEditModal({ isDark, currentUrl, imageIndex, onConfirm, onClose }) 
  * @param {function} onClose
  * @param {function} [onSuccess]     - Called with listing result on successful list
  */
-export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark, onSuccess }) {
+export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark, onSuccess, onUpdateItem }) {
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -356,8 +356,34 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
 
   const handleImageEdited = ({ displayUrl, ebayUrl }) => {
     const idx = editingImageIdx;
-    setDisplayUrls((prev) => { const next = [...prev]; next[idx] = displayUrl; return next; });
-    setEbayUrls((prev) => { const next = [...prev]; next[idx] = ebayUrl; return next; });
+    setDisplayUrls((prev) => {
+      const next = [...prev];
+      next[idx] = displayUrl;
+      // Propagate to bucket if possible
+      if (typeof onUpdateItem === 'function') {
+        onUpdateItem({
+          scrapedData: {
+            ...scrapedOverride,
+            pictureUrls: next,
+          },
+        });
+      }
+      return next;
+    });
+    setEbayUrls((prev) => {
+      const next = [...prev];
+      next[idx] = ebayUrl;
+      // Propagate to bucket if possible
+      if (typeof onUpdateItem === 'function') {
+        onUpdateItem({
+          scrapedData: {
+            ...scrapedOverride,
+            pictureUrls: next,
+          },
+        });
+      }
+      return next;
+    });
     setEditingImageIdx(null);
     setSelectedImageIdx(idx);
   };

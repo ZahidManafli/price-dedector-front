@@ -489,6 +489,12 @@ export function BucketDrawer({
           isDark={isDark}
           onClose={() => setActiveModal(null)}
           onSuccess={(result) => handleSingleListSuccess(activeModal, result)}
+          onUpdateItem={(updates) => {
+            // Only update if there are changes
+            if (updates && typeof onUpdateItem === 'function') {
+              onUpdateItem(activeModal.id, updates);
+            }
+          }}
         />
       )}
 
