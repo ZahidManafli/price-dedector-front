@@ -213,6 +213,22 @@ export function BucketDrawer({
         const scraped = entry.scrapedData || {};
         const itm = entry.item || {};
 
+        // Normalize itemSpecifics to object (not array)
+        let itemSpecificsObj = null;
+        if (Array.isArray(scraped.itemSpecifics)) {
+          const EXCLUDED_SPECIFICS = new Set(['condition', 'item condition']);
+          itemSpecificsObj = {};
+          scraped.itemSpecifics.forEach(({ name, label, value }) => {
+            const key = name || label;
+            if (key && value && !EXCLUDED_SPECIFICS.has(String(key).toLowerCase().trim())) {
+              itemSpecificsObj[key] = value;
+            }
+          });
+          if (Object.keys(itemSpecificsObj).length === 0) itemSpecificsObj = null;
+        } else if (scraped.itemSpecifics && typeof scraped.itemSpecifics === 'object') {
+          itemSpecificsObj = scraped.itemSpecifics;
+        }
+
         const payload = {
           title: scraped.title || itm.title || '',
           description: scraped.description || itm.title || '',
@@ -222,7 +238,7 @@ export function BucketDrawer({
           pictureUrls: scraped.pictureUrls || (itm.imageUrl ? [itm.imageUrl] : []),
           conditionId: scraped.conditionId ?? 1000,
           currency: scraped.currency || 'USD',
-          itemSpecifics: scraped.itemSpecifics || null,
+          itemSpecifics: itemSpecificsObj,
           freeShipping: scraped.freeShipping ?? true,
           dispatchTimeMax: scraped.dispatchTimeMax ?? 3,
           postalCode: scraped.postalCode || '',
