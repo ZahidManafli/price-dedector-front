@@ -225,14 +225,6 @@ function ImageEditModal({ isDark, currentUrl, imageIndex, onConfirm, onClose }) 
 export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark, onSuccess, onUpdateItem }) {
   // If scrapedOverride is present, we are editing a bucket item
   const isEditBucketItem = !!scrapedOverride && typeof onUpdateItem === 'function';
-  // IMPORTANT: only ONE form state
-  const MARKETPLACE_OPTIONS = [
-    { id: 'EBAY_US', label: 'United States', country: 'US' },
-    { id: 'EBAY_GB', label: 'United Kingdom', country: 'GB' },
-    { id: 'EBAY_DE', label: 'Germany', country: 'DE' },
-    { id: 'EBAY_AZ', label: 'Azerbaijan', country: 'AZ' },
-  ];
-  
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -245,8 +237,6 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
     paymentPolicyId: '',
     returnPolicyId: '',
     fulfillmentPolicyId: '',
-    marketplaceId: MARKETPLACE_OPTIONS[0].id,
-    country: MARKETPLACE_OPTIONS[0].country,
   });
 
   const [sellerPolicies, setSellerPolicies] = useState({
@@ -420,17 +410,8 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
   };
 
   const handleChange = (e) => {
-      const { name, value, type, checked } = e.target;
-      if (name === 'marketplaceId') {
-        const selected = MARKETPLACE_OPTIONS.find(opt => opt.id === value);
-        setForm((prev) => ({
-          ...prev,
-          marketplaceId: value,
-          country: selected ? selected.country : '',
-        }));
-      } else {
-        setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-      }
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleSubmit = async (e) => {
@@ -504,8 +485,6 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
         ...(form.paymentPolicyId ? { paymentPolicyId: form.paymentPolicyId } : {}),
         ...(form.returnPolicyId ? { returnPolicyId: form.returnPolicyId } : {}),
         ...(form.fulfillmentPolicyId ? { fulfillmentPolicyId: form.fulfillmentPolicyId } : {}),
-        marketplaceId: form.marketplaceId,
-        country: form.country,
       });
 
       const listingResult = res?.data || {};
@@ -664,107 +643,43 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
               <div className={divider} />
 
               {/* Pricing & inventory */}
-              {/* Marketplace & Inventory */}
-            <div className={sectionBox}>
-              <p className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                Marketplace & Inventory
-              </p>
-            
-              {/* Marketplace */}
-              <div>
-                <label className={labelClass}>Marketplace</label>
-                <select
-                  name="marketplaceId"
-                  value={form.marketplaceId}
-                  onChange={handleChange}
-                  className={inputClass}
-                  disabled={submitting}
-                >
-                  {MARKETPLACE_OPTIONS.map(opt => (
-                    <option key={opt.id} value={opt.id}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-            
-              {/* Price + Quantity */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelClass}>Price (USD)</label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={form.price}
-                    onChange={handleChange}
-                    className={inputClass}
-                  />
+              <div className={sectionBox}>
+                <p className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Pricing & Inventory</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Price (USD) <span className="text-red-400">*</span></label>
+                    <input type="number" name="price" value={form.price} onChange={handleChange} min="0.01" step="0.01" className={inputClass} placeholder="0.00" disabled={submitting} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Quantity</label>
+                    <input type="number" name="quantity" value={form.quantity} onChange={handleChange} min="1" step="1" className={inputClass} disabled={submitting} />
+                  </div>
                 </div>
-            
-                <div>
-                  <label className={labelClass}>Quantity</label>
-                  <input
-                    type="number"
-                    name="quantity"
-                    value={form.quantity}
-                    onChange={handleChange}
-                    className={inputClass}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Category ID <span className="text-red-400">*</span></label>
+                    <input type="text" name="categoryId" value={form.categoryId} onChange={handleChange} className={inputClass} placeholder="e.g. 9355" disabled={submitting} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Condition</label>
+                    <select name="conditionId" value={form.conditionId} onChange={handleChange} className={inputClass} disabled={submitting}>
+                      {CONDITION_OPTIONS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Dispatch Time (days)</label>
+                    <input type="number" name="dispatchTimeMax" value={form.dispatchTimeMax} onChange={handleChange} min="1" step="1" className={inputClass} disabled={submitting} />
+                  </div>
+                  <div className="flex items-end pb-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" name="freeShipping" checked={form.freeShipping} onChange={handleChange} disabled={submitting} />
+                      <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Free Shipping</span>
+                    </label>
+                  </div>
                 </div>
               </div>
-            
-              {/* Category + Condition */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelClass}>Category ID</label>
-                  <input
-                    type="text"
-                    name="categoryId"
-                    value={form.categoryId}
-                    onChange={handleChange}
-                    className={inputClass}
-                  />
-                </div>
-            
-                <div>
-                  <label className={labelClass}>Condition</label>
-                  <select
-                    name="conditionId"
-                    value={form.conditionId}
-                    onChange={handleChange}
-                    className={inputClass}
-                  >
-                    {CONDITION_OPTIONS.map(c => (
-                      <option key={c.id} value={c.id}>{c.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            
-              {/* Dispatch + Shipping */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelClass}>Dispatch Time</label>
-                  <input
-                    type="number"
-                    name="dispatchTimeMax"
-                    value={form.dispatchTimeMax}
-                    onChange={handleChange}
-                    className={inputClass}
-                  />
-                </div>
-            
-                <div className="flex items-end">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="freeShipping"
-                      checked={form.freeShipping}
-                      onChange={handleChange}
-                    />
-                    Free Shipping
-                  </label>
-                </div>
-              </div>
-            </div>
 
               <div className={divider} />
 
@@ -862,6 +777,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
           )}
         </div>
       </div>
+
       {/* Image Edit Sub-Modal */}
       {editingImageIdx !== null && (
         <ImageEditModal
