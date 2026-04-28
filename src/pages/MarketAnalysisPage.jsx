@@ -9,9 +9,11 @@ import MarketItemCard from '../components/MarketItemCard';
 import MarketComparePanel from '../components/MarketComparePanel';
 import useBrowseSearch from '../hooks/useBrowseSearch';
 import { calculateProfit, formatCurrency } from '../utils/helpers';
-import { browseAPI, settingsAPI } from '../services/api';
+import { browseAPI, ebayAPI, settingsAPI } from '../services/api';
 import ListOnEbayModal from '../components/ListOnEbayModal';
 import { useTheme } from '../context/ThemeContext';
+// ── Bucket ────────────────────────────────────────────────────────────────────
+import { useBucket, BucketTrigger, BucketDrawer, AddToBucketButton } from '../components/EbayBucket';
 
 const RECENT_SEARCH_STORAGE_KEY = 'checkilaRecentSearches:v1';
 const RECENT_SEARCH_LIMIT = 8;
@@ -82,10 +84,70 @@ export default function MarketAnalysisPage() {
   const [ebayListModal, setEbayListModal] = useState(null);
   const { isDark } = useTheme();
 
-  // handleListOnEbay is called when user clicks "List on eBay" button for a specific item. It opens the ListOnEbayModal with the item details.
+  // ── Bucket state ─────────────────────────────────────────────────────────────
+  const bucket = useBucket();
+  const [bucketOpen, setBucketOpen] = useState(false);
+  // Track which item ids are currently being scraped for the bucket
+  const [scrapingIds, setScrapingIds] = useState(new Set());
+
+  // handleListOnEbay is called when user clicks "List on eBay" button for a specific item.
   const handleListOnEbay = (item) => {
     setEbayListModal(item);
   };
+
+  // ── Add to bucket: scrape then store ────────────────────────────────────────
+  const handleAddToBucket = useCallback(async (item) => {
+    const itemId = item?.id;
+    if (!itemId) return;
+
+    // Mark as scraping
+    setScrapingIds((prev) => new Set([...prev, itemId]));
+
+    try {
+      let scrapedData = {
+        title: item.title || '',
+        price: item.priceValue || 0,
+        pictureUrls: item.imageUrl ? [item.imageUrl] : [],
+        categoryId: '',
+        categoryName: '',
+        itemSpecifics: [],
+        conditionId: 1000,
+        quantity: 1,
+        currency: 'USD',
+        freeShipping: true,
+        dispatchTimeMax: 3,
+      };
+
+      // Attempt to scrape full item details from eBay listing page
+      if (item.itemWebUrl) {
+        try {
+          const res = await ebayAPI.scrapeItemDetails({ url: item.itemWebUrl });
+          const scraped = res?.data || {};
+          if (scraped.success) {
+            scrapedData = {
+              ...scrapedData,
+              categoryId: scraped.categoryId || '',
+              categoryName: scraped.categoryName || '',
+              itemSpecifics: scraped.itemSpecifics || [],
+              pictureUrls: scraped.pictureUrls?.length ? scraped.pictureUrls : scrapedData.pictureUrls,
+            };
+          }
+        } catch (scrapeErr) {
+          console.warn('[bucket] Scrape failed, using basic item data:', scrapeErr?.message);
+          // Continue with basic data — don't block the user
+        }
+      }
+
+      bucket.addToBucket(item, scrapedData);
+      setBucketOpen(true); // Open bucket drawer to confirm add
+    } finally {
+      setScrapingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(itemId);
+        return next;
+      });
+    }
+  }, [bucket]);
 
   const saveRecentSearches = useCallback((nextValue) => {
     setRecentSearches(nextValue);
@@ -128,7 +190,7 @@ export default function MarketAnalysisPage() {
           });
         }
       } catch {
-        // Non-blocking: Checkila Analysis can still run without this initial UI hint.
+        // Non-blocking
       }
     };
     loadLimits();
@@ -212,7 +274,6 @@ export default function MarketAnalysisPage() {
   const renderSellerCountryFlag = (countryCode) => {
     const flagUrl = getFlagUrl(countryCode);
     if (!flagUrl) return null;
-
     const label = String(countryCode || '').trim().toUpperCase();
     return (
       <img
@@ -239,7 +300,6 @@ export default function MarketAnalysisPage() {
     setParams(nextParams);
     runSearch(nextParams);
     navigate(location.pathname, { replace: true, state: null });
-    // Run once per preset search handoff.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
@@ -284,7 +344,6 @@ export default function MarketAnalysisPage() {
 
     setParams(nextParams);
     runSearch(nextParams, { force: true });
-    // Execute once on new-tab handoff URL.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
 
@@ -368,10 +427,7 @@ export default function MarketAnalysisPage() {
             setResults((prev) =>
               prev.map((entry) =>
                 getResultKey(entry) === task.key
-                  ? {
-                      ...entry,
-                      soldQuantity: Number.isFinite(soldCount) ? soldCount : 0,
-                    }
+                  ? { ...entry, soldQuantity: Number.isFinite(soldCount) ? soldCount : 0 }
                   : entry
               )
             );
@@ -384,25 +440,14 @@ export default function MarketAnalysisPage() {
           if (!cancelled) {
             setResults((prev) =>
               prev.map((entry) =>
-                getResultKey(entry) === task.key
-                  ? {
-                      ...entry,
-                      soldQuantity: 0,
-                    }
-                  : entry
+                getResultKey(entry) === task.key ? { ...entry, soldQuantity: 0 } : entry
               )
             );
-            setSoldQuantityByKey((prev) => ({
-              ...prev,
-              [task.key]: 0,
-            }));
+            setSoldQuantityByKey((prev) => ({ ...prev, [task.key]: 0 }));
           }
         } finally {
           if (!cancelled) {
-            setSoldLoadingByKey((prev) => ({
-              ...prev,
-              [task.key]: false,
-            }));
+            setSoldLoadingByKey((prev) => ({ ...prev, [task.key]: false }));
           }
         }
       }
@@ -450,18 +495,12 @@ export default function MarketAnalysisPage() {
 
     const getValue = (item) => {
       switch (key) {
-        case 'title':
-          return String(item.title || '').toLowerCase();
-        case 'seller':
-          return String(item.sellerName || '').toLowerCase();
-        case 'condition':
-          return String(item.condition || '').toLowerCase();
-        case 'soldQuantity':
-          return Number(item.soldQuantity || 0);
-        case 'priceValue':
-          return Number(item.priceValue || 0);
-        default:
-          return '';
+        case 'title': return String(item.title || '').toLowerCase();
+        case 'seller': return String(item.sellerName || '').toLowerCase();
+        case 'condition': return String(item.condition || '').toLowerCase();
+        case 'soldQuantity': return Number(item.soldQuantity || 0);
+        case 'priceValue': return Number(item.priceValue || 0);
+        default: return '';
       }
     };
 
@@ -496,13 +535,7 @@ export default function MarketAnalysisPage() {
 
   const metrics = useMemo(() => {
     if (!filteredResults.length) {
-      return {
-        averagePrice: 0,
-        medianPrice: 0,
-        minPrice: 0,
-        maxPrice: 0,
-        withFreeShipping: 0,
-      };
+      return { averagePrice: 0, medianPrice: 0, minPrice: 0, maxPrice: 0, withFreeShipping: 0 };
     }
     const prices = filteredResults.map((r) => Number(r.priceValue || 0));
     const freeShippingCount = filteredResults.filter((r) => Number(r.shippingValue || 0) === 0).length;
@@ -535,11 +568,7 @@ export default function MarketAnalysisPage() {
     const seller = String(sellerName || '').trim();
     if (!seller) return;
     rememberRecentValue('sellers', seller);
-    const query = new URLSearchParams({
-      openSearch: '1',
-      sellerUsername: seller,
-      offset: '0',
-    });
+    const query = new URLSearchParams({ openSearch: '1', sellerUsername: seller, offset: '0' });
     window.open(`/market-analysis?${query.toString()}`, '_blank', 'noopener,noreferrer');
   };
 
@@ -547,31 +576,15 @@ export default function MarketAnalysisPage() {
     const titleQuery = String(item?.title || '').trim();
     if (!titleQuery) return;
     rememberRecentValue('titles', titleQuery);
-    const nextParams = {
-      ...params,
-      q: titleQuery,
-      sellerUsername: '',
-      offset: 0,
-    };
+    const nextParams = { ...params, q: titleQuery, sellerUsername: '', offset: 0 };
     openSearchInNewTab(nextParams);
   };
 
   const resolveLegacyListingId = (item) => {
-    const candidates = [
-      item?.legacyId,
-      item?.raw?.legacyItemId,
-      item?.raw?.itemId,
-      item?.id,
-    ];
-
+    const candidates = [item?.legacyId, item?.raw?.legacyItemId, item?.raw?.itemId, item?.id];
     for (const candidate of candidates) {
-      const normalized = String(candidate || '')
-        .trim()
-        .replace(/^v1\|/, '')
-        .replace(/\|0$/, '');
-      if (/^\d{9,15}$/.test(normalized)) {
-        return normalized;
-      }
+      const normalized = String(candidate || '').trim().replace(/^v1\|/, '').replace(/\|0$/, '');
+      if (/^\d{9,15}$/.test(normalized)) return normalized;
     }
     return null;
   };
@@ -582,7 +595,6 @@ export default function MarketAnalysisPage() {
       setError('Sell Similar requires a live numeric eBay listing ID (Item ID).');
       return;
     }
-
     const result = await Swal.fire({
       title: 'Open eBay Sell Similar?',
       text: 'You are about to continue this action on eBay. For account safety and suspension prevention, please make sure your browser is currently using the correct eBay seller profile before proceeding.',
@@ -593,9 +605,7 @@ export default function MarketAnalysisPage() {
       reverseButtons: true,
       focusCancel: true,
     });
-
     if (!result.isConfirmed) return;
-
     const url = `https://www.ebay.com/lstng?mode=SellLikeItem&itemId=${encodeURIComponent(listingId)}&sr=wn`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
@@ -618,6 +628,9 @@ export default function MarketAnalysisPage() {
     runSearch(nextParams);
   };
 
+  // ── Bucket helpers ───────────────────────────────────────────────────────────
+  const bucketItemIds = useMemo(() => new Set(bucket.items.map((b) => b.id)), [bucket.items]);
+
   return (
     <div className="page-shell space-y-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -627,11 +640,7 @@ export default function MarketAnalysisPage() {
             Discover market listings with Checkila Analysis and compare pricing opportunities before adding products.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => searchNow(params)}
-          className="btn-secondary flex items-center gap-2"
-        >
+        <button type="button" onClick={() => searchNow(params)} className="btn-secondary flex items-center gap-2">
           <RefreshCw size={14} />
           Refresh
         </button>
@@ -644,11 +653,7 @@ export default function MarketAnalysisPage() {
           <RefreshCw size={14} />
           Refresh From eBay
         </button>
-        <button
-          type="button"
-          onClick={clearCache}
-          className="btn-secondary flex items-center gap-2"
-        >
+        <button type="button" onClick={clearCache} className="btn-secondary flex items-center gap-2">
           Clear Cache
         </button>
       </header>
@@ -706,31 +711,19 @@ export default function MarketAnalysisPage() {
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-950/70 px-3 py-2">
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-300 whitespace-nowrap">Profit calc</span>
               <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={calcAmazonPrice}
-                onChange={(e) => setCalcAmazonPrice(e.target.value)}
-                placeholder="Amazon"
-                className="input-base w-[96px] h-9 text-xs"
+                type="number" min="0" step="0.01"
+                value={calcAmazonPrice} onChange={(e) => setCalcAmazonPrice(e.target.value)}
+                placeholder="Amazon" className="input-base w-[96px] h-9 text-xs"
               />
               <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={calcEbayPrice}
-                onChange={(e) => setCalcEbayPrice(e.target.value)}
-                placeholder="eBay"
-                className="input-base w-[96px] h-9 text-xs"
+                type="number" min="0" step="0.01"
+                value={calcEbayPrice} onChange={(e) => setCalcEbayPrice(e.target.value)}
+                placeholder="eBay" className="input-base w-[96px] h-9 text-xs"
               />
               <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={calcAdRate}
-                onChange={(e) => setCalcAdRate(e.target.value)}
-                placeholder="Add %"
-                className="input-base w-[88px] h-9 text-xs"
+                type="number" min="0" step="0.01"
+                value={calcAdRate} onChange={(e) => setCalcAdRate(e.target.value)}
+                placeholder="Add %" className="input-base w-[88px] h-9 text-xs"
               />
               <div className="min-w-[88px] text-xs font-semibold text-slate-900 dark:text-slate-100">
                 {inlineProfit === null ? 'Profit —' : `Profit ${formatCurrency(inlineProfit)}`}
@@ -741,18 +734,15 @@ export default function MarketAnalysisPage() {
               onClick={() => setViewMode('card')}
               className={`btn-secondary flex items-center gap-1 ${viewMode === 'card' ? 'ring-2 ring-blue-300' : ''}`}
             >
-              <LayoutGrid size={14} />
-              Card
+              <LayoutGrid size={14} /> Card
             </button>
             <button
               type="button"
               onClick={() => setViewMode('list')}
               className={`btn-secondary flex items-center gap-1 ${viewMode === 'list' ? 'ring-2 ring-blue-300' : ''}`}
             >
-              <List size={14} />
-              List
+              <List size={14} /> List
             </button>
-            
           </div>
 
           {loading ? (
@@ -877,49 +867,58 @@ export default function MarketAnalysisPage() {
                             {(() => {
                               const amazonSearchUrl = buildAmazonSearchUrlFromTitle(item?.title);
                               return (
-                            <div className="flex gap-2">
-                              <button type="button" className="btn-secondary" onClick={() => handleSelect(item)}>
-                                {selectedIds.includes(item.id) ? 'Selected' : 'Compare'}
-                              </button>
-                              <button
-                                type="button"
-                                className="btn-secondary"
-                                onClick={() => handleTitleSearch(item)}
-                                title="Search this title in new tab"
-                              >
-                                <Search size={14} />
-                              </button>
-                              <button type="button" className="btn-primary" onClick={() => handleInspect(item)}>
-                                Details
-                              </button>
-                              {amazonSearchUrl && (
-                                <a
-                                  href={amazonSearchUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="btn-secondary"
-                                  title="Search on Amazon"
-                                  aria-label="Search on Amazon"
-                                >
-                                  <img src={AMAZON_ICON_URL} alt="Amazon" className="h-3.5 w-3.5" loading="lazy" />
-                                </a>
-                              )}
-                              <button
-                                type="button"
-                                className="btn-secondary"
-                                onClick={() => handleSellSimilar(item)}
-                              >
-                                Sell Similar
-                              </button>
-                              <button
-                                type="button"
-                                className="btn-primary"
-                                onClick={() => handleListOnEbay(item)}
-                                title="List this item on your eBay account"
-                              >
-                                List on eBay
-                              </button>
-                            </div>
+                                <div className="flex gap-2 flex-wrap items-center">
+                                  {/* ── Bucket icon — NEW ── */}
+                                  <AddToBucketButton
+                                    item={item}
+                                    onAdd={handleAddToBucket}
+                                    isDark={isDark}
+                                    isInBucket={bucketItemIds.has(item.id)}
+                                    isScraping={scrapingIds.has(item.id)}
+                                  />
+
+                                  <button type="button" className="btn-secondary" onClick={() => handleSelect(item)}>
+                                    {selectedIds.includes(item.id) ? 'Selected' : 'Compare'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn-secondary"
+                                    onClick={() => handleTitleSearch(item)}
+                                    title="Search this title in new tab"
+                                  >
+                                    <Search size={14} />
+                                  </button>
+                                  <button type="button" className="btn-primary" onClick={() => handleInspect(item)}>
+                                    Details
+                                  </button>
+                                  {amazonSearchUrl && (
+                                    <a
+                                      href={amazonSearchUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="btn-secondary"
+                                      title="Search on Amazon"
+                                      aria-label="Search on Amazon"
+                                    >
+                                      <img src={AMAZON_ICON_URL} alt="Amazon" className="h-3.5 w-3.5" loading="lazy" />
+                                    </a>
+                                  )}
+                                  <button
+                                    type="button"
+                                    className="btn-secondary"
+                                    onClick={() => handleSellSimilar(item)}
+                                  >
+                                    Sell Similar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn-primary"
+                                    onClick={() => handleListOnEbay(item)}
+                                    title="List this item on your eBay account"
+                                  >
+                                    List on eBay
+                                  </button>
+                                </div>
                               );
                             })()}
                           </td>
@@ -958,15 +957,35 @@ export default function MarketAnalysisPage() {
         onRemove={(id) => setSelectedIds((prev) => prev.filter((x) => x !== id))}
         onClear={() => setSelectedIds([])}
       />
+
+      {/* ── Single-item ListOnEbayModal (unchanged flow) ── */}
       {ebayListModal && (
         <ListOnEbayModal
           item={ebayListModal}
-          // isDark is not defined in this component, you may want to determine the theme mode and pass it as a prop or remove it if not needed, how can i fix it?
-
           isDark={isDark}
           onClose={() => setEbayListModal(null)}
         />
       )}
+
+      {/* ── Floating bucket trigger ── */}
+      <BucketTrigger
+        count={bucket.items.length}
+        onClick={() => setBucketOpen(true)}
+        isDark={isDark}
+      />
+
+      {/* ── Bucket drawer ── */}
+      <BucketDrawer
+        open={bucketOpen}
+        onClose={() => setBucketOpen(false)}
+        items={bucket.items}
+        successfulListings={bucket.successfulListings}
+        onRemove={bucket.removeFromBucket}
+        onClear={bucket.clearBucket}
+        onAddSuccessfulListing={bucket.addSuccessfulListing}
+        onUpdateItem={bucket.updateBucketItem}
+        isDark={isDark}
+      />
     </div>
   );
 }
