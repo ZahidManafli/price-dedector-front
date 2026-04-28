@@ -121,7 +121,7 @@ export default function MarketAnalysisPage() {
       // Attempt to scrape full item details from eBay listing page
       if (item.itemWebUrl) {
         try {
-          const res = await ebayAPI.scrapeItemDetails({ url: item.itemWebUrl });
+          const res = await ebayAPI.scrapeItemDetails(item.itemWebUrl );
           const scraped = res?.data || {};
           if (scraped.success) {
             scrapedData = {
