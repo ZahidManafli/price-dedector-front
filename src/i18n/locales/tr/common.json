@@ -16,7 +16,8 @@
     "selectLanguage": "Dil Seç",
     "theme": "Tema",
     "logout": "Çıkış",
-    "ebayStatus": "eBay Durumu"
+    "ebayStatus": "eBay Durumu",
+    "replayTour": "Yönlendirme turunu tekrar oynat"
   },
   "auth": {
     "login": "Giriş Yap",

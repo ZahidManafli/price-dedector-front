@@ -16,7 +16,8 @@
     "selectLanguage": "Выбрать язык",
     "theme": "Тема",
     "logout": "Выйти",
-    "ebayStatus": "Статус eBay"
+    "ebayStatus": "Статус eBay",
+    "replayTour": "Повторить обучение"
   },
   "auth": {
     "login": "Вход",

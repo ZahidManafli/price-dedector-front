@@ -23,6 +23,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useSidebar } from '../context/SidebarContext';
 import { ebayAPI } from '../services/api';
 import { TAB_KEYS } from '../utils/planAccess';
@@ -35,22 +36,23 @@ export default function Sidebar() {
   const displayName = [user?.name, user?.surname].filter(Boolean).join(' ').trim() || user?.fullName || user?.displayName || 'User';
   const { isDark, toggleTheme } = useTheme();
   const { currentLanguage, changeLanguage } = useLanguage();
+  const { t } = useTranslation('common');
   const { isCollapsed, toggleSidebar } = useSidebar();
   const { replayTour } = useTour();
   const [activeEbayLabel, setActiveEbayLabel] = useState(null);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
 
   const links = [
-    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, tab: TAB_KEYS.DASHBOARD, tour: 'sidebar-dashboard' },
-    { label: 'Products', path: '/products', icon: Package, tab: TAB_KEYS.PRODUCTS, tour: 'sidebar-products' },
-    { label: 'Listings', path: '/listings', icon: Package, tab: TAB_KEYS.LISTINGS },
-    { label: 'Orders', path: '/orders', icon: Package, tab: TAB_KEYS.ORDERS },
-    { label: 'Amazon Lookup', path: '/amazon-lookup', icon: Search, tab: TAB_KEYS.AMAZON_LOOKUP, tour: 'sidebar-amazon-lookup' },
-    { label: 'eBay Calculator', path: '/ebay-calculator', icon: Calculator, tab: TAB_KEYS.EBAY_CALCULATOR },
-    { label: 'Checkila Analysis', path: '/market-analysis', icon: BarChart3, tab: TAB_KEYS.MARKET_ANALYSIS, tour: 'sidebar-market-analysis' },
-    { label: 'Dewiso', path: '/dewiso', icon: Code2, tab: TAB_KEYS.DEWISO },
-    { label: 'Settings', path: '/settings', icon: Settings, tab: TAB_KEYS.SETTINGS, tour: 'sidebar-settings' },
-    ...(user?.role === 'admin' ? [{ label: 'Admin Panel', path: '/admin', icon: ShieldCheck, tab: TAB_KEYS.ADMIN }] : []),
+    { label: t('nav.dashboard'), path: '/dashboard', icon: LayoutDashboard, tab: TAB_KEYS.DASHBOARD, tour: 'sidebar-dashboard' },
+    { label: t('nav.products'), path: '/products', icon: Package, tab: TAB_KEYS.PRODUCTS, tour: 'sidebar-products' },
+    { label: t('nav.listings'), path: '/listings', icon: Package, tab: TAB_KEYS.LISTINGS },
+    { label: t('nav.orders'), path: '/orders', icon: Package, tab: TAB_KEYS.ORDERS },
+    { label: t('nav.amazonLookup'), path: '/amazon-lookup', icon: Search, tab: TAB_KEYS.AMAZON_LOOKUP, tour: 'sidebar-amazon-lookup' },
+    { label: t('nav.ebayCalculator'), path: '/ebay-calculator', icon: Calculator, tab: TAB_KEYS.EBAY_CALCULATOR },
+    { label: t('nav.marketAnalysis'), path: '/market-analysis', icon: BarChart3, tab: TAB_KEYS.MARKET_ANALYSIS, tour: 'sidebar-market-analysis' },
+    { label: t('nav.dewiso'), path: '/dewiso', icon: Code2, tab: TAB_KEYS.DEWISO },
+    { label: t('nav.settings'), path: '/settings', icon: Settings, tab: TAB_KEYS.SETTINGS, tour: 'sidebar-settings' },
+    ...(user?.role === 'admin' ? [{ label: t('nav.adminPanel'), path: '/admin', icon: ShieldCheck, tab: TAB_KEYS.ADMIN }] : []),
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -108,10 +110,10 @@ export default function Sidebar() {
                 <span className="block text-lg font-semibold">Checkila</span>
                 {activeEbayLabel ? (
                   <span className="block text-xs text-slate-300 truncate">
-                    eBay: <span className="font-medium text-slate-100">{activeEbayLabel}</span>
+                    {t('sidebar.ebayStatus')}: <span className="font-medium text-slate-100">{activeEbayLabel}</span>
                   </span>
                 ) : (
-                  <span className="block text-xs text-slate-400 truncate">eBay: —</span>
+                  <span className="block text-xs text-slate-400 truncate">{t('sidebar.ebayStatus')}: —</span>
                 )}
               </div>
             </div>
@@ -201,7 +203,7 @@ export default function Sidebar() {
                       className="text-xs text-slate-300 hover:underline"
                       onClick={() => setIsOpen(false)}
                     >
-                      Settings
+                      {t('nav.settings')}
                     </Link>
                   ) : null}
                 </div>
@@ -211,7 +213,7 @@ export default function Sidebar() {
                   <button
                     onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
                     className="w-full flex items-center justify-center gap-2 rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
-                    title="Change language"
+                    title={t('sidebar.selectLanguage')}
                   >
                     <Globe2 size={14} />
                     <ChevronDown size={12} className={`transition ${languageMenuOpen ? 'rotate-180' : ''}`} />
@@ -247,7 +249,7 @@ export default function Sidebar() {
                 <button
                   onClick={toggleTheme}
                   className="flex-1 flex items-center justify-center gap-2 rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
-                  title={isDark ? 'Light mode' : 'Dark mode'}
+                  title={t('sidebar.theme')}
                 >
                   {isDark ? <Sun size={14} /> : <Moon size={14} />}
                 </button>
@@ -255,7 +257,7 @@ export default function Sidebar() {
                   data-tour="tour-replay-button"
                   onClick={replayTour}
                   className="flex-1 flex items-center justify-center gap-2 rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
-                  title="Replay onboarding tour"
+                  title={t('sidebar.replayTour')}
                 >
                   <HelpCircle size={14} />
                 </button>
@@ -265,7 +267,7 @@ export default function Sidebar() {
                     window.location.href = '/login';
                   }}
                   className="flex-1 flex items-center justify-center rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
-                  title="Logout"
+                  title={t('sidebar.logout')}
                 >
                   <LogOut size={14} />
                 </button>

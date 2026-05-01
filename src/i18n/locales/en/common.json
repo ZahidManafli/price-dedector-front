@@ -16,7 +16,8 @@
     "selectLanguage": "Select Language",
     "theme": "Theme",
     "logout": "Logout",
-    "ebayStatus": "eBay Status"
+    "ebayStatus": "eBay Status",
+    "replayTour": "Replay onboarding tour"
   },
   "auth": {
     "login": "Login",
