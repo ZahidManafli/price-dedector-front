@@ -1,68 +1,68 @@
 {
   "language": "Türkçe",
   "nav": {
-    "dashboard": "Kontrol Paneli",
+    "dashboard": "Panel",
     "products": "Ürünler",
     "listings": "İlanlar",
     "orders": "Siparişler",
-    "amazonLookup": "Amazon Araması",
-    "ebayCalculator": "eBay Hesaplayıcısı",
+    "amazonLookup": "Amazon Arama",
+    "ebayCalculator": "eBay Hesaplayıcı",
     "marketAnalysis": "Checkila Analizi",
     "dewiso": "Dewiso",
     "settings": "Ayarlar",
-    "adminPanel": "Yönetici Paneli"
+    "adminPanel": "Admin Paneli"
   },
   "sidebar": {
-    "selectLanguage": "Dil Seçin",
+    "selectLanguage": "Dil Seç",
     "theme": "Tema",
-    "logout": "Çıkış Yap",
+    "logout": "Çıkış",
     "ebayStatus": "eBay Durumu"
   },
   "auth": {
-    "login": "Giriş",
-    "logout": "Çıkış Yap",
+    "login": "Giriş Yap",
+    "logout": "Çıkış",
     "email": "E-posta",
-    "password": "Parola",
+    "password": "Şifre",
     "rememberMe": "Beni hatırla",
     "signIn": "Giriş Yap",
-    "dontHaveAccount": "Hesabınız yok mu?",
-    "loginFailed": "Giriş başarısız oldu",
-    "invalidCredentials": "Geçersiz e-posta veya parola",
+    "dontHaveAccount": "Hesabın yok mu?",
+    "loginFailed": "Giriş başarısız",
+    "invalidCredentials": "Geçersiz e-posta veya şifre",
     "fillAllFields": "Lütfen tüm alanları doldurun",
     "loginSuccess": "Giriş başarılı!"
   },
   "loginPage": {
-    "title": "Tekrar hoş geldiniz",
-    "subtitle": "Fiyatları ve otomasyonu yönetmek için Checkila’ya giriş yapın",
+    "title": "Tekrar hoş geldin",
+    "subtitle": "Fiyatları yönetmek ve otomasyon için Checkila'ya giriş yap",
     "register": "Kayıt Ol",
-    "noAccount": "Hesabınız yok mu?",
+    "noAccount": "Hesabın yok mu?",
     "loggingIn": "Giriş yapılıyor...",
-    "requestSent": "Talebiniz alındı. Yönetici kısa süre içinde sizinle iletişime geçecek."
+    "requestSent": "Talebiniz alındı. Yönetici yakında sizinle iletişime geçecektir."
   },
   "signupPage": {
     "title": "Hesap oluştur",
-    "subtitle": "Ürünleri daha akıllı bir şekilde takip etmeye başlayın",
+    "subtitle": "Ürünleri daha akıllı şekilde takip etmeye başla",
     "fullName": "Ad Soyad",
-    "confirmPassword": "Parolayı Onayla",
-    "passwordHint": "Parola (en az 6 karakter)",
+    "confirmPassword": "Şifreyi doğrula",
+    "passwordHint": "Şifre (en az 6 karakter)",
     "creatingAccount": "Hesap oluşturuluyor...",
     "signUp": "Kayıt Ol",
-    "alreadyHaveAccount": "Zaten hesabınız var mı?",
-    "passwordsDoNotMatch": "Parolalar eşleşmiyor",
-    "passwordTooShort": "Parola en az 6 karakter olmalıdır",
+    "alreadyHaveAccount": "Zaten hesabın var mı?",
+    "passwordsDoNotMatch": "Şifreler eşleşmiyor",
+    "passwordTooShort": "Şifre en az 6 karakter olmalı",
     "accountCreated": "Hesap başarıyla oluşturuldu! Lütfen giriş yapın.",
-    "signupFailed": "Kayıt başarısız oldu"
+    "signupFailed": "Kayıt başarısız"
   },
   "aboutPage": {
     "title": "Checkila Hakkında",
-    "intro": "Checkila, çevrimiçi satıcıların Amazon ve eBay fiyatlarını takip etmesine, kârı tahmin etmesine ve maliyetler değiştiğinde hızlı tepki vermesine yardımcı olur.",
+    "intro": "Checkila, online satıcıların Amazon ve eBay fiyatlarını takip etmesine, kar hesaplamasına ve değişikliklere hızlı tepki vermesine yardımcı olur.",
     "whatWeDo": "Ne Yapıyoruz",
     "items": [
-      "Amazon ürün fiyat değişikliklerini takip eder",
-      "Kendi formülünüzle kârı hesaplar",
+      "Amazon ürün fiyatlarını takip eder",
+      "Tanımlı formül ile kar hesaplar",
       "Her ürün için fiyat geçmişini saklar",
       "Önemli değişikliklerde bildirim gönderir",
-      "İsteğe bağlı olarak önerilen fiyatları bağlı eBay ilanlarıyla senkronize eder"
+      "İsteğe bağlı olarak eBay ilanlarını senkronize eder"
     ],
     "contact": "İletişim",
     "support": "Destek e-postası: checkilanotify@gmail.com",
@@ -71,86 +71,60 @@
   "amazonCallback": {
     "connecting": "Amazon hesabınız bağlanıyor",
     "connected": "Başarıyla bağlandı",
-    "failed": "Bağlantı başarısız oldu",
+    "failed": "Bağlantı başarısız",
     "finalizing": "Amazon yetkilendirmesi tamamlanıyor...",
-    "linkedRedirecting": "Amazon hesabınız artık bağlı. Ayarlara yönlendiriliyor...",
+    "linkedRedirecting": "Amazon hesabınız bağlandı. Ayarlara yönlendiriliyorsunuz...",
     "couldNotComplete": "Amazon bağlantısı tamamlanamadı. Lütfen tekrar deneyin.",
-    "missingCodeState": "Amazon OAuth kodu/durumu eksik",
-    "authorizationFailed": "Amazon yetkilendirmesi başarısız oldu: {{error}}",
+    "missingCodeState": "Amazon OAuth kodu/state eksik",
+    "authorizationFailed": "Amazon yetkilendirmesi başarısız: {{error}}",
     "connectionFailed": "Amazon bağlantısı tamamlanamadı",
     "successMessage": "Amazon hesabı başarıyla bağlandı",
     "tryAgain": "Tekrar dene",
-    "backToDashboard": "Kontrol paneline dön"
+    "backToDashboard": "Panele dön"
   },
   "navbar": {
     "settings": "Ayarlar",
-    "logout": "Çıkış Yap"
+    "logout": "Çıkış"
   },
   "loading": {
     "data": "Veriler yükleniyor..."
   },
   "marketCompare": {
-    "title": "Karşılaştırma Alanı",
+    "title": "Karşılaştırma Paneli",
     "clear": "Temizle",
-    "empty": "Fiyatı ve satıcı kalitesini karşılaştırmak için sonuçlardan ilan ekleyin.",
-    "min": "Min",
-    "max": "Maks",
-    "spread": "Aralık",
+    "empty": "Fiyat ve satıcı kalitesini karşılaştırmak için sonuç ekleyin.",
+    "min": "Minimum",
+    "max": "Maksimum",
+    "spread": "Fark",
     "average": "Ortalama",
     "remove": "Kaldır",
     "sellerScore": "Satıcı puanı"
   },
   "marketRefinement": {
-    "title": "İyileştirmeler",
-    "intro": "Pazar fırsatlarını daraltmak için bu dağılımları kullanın.",
+    "title": "Filtreler",
+    "intro": "Bu dağılımları kullanarak pazar fırsatlarını daraltın.",
     "condition": "Durum",
     "buyingOptions": "Satın alma seçenekleri",
     "topAspects": "Öne çıkan özellikler",
-    "noCondition": "Durum iyileştirmesi döndürülmedi.",
-    "noBuying": "Satın alma seçenekleri iyileştirmesi döndürülmedi.",
-    "noAspects": "Özellikleri doldurmak için kategori bağlamıyla arama yapın."
+    "noCondition": "Durum filtresi yok.",
+    "noBuying": "Satın alma seçeneği yok.",
+    "noAspects": "Özellikleri görmek için kategori ile arama yapın."
   },
   "listingModal": {
-    "title": "eBay’de listele",
+    "title": "eBay'de Listele",
     "activeAccount": "Aktif eBay hesabınız kullanılıyor",
-    "activeAccountFromBucket": "Liste sepetinizden · Aktif eBay hesabınız kullanılıyor",
+    "activeAccountFromBucket": "Liste havuzundan · Aktif hesap kullanılıyor",
     "listedSuccessfully": "Başarıyla listelendi!",
-    "itemId": "Ürün kimliği",
-    "viewOnEbay": "eBay’de görüntüle",
+    "itemId": "Ürün ID",
+    "viewOnEbay": "eBay'de görüntüle",
     "warnings": "Uyarılar",
     "close": "Kapat",
-    "listAnother": "Başka birini listele",
+    "listAnother": "Başka listele",
     "cancel": "İptal",
     "save": "Kaydet",
-    "list": "eBay’de listele",
+    "list": "eBay'de listele",
     "saving": "Kaydediliyor...",
     "listing": "Listeleniyor...",
-    "failedToList": "eBay’de listeleme başarısız oldu"
-  },
-  "common": {
-    "loading": "Yükleniyor...",
-    "error": "Hata",
-    "success": "Başarı",
-    "cancel": "İptal",
-    "save": "Kaydet",
-    "delete": "Sil",
-    "edit": "Düzenle",
-    "close": "Kapat",
-    "submit": "Gönder",
-    "back": "Geri"
-  },
-  "productsPage": {
-    "filterByEbayAccount": "Bağlı eBay hesabına göre filtrele",
-    "filterByEbayAccountDescription": "Ürünleri bağlı eBay hesaplarınızdan birine göre göster.",
-    "allConnectedAccounts": "Tüm bağlı hesaplar",
-    "noProductsMatchFilter": "Bu hesap filtresiyle eşleşen ürün yok.",
-    "showAllProducts": "Tüm ürünleri göster",
-    "unknownAccount": "Bilinmeyen hesap"
-  },
-  "currency": {
-    "AZN": "AZN",
-    "USD": "USD",
-    "RUB": "RUB",
-    "TL": "TL"
+    "failedToList": "eBay'de listeleme başarısız"
   }
 }

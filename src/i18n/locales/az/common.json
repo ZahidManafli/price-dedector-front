@@ -1,11 +1,11 @@
 {
   "language": "Azərbaycanca",
   "nav": {
-    "dashboard": "Paneli",
+    "dashboard": "Panel",
     "products": "Məhsullar",
-    "listings": "Siyahılar",
+    "listings": "Elanlar",
     "orders": "Sifarişlər",
-    "amazonLookup": "Amazon Axtarışı",
+    "amazonLookup": "Amazon Axtarış",
     "ebayCalculator": "eBay Kalkulyator",
     "marketAnalysis": "Checkila Analizi",
     "dewiso": "Dewiso",
@@ -13,37 +13,37 @@
     "adminPanel": "Admin Paneli"
   },
   "sidebar": {
-    "selectLanguage": "Dili Seçin",
+    "selectLanguage": "Dil seç",
     "theme": "Tema",
     "logout": "Çıxış",
     "ebayStatus": "eBay Statusu"
   },
   "auth": {
-    "login": "Giriş",
+    "login": "Daxil ol",
     "logout": "Çıxış",
-    "email": "E-mail",
+    "email": "E-poçt",
     "password": "Şifrə",
     "rememberMe": "Məni xatırla",
-    "signIn": "Daxil Ol",
+    "signIn": "Daxil ol",
     "dontHaveAccount": "Hesabınız yoxdur?",
     "loginFailed": "Giriş uğursuz oldu",
-    "invalidCredentials": "Yanlış e-mail və ya şifrə",
-    "fillAllFields": "Lütfən bütün sahələri doldurun",
-    "loginSuccess": "Giriş uğurlu oldu!"
+    "invalidCredentials": "Yanlış e-poçt və ya şifrə",
+    "fillAllFields": "Zəhmət olmasa bütün sahələri doldurun",
+    "loginSuccess": "Uğurla daxil oldunuz!"
   },
   "loginPage": {
-    "title": "Xoş gəlmisiniz",
-    "subtitle": "Qiymətləri və avtomatlaşdırmanı idarə etmək üçün Checkila-ya daxil olun",
+    "title": "Yenidən xoş gəlmisiniz",
+    "subtitle": "Qiymətləri idarə etmək və avtomatlaşdırma üçün Checkila-ya daxil olun",
     "register": "Qeydiyyat",
     "noAccount": "Hesabınız yoxdur?",
     "loggingIn": "Daxil olunur...",
-    "requestSent": "Sorğunuz qəbul olundu. Admin tezliklə sizinlə əlaqə saxlayacaq."
+    "requestSent": "Sorğunuz qəbul edildi. Admin tezliklə sizinlə əlaqə saxlayacaq."
   },
   "signupPage": {
-    "title": "Hesab yaradın",
-    "subtitle": "Məhsulları daha ağıllı izləməyə başlayın",
-    "fullName": "Ad və soyad",
-    "confirmPassword": "Şifrəni təsdiqləyin",
+    "title": "Hesab yarat",
+    "subtitle": "Məhsulları daha ağıllı şəkildə izləməyə başlayın",
+    "fullName": "Ad və Soyad",
+    "confirmPassword": "Şifrəni təsdiqlə",
     "passwordHint": "Şifrə (minimum 6 simvol)",
     "creatingAccount": "Hesab yaradılır...",
     "signUp": "Qeydiyyatdan keç",
@@ -55,14 +55,14 @@
   },
   "aboutPage": {
     "title": "Checkila haqqında",
-    "intro": "Checkila onlayn satıcılara Amazon və eBay qiymətlərini izləməyə, mənfəəti hesablamağa və xərclər dəyişəndə tez reaksiya verməyə kömək edir.",
+    "intro": "Checkila onlayn satıcılara Amazon və eBay qiymətlərini izləməyə, gəliri hesablamağa və dəyişikliklərə tez reaksiya verməyə kömək edir.",
     "whatWeDo": "Nə edirik",
     "items": [
-      "Amazon məhsul qiymət dəyişikliklərini izləyin",
-      "Təyin etdiyiniz formul ilə mənfəəti hesablayın",
-      "Hər məhsul üçün qiymət tarixçəsini saxlayın",
-      "Əhəmiyyətli dəyişikliklər olduqda bildiriş göndərin",
-      "İstəyə görə tövsiyə olunan qiymətləri bağlı eBay siyahıları ilə sinxronlaşdırın"
+      "Amazon məhsul qiymətlərini izləmək",
+      "Konfiqurasiya olunmuş formula ilə gəliri hesablamaq",
+      "Hər məhsul üçün qiymət tarixçəsini saxlamaq",
+      "Vacib dəyişikliklər olduqda bildiriş göndərmək",
+      "İstəyə görə eBay elanlarını avtomatik yeniləmək"
     ],
     "contact": "Əlaqə",
     "support": "Dəstək e-poçtu: checkilanotify@gmail.com",
@@ -72,12 +72,12 @@
     "connecting": "Amazon hesabınız qoşulur",
     "connected": "Uğurla qoşuldu",
     "failed": "Qoşulma uğursuz oldu",
-    "finalizing": "Amazon icazəsi tamamlanır...",
-    "linkedRedirecting": "Amazon hesabınız artıq qoşuldu. Ayarlara yönləndirilir...",
-    "couldNotComplete": "Amazon qoşulmasını tamamlamaq mümkün olmadı. Yenidən cəhd edin.",
-    "missingCodeState": "Amazon OAuth kodu/vəziyyəti çatışmır",
+    "finalizing": "Amazon icazəniz tamamlanır...",
+    "linkedRedirecting": "Amazon hesabınız qoşuldu. Ayarlara yönləndirilirsiniz...",
+    "couldNotComplete": "Amazon bağlantısı tamamlanmadı. Yenidən cəhd edin.",
+    "missingCodeState": "Amazon OAuth kodu/state çatışmır",
     "authorizationFailed": "Amazon icazəsi uğursuz oldu: {{error}}",
-    "connectionFailed": "Amazon qoşulmasını tamamlamaq mümkün olmadı",
+    "connectionFailed": "Amazon bağlantısı tamamlanmadı",
     "successMessage": "Amazon hesabı uğurla qoşuldu",
     "tryAgain": "Yenidən cəhd et",
     "backToDashboard": "Panelə qayıt"
@@ -87,70 +87,44 @@
     "logout": "Çıxış"
   },
   "loading": {
-    "data": "Məlumat yüklənir..."
+    "data": "Məlumatlar yüklənir..."
   },
   "marketCompare": {
-    "title": "Müqayisə səbəti",
+    "title": "Müqayisə paneli",
     "clear": "Təmizlə",
-    "empty": "Qiymət və satıcı keyfiyyətini müqayisə etmək üçün nəticələrdən siyahılar əlavə edin.",
-    "min": "Min",
-    "max": "Maks",
+    "empty": "Qiymət və satıcı keyfiyyətini müqayisə etmək üçün nəticələr əlavə edin.",
+    "min": "Minimum",
+    "max": "Maksimum",
     "spread": "Fərq",
     "average": "Orta",
     "remove": "Sil",
-    "sellerScore": "Satıcı balı"
+    "sellerScore": "Satıcı reytinqi"
   },
   "marketRefinement": {
-    "title": "Dəqiqləşdirmələr",
-    "intro": "Bazar imkanlarını daraltmaq üçün bu paylanmalardan istifadə edin.",
+    "title": "Filtrlər",
+    "intro": "Bu paylanmaları istifadə edərək bazar imkanlarını daraldın.",
     "condition": "Vəziyyət",
-    "buyingOptions": "Alış variantları",
+    "buyingOptions": "Alış seçimləri",
     "topAspects": "Əsas xüsusiyyətlər",
-    "noCondition": "Vəziyyət üzrə dəqiqləşdirmə qaytarılmadı.",
-    "noBuying": "Alış variantları üzrə dəqiqləşdirmə qaytarılmadı.",
-    "noAspects": "Xüsusiyyətləri doldurmaq üçün kateqoriya konteksti ilə axtarış edin."
+    "noCondition": "Vəziyyət filtri mövcud deyil.",
+    "noBuying": "Alış seçimləri mövcud deyil.",
+    "noAspects": "Kateqoriya ilə axtarış edin ki, xüsusiyyətlər görünsün."
   },
   "listingModal": {
-    "title": "eBay-da yerləşdir",
+    "title": "eBay-də yerləşdir",
     "activeAccount": "Aktiv eBay hesabınız istifadə olunur",
-    "activeAccountFromBucket": "Siyahı səbətinizdən · Aktiv eBay hesabınız istifadə olunur",
+    "activeAccountFromBucket": "Elan səbətindən · Aktiv hesab istifadə olunur",
     "listedSuccessfully": "Uğurla yerləşdirildi!",
-    "itemId": "Məhsul ID-si",
-    "viewOnEbay": "eBay-da bax",
+    "itemId": "Məhsul ID",
+    "viewOnEbay": "eBay-də bax",
     "warnings": "Xəbərdarlıqlar",
     "close": "Bağla",
-    "listAnother": "Başqa birini yerləşdir",
+    "listAnother": "Başqa yerləşdir",
     "cancel": "Ləğv et",
-    "save": "Saxla",
-    "list": "eBay-da yerləşdir",
-    "saving": "Saxlanılır...",
+    "save": "Yadda saxla",
+    "list": "eBay-də yerləşdir",
+    "saving": "Yadda saxlanılır...",
     "listing": "Yerləşdirilir...",
-    "failedToList": "eBay-da yerləşdirmək alınmadı"
-  },
-  "common": {
-    "loading": "Yüklənir...",
-    "error": "Xəta",
-    "success": "Uğur",
-    "cancel": "Ləğv Et",
-    "save": "Saxla",
-    "delete": "Sil",
-    "edit": "Redaktə Et",
-    "close": "Bağla",
-    "submit": "Göndər",
-    "back": "Geri"
-  },
-  "productsPage": {
-    "filterByEbayAccount": "Bağlı eBay hesabına görə filtrlə",
-    "filterByEbayAccountDescription": "Məhsulları bağlı eBay hesablarından birinə görə göstər.",
-    "allConnectedAccounts": "Bütün bağlı hesablar",
-    "noProductsMatchFilter": "Bu hesab filtri ilə uyğun məhsul yoxdur.",
-    "showAllProducts": "Bütün məhsulları göstər",
-    "unknownAccount": "Naməlum hesab"
-  },
-  "currency": {
-    "AZN": "AZN",
-    "USD": "USD",
-    "RUB": "RUB",
-    "TL": "TL"
+    "failedToList": "eBay-də yerləşdirmək alınmadı"
   }
 }
