@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LogOut, Settings, UserCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const [showDropdown, setShowDropdown] = useState(false);
   const displayName = [user?.name, user?.surname].filter(Boolean).join(' ').trim() || user?.fullName || user?.email || 'Account';
 
@@ -48,14 +50,14 @@ export default function Navbar() {
                     onClick={() => setShowDropdown(false)}
                   >
                     <Settings size={14} />
-                    Settings
+                    {t('navbar.settings')}
                   </Link>
                   <button
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2.5 text-red-600 hover:bg-red-50 border-t border-slate-100 flex items-center gap-2"
                   >
                     <LogOut size={14} />
-                    Logout
+                    {t('navbar.logout')}
                   </button>
                 </div>
               )}

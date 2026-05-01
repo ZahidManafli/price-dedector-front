@@ -1,0 +1,37 @@
+{
+  "dashboard": {
+    "title": "Kontrol Paneli",
+    "welcome": "Hoşgeldiniz",
+    "overview": "Genel Bakış"
+  },
+  "products": {
+    "title": "Ürünler",
+    "addProduct": "Ürün Ekle",
+    "editProduct": "Ürünü Düzenle",
+    "deleteProduct": "Ürünü Sil",
+    "viewDetails": "Ayrıntıları Görüntüle",
+    "noProducts": "Henüz ürün yok"
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "general": "Genel",
+    "preferences": "Tercihler",
+    "account": "Hesap",
+    "notifications": "Bildirimler",
+    "privacy": "Gizlilik"
+  },
+  "admin": {
+    "title": "Yönetici Paneli",
+    "users": "Kullanıcılar",
+    "plans": "Planlar",
+    "analytics": "Analitik",
+    "systemHealth": "Sistem Durumu"
+  },
+  "errors": {
+    "notFound": "Bulunamadı",
+    "unauthorized": "Yetkisiz",
+    "forbidden": "Yasak",
+    "serverError": "Sunucu hatası",
+    "tryAgain": "Tekrar deneyin"
+  }
+}

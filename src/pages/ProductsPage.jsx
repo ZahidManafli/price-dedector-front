@@ -6,9 +6,11 @@ import ProductCard from '../components/ProductCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
 import { ProductFormModal } from './ProductFormPage';
+import { useTranslation } from 'react-i18next';
 
 export default function ProductsPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
@@ -27,7 +29,7 @@ export default function ProductsPage() {
       const response = await productAPI.getAll();
       setProducts(response.data || []);
     } catch (error) {
-      setAlert({ type: 'error', message: 'Failed to load products' });
+      setAlert({ type: 'error', message: t('productsPage.failedLoad') });
     } finally {
       setLoading(false);
     }
@@ -43,14 +45,14 @@ export default function ProductsPage() {
   };
 
   const handleDelete = async (productId) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) return;
+    if (!window.confirm(t('productsPage.deleteConfirm'))) return;
     try {
       await productAPI.delete(productId);
       setProducts((prev) => prev.filter((p) => p.id !== productId));
-      setAlert({ type: 'success', message: 'Product deleted successfully' });
+      setAlert({ type: 'success', message: t('productsPage.deleted') });
       fetchLimits();
     } catch {
-      setAlert({ type: 'error', message: 'Failed to delete product' });
+      setAlert({ type: 'error', message: t('productsPage.failedDelete') });
     }
   };
 
@@ -84,15 +86,15 @@ export default function ProductsPage() {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-3">
         <div>
-          <h1 className="page-title">Products</h1>
-          <p className="page-subtitle">Manage your tracked items and monitor performance.</p>
+          <h1 className="page-title">{t('productsPage.title')}</h1>
+          <p className="page-subtitle">{t('productsPage.subtitle')}</p>
         </div>
         <div className="w-full md:w-auto flex flex-col md:flex-row gap-2">
           <button
             onClick={() => navigate('/market-analysis')}
             className="w-full md:w-auto btn-secondary"
           >
-            Open Checkila Analysis
+            {t('productsPage.openAnalysis')}
           </button>
           <button
             data-tour="products-add-button"
@@ -100,7 +102,7 @@ export default function ProductsPage() {
               if (isProductQuotaReached) {
                 setAlert({
                   type: 'warning',
-                  message: 'Product quota reached. Delete one product or ask admin to increase your limit.',
+                  message: t('productsPage.quotaReached'),
                 });
                 return;
               }
@@ -111,16 +113,16 @@ export default function ProductsPage() {
             className="w-full md:w-auto btn-primary flex items-center justify-center gap-1.5 disabled:cursor-not-allowed"
           >
             <Plus size={14} />
-            Add Product
+            {t('productsPage.addProduct')}
             {productsRemaining === null || productsRemaining === undefined ? (
-              <span className="ml-1 text-[11px] bg-white/20 px-2 py-0.5 rounded-full">Unlimited</span>
+              <span className="ml-1 text-[11px] bg-white/20 px-2 py-0.5 rounded-full">{t('productsPage.unlimited')}</span>
             ) : (
               <span
                 className={`ml-1 text-[11px] px-2 py-0.5 rounded-full ${
                   isProductQuotaReached ? 'bg-red-500/80' : 'bg-white/20'
                 }`}
               >
-                {productsRemaining} left
+                {productsRemaining} {t('productsPage.left')}
               </span>
             )}
           </button>
@@ -131,13 +133,13 @@ export default function ProductsPage() {
         <LoadingSpinner />
       ) : products.length === 0 ? (
         <div className="glass-card text-center py-10">
-          <p className="text-xl text-slate-500 dark:text-slate-300 mb-3">No products yet</p>
+          <p className="text-xl text-slate-500 dark:text-slate-300 mb-3">{t('productsPage.noProductsYet')}</p>
           <button
             onClick={() => {
               if (isProductQuotaReached) {
                 setAlert({
                   type: 'warning',
-                  message: 'Product quota reached. Delete one product or ask admin to increase your limit.',
+                  message: t('productsPage.quotaReached'),
                 });
                 return;
               }
@@ -147,7 +149,7 @@ export default function ProductsPage() {
             disabled={isProductQuotaReached}
             className="btn-primary disabled:cursor-not-allowed"
           >
-            {isProductQuotaReached ? 'Product quota reached' : 'Add your first product'}
+            {isProductQuotaReached ? t('productsPage.quotaReachedLabel') : t('productsPage.addFirstProduct')}
           </button>
         </div>
       ) : (

@@ -6,11 +6,13 @@ import Alert from '../components/Alert';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [preferences, setPreferences] = useState({
     emailOnPriceChange: true,
     emailNotificationFrequency: 'instant',
@@ -103,17 +105,17 @@ export default function SettingsPage() {
     e.preventDefault();
 
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      setAlert({ type: 'error', message: 'Please fill all password fields' });
+      setAlert({ type: 'error', message: t('settingsPage.pleaseFillPassword') });
       return;
     }
 
     if (passwordForm.newPassword.length < 8) {
-      setAlert({ type: 'error', message: 'New password must be at least 8 characters long' });
+      setAlert({ type: 'error', message: t('settingsPage.passwordTooShort') });
       return;
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setAlert({ type: 'error', message: 'New password and confirmation do not match' });
+      setAlert({ type: 'error', message: t('settingsPage.passwordMismatch') });
       return;
     }
 
@@ -121,9 +123,9 @@ export default function SettingsPage() {
       setPasswordSaving(true);
       await authAPI.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setAlert({ type: 'success', message: 'Password updated successfully' });
+      setAlert({ type: 'success', message: t('settingsPage.passwordUpdated') });
     } catch (error) {
-      setAlert({ type: 'error', message: error.response?.data?.error || 'Failed to change password' });
+      setAlert({ type: 'error', message: error.response?.data?.error || t('settingsPage.failedChangePassword') });
     } finally {
       setPasswordSaving(false);
     }
@@ -134,12 +136,12 @@ export default function SettingsPage() {
       requestType,
       title:
         requestType === 'update_credits'
-          ? 'Request Credit Top-Up'
-          : 'Request Subscription Reset',
+          ? t('settingsPage.requestCreditTopUp')
+          : t('settingsPage.requestSubscriptionReset'),
       description:
         requestType === 'update_credits'
-          ? 'Ask the admin team to add more credits to your account.'
-          : 'Ask the admin team to refresh your current subscription.',
+          ? t('settingsPage.requestMoreCredits')
+          : t('settingsPage.refreshSubscription'),
     });
   };
 
@@ -148,7 +150,7 @@ export default function SettingsPage() {
     if (remaining !== null && remaining !== undefined && remaining <= 0) {
       setAlert({
         type: 'warning',
-        message: 'Your eBay account connection limit is reached. Ask admin to increase your quota.',
+        message: t('settingsPage.connectionLimitReached') || 'Your eBay account connection limit is reached. Ask admin to increase your quota.',
       });
       return;
     }
@@ -162,7 +164,7 @@ export default function SettingsPage() {
     } catch (error) {
       setAlert({
         type: 'error',
-        message: error.response?.data?.error || 'Failed to start eBay connection',
+        message: error.response?.data?.error || t('settingsPage.failedToStartEbay')
       });
       setEbayLoading(false);
     }
@@ -173,11 +175,11 @@ export default function SettingsPage() {
       setEbayLoading(true);
       await ebayAPI.disconnect();
       setEbayStatus((prev) => ({ ...prev, connected: false, accountId: null }));
-      setAlert({ type: 'success', message: 'Disconnected eBay account' });
+      setAlert({ type: 'success', message: t('settingsPage.disconnectedEbay') || 'Disconnected eBay account' });
     } catch (error) {
       setAlert({
         type: 'error',
-        message: error.response?.data?.error || 'Failed to disconnect eBay',
+        message: error.response?.data?.error || t('settingsPage.failedToDisconnectEbay')
       });
     } finally {
       setEbayLoading(false);
@@ -194,7 +196,7 @@ export default function SettingsPage() {
     } catch (error) {
       setAlert({
         type: 'error',
-        message: error.response?.data?.error || 'Failed to start Amazon connection',
+        message: error.response?.data?.error || t('settingsPage.failedToStartAmazon')
       });
     } finally {
       setAmazonLoading(false);
@@ -207,11 +209,11 @@ export default function SettingsPage() {
       await amazonOAuthAPI.disconnect();
       const res = await amazonOAuthAPI.getStatus().catch(() => ({ data: { connected: false } }));
       setAmazonStatus(res?.data || { connected: false });
-      setAlert({ type: 'success', message: 'Disconnected Amazon account' });
+      setAlert({ type: 'success', message: t('settingsPage.disconnectedAmazon') || 'Disconnected Amazon account' });
     } catch (error) {
       setAlert({
         type: 'error',
-        message: error.response?.data?.error || 'Failed to disconnect Amazon',
+        message: error.response?.data?.error || t('settingsPage.failedToDisconnectAmazon')
       });
     } finally {
       setAmazonLoading(false);
@@ -225,11 +227,11 @@ export default function SettingsPage() {
       const ebayRes = await ebayAPI.getStatus();
       const nextStatus = ebayRes.data || {};
       setEbayStatus(nextStatus);
-      setAlert({ type: 'success', message: 'Active eBay account updated' });
+      setAlert({ type: 'success', message: t('settingsPage.activeEbayUpdated') || 'Active eBay account updated' });
     } catch (error) {
       setAlert({
         type: 'error',
-        message: error.response?.data?.error || 'Failed to set active eBay account',
+        message: error.response?.data?.error || t('settingsPage.failedSetActiveEbay')
       });
     } finally {
       setEbayLoading(false);
@@ -237,7 +239,7 @@ export default function SettingsPage() {
   };
 
   const handleDeleteEbayAccount = async (ebayAccountId) => {
-    const ok = window.confirm('Delete this eBay account? This will disconnect it and remove it from your saved accounts.');
+    const ok = window.confirm(t('settingsPage.deleteEbayAccount') || 'Delete this eBay account? This will disconnect it and remove it from your saved accounts.')
     if (!ok) return;
     try {
       setEbayLoading(true);
@@ -252,11 +254,11 @@ export default function SettingsPage() {
       });
       setNameDrafts(drafts);
       setLimits(limitsRes?.data || limits);
-      setAlert({ type: 'success', message: 'eBay account deleted' });
+      setAlert({ type: 'success', message: t('settingsPage.eBayDeleted') || 'eBay account deleted' });
     } catch (error) {
       setAlert({
         type: 'error',
-        message: error.response?.data?.error || 'Failed to delete eBay account',
+        message: error.response?.data?.error || t('settingsPage.failedDeleteEbay')
       });
     } finally {
       setEbayLoading(false);
@@ -266,7 +268,7 @@ export default function SettingsPage() {
   const handleSaveAccountName = async (ebayAccountId) => {
     const connectionName = String(nameDrafts[ebayAccountId] || '').trim();
     if (!connectionName) {
-      setAlert({ type: 'error', message: 'Connection name cannot be empty' });
+      setAlert({ type: 'error', message: t('settingsPage.connectionNameEmpty') || 'Connection name cannot be empty' });
       return;
     }
     try {
@@ -280,11 +282,11 @@ export default function SettingsPage() {
         drafts[a.id] = a.connectionName || a.username || a.profileUserId || '';
       });
       setNameDrafts(drafts);
-      setAlert({ type: 'success', message: 'eBay connection name updated' });
+      setAlert({ type: 'success', message: t('settingsPage.eBayNameUpdated') || 'eBay connection name updated' });
     } catch (error) {
       setAlert({
         type: 'error',
-        message: error.response?.data?.error || 'Failed to update eBay connection name',
+        message: error.response?.data?.error || t('settingsPage.failedUpdateEbayName')
       });
     } finally {
       setEbayLoading(false);
@@ -296,9 +298,9 @@ export default function SettingsPage() {
     try {
       setLoading(true);
       await settingsAPI.updatePreferences(preferences);
-      setAlert({ type: 'success', message: 'Settings saved successfully!' });
+      setAlert({ type: 'success', message: t('settingsPage.settingsSaved') || 'Settings saved successfully!' });
     } catch (error) {
-      setAlert({ type: 'error', message: 'Failed to save settings' });
+      setAlert({ type: 'error', message: t('settingsPage.failedSaveSettings') || 'Failed to save settings' });
     } finally {
       setLoading(false);
     }
@@ -315,7 +317,7 @@ export default function SettingsPage() {
   return (
     <div className="page-shell">
       <div className="max-w-2xl mx-auto">
-        <h1 className="page-title mb-8">Settings</h1>
+        <h1 className="page-title mb-8">{t('settingsPage.title')}</h1>
 
         {alert && (
           <div className="mb-6">
@@ -330,11 +332,11 @@ export default function SettingsPage() {
         <div className={`mb-6 rounded-xl p-1 border ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
             {[
-              { id: 'security', label: 'Account Security' },
-              { id: 'plans', label: 'Subscription & Credits' },
-              { id: 'ebay', label: 'eBay Connections' },
-              { id: 'amazon', label: 'Amazon Login' },
-              { id: 'notifications', label: 'Notifications' },
+              { id: 'security', label: t('settingsPage.security') },
+              { id: 'plans', label: t('settingsPage.plans') },
+              { id: 'ebay', label: t('settingsPage.ebay') },
+              { id: 'amazon', label: t('settingsPage.amazon') },
+              { id: 'notifications', label: t('settingsPage.notifications') },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -366,7 +368,7 @@ export default function SettingsPage() {
                 type="password"
                 value={passwordForm.currentPassword}
                 onChange={(e) => setPasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
-                placeholder="Current password"
+                placeholder={t('settingsPage.currentPassword')}
                 className="input-base"
                 disabled={passwordSaving}
               />
@@ -374,7 +376,7 @@ export default function SettingsPage() {
                 type="password"
                 value={passwordForm.newPassword}
                 onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
-                placeholder="New password"
+                placeholder={t('settingsPage.newPassword')}
                 className="input-base"
                 disabled={passwordSaving}
               />
@@ -382,7 +384,7 @@ export default function SettingsPage() {
                 type="password"
                 value={passwordForm.confirmPassword}
                 onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-                placeholder="Confirm new password"
+                placeholder={t('settingsPage.confirmNewPassword')}
                 className="input-base"
                 disabled={passwordSaving}
               />
@@ -393,7 +395,7 @@ export default function SettingsPage() {
                 disabled={passwordSaving}
                 className="rounded-xl bg-indigo-600 text-white px-5 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
               >
-                {passwordSaving ? 'Updating...' : 'Change Password'}
+                {passwordSaving ? t('settingsPage.updating') : t('settingsPage.changePassword')}
               </button>
             </div>
           </form>
@@ -406,10 +408,10 @@ export default function SettingsPage() {
             <div>
               <h2 className={`text-lg font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                 <Mail size={16} />
-                Credit Requests
+                {t('settingsPage.requestCreditTopUp')}
               </h2>
               <p className={`text-sm mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                Request more credits or ask the admin team to refresh your subscription.
+                {t('settingsPage.requestMoreCredits')}
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -418,14 +420,14 @@ export default function SettingsPage() {
                 onClick={() => openRequestModal('update_credits')}
                 className="rounded-xl bg-emerald-600 text-white px-4 py-2.5 hover:bg-emerald-700 transition"
               >
-                Request Credit Top-Up
+                {t('settingsPage.requestCreditTopUp')}
               </button>
               <button
                 type="button"
                 onClick={() => openRequestModal('reset_credits')}
                 className="rounded-xl bg-slate-800 text-white px-4 py-2.5 hover:bg-slate-700 transition"
               >
-                Request Subscription Reset
+                {t('settingsPage.requestSubscriptionReset')}
               </button>
             </div>
           </div>
@@ -444,7 +446,7 @@ export default function SettingsPage() {
                 isDark ? 'text-slate-100' : 'text-slate-900'
               }`}>
                 <Bell size={16} />
-                Email Notifications
+                {t('settingsPage.emailNotifications')}
               </h2>
 
               <label className={`flex items-center gap-3 mb-3 rounded-lg p-2.5 ${
@@ -459,7 +461,7 @@ export default function SettingsPage() {
                   disabled={loading}
                 />
                 <span className={isDark ? 'text-slate-200' : 'text-slate-700'}>
-                  Send email when prices change
+                  {t('settingsPage.sendEmailWhenPricesChange')}
                 </span>
               </label>
 
@@ -467,7 +469,7 @@ export default function SettingsPage() {
                 <label className={`block text-sm font-semibold mb-2 ${
                   isDark ? 'text-slate-300' : 'text-gray-700'
                 }`}>
-                  Notification Frequency
+                  {t('settingsPage.notificationFrequency')}
                 </label>
                 <select
                   name="emailNotificationFrequency"
@@ -476,9 +478,9 @@ export default function SettingsPage() {
                   className="input-base"
                   disabled={!preferences.emailOnPriceChange || loading}
                 >
-                  <option value="instant">Instant</option>
-                  <option value="daily">Daily Summary</option>
-                  <option value="weekly">Weekly Summary</option>
+                  <option value="instant">{t('settingsPage.instant')}</option>
+                  <option value="daily">{t('settingsPage.dailySummary')}</option>
+                  <option value="weekly">{t('settingsPage.weeklySummary')}</option>
                 </select>
               </div>
             </div>

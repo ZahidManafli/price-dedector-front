@@ -1,0 +1,148 @@
+{
+  "language": "Azərbaycanca",
+  "nav": {
+    "dashboard": "Paneli",
+    "products": "Məhsullar",
+    "listings": "Siyahılar",
+    "orders": "Sifarişlər",
+    "amazonLookup": "Amazon Axtarışı",
+    "ebayCalculator": "eBay Kalkulyator",
+    "marketAnalysis": "Checkila Analizi",
+    "dewiso": "Dewiso",
+    "settings": "Ayarlar",
+    "adminPanel": "Admin Paneli"
+  },
+  "sidebar": {
+    "selectLanguage": "Dili Seçin",
+    "theme": "Tema",
+    "logout": "Çıxış",
+    "ebayStatus": "eBay Statusu"
+  },
+  "auth": {
+    "login": "Giriş",
+    "logout": "Çıxış",
+    "email": "E-mail",
+    "password": "Şifrə",
+    "rememberMe": "Məni xatırla",
+    "signIn": "Daxil Ol",
+    "dontHaveAccount": "Hesabınız yoxdur?",
+    "loginFailed": "Giriş uğursuz oldu",
+    "invalidCredentials": "Yanlış e-mail və ya şifrə",
+    "fillAllFields": "Lütfən bütün sahələri doldurun",
+    "loginSuccess": "Giriş uğurlu oldu!"
+  },
+  "loginPage": {
+    "title": "Xoş gəlmisiniz",
+    "subtitle": "Qiymətləri və avtomatlaşdırmanı idarə etmək üçün Checkila-ya daxil olun",
+    "register": "Qeydiyyat",
+    "noAccount": "Hesabınız yoxdur?",
+    "loggingIn": "Daxil olunur...",
+    "requestSent": "Sorğunuz qəbul olundu. Admin tezliklə sizinlə əlaqə saxlayacaq."
+  },
+  "signupPage": {
+    "title": "Hesab yaradın",
+    "subtitle": "Məhsulları daha ağıllı izləməyə başlayın",
+    "fullName": "Ad və soyad",
+    "confirmPassword": "Şifrəni təsdiqləyin",
+    "passwordHint": "Şifrə (minimum 6 simvol)",
+    "creatingAccount": "Hesab yaradılır...",
+    "signUp": "Qeydiyyatdan keç",
+    "alreadyHaveAccount": "Artıq hesabınız var?",
+    "passwordsDoNotMatch": "Şifrələr uyğun gəlmir",
+    "passwordTooShort": "Şifrə ən azı 6 simvol olmalıdır",
+    "accountCreated": "Hesab uğurla yaradıldı! Zəhmət olmasa daxil olun.",
+    "signupFailed": "Qeydiyyat uğursuz oldu"
+  },
+  "aboutPage": {
+    "title": "Checkila haqqında",
+    "intro": "Checkila onlayn satıcılara Amazon və eBay qiymətlərini izləməyə, mənfəəti hesablamağa və xərclər dəyişəndə tez reaksiya verməyə kömək edir.",
+    "whatWeDo": "Nə edirik",
+    "items": [
+      "Amazon məhsul qiymət dəyişikliklərini izləyin",
+      "Təyin etdiyiniz formul ilə mənfəəti hesablayın",
+      "Hər məhsul üçün qiymət tarixçəsini saxlayın",
+      "Əhəmiyyətli dəyişikliklər olduqda bildiriş göndərin",
+      "İstəyə görə tövsiyə olunan qiymətləri bağlı eBay siyahıları ilə sinxronlaşdırın"
+    ],
+    "contact": "Əlaqə",
+    "support": "Dəstək e-poçtu: checkilanotify@gmail.com",
+    "backToApp": "Tətbiqə qayıt"
+  },
+  "amazonCallback": {
+    "connecting": "Amazon hesabınız qoşulur",
+    "connected": "Uğurla qoşuldu",
+    "failed": "Qoşulma uğursuz oldu",
+    "finalizing": "Amazon icazəsi tamamlanır...",
+    "linkedRedirecting": "Amazon hesabınız artıq qoşuldu. Ayarlara yönləndirilir...",
+    "couldNotComplete": "Amazon qoşulmasını tamamlamaq mümkün olmadı. Yenidən cəhd edin.",
+    "missingCodeState": "Amazon OAuth kodu/vəziyyəti çatışmır",
+    "authorizationFailed": "Amazon icazəsi uğursuz oldu: {{error}}",
+    "connectionFailed": "Amazon qoşulmasını tamamlamaq mümkün olmadı",
+    "successMessage": "Amazon hesabı uğurla qoşuldu",
+    "tryAgain": "Yenidən cəhd et",
+    "backToDashboard": "Panelə qayıt"
+  },
+  "navbar": {
+    "settings": "Ayarlar",
+    "logout": "Çıxış"
+  },
+  "loading": {
+    "data": "Məlumat yüklənir..."
+  },
+  "marketCompare": {
+    "title": "Müqayisə səbəti",
+    "clear": "Təmizlə",
+    "empty": "Qiymət və satıcı keyfiyyətini müqayisə etmək üçün nəticələrdən siyahılar əlavə edin.",
+    "min": "Min",
+    "max": "Maks",
+    "spread": "Fərq",
+    "average": "Orta",
+    "remove": "Sil",
+    "sellerScore": "Satıcı balı"
+  },
+  "marketRefinement": {
+    "title": "Dəqiqləşdirmələr",
+    "intro": "Bazar imkanlarını daraltmaq üçün bu paylanmalardan istifadə edin.",
+    "condition": "Vəziyyət",
+    "buyingOptions": "Alış variantları",
+    "topAspects": "Əsas xüsusiyyətlər",
+    "noCondition": "Vəziyyət üzrə dəqiqləşdirmə qaytarılmadı.",
+    "noBuying": "Alış variantları üzrə dəqiqləşdirmə qaytarılmadı.",
+    "noAspects": "Xüsusiyyətləri doldurmaq üçün kateqoriya konteksti ilə axtarış edin."
+  },
+  "listingModal": {
+    "title": "eBay-da yerləşdir",
+    "activeAccount": "Aktiv eBay hesabınız istifadə olunur",
+    "activeAccountFromBucket": "Siyahı səbətinizdən · Aktiv eBay hesabınız istifadə olunur",
+    "listedSuccessfully": "Uğurla yerləşdirildi!",
+    "itemId": "Məhsul ID-si",
+    "viewOnEbay": "eBay-da bax",
+    "warnings": "Xəbərdarlıqlar",
+    "close": "Bağla",
+    "listAnother": "Başqa birini yerləşdir",
+    "cancel": "Ləğv et",
+    "save": "Saxla",
+    "list": "eBay-da yerləşdir",
+    "saving": "Saxlanılır...",
+    "listing": "Yerləşdirilir...",
+    "failedToList": "eBay-da yerləşdirmək alınmadı"
+  },
+  "common": {
+    "loading": "Yüklənir...",
+    "error": "Xəta",
+    "success": "Uğur",
+    "cancel": "Ləğv Et",
+    "save": "Saxla",
+    "delete": "Sil",
+    "edit": "Redaktə Et",
+    "close": "Bağla",
+    "submit": "Göndər",
+    "back": "Geri"
+  },
+  "currency": {
+    "AZN": "AZN",
+    "USD": "USD",
+    "RUB": "RUB",
+    "TL": "TL"
+  }
+}

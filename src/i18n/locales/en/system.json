@@ -1,0 +1,37 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome",
+    "overview": "Overview"
+  },
+  "products": {
+    "title": "Products",
+    "addProduct": "Add Product",
+    "editProduct": "Edit Product",
+    "deleteProduct": "Delete Product",
+    "viewDetails": "View Details",
+    "noProducts": "No products yet"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "preferences": "Preferences",
+    "account": "Account",
+    "notifications": "Notifications",
+    "privacy": "Privacy"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "users": "Users",
+    "plans": "Plans",
+    "analytics": "Analytics",
+    "systemHealth": "System Health"
+  },
+  "errors": {
+    "notFound": "Not found",
+    "unauthorized": "Unauthorized",
+    "forbidden": "Forbidden",
+    "serverError": "Server error",
+    "tryAgain": "Try again"
+  }
+}

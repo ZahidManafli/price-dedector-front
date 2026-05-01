@@ -1,0 +1,148 @@
+{
+  "language": "Türkçe",
+  "nav": {
+    "dashboard": "Kontrol Paneli",
+    "products": "Ürünler",
+    "listings": "İlanlar",
+    "orders": "Siparişler",
+    "amazonLookup": "Amazon Araması",
+    "ebayCalculator": "eBay Hesaplayıcısı",
+    "marketAnalysis": "Checkila Analizi",
+    "dewiso": "Dewiso",
+    "settings": "Ayarlar",
+    "adminPanel": "Yönetici Paneli"
+  },
+  "sidebar": {
+    "selectLanguage": "Dil Seçin",
+    "theme": "Tema",
+    "logout": "Çıkış Yap",
+    "ebayStatus": "eBay Durumu"
+  },
+  "auth": {
+    "login": "Giriş",
+    "logout": "Çıkış Yap",
+    "email": "E-posta",
+    "password": "Parola",
+    "rememberMe": "Beni hatırla",
+    "signIn": "Giriş Yap",
+    "dontHaveAccount": "Hesabınız yok mu?",
+    "loginFailed": "Giriş başarısız oldu",
+    "invalidCredentials": "Geçersiz e-posta veya parola",
+    "fillAllFields": "Lütfen tüm alanları doldurun",
+    "loginSuccess": "Giriş başarılı!"
+  },
+  "loginPage": {
+    "title": "Tekrar hoş geldiniz",
+    "subtitle": "Fiyatları ve otomasyonu yönetmek için Checkila’ya giriş yapın",
+    "register": "Kayıt Ol",
+    "noAccount": "Hesabınız yok mu?",
+    "loggingIn": "Giriş yapılıyor...",
+    "requestSent": "Talebiniz alındı. Yönetici kısa süre içinde sizinle iletişime geçecek."
+  },
+  "signupPage": {
+    "title": "Hesap oluştur",
+    "subtitle": "Ürünleri daha akıllı bir şekilde takip etmeye başlayın",
+    "fullName": "Ad Soyad",
+    "confirmPassword": "Parolayı Onayla",
+    "passwordHint": "Parola (en az 6 karakter)",
+    "creatingAccount": "Hesap oluşturuluyor...",
+    "signUp": "Kayıt Ol",
+    "alreadyHaveAccount": "Zaten hesabınız var mı?",
+    "passwordsDoNotMatch": "Parolalar eşleşmiyor",
+    "passwordTooShort": "Parola en az 6 karakter olmalıdır",
+    "accountCreated": "Hesap başarıyla oluşturuldu! Lütfen giriş yapın.",
+    "signupFailed": "Kayıt başarısız oldu"
+  },
+  "aboutPage": {
+    "title": "Checkila Hakkında",
+    "intro": "Checkila, çevrimiçi satıcıların Amazon ve eBay fiyatlarını takip etmesine, kârı tahmin etmesine ve maliyetler değiştiğinde hızlı tepki vermesine yardımcı olur.",
+    "whatWeDo": "Ne Yapıyoruz",
+    "items": [
+      "Amazon ürün fiyat değişikliklerini takip eder",
+      "Kendi formülünüzle kârı hesaplar",
+      "Her ürün için fiyat geçmişini saklar",
+      "Önemli değişikliklerde bildirim gönderir",
+      "İsteğe bağlı olarak önerilen fiyatları bağlı eBay ilanlarıyla senkronize eder"
+    ],
+    "contact": "İletişim",
+    "support": "Destek e-postası: checkilanotify@gmail.com",
+    "backToApp": "Uygulamaya dön"
+  },
+  "amazonCallback": {
+    "connecting": "Amazon hesabınız bağlanıyor",
+    "connected": "Başarıyla bağlandı",
+    "failed": "Bağlantı başarısız oldu",
+    "finalizing": "Amazon yetkilendirmesi tamamlanıyor...",
+    "linkedRedirecting": "Amazon hesabınız artık bağlı. Ayarlara yönlendiriliyor...",
+    "couldNotComplete": "Amazon bağlantısı tamamlanamadı. Lütfen tekrar deneyin.",
+    "missingCodeState": "Amazon OAuth kodu/durumu eksik",
+    "authorizationFailed": "Amazon yetkilendirmesi başarısız oldu: {{error}}",
+    "connectionFailed": "Amazon bağlantısı tamamlanamadı",
+    "successMessage": "Amazon hesabı başarıyla bağlandı",
+    "tryAgain": "Tekrar dene",
+    "backToDashboard": "Kontrol paneline dön"
+  },
+  "navbar": {
+    "settings": "Ayarlar",
+    "logout": "Çıkış Yap"
+  },
+  "loading": {
+    "data": "Veriler yükleniyor..."
+  },
+  "marketCompare": {
+    "title": "Karşılaştırma Alanı",
+    "clear": "Temizle",
+    "empty": "Fiyatı ve satıcı kalitesini karşılaştırmak için sonuçlardan ilan ekleyin.",
+    "min": "Min",
+    "max": "Maks",
+    "spread": "Aralık",
+    "average": "Ortalama",
+    "remove": "Kaldır",
+    "sellerScore": "Satıcı puanı"
+  },
+  "marketRefinement": {
+    "title": "İyileştirmeler",
+    "intro": "Pazar fırsatlarını daraltmak için bu dağılımları kullanın.",
+    "condition": "Durum",
+    "buyingOptions": "Satın alma seçenekleri",
+    "topAspects": "Öne çıkan özellikler",
+    "noCondition": "Durum iyileştirmesi döndürülmedi.",
+    "noBuying": "Satın alma seçenekleri iyileştirmesi döndürülmedi.",
+    "noAspects": "Özellikleri doldurmak için kategori bağlamıyla arama yapın."
+  },
+  "listingModal": {
+    "title": "eBay’de listele",
+    "activeAccount": "Aktif eBay hesabınız kullanılıyor",
+    "activeAccountFromBucket": "Liste sepetinizden · Aktif eBay hesabınız kullanılıyor",
+    "listedSuccessfully": "Başarıyla listelendi!",
+    "itemId": "Ürün kimliği",
+    "viewOnEbay": "eBay’de görüntüle",
+    "warnings": "Uyarılar",
+    "close": "Kapat",
+    "listAnother": "Başka birini listele",
+    "cancel": "İptal",
+    "save": "Kaydet",
+    "list": "eBay’de listele",
+    "saving": "Kaydediliyor...",
+    "listing": "Listeleniyor...",
+    "failedToList": "eBay’de listeleme başarısız oldu"
+  },
+  "common": {
+    "loading": "Yükleniyor...",
+    "error": "Hata",
+    "success": "Başarı",
+    "cancel": "İptal",
+    "save": "Kaydet",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "close": "Kapat",
+    "submit": "Gönder",
+    "back": "Geri"
+  },
+  "currency": {
+    "AZN": "AZN",
+    "USD": "USD",
+    "RUB": "RUB",
+    "TL": "TL"
+  }
+}

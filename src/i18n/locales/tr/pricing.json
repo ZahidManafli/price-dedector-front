@@ -1,0 +1,33 @@
+{
+  "planCard": {
+    "monthly": "Aylık",
+    "yearly": "Yıllık",
+    "perMonth": "aylık",
+    "featured": "Öne Çıkanlar",
+    "subscribe": "Abone Ol",
+    "select": "Planı Seçin",
+    "features": "Özellikler"
+  },
+  "subscription": {
+    "trackProducts": "{{count}}'e kadar Amazon ürünü izleyin",
+    "amazonLookups": "Günde {{count}} Amazon araması",
+    "basicCompetitorMonitoring": "Temel rakip izlemesi",
+    "advancedCompetitorMonitoring": "Gelişmiş rakip izlemesi",
+    "fullMarketMonitoring": "Tam pazar izlemesi",
+    "emailSupport": "E-posta desteği",
+    "prioritySupport": "Öncelikli destek"
+  },
+  "analytics": {
+    "credits": "Checkila Analizi için {{count}} kredi",
+    "unlimitedCredits": "Sınırsız Checkila Analizi kredileri"
+  },
+  "amazonMonitoring": {
+    "trackProducts": "{{count}}'e kadar Amazon ürünü izleyin",
+    "amazonLookups": "Günde {{count}} Amazon araması",
+    "basicCompetitorMonitoring": "Temel rakip izlemesi",
+    "advancedCompetitorMonitoring": "Gelişmiş rakip izlemesi",
+    "fullMarketMonitoring": "Tam pazar izlemesi",
+    "emailSupport": "E-posta desteği",
+    "prioritySupport": "Öncelikli destek"
+  }
+}

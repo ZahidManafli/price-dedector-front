@@ -1,23 +1,23 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function MarketRefinementPanel({ refinement }) {
+  const { t } = useTranslation();
   const aspects = refinement?.aspectDistributions || [];
   const conditions = refinement?.conditionDistributions || [];
   const buying = refinement?.buyingOptionDistributions || [];
 
   return (
     <aside className="glass-card p-4 h-fit">
-      <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Refinements</h3>
-      <p className="text-xs text-slate-500 dark:text-slate-300 mt-1 mb-3">
-        Use these distributions to narrow your market opportunities.
-      </p>
+      <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{t('marketRefinement.title')}</h3>
+      <p className="text-xs text-slate-500 dark:text-slate-300 mt-1 mb-3">{t('marketRefinement.intro')}</p>
 
       <div className="space-y-4">
         <section>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 mb-2">Condition</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 mb-2">{t('marketRefinement.condition')}</p>
           <div className="space-y-1">
             {conditions.length === 0 ? (
-              <p className="text-xs text-slate-400">No condition refinements returned.</p>
+              <p className="text-xs text-slate-400">{t('marketRefinement.noCondition')}</p>
             ) : (
               conditions.slice(0, 6).map((item) => (
                 <div key={`${item.conditionId}-${item.matchCount}`} className="flex justify-between text-sm">
@@ -30,10 +30,10 @@ export default function MarketRefinementPanel({ refinement }) {
         </section>
 
         <section>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 mb-2">Buying Options</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 mb-2">{t('marketRefinement.buyingOptions')}</p>
           <div className="space-y-1">
             {buying.length === 0 ? (
-              <p className="text-xs text-slate-400">No buying-option refinements returned.</p>
+              <p className="text-xs text-slate-400">{t('marketRefinement.noBuying')}</p>
             ) : (
               buying.slice(0, 6).map((item) => (
                 <div key={`${item.buyingOption}-${item.matchCount}`} className="flex justify-between text-sm">
@@ -46,10 +46,10 @@ export default function MarketRefinementPanel({ refinement }) {
         </section>
 
         <section>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 mb-2">Top Aspects</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 mb-2">{t('marketRefinement.topAspects')}</p>
           <div className="space-y-2">
             {aspects.length === 0 ? (
-              <p className="text-xs text-slate-400">Run a search with category context to populate aspects.</p>
+              <p className="text-xs text-slate-400">{t('marketRefinement.noAspects')}</p>
             ) : (
               aspects.slice(0, 4).map((aspect) => (
                 <div key={aspect.localizedAspectName} className="border border-slate-200 dark:border-slate-700 rounded-lg p-2">

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowRight,
   BadgeCheck,
@@ -9,101 +10,13 @@ import {
   Radar,
   ShieldCheck,
   Sparkles,
+  ChevronDown,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { settingsAPI } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import PartnersSection from '../components/PartnersSection';
-
-const featureCards = [
-  {
-    icon: BarChart3,
-    title: 'Tracking that stays current',
-    description: 'Monitor Amazon pricing, inventory signals, and movement with fewer manual checks.',
-  },
-  {
-    icon: Radar,
-    title: 'Checkila Analysis built in',
-    description: 'Use credits on fast Checkila Analysis workflows to validate opportunities before listing.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Listing control and support',
-    description: 'Keep every draft editable, organized, and supported by responsive service coverage.',
-  },
-];
-
-const heroStats = [
-  { label: 'Amazon price tracking', value: 'Track products faster', icon: Globe2 },
-  { label: 'Checkila Analysis', value: 'Credit-based intelligence', icon: BarChart3 },
-  { label: 'eBay account workflow', value: 'Built for multi-account use', icon: BadgeCheck },
-];
-
-const workflowSteps = [
-  {
-    title: 'Discover',
-    description: 'Start from Amazon lookup, Checkila Analysis, or a product you already track.',
-  },
-  {
-    title: 'Decide',
-    description: 'Compare pricing, credits, and account limits before you commit to a plan.',
-  },
-  {
-    title: 'Publish',
-    description: 'Move into your eBay workflow with a clear structure and fewer surprises.',
-  },
-];
-
-const amazonMonitoringPlans = [
-  {
-    name: 'Basic',
-    duration: 'Monthly',
-    price: '12.99 AZN',
-    summary: 'Entry-level Amazon monitoring for small sellers who need steady tracking.',
-    features: ['Track up to 20 Amazon products', '1 Amazon lookup per day', 'Basic competitor monitoring', 'Email support'],
-    accent: 'from-sky-400/25 to-indigo-500/15',
-    featured: false,
-  },
-  {
-    name: 'Pro',
-    duration: 'Monthly',
-    price: '23.99 AZN',
-    summary: 'A stronger Amazon monitoring plan for growing stores and heavier usage.',
-    features: ['Track up to 50 Amazon products', '2 Amazon lookups per day', 'Advanced competitor monitoring', 'Priority support'],
-    accent: 'from-cyan-400/35 to-blue-500/20',
-    featured: true,
-  },
-  {
-    name: 'Advantage',
-    duration: 'Monthly',
-    price: '37.99 AZN',
-    summary: 'The highest Amazon monitoring tier for active teams and scaling sellers.',
-    features: ['Track up to 100 Amazon products', '3 Amazon lookups per day', 'Full market monitoring', 'Priority support'],
-    accent: 'from-amber-400/25 to-orange-500/15',
-    featured: false,
-  },
-];
-
-const analyticsPlans = [
-  {
-    name: 'Basic Analytics Plan',
-    duration: 'Monthly',
-    price: '7.99 AZN',
-    summary: 'Best for focused analysis use without a large feature set.',
-    features: ['2,000 credits for Checkila Analysis'],
-    accent: 'from-violet-400/20 to-slate-700/10',
-    featured: false,
-  },
-  {
-    name: 'Pro Analytics Plan',
-    duration: 'Monthly',
-    price: '9.90 AZN',
-    summary: 'A better fit for frequent analysis and conversion workflows.',
-    features: ['5,000 credits for Checkila Analysis', 'Access to Sell Similar feature'],
-    accent: 'from-cyan-400/30 to-blue-500/15',
-    featured: true,
-  },
-];
 
 function SectionHeader({ eyebrow, title, description, align = 'left' }) {
   const alignClasses = align === 'center' ? 'items-center text-center' : 'items-start text-left';
@@ -119,7 +32,58 @@ function SectionHeader({ eyebrow, title, description, align = 'left' }) {
   );
 }
 
+function LanguageSelector() {
+  const { currentLanguage, changeLanguage } = useLanguage();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const languages = [
+    { code: 'en', label: 'English (EN)' },
+    { code: 'az', label: 'Azərbaycanca (AZ)' },
+    { code: 'ru', label: 'Русский (RUS)' },
+    { code: 'tr', label: 'Türkçe (TÜR)' },
+  ];
+
+  const currentLangLabel = languages.find((lang) => lang.code === currentLanguage)?.label || 'English';
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/15"
+      >
+        <Globe2 size={16} />
+        <span className="hidden sm:inline">{currentLangLabel.split(' ')[0]}</span>
+        <ChevronDown size={14} className={`transition ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-48 rounded-xl border border-white/15 bg-slate-900 shadow-xl z-50">
+          {languages.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => {
+                changeLanguage(lang.code);
+                setIsOpen(false);
+              }}
+              className={`w-full px-4 py-3 text-left text-sm font-medium transition ${
+                currentLanguage === lang.code
+                  ? 'bg-cyan-500/20 text-cyan-100'
+                  : 'text-slate-300 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PlanCard({ plan, onSubscribe }) {
+  const { formatPrice } = useLanguage();
+  const { t } = useTranslation('pricing');
+
   const featuredClasses = plan.featured
     ? 'border-cyan-300/50 bg-slate-900/95 shadow-[0_20px_80px_rgba(34,211,238,0.14)]'
     : 'border-white/10 bg-slate-900/70';
@@ -133,7 +97,11 @@ function PlanCard({ plan, onSubscribe }) {
     ? Math.round(((Number(plan.actualPrice) - Number(plan.discountedPrice)) / Number(plan.actualPrice)) * 100)
     : 0;
 
-  const currency = plan.currency || 'AZN';
+  // Convert price from AZN to target currency
+  const displayPrice = plan.actualPrice
+    ? formatPrice(plan.actualPrice)
+    : formatPrice(plan.price?.match(/[\d.]+/)?.[0] || 0);
+  const discountedDisplay = plan.discountedPrice ? formatPrice(plan.discountedPrice) : null;
 
   return (
     <article
@@ -149,32 +117,28 @@ function PlanCard({ plan, onSubscribe }) {
           </div>
           {plan.featured ? (
             <span className="rounded-full border border-cyan-300/30 bg-cyan-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
-              Best value
+              {t('planCard.featured')}
             </span>
           ) : null}
         </div>
 
         <div className="mt-5 rounded-2xl border border-cyan-300/20 bg-slate-950/45 p-3">
-          {hasDiscount ? (
+          {hasDiscount && discountedDisplay ? (
             <>
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm text-slate-300 line-through">
-                  {Number(plan.actualPrice).toFixed(2)} {currency}
-                </p>
+                <p className="text-sm text-slate-300 line-through">{displayPrice}</p>
                 <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-100">
                   Save {discountPercent}%
                 </span>
               </div>
               <div className="mt-1 flex items-end gap-2">
-                <span className="text-3xl font-semibold tracking-tight text-white">
-                  {Number(plan.discountedPrice).toFixed(2)} {currency}
-                </span>
+                <span className="text-3xl font-semibold tracking-tight text-white">{discountedDisplay}</span>
                 <span className="text-xs text-slate-400">special offer</span>
               </div>
             </>
           ) : (
             <div className="flex items-end gap-2">
-              <span className="text-3xl font-semibold tracking-tight text-white">{plan.price}</span>
+              <span className="text-3xl font-semibold tracking-tight text-white">{displayPrice}</span>
             </div>
           )}
         </div>
@@ -195,7 +159,7 @@ function PlanCard({ plan, onSubscribe }) {
           onClick={() => onSubscribe?.(plan)}
           className="mt-5 w-full rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
         >
-          Subscribe
+          {t('planCard.subscribe')}
         </button>
       </div>
     </article>
@@ -244,6 +208,7 @@ function normalizePlan(raw = {}) {
 }
 
 export default function LandingPage() {
+  const { t } = useTranslation(['landing', 'common', 'pricing']);
   const [activeTab, setActiveTab] = useState('subscription');
   const [plans, setPlans] = useState([]);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
@@ -272,11 +237,10 @@ export default function LandingPage() {
     };
   }, []);
 
-  const planSource = plans.length > 0 ? plans : amazonMonitoringPlans;
+  const planSource = plans.length > 0 ? plans : [];
 
   const amazonMonitoringVisiblePlans = useMemo(() => {
-    const apiAmazonMonitoringPlans = planSource.filter((p) => p.category === 'amazon_monitoring' && p.isActive !== false);
-    return apiAmazonMonitoringPlans.length > 0 ? apiAmazonMonitoringPlans : amazonMonitoringPlans;
+    return planSource.filter((p) => p.category === 'amazon_monitoring' && p.isActive !== false);
   }, [planSource]);
 
   const subscriptionVisiblePlans = useMemo(
@@ -297,11 +261,51 @@ export default function LandingPage() {
   const onRequestSuccess = () => {
     Swal.fire({
       icon: 'success',
-      title: 'Request Received',
+      title: t('common:success'),
       text: 'Your request has been sent. Admin will reach you soon.',
       confirmButtonColor: '#22d3ee',
     });
   };
+
+  // Build dynamic feature cards from translations
+  const featureCards = [
+    {
+      icon: BarChart3,
+      title: t('landing:features.tracking.title'),
+      description: t('landing:features.tracking.description'),
+    },
+    {
+      icon: Radar,
+      title: t('landing:features.analysis.title'),
+      description: t('landing:features.analysis.description'),
+    },
+    {
+      icon: ShieldCheck,
+      title: t('landing:features.listing.title'),
+      description: t('landing:features.listing.description'),
+    },
+  ];
+
+  const heroStats = [
+    { label: t('landing:stats.tracking'), value: t('landing:stats.trackingValue'), icon: Globe2 },
+    { label: t('landing:stats.analysis'), value: t('landing:stats.analysisValue'), icon: BarChart3 },
+    { label: t('landing:stats.ebay'), value: t('landing:stats.ebayValue'), icon: BadgeCheck },
+  ];
+
+  const workflowSteps = [
+    {
+      title: t('landing:workflow.discover.title'),
+      description: t('landing:workflow.discover.description'),
+    },
+    {
+      title: t('landing:workflow.decide.title'),
+      description: t('landing:workflow.decide.description'),
+    },
+    {
+      title: t('landing:workflow.publish.title'),
+      description: t('landing:workflow.publish.description'),
+    },
+  ];
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
@@ -341,34 +345,36 @@ export default function LandingPage() {
                 Contact
               </a>
             </nav>
-            <Link
-              to="/login"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/15"
-            >
-              Portal
-              <ArrowRight size={14} />
-            </Link>
+            <div className="flex items-center gap-3">
+              <LanguageSelector />
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/15"
+              >
+                {t('common:auth.login')}
+                <ArrowRight size={14} />
+              </Link>
+            </div>
           </header>
 
           <div className="mt-14 grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
                 <Sparkles size={14} />
-                Way to e-commerce
+                {t('landing:hero.eyebrow')}
               </div>
               <h1 className="mt-5 text-4xl font-semibold leading-tight tracking-tight text-white md:text-6xl xl:text-7xl">
-                Your dependable guide to smarter pricing, tracking, and selling.
+                {t('landing:hero.title')}
               </h1>
               <p className="mt-6 max-w-xl text-base leading-7 text-slate-300 md:text-lg">
-                Checkila helps sellers automate product tracking, validate market opportunities, and manage
-                eBay workflows with a polished experience that feels fast, clear, and premium.
+                {t('landing:hero.subtitle')}
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link
                   to="/login"
                   className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:scale-[1.01] hover:from-cyan-300 hover:to-blue-400"
                 >
-                  Enter Portal
+                  {t('landing:hero.cta')}
                   <ArrowRight size={14} />
                 </Link>
                 <a
@@ -409,9 +415,9 @@ export default function LandingPage() {
 
         <section id="features" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
           <SectionHeader
-            eyebrow="What you get"
-            title="Everything is shaped around faster decisions and cleaner execution."
-            description="The layout is intentionally concise: high-value features, measurable limits, and a premium visual rhythm that makes the product feel established from the first screen."
+            eyebrow={t('landing:hero.eyebrow')}
+            title={t('landing:features.tracking.title')}
+            description={t('landing:features.tracking.description')}
             align="center"
           />
 
@@ -474,9 +480,9 @@ export default function LandingPage() {
 
         <section id="plans" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
           <SectionHeader
-            eyebrow="Our plans"
-            title="Flexible subscription plans, plus data analytics packages."
-            description="Choose between subscription, analytics, and Amazon monitoring packages based on your workflow."
+            eyebrow={t('landing:pricing.eyebrow')}
+            title={t('landing:pricing.title')}
+            description={t('landing:pricing.description')}
             align="center"
           />
 
@@ -490,7 +496,7 @@ export default function LandingPage() {
                     : 'text-slate-300 hover:text-white'
                 }`}
               >
-                Subscription Plans
+                {t('landing:pricing.subscriptionPlans')}
               </button>
               <button
                 onClick={() => setActiveTab('analytics')}
@@ -500,7 +506,7 @@ export default function LandingPage() {
                     : 'text-slate-300 hover:text-white'
                 }`}
               >
-                Data Analytics Plans
+                {t('landing:pricing.analyticsPlans')}
               </button>
               <button
                 onClick={() => setActiveTab('amazon_monitoring')}
@@ -510,7 +516,7 @@ export default function LandingPage() {
                     : 'text-slate-300 hover:text-white'
                 }`}
               >
-                Amazon Monitoring Plans
+                {t('landing:pricing.amazonMonitoringPlans')}
               </button>
             </div>
           </div>
@@ -520,9 +526,11 @@ export default function LandingPage() {
               <div>
                 <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">Subscription Plans</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">
+                      {t('landing:pricing.subscriptionPlans')}
+                    </p>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-                      Choose the plan that matches your product count, daily lookup needs, and access level.
+                      {t('landing:pricing.subscriptionDescription')}
                     </p>
                   </div>
                 </div>
@@ -533,14 +541,14 @@ export default function LandingPage() {
                     onClick={() => onSubscribePlan({ id: 'custom' })}
                     className="rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20"
                   >
-                    Request Custom Plan
+                    {t('landing:pricing.requestCustom')}
                   </button>
                 </div>
 
                 <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
                   {subscriptionVisiblePlans.length === 0 ? (
                     <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-300">
-                      No subscription plans configured yet. Ask admin to add plans in Admin Panel.
+                      {t('landing:pricing.noPlans')}
                     </div>
                   ) : (
                     subscriptionVisiblePlans.map((plan) => (
@@ -555,9 +563,11 @@ export default function LandingPage() {
               <div>
                 <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">Data Analytics Plans</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">
+                      {t('landing:pricing.analyticsPlans')}
+                    </p>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-                      For users who want Checkila Analysis credits and a focused analytics workflow.
+                      {t('landing:pricing.analyticsDescription')}
                     </p>
                   </div>
                 </div>
@@ -568,14 +578,14 @@ export default function LandingPage() {
                     onClick={() => onSubscribePlan({ id: 'custom' })}
                     className="rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20"
                   >
-                    Request Custom Plan
+                    {t('landing:pricing.requestCustom')}
                   </button>
                 </div>
 
                 <div className="mt-6 grid gap-5 lg:grid-cols-2">
                   {analyticsVisiblePlans.length === 0 ? (
                     <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-300">
-                      No analytics plans configured yet. Ask admin to add plans in Admin Panel.
+                      {t('landing:pricing.noPlans')}
                     </div>
                   ) : (
                     analyticsVisiblePlans.map((plan) => (
@@ -590,9 +600,11 @@ export default function LandingPage() {
               <div>
                 <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">Amazon Monitoring Plans</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">
+                      {t('landing:pricing.amazonMonitoringPlans')}
+                    </p>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-                      Dedicated Amazon monitoring tiers for users who need product tracking and lookup controls.
+                      {t('landing:pricing.amazonMonitoringDescription')}
                     </p>
                   </div>
                 </div>
@@ -603,14 +615,14 @@ export default function LandingPage() {
                     onClick={() => onSubscribePlan({ id: 'custom' })}
                     className="rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20"
                   >
-                    Request Custom Plan
+                    {t('landing:pricing.requestCustom')}
                   </button>
                 </div>
 
                 <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
                   {amazonMonitoringVisiblePlans.length === 0 ? (
                     <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-300">
-                      No Amazon monitoring plans configured yet. Ask admin to add plans in Admin Panel.
+                      {t('landing:pricing.noPlans')}
                     </div>
                   ) : (
                     amazonMonitoringVisiblePlans.map((plan) => (
@@ -626,24 +638,25 @@ export default function LandingPage() {
         <section id="contact" className="mx-auto max-w-7xl px-6 pb-16 md:pb-24">
           <div className="grid gap-4 overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/75 p-6 shadow-2xl shadow-black/25 backdrop-blur lg:grid-cols-[1.15fr_0.85fr] lg:p-8">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-cyan-100">Need help choosing?</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-cyan-100">{t('landing:cta.needHelp')}</p>
               <h3 className="mt-3 text-2xl font-semibold tracking-tight text-white md:text-4xl">
-                Start with the plan that matches your volume, then scale when the workflow proves itself.
+                {t('landing:cta.startWithPlan')}
               </h3>
-
             </div>
 
             <div className="flex flex-col justify-between gap-4 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5">
               <div>
                 <p className="text-sm font-medium text-slate-200">Ready to continue?</p>
-                <p className="mt-2 text-sm leading-6 text-slate-400">Open the portal or ask for a custom fit after you review the plans.</p>
+                <p className="mt-2 text-sm leading-6 text-slate-400">
+                  Open the portal or ask for a custom fit after you review the plans.
+                </p>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Link
                   to="/login"
                   className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.01]"
                 >
-                  Get Started Now
+                  {t('landing:cta.ctaButton')}
                   <ArrowRight size={14} />
                 </Link>
                 <a

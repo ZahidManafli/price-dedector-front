@@ -1,0 +1,37 @@
+{
+  "dashboard": {
+    "title": "Панель управления",
+    "welcome": "Добро пожаловать",
+    "overview": "Обзор"
+  },
+  "products": {
+    "title": "Товары",
+    "addProduct": "Добавить товар",
+    "editProduct": "Редактировать товар",
+    "deleteProduct": "Удалить товар",
+    "viewDetails": "Просмотреть подробности",
+    "noProducts": "Товаров еще нет"
+  },
+  "settings": {
+    "title": "Параметры",
+    "general": "Общие",
+    "preferences": "Предпочтения",
+    "account": "Учетная запись",
+    "notifications": "Уведомления",
+    "privacy": "Конфиденциальность"
+  },
+  "admin": {
+    "title": "Панель администратора",
+    "users": "Пользователи",
+    "plans": "Планы",
+    "analytics": "Аналитика",
+    "systemHealth": "Здоровье системы"
+  },
+  "errors": {
+    "notFound": "Не найдено",
+    "unauthorized": "Неавторизовано",
+    "forbidden": "Запрещено",
+    "serverError": "Ошибка сервера",
+    "tryAgain": "Попробуйте снова"
+  }
+}

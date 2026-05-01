@@ -17,9 +17,12 @@ import {
   ChevronRight,
   HelpCircle,
   Lock,
+  Globe2,
+  ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useSidebar } from '../context/SidebarContext';
 import { ebayAPI } from '../services/api';
 import { TAB_KEYS } from '../utils/planAccess';
@@ -31,9 +34,11 @@ export default function Sidebar() {
   const { user, logout, hasTabAccess } = useAuth();
   const displayName = [user?.name, user?.surname].filter(Boolean).join(' ').trim() || user?.fullName || user?.displayName || 'User';
   const { isDark, toggleTheme } = useTheme();
+  const { currentLanguage, changeLanguage } = useLanguage();
   const { isCollapsed, toggleSidebar } = useSidebar();
   const { replayTour } = useTour();
   const [activeEbayLabel, setActiveEbayLabel] = useState(null);
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
 
   const links = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, tab: TAB_KEYS.DASHBOARD, tour: 'sidebar-dashboard' },
@@ -202,6 +207,43 @@ export default function Sidebar() {
                 </div>
               </div>
               <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <button
+                    onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
+                    className="w-full flex items-center justify-center gap-2 rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
+                    title="Change language"
+                  >
+                    <Globe2 size={14} />
+                    <ChevronDown size={12} className={`transition ${languageMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {languageMenuOpen && (
+                    <div className="absolute bottom-full left-0 mb-2 w-40 rounded-lg border border-slate-600 bg-slate-800 shadow-xl z-50">
+                      {[
+                        { code: 'en', label: 'English' },
+                        { code: 'az', label: 'Azərbaycanca' },
+                        { code: 'ru', label: 'Русский' },
+                        { code: 'tr', label: 'Türkçe' },
+                      ].map((lang) => (
+                        <button
+                          key={lang.code}
+                          onClick={() => {
+                            changeLanguage(lang.code);
+                            setLanguageMenuOpen(false);
+                          }}
+                          className={`w-full px-4 py-2 text-left text-sm font-medium transition ${
+                            currentLanguage === lang.code
+                              ? 'bg-blue-600 text-white'
+                              : 'text-slate-300 hover:bg-slate-700'
+                          }`}
+                        >
+                          {lang.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <button
                   onClick={toggleTheme}
                   className="flex-1 flex items-center justify-center gap-2 rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
@@ -231,6 +273,42 @@ export default function Sidebar() {
             </>
           ) : (
             <div className="flex flex-col gap-2 items-center">
+              <div className="relative w-full">
+                <button
+                  onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
+                  className="w-full p-2 rounded-md bg-slate-800 hover:bg-slate-700 transition flex items-center justify-center"
+                  title="Change language"
+                >
+                  <Globe2 size={16} />
+                </button>
+
+                {languageMenuOpen && (
+                  <div className="absolute bottom-full left-0 mb-2 w-40 rounded-lg border border-slate-600 bg-slate-800 shadow-xl z-50">
+                    {[
+                      { code: 'en', label: 'English' },
+                      { code: 'az', label: 'Azərbaycanca' },
+                      { code: 'ru', label: 'Русский' },
+                      { code: 'tr', label: 'Türkçe' },
+                    ].map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => {
+                          changeLanguage(lang.code);
+                          setLanguageMenuOpen(false);
+                        }}
+                        className={`w-full px-4 py-2 text-left text-sm font-medium transition ${
+                          currentLanguage === lang.code
+                            ? 'bg-blue-600 text-white'
+                            : 'text-slate-300 hover:bg-slate-700'
+                        }`}
+                      >
+                        {lang.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 transition"
@@ -257,8 +335,8 @@ export default function Sidebar() {
                 <LogOut size={16} />
               </button>
             </div>
-          )}
-        </div>
+            )}
+          </div>
       </aside>
 
       {/* Overlay for mobile */}

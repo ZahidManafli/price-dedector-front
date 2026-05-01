@@ -1,0 +1,88 @@
+{
+  "hero": {
+    "eyebrow": "Otomatikleştirilmiş Satıcı Platformu",
+    "title": "Amazon fiyatlarını izleyin. eBay'e listeleyin. Tekrarlayın.",
+    "subtitle": "Amazon'daki ürünleri izleyin, Checkila analitikleri ile fırsatları analiz edin ve eBay'e yayınlayın — hepsi tek bir iş akışında.",
+    "cta": "Ücretsiz Başlayın"
+  },
+  "features": {
+    "tracking": {
+      "title": "Güncel kalan izleme",
+      "description": "Amazon fiyatlandırması, envanter sinyalleri ve hareketi daha az manuel kontrol ile izleyin."
+    },
+    "analysis": {
+      "title": "Checkila Analizi yerleşik",
+      "description": "Listelemeden önce fırsatları doğrulamak için hızlı Checkila Analizi iş akışları için krediler kullanın."
+    },
+    "listing": {
+      "title": "Listeleme kontrolü ve destek",
+      "description": "Her taslağı düzenlenebilir, organize ve destekli tutun."
+    }
+  },
+  "stats": {
+    "tracking": "Amazon fiyat izleme",
+    "trackingValue": "Ürünleri daha hızlı izleyin",
+    "analysis": "Checkila Analizi",
+    "analysisValue": "Kredi tabanlı istihbarat",
+    "ebay": "eBay hesap iş akışı",
+    "ebayValue": "Çok hesaplı kullanım için oluşturulmuş"
+  },
+  "workflow": {
+    "discover": {
+      "title": "Keşfet",
+      "description": "Amazon araması, Checkila Analizi veya zaten izlediğiniz bir üründen başlayın."
+    },
+    "decide": {
+      "title": "Karar Ver",
+      "description": "Bir plana karar vermeden önce fiyatlandırma, kredileri ve hesap limitlerini karşılaştırın."
+    },
+    "publish": {
+      "title": "Yayınla",
+      "description": "eBay iş akışına net yapı ve daha az sürprizle geçin."
+    }
+  },
+  "pricing": {
+    "eyebrow": "Planlarımız",
+    "title": "Esnek abonelik planları, artı veri analitik paketleri.",
+    "description": "İş akışınıza bağlı olarak abonelik, analitik ve Amazon izleme paketleri arasından seçin.",
+    "subscriptionPlans": "Abonelik Planları",
+    "analyticsPlans": "Veri Analitik Planları",
+    "amazonMonitoringPlans": "Amazon İzleme Planları",
+    "requestCustom": "Özel Plan İsteyin",
+    "subscriptionDescription": "Ürün sayınız, günlük arama ihtiyaçlarınız ve erişim seviyenize uygun planı seçin.",
+    "analyticsDescription": "Checkila Analizi kredileri ve odaklanmış analitik iş akışı isteyen kullanıcılar için.",
+    "amazonMonitoringDescription": "Ürün izleme ve arama kontrolüne ihtiyaç duyan kullanıcılar için adanmış Amazon izleme seviyeleri.",
+    "noPlans": "Henüz hiçbir plan yapılandırılmamış. Yönetici Panelinde planları eklemesi için yöneticiye kişi verin.",
+    "monthlyDuration": "Aylık"
+  },
+  "plans": {
+    "basic": "Temel",
+    "pro": "Profesyonel",
+    "advantage": "Avantaj",
+    "basicAnalytics": "Temel Analitik Planı",
+    "proAnalytics": "Profesyonel Analitik Planı",
+    "premiumAnalytics": "Premium Analitik Planı",
+    "basicAmazonMonitoring": "Temel Amazon İzlemesi",
+    "proAmazonMonitoring": "Profesyonel Amazon İzlemesi",
+    "advantageAmazonMonitoring": "Avantaj Amazon İzlemesi"
+  },
+  "planFeatures": {
+    "productsLimit": "izlenen ürün",
+    "lookupsPerDay": "günde Amazon araması",
+    "competitorMonitoring": "Rakip izlemesi",
+    "marketMonitoring": "Tam pazar izlemesi",
+    "emailSupport": "E-posta desteği",
+    "prioritySupport": "Öncelikli destek",
+    "credits": "Checkila Analizi için kreditler"
+  },
+  "cta": {
+    "needHelp": "Seçim konusunda yardıma mı ihtiyacınız var?",
+    "startWithPlan": "Haciminize uygun planla başlayın, sonra iş akışı kendisini kanıtladığında ölçeği artırın.",
+    "ctaButton": "Başlayın"
+  },
+  "contact": {
+    "title": "Sorularınız mı var?",
+    "description": "Ekibimizle iletişime geçin",
+    "contactUs": "Bize Ulaşın"
+  }
+}

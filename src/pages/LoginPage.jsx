@@ -6,11 +6,13 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import Swal from 'sweetalert2';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
+import { useTranslation } from 'react-i18next';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
   const { setSession } = useAuth();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -30,7 +32,7 @@ export default function LoginPage() {
     setAlert(null);
 
     if (!formData.email || !formData.password) {
-      setAlert({ type: 'error', message: 'Please fill all fields' });
+      setAlert({ type: 'error', message: t('auth.fillAllFields') });
       return;
     }
 
@@ -42,7 +44,7 @@ export default function LoginPage() {
       const user = response?.data?.user;
 
       if (!token) {
-        throw new Error('Login failed: missing token');
+        throw new Error(t('auth.loginFailed'));
       }
 
       localStorage.setItem('authToken', token);
@@ -52,11 +54,11 @@ export default function LoginPage() {
         setSession({ email: formData.email, role: 'user' }, token);
       }
 
-      setAlert({ type: 'success', message: 'Login successful!' });
+      setAlert({ type: 'success', message: t('auth.loginSuccess') });
       navigate('/dashboard', { replace: true });
     } catch (error) {
       const errorMessage =
-        error?.response?.data?.message || error?.response?.data?.error || error.message || 'Login failed';
+        error?.response?.data?.message || error?.response?.data?.error || error.message || t('auth.loginFailed');
       setAlert({ type: 'error', message: errorMessage });
     } finally {
       setLoading(false);
@@ -77,8 +79,8 @@ export default function LoginPage() {
   const onRequestSuccess = () => {
     Swal.fire({
       icon: 'success',
-      title: 'Request Sent',
-      text: 'Your request is seen. Admin will reach you soon.',
+      title: t('common.success'),
+      text: t('loginPage.requestSent'),
       confirmButtonColor: '#2563eb',
     });
   };
@@ -101,10 +103,10 @@ export default function LoginPage() {
             className="w-16 h-16 rounded-2xl object-cover mx-auto mb-4 shadow-sm border border-slate-300/40"
           />
           <h1 className={`text-3xl font-semibold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-            Welcome back
+            {t('loginPage.title')}
           </h1>
           <p className={`${isDark ? 'text-slate-300' : 'text-slate-600'} mt-2`}>
-            Sign in to Checkila to manage pricing and automation
+            {t('loginPage.subtitle')}
           </p>
         </div>
 
@@ -123,7 +125,7 @@ export default function LoginPage() {
           <input
             type="email"
             name="email"
-            placeholder="Email"
+            placeholder={t('auth.email')}
             value={formData.email}
             onChange={handleChange}
             className={`w-full rounded-lg border px-3 py-2 outline-none transition ${
@@ -137,7 +139,7 @@ export default function LoginPage() {
           <input
             type="password"
             name="password"
-            placeholder="Password"
+            placeholder={t('auth.password')}
             value={formData.password}
             onChange={handleChange}
             className={`w-full rounded-lg border px-3 py-2 outline-none transition ${
@@ -153,18 +155,18 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full btn-primary py-2.5"
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? t('loginPage.loggingIn') : t('auth.login')}
           </button>
         </form>
 
         <div className={`mt-6 text-center text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-          <p>Don&apos;t have an account?</p>
+          <p>{t('loginPage.noAccount')}</p>
           <button
             type="button"
             onClick={openRegister}
             className="mt-2 font-semibold text-blue-600 hover:text-blue-700"
           >
-            Register
+            {t('loginPage.register')}
           </button>
         </div>
       </div>

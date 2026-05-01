@@ -6,9 +6,11 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
 import { useTheme } from '../context/ThemeContext';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function ProductDetailPage() {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const { productId } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
@@ -32,7 +34,7 @@ export default function ProductDetailPage() {
       setProduct(productResponse.data);
       setHistory(historyResponse.data || []);
     } catch (error) {
-      setAlert({ type: 'error', message: 'Failed to load product details' });
+      setAlert({ type: 'error', message: t('productDetailPage.failedLoad') });
       console.error('Error:', error);
     } finally {
       setLoading(false);
@@ -46,12 +48,12 @@ export default function ProductDetailPage() {
       await productAPI.comparePrice(productId);
       setAlert({
         type: 'success',
-        message: 'Price comparison triggered. Check your email for updates!',
+        message: t('productDetailPage.compareTriggered'),
       });
       // Refresh product data
       await fetchProductDetails();
     } catch (error) {
-      setAlert({ type: 'error', message: 'Failed to compare prices' });
+      setAlert({ type: 'error', message: t('productDetailPage.failedCompare') });
     } finally {
       setCompareLoading(false);
     }
@@ -62,12 +64,12 @@ export default function ProductDetailPage() {
   if (!product) {
     return (
       <div className="page-shell text-center">
-        <p className="text-xl text-slate-600">Product not found</p>
+        <p className="text-xl text-slate-600">{t('productDetailPage.notFound')}</p>
         <button
           onClick={() => navigate('/dashboard')}
           className="mt-4 btn-primary"
         >
-          Back to Dashboard
+          {t('productDetailPage.backToDashboard')}
         </button>
       </div>
     );
@@ -84,7 +86,7 @@ export default function ProductDetailPage() {
           onClick={() => navigate('/dashboard')}
           className="text-blue-600 hover:underline mb-6 text-sm"
         >
-          ← Back to Dashboard
+          ← {t('productDetailPage.backToDashboard')}
         </button>
 
         {alert && (

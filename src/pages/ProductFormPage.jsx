@@ -9,9 +9,11 @@ import {
 } from '../utils/helpers';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useTranslation } from 'react-i18next';
 
 export function ProductFormModal({ productId = null, onClose, onSuccess }) {
   const isEditMode = Boolean(productId);
+  const { t } = useTranslation();
   const profitOptions = {
     taxRate: 0.06,
     fvfRate: 0.136,
@@ -85,7 +87,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
         const boundAccountId = product.ebayTradingAccountId || product.ebayAccountId || '';
         setSelectedEbayAccountId((prev) => prev || boundAccountId || activeEbayAccountId || '');
       } catch (error) {
-        setAlert({ type: 'error', message: 'Failed to load product for editing' });
+        setAlert({ type: 'error', message: t('productFormPage.failedLoad') });
       } finally {
         setInitialLoading(false);
       }
@@ -115,26 +117,26 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
 
     // Validation
     if (!formData.productName || !formData.amazonAsin || !formData.ebayItemId) {
-      setAlert({ type: 'error', message: 'Please fill all required fields' });
+      setAlert({ type: 'error', message: t('productFormPage.pleaseFillRequired') });
       return;
     }
     if (!/^\d{9,15}$/.test(String(formData.ebayItemId || '').trim())) {
-      setAlert({ type: 'error', message: 'eBay product ID must be 9-15 digits.' });
+      setAlert({ type: 'error', message: t('productFormPage.ebayIdInvalid') });
       return;
     }
 
     if (!isValidAmazonAsin(formData.amazonAsin)) {
-      setAlert({ type: 'error', message: 'Amazon ASIN must be exactly 10 letters/numbers.' });
+      setAlert({ type: 'error', message: t('productFormPage.asinInvalid') });
       return;
     }
 
     if (!formData.currentAmazonPrice || !formData.currentEbayPrice) {
-      setAlert({ type: 'error', message: 'Please enter both prices' });
+      setAlert({ type: 'error', message: t('productFormPage.enterBothPrices') });
       return;
     }
 
     if (!formData.userEmail) {
-      setAlert({ type: 'error', message: 'Please enter your email for notifications' });
+      setAlert({ type: 'error', message: t('productFormPage.enterEmail') });
       return;
     }
 
@@ -167,7 +169,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
 
       setAlert({
         type: 'success',
-        message: isEditMode ? 'Product updated successfully!' : 'Product added successfully!',
+        message: isEditMode ? t('productFormPage.updated') : t('productFormPage.added'),
       });
       setTimeout(() => {
         onSuccess?.();
@@ -178,7 +180,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
         type: 'error',
         message:
           error.response?.data?.message ||
-          (isEditMode ? 'Failed to update product' : 'Failed to add product'),
+          (isEditMode ? t('productFormPage.failedUpdate') : t('productFormPage.failedAdd')),
       });
     } finally {
       setLoading(false);
@@ -199,7 +201,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       <div className="w-full max-w-2xl">
         <div className="mb-3">
           <h1 className="page-title">
-            {isEditMode ? 'Edit Product' : 'Add New Product'}
+            {isEditMode ? t('productFormPage.editTitle') : t('productFormPage.addTitle')}
           </h1>
         </div>
 
@@ -218,7 +220,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
           {/* Product Name */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Product Name *
+              {t('productFormPage.productName')}
             </label>
             <input
               type="text"
@@ -235,7 +237,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
           {/* Amazon ASIN */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Amazon ASIN *
+              {t('productFormPage.amazonAsin')}
             </label>
             <input
               type="text"
@@ -252,7 +254,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
           {/* eBay Item ID */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              eBay Product ID *
+              {t('productFormPage.ebayProductId')}
             </label>
             <input
               type="text"
@@ -270,7 +272,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
           {ebayAccounts.length > 0 && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                eBay account for this product *
+                {t('productFormPage.ebayAccountForProduct')}
               </label>
               <select
                 value={selectedEbayAccountId}
@@ -287,7 +289,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
                 ))}
               </select>
               <p className="text-xs text-slate-500 mt-1">
-                Used for listing updates and auto-sync on this product.
+                {t('productFormPage.usedForSync')}
               </p>
             </div>
           )}
@@ -296,7 +298,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Amazon Price *
+                {t('productFormPage.amazonPrice')}
               </label>
               <input
                 type="number"

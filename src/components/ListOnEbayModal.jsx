@@ -30,6 +30,7 @@ function wrapDescriptionCdata(desc) {
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ebayAPI, dewisoAPI } from '../services/api';
 
 const CONDITION_OPTIONS = [
@@ -223,6 +224,7 @@ function ImageEditModal({ isDark, currentUrl, imageIndex, onConfirm, onClose }) 
  * @param {function} [onSuccess]     - Called with listing result on successful list
  */
 export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark, onSuccess, onUpdateItem }) {
+  const { t } = useTranslation();
   // If scrapedOverride is present, we are editing a bucket item
   const isEditBucketItem = !!scrapedOverride && typeof onUpdateItem === 'function';
   const [form, setForm] = useState({
@@ -495,7 +497,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
         onSuccess(listingResult);
       }
     } catch (err) {
-      setError(err?.response?.data?.error || err?.message || 'Failed to list on eBay');
+      setError(err?.response?.data?.error || err?.message || t('listingModal.failedToList'));
     } finally {
       setSubmitting(false);
     }
@@ -520,9 +522,9 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
           {/* Header */}
           <div className={`flex items-center justify-between p-5 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
             <div>
-              <h2 className="text-lg font-semibold">List on eBay</h2>
+              <h2 className="text-lg font-semibold">{t('listingModal.title')}</h2>
               <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                {scrapedOverride ? 'From your listing bucket · Using your active eBay account' : 'Using your active eBay account'}
+                {scrapedOverride ? t('listingModal.activeAccountFromBucket') : t('listingModal.activeAccount')}
               </p>
             </div>
             <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl font-bold leading-none">✕</button>
@@ -532,18 +534,18 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
           {result ? (
             <div className="p-5 space-y-4">
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30 p-4">
-                <p className="text-emerald-700 dark:text-emerald-400 font-semibold text-sm">✅ Listed successfully!</p>
+                <p className="text-emerald-700 dark:text-emerald-400 font-semibold text-sm">✅ {t('listingModal.listedSuccessfully')}</p>
                 <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  Item ID: <span className="font-mono font-semibold">{result.itemId}</span>
+                  {t('listingModal.itemId')}: <span className="font-mono font-semibold">{result.itemId}</span>
                 </p>
                 {result.listingUrl && (
                   <a href={result.listingUrl} target="_blank" rel="noreferrer" className="inline-block mt-2 text-xs text-blue-600 hover:underline font-medium">
-                    View on eBay →
+                    {t('listingModal.viewOnEbay')} →
                   </a>
                 )}
                 {result.warnings?.length > 0 && (
                   <div className="mt-3 text-xs text-amber-600 dark:text-amber-400">
-                    <p className="font-semibold">Warnings:</p>
+                    <p className="font-semibold">{t('listingModal.warnings')}:</p>
                     <ul className="list-disc list-inside mt-1 space-y-0.5">
                       {result.warnings.map((w, i) => <li key={i}>{w?.message || String(w)}</li>)}
                     </ul>
@@ -551,9 +553,9 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
                 )}
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={onClose} className="btn-secondary flex-1 py-2">Close</button>
+                <button type="button" onClick={onClose} className="btn-secondary flex-1 py-2">{t('listingModal.close')}</button>
                 <button type="button" onClick={() => { setResult(null); setError(null); }} className="btn-primary flex-1 py-2">
-                  List Another
+                  {t('listingModal.listAnother')}
                 </button>
               </div>
             </div>
@@ -746,7 +748,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
 
               {/* Actions */}
               <div className="flex gap-2 pt-1">
-                <button type="button" onClick={onClose} disabled={submitting} className="btn-secondary flex-1 py-2.5 disabled:opacity-60">Cancel</button>
+                <button type="button" onClick={onClose} disabled={submitting} className="btn-secondary flex-1 py-2.5 disabled:opacity-60">{t('listingModal.cancel')}</button>
                 {isEditBucketItem ? (
                   <button type="submit" disabled={submitting} className="btn-primary flex-1 py-2.5 disabled:opacity-60 flex items-center justify-center gap-2">
                     {submitting ? (
@@ -755,9 +757,9 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                         </svg>
-                        Saving…
+                        {t('listingModal.saving')}
                       </>
-                    ) : 'Save'}
+                    ) : t('listingModal.save')}
                   </button>
                 ) : (
                   <button type="submit" disabled={submitting} className="btn-primary flex-1 py-2.5 disabled:opacity-60 flex items-center justify-center gap-2">
@@ -767,9 +769,9 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                         </svg>
-                        Listing…
+                        {t('listingModal.listing')}
                       </>
-                    ) : 'List on eBay'}
+                    ) : t('listingModal.list')}
                   </button>
                 )}
               </div>

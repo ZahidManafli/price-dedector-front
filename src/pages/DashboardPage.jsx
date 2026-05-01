@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Gauge, LineChart, ShieldCheck, X } from 'lucide-react';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
+import { useTranslation } from 'react-i18next';
 
 export default function DashboardPage() {
   const [products, setProducts] = useState([]);
@@ -25,6 +26,7 @@ export default function DashboardPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { isDark } = useTheme();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [ebayStatus, setEbayStatus] = useState({ connected: false });
   const [showEbayBanner, setShowEbayBanner] = useState(() => {
@@ -70,12 +72,12 @@ export default function DashboardPage() {
             })
             .catch((err) => {
               setEbayRateLimits(null);
-              setEbayRateLimitsError(err?.response?.data?.error || err?.message || 'Failed to load eBay rate limits');
+              setEbayRateLimitsError(err?.response?.data?.error || err?.message || t('dashboard.failedToLoadRateLimits'));
             })
             .finally(() => setEbayRateLimitsLoading(false));
         }
       } catch {
-        setAlert({ type: 'error', message: 'Failed to load dashboard data' });
+        setAlert({ type: 'error', message: t('dashboard.failedToLoadData') });
       } finally {
         setLoading(false);
       }
@@ -94,7 +96,7 @@ export default function DashboardPage() {
         setAnalytics(res?.data || null);
       } catch (err) {
         setAnalyticsError(
-          err?.response?.data?.error || err?.message || 'Failed to load eBay analytics'
+          err?.response?.data?.error || err?.message || t('dashboard.failedToLoadAnalytics')
         );
         setAnalytics(null);
       } finally {
@@ -298,7 +300,7 @@ export default function DashboardPage() {
     const used = remaining == null ? null : Math.max(0, limit - remaining);
     const usedPct = limit > 0 && used != null ? Math.min(100, Math.max(0, (used / limit) * 100)) : null;
     const resetText = rate?.reset ? new Date(rate.reset).toLocaleString() : '—';
-    const windowText = rate?.timeWindow ? `${Math.round(rate.timeWindow / 60)} min window` : '—';
+    const windowText = rate?.timeWindow ? `${Math.round(rate.timeWindow / 60)} ${t('dashboard.windowMin')}` : '—';
 
     const danger = usedPct != null && usedPct >= 85;
     const warn = usedPct != null && usedPct >= 65 && usedPct < 85;
@@ -350,7 +352,7 @@ export default function DashboardPage() {
                   isDark ? 'border-slate-700 bg-slate-900/50 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-600'
                 }`}
               >
-                No usage data
+                {t('dashboard.noUsageData')}
               </span>
             )}
           </div>
@@ -360,7 +362,7 @@ export default function DashboardPage() {
               <div className="mt-3">
                 <div className="flex items-end justify-between gap-3">
                   <div>
-                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Remaining</p>
+                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('dashboard.remaining')}</p>
                     <p className="text-2xl font-bold leading-tight">
                       {remaining}
                       <span className={`ml-2 text-sm font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -369,8 +371,8 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <div className={`text-xs text-right ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    <div>Used: {used}</div>
-                    <div>Reset: {resetText}</div>
+                    <div>{t('dashboard.used')}: {used}</div>
+                    <div>{t('dashboard.reset')}: {resetText}</div>
                   </div>
                 </div>
 
@@ -412,7 +414,7 @@ export default function DashboardPage() {
 
           <button
             type="button"
-            aria-label="Dismiss"
+              aria-label={t('dashboard.dismiss')}
             onClick={handleDismissEbayBanner}
             className={`absolute top-3 right-3 h-9 w-9 rounded-xl flex items-center justify-center transition ${
               isDark
@@ -427,14 +429,13 @@ export default function DashboardPage() {
             <div className="lg:col-span-2">
               <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold mb-3 bg-white/30 border border-white/20">
                 <ShieldCheck size={14} />
-                eBay analytics unlocked with connection
+                {t('dashboard.bannerBadge')}
               </div>
               <h2 className={`text-xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'} mb-2`}>
-                Connect eBay to unlock seller insights
+                {t('dashboard.bannerTitle')}
               </h2>
               <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'} max-w-2xl`}>
-                Get traffic reports, customer-service benchmarks (INAD/INR), and seller standards performance so you can
-                improve listings and boost results.
+                {t('dashboard.bannerText')}
               </p>
 
               <div className="flex flex-wrap gap-2 mt-4">
@@ -447,7 +448,7 @@ export default function DashboardPage() {
                       : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-600/20'
                   }`}
                 >
-                  Connect eBay
+                  {t('dashboard.connectEbay')}
                 </button>
                 <button
                   type="button"
@@ -458,7 +459,7 @@ export default function DashboardPage() {
                       : 'bg-white hover:bg-slate-50 text-slate-900 border border-slate-200'
                   }`}
                 >
-                  Learn more
+                  {t('dashboard.learnMore')}
                 </button>
               </div>
             </div>
@@ -467,28 +468,28 @@ export default function DashboardPage() {
               <div className={`rounded-xl border p-3 ${isDark ? 'bg-slate-900/40 border-slate-700' : 'bg-white border-slate-200'}`}>
                 <div className={`flex items-center gap-2 mb-1 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                   <LineChart size={16} />
-                  <span className="text-xs font-semibold">Traffic</span>
+                  <span className="text-xs font-semibold">{t('dashboard.traffic')}</span>
                 </div>
                 <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>7.41%</p>
-                <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Sales conversion sample</p>
+                <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dashboard.salesConversionSample')}</p>
               </div>
 
               <div className={`rounded-xl border p-3 ${isDark ? 'bg-slate-900/40 border-slate-700' : 'bg-white border-slate-200'}`}>
                 <div className={`flex items-center gap-2 mb-1 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                   <Gauge size={16} />
-                  <span className="text-xs font-semibold">Customer Service</span>
+                  <span className="text-xs font-semibold">{t('dashboard.customerService')}</span>
                 </div>
                 <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>0.78</p>
-                <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Projected rate sample (INR)</p>
+                <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dashboard.projectedRateSample')}</p>
               </div>
 
               <div className={`rounded-xl border p-3 ${isDark ? 'bg-slate-900/40 border-slate-700' : 'bg-white border-slate-200'}`}>
                 <div className={`flex items-center gap-2 mb-1 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                   <ShieldCheck size={16} />
-                  <span className="text-xs font-semibold">Standards</span>
+                  <span className="text-xs font-semibold">{t('dashboard.standards')}</span>
                 </div>
                 <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>TOP_RATED</p>
-                <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Seller level sample</p>
+                <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dashboard.sellerLevelSample')}</p>
               </div>
             </div>
           </div>
@@ -512,7 +513,7 @@ export default function DashboardPage() {
                 type="error"
                 message={
                   analytics?.analyticsAccessErrorMessage ||
-                  'eBay analytics access denied. Go to Settings and connect a real eBay seller account to view future dashboard analytics.'
+                    t('dashboard.analyticsDenied')
                 }
                 onClose={() => setHideAnalyticsAccessAlert(true)}
                 autoClose={false}
@@ -527,7 +528,7 @@ export default function DashboardPage() {
                       : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-600/20'
                   }`}
                 >
-                  Go to Settings
+                  {t('dashboard.goToSettings')}
                 </button>
                 <button
                   type="button"
@@ -538,7 +539,7 @@ export default function DashboardPage() {
                       : 'bg-white hover:bg-slate-50 text-slate-900 border border-slate-200'
                   }`}
                 >
-                  Dismiss
+                  {t('dashboard.dismiss')}
                 </button>
               </div>
             </div>
@@ -549,14 +550,14 @@ export default function DashboardPage() {
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div>
                   <h2 className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                    eBay Seller Analytics
+                    {t('dashboard.sellerAnalytics')}
                   </h2>
                   <p className={`text-sm mt-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    Standards, customer service metrics, and traffic insights.
+                    {t('dashboard.sellerAnalyticsSubtitle')}
                   </p>
                 </div>
                 <div className="text-xs opacity-80">
-                  {analyticsLoading ? 'Loading…' : analytics ? 'Updated' : ''}
+                  {analyticsLoading ? t('dashboard.loading') : analytics ? t('dashboard.updated') : ''}
                 </div>
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 mb-4">
@@ -644,7 +645,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     ) : (
-                      <p className={`text-sm mt-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>No data</p>
+                      <p className={`text-sm mt-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('dashboard.noData')}</p>
                     )}
                   </div>
 
@@ -655,26 +656,26 @@ export default function DashboardPage() {
                   >
                     <div className="grid grid-cols-3 gap-2 mb-3">
                       <div className={`rounded-lg border p-2 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
-                        <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Program</p>
+                        <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dashboard.program')}</p>
                         <p className={`text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                           {analytics?.sellerStandards?.profile?.program || '-'}
                         </p>
                       </div>
                       <div className={`rounded-lg border p-2 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
-                        <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Cycle</p>
+                        <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dashboard.cycle')}</p>
                         <p className={`text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                           {analytics?.sellerStandards?.profile?.cycle?.cycleType || '-'}
                         </p>
                       </div>
                       <div className={`rounded-lg border p-2 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
-                        <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Metrics</p>
+                        <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dashboard.metrics')}</p>
                         <p className={`text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                           {(analytics?.sellerStandards?.profile?.metrics || []).length}
                         </p>
                       </div>
                     </div>
                     <p className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                      Seller Standards Profile
+                      {t('dashboard.sellerStandardsProfile')}
                     </p>
                     {analytics?.sellerStandards?.profile ? (
                       <div className="mt-4">
@@ -724,11 +725,11 @@ export default function DashboardPage() {
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <p className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                        Traffic & Conversion
+                        <p className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                        {t('dashboard.trafficConversion')}
                       </p>
                       <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        last 7 days
+                        {t('dashboard.last7Days')}
                       </span>
                     </div>
                     {trafficChartData.length > 0 ? (
@@ -758,7 +759,7 @@ export default function DashboardPage() {
                       <div className={`mt-3 h-[220px] rounded-xl border border-dashed flex items-center justify-center text-sm ${
                         isDark ? 'border-slate-700 text-slate-400 bg-slate-900/40' : 'border-slate-300 text-slate-500 bg-slate-50'
                       }`}>
-                        No traffic data for selected period.
+                        {t('dashboard.noTrafficData')}
                       </div>
                     )}
                   </div>

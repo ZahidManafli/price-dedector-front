@@ -1,0 +1,88 @@
+{
+  "hero": {
+    "eyebrow": "Automated Reseller Platform",
+    "title": "Monitor Amazon pricing. List to eBay. Repeat.",
+    "subtitle": "Track products across Amazon, analyze opportunities with Checkila intelligence, and publish to eBay—all in one workflow.",
+    "cta": "Get Started Free"
+  },
+  "features": {
+    "tracking": {
+      "title": "Tracking that stays current",
+      "description": "Monitor Amazon pricing, inventory signals, and movement with fewer manual checks."
+    },
+    "analysis": {
+      "title": "Checkila Analysis built in",
+      "description": "Use credits on fast Checkila Analysis workflows to validate opportunities before listing."
+    },
+    "listing": {
+      "title": "Listing control and support",
+      "description": "Keep every draft editable, organized, and supported by responsive service coverage."
+    }
+  },
+  "stats": {
+    "tracking": "Amazon price tracking",
+    "trackingValue": "Track products faster",
+    "analysis": "Checkila Analysis",
+    "analysisValue": "Credit-based intelligence",
+    "ebay": "eBay account workflow",
+    "ebayValue": "Built for multi-account use"
+  },
+  "workflow": {
+    "discover": {
+      "title": "Discover",
+      "description": "Start from Amazon lookup, Checkila Analysis, or a product you already track."
+    },
+    "decide": {
+      "title": "Decide",
+      "description": "Compare pricing, credits, and account limits before you commit to a plan."
+    },
+    "publish": {
+      "title": "Publish",
+      "description": "Move into your eBay workflow with a clear structure and fewer surprises."
+    }
+  },
+  "pricing": {
+    "eyebrow": "Our plans",
+    "title": "Flexible subscription plans, plus data analytics packages.",
+    "description": "Choose between subscription, analytics, and Amazon monitoring packages based on your workflow.",
+    "subscriptionPlans": "Subscription Plans",
+    "analyticsPlans": "Data Analytics Plans",
+    "amazonMonitoringPlans": "Amazon Monitoring Plans",
+    "requestCustom": "Request Custom Plan",
+    "subscriptionDescription": "Choose the plan that matches your product count, daily lookup needs, and access level.",
+    "analyticsDescription": "For users who want Checkila Analysis credits and a focused analytics workflow.",
+    "amazonMonitoringDescription": "Dedicated Amazon monitoring tiers for users who need product tracking and lookup controls.",
+    "noPlans": "No plans configured yet. Ask admin to add plans in Admin Panel.",
+    "monthlyDuration": "Monthly"
+  },
+  "plans": {
+    "basic": "Basic",
+    "pro": "Pro",
+    "advantage": "Advantage",
+    "basicAnalytics": "Basic Analytics Plan",
+    "proAnalytics": "Pro Analytics Plan",
+    "premiumAnalytics": "Premium Analytics Plan",
+    "basicAmazonMonitoring": "Basic Amazon Monitoring",
+    "proAmazonMonitoring": "Pro Amazon Monitoring",
+    "advantageAmazonMonitoring": "Advantage Amazon Monitoring"
+  },
+  "planFeatures": {
+    "productsLimit": "products tracked",
+    "lookupsPerDay": "Amazon lookups per day",
+    "competitorMonitoring": "Competitor monitoring",
+    "marketMonitoring": "Full market monitoring",
+    "emailSupport": "Email support",
+    "prioritySupport": "Priority support",
+    "credits": "credits for Checkila Analysis"
+  },
+  "cta": {
+    "needHelp": "Need help choosing?",
+    "startWithPlan": "Start with the plan that matches your volume, then scale when the workflow proves itself.",
+    "ctaButton": "Get Started"
+  },
+  "contact": {
+    "title": "Have questions?",
+    "description": "Get in touch with our team",
+    "contactUs": "Contact Us"
+  }
+}

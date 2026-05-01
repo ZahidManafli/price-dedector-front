@@ -3,10 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Link2, Loader2, XCircle } from 'lucide-react';
 import { amazonOAuthAPI } from '../services/api';
 import Alert from '../components/Alert';
+import { useTranslation } from 'react-i18next';
 
 export default function AmazonCallbackPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -18,12 +20,12 @@ export default function AmazonCallbackPage() {
       const error = searchParams.get('error');
 
       if (error) {
-        setAlert({ type: 'error', message: `Amazon authorization failed: ${error}` });
+        setAlert({ type: 'error', message: t('amazonCallback.authorizationFailed', { error }) });
         setLoading(false);
         return;
       }
       if (!code || !state) {
-        setAlert({ type: 'error', message: 'Missing Amazon OAuth code/state' });
+        setAlert({ type: 'error', message: t('amazonCallback.missingCodeState') });
         setLoading(false);
         return;
       }
@@ -34,12 +36,12 @@ export default function AmazonCallbackPage() {
           window.dispatchEvent(new Event('amazon:updated'));
         }
         setSuccess(true);
-        setAlert({ type: 'success', message: 'Amazon account connected successfully' });
+        setAlert({ type: 'success', message: t('amazonCallback.successMessage') });
         setTimeout(() => navigate('/settings', { replace: true }), 1500);
       } catch (err) {
         setAlert({
           type: 'error',
-          message: err.response?.data?.error || 'Failed to complete Amazon connection',
+          message: err.response?.data?.error || t('amazonCallback.connectionFailed'),
         });
       } finally {
         setLoading(false);
@@ -58,14 +60,14 @@ export default function AmazonCallbackPage() {
           </div>
         </div>
         <h1 className="text-2xl font-semibold text-slate-900 mb-2">
-          {loading ? 'Connecting your Amazon account' : success ? 'Connected successfully' : 'Connection failed'}
+          {loading ? t('amazonCallback.connecting') : success ? t('amazonCallback.connected') : t('amazonCallback.failed')}
         </h1>
         <p className="text-slate-600 mb-5">
           {loading
-            ? 'Finalizing your Amazon authorization...'
+            ? t('amazonCallback.finalizing')
             : success
-              ? 'Your Amazon account is now linked. Redirecting to settings...'
-              : 'We could not complete your Amazon connection. Please try again.'}
+              ? t('amazonCallback.linkedRedirecting')
+              : t('amazonCallback.couldNotComplete')}
         </p>
 
         {loading && (
@@ -89,10 +91,10 @@ export default function AmazonCallbackPage() {
         {!loading && !success && (
           <div className="flex items-center justify-center gap-3">
             <button type="button" onClick={() => navigate('/settings')} className="btn-primary">
-              Try again
+              {t('amazonCallback.tryAgain')}
             </button>
             <button type="button" onClick={() => navigate('/dashboard')} className="btn-secondary">
-              Back to dashboard
+              {t('amazonCallback.backToDashboard')}
             </button>
           </div>
         )}

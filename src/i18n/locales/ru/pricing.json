@@ -1,0 +1,33 @@
+{
+  "planCard": {
+    "monthly": "Ежемесячно",
+    "yearly": "Ежегодно",
+    "perMonth": "в месяц",
+    "featured": "Рекомендуемый",
+    "subscribe": "Подписаться",
+    "select": "Выбрать план",
+    "features": "Функции"
+  },
+  "subscription": {
+    "trackProducts": "Отслеживайте до {{count}} товаров Amazon",
+    "amazonLookups": "{{count}} поисков Amazon в день",
+    "basicCompetitorMonitoring": "Базовый мониторинг конкурентов",
+    "advancedCompetitorMonitoring": "Расширенный мониторинг конкурентов",
+    "fullMarketMonitoring": "Полный мониторинг рынка",
+    "emailSupport": "Поддержка по электронной почте",
+    "prioritySupport": "Приоритетная поддержка"
+  },
+  "analytics": {
+    "credits": "{{count}} кредитов для Checkila Analytics",
+    "unlimitedCredits": "Неограниченные кредиты Checkila Analytics"
+  },
+  "amazonMonitoring": {
+    "trackProducts": "Отслеживайте до {{count}} товаров Amazon",
+    "amazonLookups": "{{count}} поисков Amazon в день",
+    "basicCompetitorMonitoring": "Базовый мониторинг конкурентов",
+    "advancedCompetitorMonitoring": "Расширенный мониторинг конкурентов",
+    "fullMarketMonitoring": "Полный мониторинг рынка",
+    "emailSupport": "Поддержка по электронной почте",
+    "prioritySupport": "Приоритетная поддержка"
+  }
+}

@@ -1,8 +1,11 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
+import { I18nextProvider } from 'react-i18next';
+import i18n from './i18n';
 import { useAuth } from './context/AuthContext';
 import { useSidebar, SidebarProvider } from './context/SidebarContext';
+import { LanguageProvider } from './context/LanguageContext';
 import Sidebar from './components/Sidebar';
 import { TourProvider } from './context/TourContext';
 
@@ -264,14 +267,18 @@ function AppContent() {
 
 function App() {
   return (
-    <SidebarProvider>
-      <Router>
-        <TourProvider>
-          <AppContent />
-          <Analytics />
-        </TourProvider>
-      </Router>
-    </SidebarProvider>
+    <I18nextProvider i18n={i18n}>
+      <LanguageProvider>
+        <SidebarProvider>
+          <Router>
+            <TourProvider>
+              <AppContent />
+              <Analytics />
+            </TourProvider>
+          </Router>
+        </SidebarProvider>
+      </LanguageProvider>
+    </I18nextProvider>
   );
 }
 

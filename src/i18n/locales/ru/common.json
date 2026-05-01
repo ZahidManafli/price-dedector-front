@@ -1,0 +1,148 @@
+{
+  "language": "Русский",
+  "nav": {
+    "dashboard": "Панель управления",
+    "products": "Товары",
+    "listings": "Объявления",
+    "orders": "Заказы",
+    "amazonLookup": "Поиск Amazon",
+    "ebayCalculator": "Калькулятор eBay",
+    "marketAnalysis": "Анализ Checkila",
+    "dewiso": "Dewiso",
+    "settings": "Параметры",
+    "adminPanel": "Панель администратора"
+  },
+  "sidebar": {
+    "selectLanguage": "Выбрать язык",
+    "theme": "Тема",
+    "logout": "Выход",
+    "ebayStatus": "Статус eBay"
+  },
+  "auth": {
+    "login": "Вход",
+    "logout": "Выход",
+    "email": "Электронная почта",
+    "password": "Пароль",
+    "rememberMe": "Запомнить меня",
+    "signIn": "Войти",
+    "dontHaveAccount": "Нет аккаунта?",
+    "loginFailed": "Ошибка входа",
+    "invalidCredentials": "Неверная электронная почта или пароль",
+    "fillAllFields": "Пожалуйста, заполните все поля",
+    "loginSuccess": "Вход выполнен успешно!"
+  },
+  "loginPage": {
+    "title": "С возвращением",
+    "subtitle": "Войдите в Checkila, чтобы управлять ценами и автоматизацией",
+    "register": "Регистрация",
+    "noAccount": "Нет аккаунта?",
+    "loggingIn": "Выполняется вход...",
+    "requestSent": "Ваш запрос получен. Администратор скоро свяжется с вами."
+  },
+  "signupPage": {
+    "title": "Создать аккаунт",
+    "subtitle": "Начните отслеживать товары умнее",
+    "fullName": "Полное имя",
+    "confirmPassword": "Подтвердите пароль",
+    "passwordHint": "Пароль (минимум 6 символов)",
+    "creatingAccount": "Создание аккаунта...",
+    "signUp": "Зарегистрироваться",
+    "alreadyHaveAccount": "Уже есть аккаунт?",
+    "passwordsDoNotMatch": "Пароли не совпадают",
+    "passwordTooShort": "Пароль должен содержать не менее 6 символов",
+    "accountCreated": "Аккаунт успешно создан! Пожалуйста, войдите.",
+    "signupFailed": "Не удалось зарегистрироваться"
+  },
+  "aboutPage": {
+    "title": "О Checkila",
+    "intro": "Checkila помогает онлайн-продавцам отслеживать цены Amazon и eBay, оценивать прибыль и быстро реагировать на изменения затрат.",
+    "whatWeDo": "Что мы делаем",
+    "items": [
+      "Отслеживаем изменения цен товаров Amazon",
+      "Рассчитываем прибыль по вашей формуле",
+      "Сохраняем историю цен для каждого товара",
+      "Отправляем уведомления при важных изменениях",
+      "При желании синхронизируем рекомендованные цены с подключенными объявлениями eBay"
+    ],
+    "contact": "Контакт",
+    "support": "Почта поддержки: checkilanotify@gmail.com",
+    "backToApp": "Вернуться в приложение"
+  },
+  "amazonCallback": {
+    "connecting": "Подключение вашей учетной записи Amazon",
+    "connected": "Успешно подключено",
+    "failed": "Ошибка подключения",
+    "finalizing": "Завершение авторизации Amazon...",
+    "linkedRedirecting": "Ваша учетная запись Amazon теперь связана. Перенаправление в настройки...",
+    "couldNotComplete": "Не удалось завершить подключение Amazon. Попробуйте еще раз.",
+    "missingCodeState": "Отсутствует код/состояние OAuth Amazon",
+    "authorizationFailed": "Ошибка авторизации Amazon: {{error}}",
+    "connectionFailed": "Не удалось завершить подключение Amazon",
+    "successMessage": "Учетная запись Amazon успешно подключена",
+    "tryAgain": "Попробовать снова",
+    "backToDashboard": "Вернуться к панели"
+  },
+  "navbar": {
+    "settings": "Параметры",
+    "logout": "Выход"
+  },
+  "loading": {
+    "data": "Загрузка данных..."
+  },
+  "marketCompare": {
+    "title": "Панель сравнения",
+    "clear": "Очистить",
+    "empty": "Добавьте объявления из результатов, чтобы сравнить цену и качество продавца.",
+    "min": "Мин",
+    "max": "Макс",
+    "spread": "Разброс",
+    "average": "Среднее",
+    "remove": "Удалить",
+    "sellerScore": "Оценка продавца"
+  },
+  "marketRefinement": {
+    "title": "Уточнения",
+    "intro": "Используйте эти распределения, чтобы сузить рыночные возможности.",
+    "condition": "Состояние",
+    "buyingOptions": "Варианты покупки",
+    "topAspects": "Основные характеристики",
+    "noCondition": "Уточнения по состоянию не возвращены.",
+    "noBuying": "Уточнения по вариантам покупки не возвращены.",
+    "noAspects": "Запустите поиск с контекстом категории, чтобы заполнить характеристики."
+  },
+  "listingModal": {
+    "title": "Разместить на eBay",
+    "activeAccount": "Используется ваша активная учетная запись eBay",
+    "activeAccountFromBucket": "Из вашего списка · Используется ваша активная учетная запись eBay",
+    "listedSuccessfully": "Успешно размещено!",
+    "itemId": "ID товара",
+    "viewOnEbay": "Посмотреть на eBay",
+    "warnings": "Предупреждения",
+    "close": "Закрыть",
+    "listAnother": "Разместить еще",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "list": "Разместить на eBay",
+    "saving": "Сохранение...",
+    "listing": "Размещение...",
+    "failedToList": "Не удалось разместить на eBay"
+  },
+  "common": {
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "success": "Успех",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "close": "Закрыть",
+    "submit": "Отправить",
+    "back": "Назад"
+  },
+  "currency": {
+    "AZN": "AZN",
+    "USD": "USD",
+    "RUB": "RUB",
+    "TL": "TL"
+  }
+}

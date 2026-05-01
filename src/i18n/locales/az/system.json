@@ -1,0 +1,37 @@
+{
+  "dashboard": {
+    "title": "Paneli",
+    "welcome": "Xoş Gəlmisiniz",
+    "overview": "Ümumi Baxış"
+  },
+  "products": {
+    "title": "Məhsullar",
+    "addProduct": "Məhsul Əlavə Et",
+    "editProduct": "Məhsulu Redaktə Et",
+    "deleteProduct": "Məhsulu Sil",
+    "viewDetails": "Detalları Bax",
+    "noProducts": "Hələ məhsul yoxdur"
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "general": "Ümumi",
+    "preferences": "Seçimlər",
+    "account": "Hesab",
+    "notifications": "Bildirişlər",
+    "privacy": "Gizlilik"
+  },
+  "admin": {
+    "title": "Admin Paneli",
+    "users": "İstifadəçilər",
+    "plans": "Planlar",
+    "analytics": "Analitika",
+    "systemHealth": "Sistem Sağlamlığı"
+  },
+  "errors": {
+    "notFound": "Tapılmadı",
+    "unauthorized": "İcazəsiz",
+    "forbidden": "Qadağan",
+    "serverError": "Server xətası",
+    "tryAgain": "Yenidən cəhd edin"
+  }
+}

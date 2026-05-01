@@ -1,0 +1,33 @@
+{
+  "planCard": {
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "perMonth": "per month",
+    "featured": "Featured",
+    "subscribe": "Subscribe",
+    "select": "Select Plan",
+    "features": "Features"
+  },
+  "subscription": {
+    "trackProducts": "Track up to {{count}} Amazon products",
+    "amazonLookups": "{{count}} Amazon lookups per day",
+    "basicCompetitorMonitoring": "Basic competitor monitoring",
+    "advancedCompetitorMonitoring": "Advanced competitor monitoring",
+    "fullMarketMonitoring": "Full market monitoring",
+    "emailSupport": "Email support",
+    "prioritySupport": "Priority support"
+  },
+  "analytics": {
+    "credits": "{{count}} credits for Checkila Analysis",
+    "unlimitedCredits": "Unlimited Checkila Analysis credits"
+  },
+  "amazonMonitoring": {
+    "trackProducts": "Track up to {{count}} Amazon products",
+    "amazonLookups": "{{count}} Amazon lookups per day",
+    "basicCompetitorMonitoring": "Basic competitor monitoring",
+    "advancedCompetitorMonitoring": "Advanced competitor monitoring",
+    "fullMarketMonitoring": "Full market monitoring",
+    "emailSupport": "Email support",
+    "prioritySupport": "Priority support"
+  }
+}
