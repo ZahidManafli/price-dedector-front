@@ -139,6 +139,14 @@
     "submit": "Gönder",
     "back": "Geri"
   },
+  "productsPage": {
+    "filterByEbayAccount": "Bağlı eBay hesabına göre filtrele",
+    "filterByEbayAccountDescription": "Ürünleri bağlı eBay hesaplarınızdan birine göre göster.",
+    "allConnectedAccounts": "Tüm bağlı hesaplar",
+    "noProductsMatchFilter": "Bu hesap filtresiyle eşleşen ürün yok.",
+    "showAllProducts": "Tüm ürünleri göster",
+    "unknownAccount": "Bilinmeyen hesap"
+  },
   "currency": {
     "AZN": "AZN",
     "USD": "USD",

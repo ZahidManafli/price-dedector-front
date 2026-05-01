@@ -227,7 +227,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
               name="productName"
               value={formData.productName}
               onChange={handleChange}
-              placeholder="e.g., iPhone 15 Pro"
+              placeholder={t('productFormPage.productNamePlaceholder')}
               className="input-base"
               disabled={loading}
               required
@@ -244,7 +244,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
               name="amazonAsin"
               value={formData.amazonAsin}
               onChange={handleChange}
-              placeholder="B09836X9RR"
+              placeholder={t('productFormPage.amazonAsinPlaceholder')}
               className="input-base"
               disabled={loading}
               required
@@ -261,7 +261,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
               name="ebayItemId"
               value={formData.ebayItemId}
               onChange={handleChange}
-              placeholder="389129383838"
+              placeholder={t('productFormPage.ebayIdPlaceholder')}
               className="input-base"
               disabled={loading}
               required
@@ -283,8 +283,8 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
               >
                 {ebayAccounts.map((acc) => (
                   <option key={acc.id} value={acc.tradingAccountId || acc.id}>
-                    {acc.connectionName || acc.username || acc.profileUserId || 'Unknown account'}
-                    {acc.id === activeEbayAccountId ? ' (active)' : ''}
+                    {acc.connectionName || acc.username || acc.profileUserId || t('productFormPage.unknownAccount')}
+                    {acc.id === activeEbayAccountId ? ` ${t('productFormPage.activeAccountSuffix')}` : ''}
                   </option>
                 ))}
               </select>
@@ -305,7 +305,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
                 name="currentAmazonPrice"
                 value={formData.currentAmazonPrice}
                 onChange={handleChange}
-                placeholder="0.00"
+                placeholder={t('productFormPage.pricePlaceholder')}
                 step="0.01"
                 className="input-base"
                 disabled={loading}
@@ -314,14 +314,14 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                eBay Price *
+                {t('productFormPage.ebayPrice')}
               </label>
               <input
                 type="number"
                 name="currentEbayPrice"
                 value={formData.currentEbayPrice}
                 onChange={handleChange}
-                placeholder="0.00"
+                placeholder={t('productFormPage.pricePlaceholder')}
                 step="0.01"
                 className="input-base"
                 disabled={loading}
@@ -332,28 +332,28 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Ad rate (%)
+              {t('productFormPage.adRate')}
             </label>
             <input
               type="number"
               name="adRate"
               value={formData.adRate}
               onChange={handleChange}
-              placeholder="4"
+              placeholder={t('productFormPage.adRatePlaceholder')}
               step="0.01"
               min="0"
               className="input-base"
               disabled={loading}
             />
             <p className="text-xs text-slate-500 mt-1">
-              This is the promoted listing rate used in profit calculation.
+              {t('productFormPage.adRateHint')}
             </p>
           </div>
 
           {/* Profit Preview */}
           {(formData.currentAmazonPrice || formData.currentEbayPrice) && (
             <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-              <p className="text-sm text-slate-600">Estimated Profit</p>
+              <p className="text-sm text-slate-600">{t('productFormPage.estimatedProfit')}</p>
               <p className={`text-2xl font-bold ${ calculatedProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(calculatedProfit)}
               </p>
@@ -363,20 +363,20 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
           {/* Email */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Email for Notifications *
+              {t('productFormPage.emailForNotifications')}
             </label>
             <input
               type="email"
               name="userEmail"
               value={formData.userEmail}
               onChange={handleChange}
-              placeholder="your.email@example.com"
+              placeholder={t('productFormPage.emailPlaceholder')}
               className="input-base"
               disabled={loading}
               required
             />
             <p className="text-xs text-slate-500 mt-1">
-              You'll receive alerts when prices change
+              {t('productFormPage.emailHint')}
             </p>
           </div>
 
@@ -389,11 +389,11 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
             >
               {loading
                 ? isEditMode
-                  ? 'Updating Product...'
-                  : 'Adding Product...'
+                  ? t('productFormPage.updating')
+                  : t('productFormPage.adding')
                 : isEditMode
-                  ? 'Update Product'
-                  : 'Add Product'}
+                  ? t('productFormPage.updateButton')
+                  : t('productFormPage.addButton')}
             </button>
             <button
               type="button"
@@ -401,7 +401,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
               className="flex-1 btn-secondary py-3"
               disabled={loading}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         </form>

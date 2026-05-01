@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { settingsAPI } from '../services/api';
+import { useTranslation } from 'react-i18next';
 
 function toHumanText(value = '') {
   const raw = String(value || '').trim();
@@ -12,22 +13,22 @@ function toHumanText(value = '') {
     .join(' ');
 }
 
-function formatPlanCategory(category = '') {
+function formatPlanCategory(category = '', t) {
   const normalized = String(category || '')
     .trim()
     .toLowerCase()
     .replace(/\s+/g, '_');
 
-  if (normalized === 'amazon_monitoring' || normalized === 'amazonmonitoring') return 'Amazon Monitoring';
-  if (normalized === 'analytics' || normalized === 'analysis' || normalized === 'data_analytics') return 'Data Analytics';
-  if (normalized === 'subscription') return 'Subscription';
-  if (normalized === 'custom') return 'Custom';
+  if (normalized === 'amazon_monitoring' || normalized === 'amazonmonitoring') return t('subscriptionRequestModal.planCategoryAmazonMonitoring');
+  if (normalized === 'analytics' || normalized === 'analysis' || normalized === 'data_analytics') return t('subscriptionRequestModal.planCategoryDataAnalytics');
+  if (normalized === 'subscription') return t('subscriptionRequestModal.planCategorySubscription');
+  if (normalized === 'custom') return t('subscriptionRequestModal.planCategoryCustom');
   return toHumanText(normalized || 'subscription');
 }
 
-function formatPlanName(name = '') {
+function formatPlanName(name = '', t) {
   const raw = String(name || '').trim();
-  if (!raw) return 'Plan';
+  if (!raw) return t('subscriptionRequestModal.planFallback');
   // Keep existing proper names, but normalize technical keys like amazon_monitoring.
   if (raw.includes('_') || raw.includes('-')) return toHumanText(raw);
   return raw;
@@ -63,6 +64,7 @@ export default function SubscriptionRequestModal({
   description,
   submitLabel,
 }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState(initialForm(selectedPlanId, requestType, defaultValues));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -125,7 +127,7 @@ export default function SubscriptionRequestModal({
 
     if (isSubscriptionRequest) {
       if (!form.name || !form.surname || !form.email || !form.phoneNumber || !form.planId) {
-        setError('Please fill all required fields.');
+        setError(t('subscriptionRequestModal.pleaseFillAllRequiredFields'));
         return;
       }
 
@@ -139,7 +141,7 @@ export default function SubscriptionRequestModal({
         ];
         const hasInvalid = requiredNumbers.some((v) => v === '' || Number(v) < 0 || !Number.isFinite(Number(v)));
         if (hasInvalid) {
-          setError('Custom plan requires Amazon lookup, products, Checkila Analysis credits, and eBay accounts (0 or more).');
+          setError(t('subscriptionRequestModal.customPlanRequiresFields'));
           return;
         }
       }
@@ -168,7 +170,7 @@ export default function SubscriptionRequestModal({
         onSuccess?.();
         onClose?.();
       } catch (err) {
-        setError(err?.response?.data?.error || err?.message || 'Failed to send request');
+        setError(err?.response?.data?.error || err?.message || t('subscriptionRequestModal.failedToSendRequest'));
       } finally {
         setLoading(false);
       }
@@ -178,7 +180,7 @@ export default function SubscriptionRequestModal({
     if (isCreditTopUpRequest) {
       const nextCredits = Number(form.requestedCredits);
       if (!Number.isFinite(nextCredits) || nextCredits <= 0) {
-        setError('Please enter a credit amount greater than 0.');
+        setError(t('subscriptionRequestModal.creditAmountGreaterThanZero'));
         return;
       }
 
@@ -191,7 +193,7 @@ export default function SubscriptionRequestModal({
         onSuccess?.();
         onClose?.();
       } catch (err) {
-        setError(err?.response?.data?.error || err?.message || 'Failed to send request');
+        setError(err?.response?.data?.error || err?.message || t('subscriptionRequestModal.failedToSendRequest'));
       } finally {
         setLoading(false);
       }
@@ -206,7 +208,7 @@ export default function SubscriptionRequestModal({
       onSuccess?.();
       onClose?.();
     } catch (err) {
-      setError(err?.response?.data?.error || err?.message || 'Failed to send request');
+      setError(err?.response?.data?.error || err?.message || t('subscriptionRequestModal.failedToSendRequest'));
     } finally {
       setLoading(false);
     }
@@ -218,14 +220,14 @@ export default function SubscriptionRequestModal({
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-xl font-semibold text-white">
-              {title || (isCreditTopUpRequest ? 'Request Credit Top-Up' : isResetRequest ? 'Request Subscription Reset' : 'Request Access')}
+              {title || (isCreditTopUpRequest ? t('subscriptionRequestModal.requestCreditTopUp') : isResetRequest ? t('subscriptionRequestModal.requestSubscriptionReset') : t('subscriptionRequestModal.requestAccess'))}
             </h3>
             <p className="mt-1 text-sm text-slate-300">
               {description || (isCreditTopUpRequest
-                ? 'Ask the admin team to add more credits to your account.'
+                ? t('subscriptionRequestModal.askAddMoreCredits')
                 : isResetRequest
-                  ? 'Ask the admin team to refresh your current subscription.'
-                  : 'Send your request and our admin team will contact you.')}
+                  ? t('subscriptionRequestModal.askRefreshSubscription')
+                  : t('subscriptionRequestModal.sendRequestDescription'))}
             </p>
           </div>
           <button
@@ -233,7 +235,7 @@ export default function SubscriptionRequestModal({
             onClick={onClose}
             className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/10"
           >
-            Close
+            {t('common.close')}
           </button>
         </div>
 
@@ -246,7 +248,7 @@ export default function SubscriptionRequestModal({
                     type="text"
                     value={form.name}
                     onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                    placeholder="Name"
+                    placeholder={t('subscriptionRequestModal.name')}
                     className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
                   />
                 ) : null}
@@ -255,7 +257,7 @@ export default function SubscriptionRequestModal({
                     type="text"
                     value={form.surname}
                     onChange={(e) => setForm((p) => ({ ...p, surname: e.target.value }))}
-                    placeholder="Surname"
+                    placeholder={t('subscriptionRequestModal.surname')}
                     className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
                   />
                 ) : null}
@@ -266,7 +268,7 @@ export default function SubscriptionRequestModal({
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                  placeholder="Email"
+                  placeholder={t('subscriptionRequestModal.email')}
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
                 />
               ) : null}
@@ -276,7 +278,7 @@ export default function SubscriptionRequestModal({
                   type="tel"
                   value={form.phoneNumber}
                   onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))}
-                  placeholder="Phone Number"
+                  placeholder={t('subscriptionRequestModal.phoneNumber')}
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
                 />
               ) : null}
@@ -287,31 +289,31 @@ export default function SubscriptionRequestModal({
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
                 disabled={lockPlan}
               >
-                <option value="">Select plan</option>
+                <option value="">{t('subscriptionRequestModal.selectPlan')}</option>
                 {availablePlans.map((plan) => (
                   <option key={plan.id} value={plan.id}>
-                    {formatPlanName(plan.name)} ({formatPlanCategory(plan.category)})
+                    {formatPlanName(plan.name, t)} ({formatPlanCategory(plan.category, t)})
                   </option>
                 ))}
-                <option value="custom">Custom Plan (Request)</option>
+                <option value="custom">{t('subscriptionRequestModal.customPlanRequest')}</option>
               </select>
 
               {selectedPlan ? (
                 <p className="text-xs text-slate-300">
-                  Selected category: <span className="font-semibold">{formatPlanCategory(selectedPlan.category)}</span>
+                  {t('subscriptionRequestModal.selectedCategory')} <span className="font-semibold">{formatPlanCategory(selectedPlan.category, t)}</span>
                 </p>
               ) : null}
 
               {form.planId === 'custom' ? (
                 <div className="space-y-3 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">Custom Plan Requirements</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">{t('subscriptionRequestModal.customPlanRequirements')}</p>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <input
                       type="number"
                       min="0"
                       value={form.amazonLookupLimitPerWeek}
                       onChange={(e) => setForm((p) => ({ ...p, amazonLookupLimitPerWeek: e.target.value }))}
-                      placeholder="Amazon lookups / week"
+                      placeholder={t('subscriptionRequestModal.amazonLookupsPerWeek')}
                       className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
                     />
                     <input
@@ -319,7 +321,7 @@ export default function SubscriptionRequestModal({
                       min="0"
                       value={form.productsLimit}
                       onChange={(e) => setForm((p) => ({ ...p, productsLimit: e.target.value }))}
-                      placeholder="Products limit"
+                      placeholder={t('subscriptionRequestModal.productsLimit')}
                       className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
                     />
                     <input
@@ -327,7 +329,7 @@ export default function SubscriptionRequestModal({
                       min="0"
                       value={form.marketAnalysisCreditsLimit}
                       onChange={(e) => setForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))}
-                      placeholder="Checkila Analysis credits"
+                      placeholder={t('subscriptionRequestModal.checkilaAnalysisCredits')}
                       className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
                     />
                     <input
@@ -335,14 +337,14 @@ export default function SubscriptionRequestModal({
                       min="0"
                       value={form.ebayAccountsLimit}
                       onChange={(e) => setForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))}
-                      placeholder="eBay accounts"
+                      placeholder={t('subscriptionRequestModal.ebayAccounts')}
                       className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
                     />
                   </div>
                   <textarea
                     value={form.customNote}
                     onChange={(e) => setForm((p) => ({ ...p, customNote: e.target.value }))}
-                    placeholder="Optional note (team size, usage patterns, extra needs, etc.)"
+                    placeholder={t('subscriptionRequestModal.optionalNoteDetailed')}
                     className="min-h-[84px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
                   />
                 </div>
@@ -355,13 +357,13 @@ export default function SubscriptionRequestModal({
                 min="1"
                 value={form.requestedCredits}
                 onChange={(e) => setForm((p) => ({ ...p, requestedCredits: e.target.value }))}
-                placeholder="Requested credits"
+                placeholder={t('subscriptionRequestModal.requestedCredits')}
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
               />
               <textarea
                 value={form.customNote}
                 onChange={(e) => setForm((p) => ({ ...p, customNote: e.target.value }))}
-                placeholder="Optional note for the admin team"
+                placeholder={t('subscriptionRequestModal.optionalNoteForAdmin')}
                 className="min-h-[84px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
               />
             </>
@@ -369,7 +371,7 @@ export default function SubscriptionRequestModal({
             <textarea
               value={form.customNote}
               onChange={(e) => setForm((p) => ({ ...p, customNote: e.target.value }))}
-              placeholder="Optional note for the admin team"
+              placeholder={t('subscriptionRequestModal.optionalNoteForAdmin')}
               className="min-h-[112px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
             />
           )}
@@ -381,7 +383,7 @@ export default function SubscriptionRequestModal({
             disabled={loading}
             className="w-full rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
           >
-            {loading ? 'Submitting...' : submitLabel || (isCreditTopUpRequest ? 'Send Credit Request' : isResetRequest ? 'Send Reset Request' : 'Send Request')}
+            {loading ? t('subscriptionRequestModal.submitting') : submitLabel || (isCreditTopUpRequest ? t('subscriptionRequestModal.sendCreditRequest') : isResetRequest ? t('subscriptionRequestModal.sendResetRequest') : t('subscriptionRequestModal.sendRequest'))}
           </button>
         </form>
       </div>

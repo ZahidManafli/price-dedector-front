@@ -139,6 +139,14 @@
     "submit": "Отправить",
     "back": "Назад"
   },
+  "productsPage": {
+    "filterByEbayAccount": "Фильтр по подключенному eBay-аккаунту",
+    "filterByEbayAccountDescription": "Показывать товары, относящиеся к одному из ваших подключенных eBay-аккаунтов.",
+    "allConnectedAccounts": "Все подключенные аккаунты",
+    "noProductsMatchFilter": "Нет товаров, подходящих под этот фильтр аккаунта.",
+    "showAllProducts": "Показать все товары",
+    "unknownAccount": "Неизвестный аккаунт"
+  },
   "currency": {
     "AZN": "AZN",
     "USD": "USD",

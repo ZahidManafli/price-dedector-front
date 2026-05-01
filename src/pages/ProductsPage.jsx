@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import { productAPI, settingsAPI } from '../services/api';
+import { ebayAPI, productAPI, settingsAPI } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
@@ -13,6 +13,7 @@ export default function ProductsPage() {
   const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [ebayAccounts, setEbayAccounts] = useState([]);
   const [alert, setAlert] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
@@ -22,6 +23,7 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchProducts();
     fetchLimits();
+    fetchEbayAccounts();
   }, []);
 
   const fetchProducts = async () => {
@@ -45,6 +47,16 @@ export default function ProductsPage() {
     }
   };
 
+  const fetchEbayAccounts = async () => {
+    try {
+      const response = await ebayAPI.getStatus();
+      const accounts = Array.isArray(response?.data?.ebayAccounts) ? response.data.ebayAccounts : [];
+      setEbayAccounts(accounts);
+    } catch {
+      setEbayAccounts([]);
+    }
+  };
+
   const handleDelete = async (productId) => {
     if (!window.confirm(t('productsPage.deleteConfirm'))) return;
     try {
@@ -64,14 +76,42 @@ export default function ProductsPage() {
     productsRemaining <= 0;
 
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const hasEbayLink = Boolean(String(product.ebayItemId || '').trim() || String(product.ebayLink || '').trim());
+    const matchesAccount = (product, account) => {
+      const productAccountIds = [
+        product?.ebayAccountId,
+        product?.ebayTradingAccountId,
+        product?.ebayAccountInternalId,
+      ]
+        .filter(Boolean)
+        .map((value) => String(value).trim());
 
-      if (ebayFilter === 'WITH_EBAY') return hasEbayLink;
-      if (ebayFilter === 'WITHOUT_EBAY') return !hasEbayLink;
-      return true;
+      const accountIds = [account?.id, account?.tradingAccountId, account?.profileUserId]
+        .filter(Boolean)
+        .map((value) => String(value).trim());
+
+      return accountIds.some((accountId) => productAccountIds.includes(accountId));
+    };
+
+    return products.filter((product) => {
+      if (ebayFilter === 'ALL') return true;
+
+      const selectedAccount = ebayAccounts.find((account) => String(account.id || '').trim() === ebayFilter);
+      if (!selectedAccount) return true;
+
+      return matchesAccount(product, selectedAccount);
     });
-  }, [products, ebayFilter]);
+  }, [products, ebayAccounts, ebayFilter]);
+
+  const accountFilterOptions = useMemo(
+    () =>
+      ebayAccounts
+        .map((account) => ({
+          id: String(account.id || '').trim(),
+          label: account.connectionName || account.username || account.profileUserId || t('productsPage.unknownAccount'),
+        }))
+        .filter((option) => option.id),
+    [ebayAccounts, t]
+  );
 
   return (
     <div className="page-shell">
@@ -142,21 +182,28 @@ export default function ProductsPage() {
 
       <div className="glass-card mb-5 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Filter by eBay</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Show products that are linked or not linked to eBay.</p>
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t('productsPage.filterByEbayAccount')}</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t('productsPage.filterByEbayAccountDescription')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {[
-            { key: 'ALL', label: 'All products' },
-            { key: 'WITH_EBAY', label: 'With eBay' },
-            { key: 'WITHOUT_EBAY', label: 'Without eBay' },
-          ].map((option) => {
-            const active = ebayFilter === option.key;
+          <button
+            type="button"
+            onClick={() => setEbayFilter('ALL')}
+            className={`rounded-full px-3 py-1.5 text-sm border transition ${
+              ebayFilter === 'ALL'
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white/70 text-slate-700 border-slate-300 hover:bg-white dark:bg-slate-900/70 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800'
+            }`}
+          >
+            {t('productsPage.allConnectedAccounts')}
+          </button>
+          {accountFilterOptions.map((option) => {
+            const active = ebayFilter === option.id;
             return (
               <button
-                key={option.key}
+                key={option.id}
                 type="button"
-                onClick={() => setEbayFilter(option.key)}
+                onClick={() => setEbayFilter(option.id)}
                 className={`rounded-full px-3 py-1.5 text-sm border transition ${
                   active
                     ? 'bg-blue-600 text-white border-blue-600'
@@ -195,9 +242,9 @@ export default function ProductsPage() {
         </div>
       ) : filteredProducts.length === 0 ? (
         <div className="glass-card text-center py-10">
-          <p className="text-xl text-slate-500 dark:text-slate-300 mb-3">No products match this eBay filter.</p>
+          <p className="text-xl text-slate-500 dark:text-slate-300 mb-3">{t('productsPage.noProductsMatchFilter')}</p>
           <button type="button" onClick={() => setEbayFilter('ALL')} className="btn-secondary">
-            Show all products
+            {t('productsPage.showAllProducts')}
           </button>
         </div>
       ) : (

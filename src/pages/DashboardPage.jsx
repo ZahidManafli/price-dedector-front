@@ -26,7 +26,7 @@ export default function DashboardPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { isDark } = useTheme();
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t } = useTranslation('system');
   const navigate = useNavigate();
   const [ebayStatus, setEbayStatus] = useState({ connected: false });
   const [showEbayBanner, setShowEbayBanner] = useState(() => {
@@ -488,7 +488,7 @@ export default function DashboardPage() {
                   <ShieldCheck size={16} />
                   <span className="text-xs font-semibold">{t('dashboard.standards')}</span>
                 </div>
-                <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>TOP_RATED</p>
+                <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('dashboard.topRated')}</p>
                 <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dashboard.sellerLevelSample')}</p>
               </div>
             </div>
@@ -562,7 +562,7 @@ export default function DashboardPage() {
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 mb-4">
                 <div className={`rounded-lg border p-3 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
-                  <p className={`text-[10px] uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Transactions</p>
+                  <p className={`text-[10px] uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dashboard.transactions')}</p>
                   <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{executiveStats.transactions}</p>
                 </div>
                 <div className={`rounded-lg border p-3 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
@@ -608,35 +608,35 @@ export default function DashboardPage() {
                     }`}
                   >
                     <p className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                      Customer Service Metric
+                      {t('dashboard.customerServiceMetric')}
                     </p>
                     <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {analytics?.customerService?.metricType || 'ITEM_NOT_AS_DESCRIBED'} • CURRENT
+                      {analytics?.customerService?.metricType || t('dashboard.itemNotAsDescribed')} • {t('dashboard.current')}
                     </p>
                     {analytics?.customerService?.dimension ? (
                       <div className="mt-4">
                         <div className="flex items-center justify-between gap-3">
                           <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                            {analytics.customerService.dimension.name || 'Top category'}
+                            {analytics.customerService.dimension.name || t('dashboard.topCategory')}
                           </p>
                           <span
                             className={`text-xs font-semibold px-2 py-1 rounded-full border ${
                               isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-slate-50 border-slate-200'
                             }`}
                           >
-                            {analytics.customerService.dimension.rating || 'N/A'}
+                            {analytics.customerService.dimension.rating || t('na', { ns: 'common' })}
                           </span>
                         </div>
                         <div className="mt-3 grid grid-cols-2 gap-3">
                           <div>
-                            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Rate</p>
+                            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dashboard.rate')}</p>
                             <p className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                               {Number(analytics.customerService.dimension.rate || 0).toFixed(2)}
                             </p>
                           </div>
                           <div>
                             <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                              Transactions
+                              {t('dashboard.transactions')}
                             </p>
                             <p className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                               {Number(analytics.customerService.dimension.transactionCount || 0).toLocaleString()}
@@ -688,11 +688,11 @@ export default function DashboardPage() {
                               isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-slate-50 border-slate-200'
                             }`}
                           >
-                            {analytics.sellerStandards.profile.cycle?.cycleType || 'CURRENT'}
+                            {analytics.sellerStandards.profile.cycle?.cycleType || t('dashboard.current')}
                           </span>
                         </div>
                         <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                          Program: {analytics.sellerStandards.profile.program || '-'}
+                          {t('dashboard.program')}: {analytics.sellerStandards.profile.program || '-'}
                         </p>
                         <div className="mt-4 space-y-2">
                           {analytics.sellerStandards.profile.metrics?.slice(0, 4)?.map((m) => (
@@ -715,7 +715,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     ) : (
-                      <p className={`text-sm mt-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>No data</p>
+                      <p className={`text-sm mt-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('dashboard.noData')}</p>
                     )}
                   </div>
 
@@ -792,19 +792,19 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <h1 className="page-title mb-5">Dashboard</h1>
+      <h1 className="page-title mb-5">{t('dashboard.title')}</h1>
 
       <div className="mb-5" data-tour="dashboard-plan-card">
         <div className={`glass-card p-5 border ${isDark ? 'bg-slate-950 text-white border-slate-800' : 'bg-slate-100 text-slate-900 border-slate-300'}`}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Current Plan</p>
-              <p className="mt-1 text-2xl font-bold">{userPlan?.name || 'No active plan'}</p>
+              <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('dashboard.currentPlan')}</p>
+              <p className="mt-1 text-2xl font-bold">{userPlan?.name || t('dashboard.noActivePlan')}</p>
               <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
-                Expires: {userPlan?.expiresAt ? new Date(userPlan.expiresAt).toLocaleDateString() : 'N/A'}
+                {t('dashboard.expires')} {userPlan?.expiresAt ? new Date(userPlan.expiresAt).toLocaleDateString() : t('na', { ns: 'common' })}
               </p>
               {userPlan?.isExpired ? (
-                <p className="mt-1 text-xs font-semibold text-amber-500">Plan expired. Request renewal or upgrade.</p>
+                <p className="mt-1 text-xs font-semibold text-amber-500">{t('dashboard.planExpired')}</p>
               ) : null}
             </div>
             <button
@@ -812,7 +812,7 @@ export default function DashboardPage() {
               onClick={onOpenUpgradeRequest}
               className="btn-primary px-4 py-2 text-sm"
             >
-              Request Plan Upgrade
+              {t('dashboard.requestPlanUpgrade')}
             </button>
           </div>
         </div>
@@ -821,21 +821,21 @@ export default function DashboardPage() {
       {user?.role === 'admin' && adminStats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
           <div className={`glass-card p-4 border ${isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-200 border-slate-300 text-slate-900'}`}>
-            <p className="text-xs opacity-80">Users registered (1 week)</p>
+            <p className="text-xs opacity-80">{t('dashboard.usersRegisteredWeek')}</p>
             <p className="text-2xl font-bold mt-1">{adminStats.usersRegistered?.week ?? 0}</p>
-            <p className="text-xs opacity-70 mt-1">Month: {adminStats.usersRegistered?.month ?? 0} • Year: {adminStats.usersRegistered?.year ?? 0}</p>
+            <p className="text-xs opacity-70 mt-1">{t('dashboard.month')}: {adminStats.usersRegistered?.month ?? 0} • {t('dashboard.year')}: {adminStats.usersRegistered?.year ?? 0}</p>
           </div>
           <div className={`glass-card p-4 border ${isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-200 border-slate-300 text-slate-900'}`}>
-            <p className="text-xs opacity-80">Products added (1 week)</p>
+            <p className="text-xs opacity-80">{t('dashboard.productsAddedWeek')}</p>
             <p className="text-2xl font-bold mt-1">{adminStats.productsAdded?.week ?? 0}</p>
-            <p className="text-xs opacity-70 mt-1">Month: {adminStats.productsAdded?.month ?? 0} • Year: {adminStats.productsAdded?.year ?? 0}</p>
+            <p className="text-xs opacity-70 mt-1">{t('dashboard.month')}: {adminStats.productsAdded?.month ?? 0} • {t('dashboard.year')}: {adminStats.productsAdded?.year ?? 0}</p>
           </div>
           <div className={`glass-card p-4 border ${isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-200 border-slate-300 text-slate-900'}`}>
-            <p className="text-xs opacity-80">Users reached Amazon quota</p>
+            <p className="text-xs opacity-80">{t('dashboard.usersReachedAmazonQuota')}</p>
             <p className="text-2xl font-bold mt-1">{adminStats.quotaReachedUsers?.amazonLookup ?? 0}</p>
           </div>
           <div className={`glass-card p-4 border ${isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-200 border-slate-300 text-slate-900'}`}>
-            <p className="text-xs opacity-80">Users reached Product quota</p>
+            <p className="text-xs opacity-80">{t('dashboard.usersReachedProductQuota')}</p>
             <p className="text-2xl font-bold mt-1">{adminStats.quotaReachedUsers?.products ?? 0}</p>
           </div>
         </div>
@@ -846,13 +846,13 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between gap-3 mb-3">
             <div>
               <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Admin
+                {t('dashboard.adminLabel')}
               </p>
               <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                eBay API Rate Limits
+                {t('dashboard.ebayApiRateLimits')}
               </h2>
               <p className={`text-sm mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                Live quotas from eBay Developer Analytics (application rate limits).
+                {t('dashboard.ebayApiRateLimitsDesc')}
               </p>
             </div>
             <button
@@ -863,7 +863,7 @@ export default function DashboardPage() {
                 adminAPI
                   .getEbayRateLimits()
                   .then((res) => setEbayRateLimits(res?.data || null))
-                  .catch((err) => setEbayRateLimitsError(err?.response?.data?.error || err?.message || 'Failed to refresh eBay rate limits'))
+                  .catch((err) => setEbayRateLimitsError(err?.response?.data?.error || err?.message || t('dashboard.failedToRefreshRateLimits')))
                   .finally(() => setEbayRateLimitsLoading(false));
               }}
               disabled={ebayRateLimitsLoading}
@@ -873,7 +873,7 @@ export default function DashboardPage() {
                   : 'bg-white border border-slate-200 text-slate-800 hover:bg-slate-50'
               }`}
             >
-              {ebayRateLimitsLoading ? 'Refreshing…' : 'Refresh'}
+              {ebayRateLimitsLoading ? t('dashboard.refreshing') : t('dashboard.refresh')}
             </button>
           </div>
 
@@ -883,7 +883,7 @@ export default function DashboardPage() {
                 <input
                   value={rateLimitQuery}
                   onChange={(e) => setRateLimitQuery(e.target.value)}
-                  placeholder="Filter by resource name (e.g. sell.inventory, buy.browse, developer.analytics...)"
+                  placeholder={t('dashboard.rateLimitFilterPlaceholder')}
                   className={`w-full rounded-xl px-4 py-2 text-sm border outline-none transition ${
                     isDark
                       ? 'bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-indigo-500'
@@ -892,7 +892,7 @@ export default function DashboardPage() {
                 />
               </div>
               <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Showing {rateLimitQuery.trim() ? 'filtered' : 'all'} resources: {rateLimitQuery.trim() ? groupedRateLimits.reduce((s, g) => s + g.rows.length, 0) : rateLimitRows.length}
+                {t('dashboard.showing')} {rateLimitQuery.trim() ? t('dashboard.filtered') : t('dashboard.all')} {t('dashboard.resources')} {rateLimitQuery.trim() ? groupedRateLimits.reduce((s, g) => s + g.rows.length, 0) : rateLimitRows.length}
               </p>
             </div>
 
@@ -905,7 +905,7 @@ export default function DashboardPage() {
                   : 'bg-white border border-slate-200 text-slate-800 hover:bg-slate-50'
               }`}
             >
-              {openAllRateLimitGroups ? 'Collapse all' : 'Expand all'}
+              {openAllRateLimitGroups ? t('dashboard.collapseAll') : t('dashboard.expandAll')}
             </button>
           </div>
 
@@ -921,7 +921,7 @@ export default function DashboardPage() {
                 isDark ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-700'
               }`}
             >
-              No rate-limit data returned yet.
+              {t('dashboard.noRateLimitData')}
             </div>
           ) : (
             <div className="space-y-3">
@@ -941,7 +941,7 @@ export default function DashboardPage() {
                       <div className="min-w-0">
                         <p className="font-semibold truncate">{group.label}</p>
                         <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                          Resources: {group.rows.length} • Max used: {group.maxUsedPct.toFixed(0)}%
+                          {t('dashboard.resourcesLabel')}: {group.rows.length} • {t('dashboard.maxUsed')}: {group.maxUsedPct.toFixed(0)}%
                         </p>
                       </div>
                       <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-1 text-xs border ${
@@ -973,10 +973,10 @@ export default function DashboardPage() {
               : 'bg-slate-200 text-slate-900 border-slate-300'
           }`}
         >
-          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Product upload left</p>
+          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('dashboard.productUploadLeft')}</p>
           <div className="mt-2 flex items-center justify-between gap-3">
             <p className="text-3xl font-bold">
-              {productsLeft === null || productsLeft === undefined ? 'Unlimited' : productsLeft}
+              {productsLeft === null || productsLeft === undefined ? t('unlimited', { ns: 'common' }) : productsLeft}
             </p>
             <button
               type="button"
@@ -986,7 +986,7 @@ export default function DashboardPage() {
                   setAlert({
                     type: 'warning',
                     message:
-                      'Product quota reached. Delete one product or ask admin to increase your limit.',
+                      t('dashboard.productQuotaReached'),
                   });
                   return;
                 }
@@ -998,7 +998,7 @@ export default function DashboardPage() {
                   : 'bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 hover:border-blue-300 shadow-sm'
               }`}
             >
-              {isProductQuotaReached ? 'Quota Reached' : 'Upload Now'}
+              {isProductQuotaReached ? t('dashboard.quotaReached') : t('dashboard.uploadNow')}
             </button>
           </div>
           <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
@@ -1012,11 +1012,11 @@ export default function DashboardPage() {
               : 'bg-slate-200 text-slate-900 border-slate-300'
           }`}
         >
-          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Auto Tracking Credits</p>
+          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('dashboard.autoTrackingCredits')}</p>
           <p className="mt-2 text-3xl font-bold">
-            {lookupLeft === null || lookupLeft === undefined ? 'Unlimited' : lookupLeft}
+            {lookupLeft === null || lookupLeft === undefined ? t('unlimited', { ns: 'common' }) : lookupLeft}
           </p>
-          <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>Amazon lookups remaining this week</p>
+          <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>{t('dashboard.amazonLookupsRemaining')}</p>
         </div>
         <div
           className={`glass-card p-5 border ${
@@ -1025,16 +1025,16 @@ export default function DashboardPage() {
               : 'bg-slate-200 text-slate-900 border-slate-300'
           }`}
         >
-          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Checkila Analysis Credits</p>
+          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('dashboard.checkilaAnalysisCredits')}</p>
           <p className="mt-2 text-3xl font-bold">
-            {marketCreditsLeft === null || marketCreditsLeft === undefined ? 'Unlimited' : marketCreditsLeft}
+            {marketCreditsLeft === null || marketCreditsLeft === undefined ? t('unlimited', { ns: 'common' }) : marketCreditsLeft}
           </p>
           <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
             Used {marketCreditsUsed ?? 0}
             {marketCreditsLimit != null ? ` / ${marketCreditsLimit}` : ''}
           </p>
           <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
-            Seller search costs 2 credits, other searches cost 1 credit.
+            {t('dashboard.sellerSearchCost')}
           </p>
         </div>
       </div>
@@ -1048,11 +1048,11 @@ export default function DashboardPage() {
       >
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-black'}`}>PRODUCT SALES</p>
+            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-black'}`}>{t('dashboard.productSales')}</p>
             <p className="text-3xl font-bold mt-2">{formatCurrency(totalProfit)}</p>
           </div>
           <p className="text-amber-500 text-sm font-semibold">
-            {formatCurrency(chartData.reduce((s, c) => s + c.sales, 0))} in last 7 days
+            {formatCurrency(chartData.reduce((s, c) => s + c.sales, 0))} {t('dashboard.inLast7Days')}
           </p>
         </div>
         <div className="h-[320px] pointer-events-none blur-[2px] opacity-70 select-none">
@@ -1073,8 +1073,8 @@ export default function DashboardPage() {
         </div>
         <div className="absolute inset-0 flex items-center justify-center backdrop-blur-[2px] bg-slate-900/10 dark:bg-slate-950/20 pointer-events-none">
           <div className="text-center">
-            <p className={`text-2xl font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Available soon</p>
-            <p className={`text-sm mt-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Sales analytics module is under development</p>
+            <p className={`text-2xl font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('dashboard.availableSoon')}</p>
+            <p className={`text-sm mt-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('dashboard.salesAnalyticsUnderDevelopment')}</p>
           </div>
         </div>
       </div>
@@ -1091,7 +1091,7 @@ export default function DashboardPage() {
           phoneNumber: user?.phoneNumber || user?.phone || '',
         }}
         onSuccess={() => {
-          setAlert({ type: 'success', message: 'Upgrade request sent. Admin will review it.' });
+          setAlert({ type: 'success', message: t('dashboard.upgradeRequestSent') });
         }}
       />
     </div>
