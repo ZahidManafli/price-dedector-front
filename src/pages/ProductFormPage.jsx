@@ -11,6 +11,45 @@ import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useTranslation } from 'react-i18next';
 
+function trimAccountValue(value) {
+  return String(value || '').trim();
+}
+
+function getAccountKeys(account = {}) {
+  return [
+    account.id,
+    account.accountId,
+    account.tradingAccountId,
+    account.profileUserId,
+    account.username,
+  ]
+    .map(trimAccountValue)
+    .filter(Boolean);
+}
+
+function getProductAccountKeys(product = {}) {
+  return [
+    product.ebayAccountId,
+    product.ebayAccountInternalId,
+    product.ebayTradingAccountId,
+    product.ebayProfileUserId,
+  ]
+    .map(trimAccountValue)
+    .filter(Boolean);
+}
+
+function getPreferredAccountValue(account = {}) {
+  return trimAccountValue(
+    account.id || account.accountId || account.tradingAccountId || account.profileUserId || account.username
+  );
+}
+
+function findMatchingAccount(accounts = [], keys = []) {
+  const targetKeys = new Set(keys.map(trimAccountValue).filter(Boolean));
+  if (!targetKeys.size) return null;
+  return accounts.find((account) => getAccountKeys(account).some((key) => targetKeys.has(key))) || null;
+}
+
 export function ProductFormModal({ productId = null, onClose, onSuccess }) {
   const isEditMode = Boolean(productId);
   const { t } = useTranslation();
@@ -36,6 +75,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
   const [ebayAccounts, setEbayAccounts] = useState([]);
   const [activeEbayAccountId, setActiveEbayAccountId] = useState(null);
   const [selectedEbayAccountId, setSelectedEbayAccountId] = useState('');
+  const [boundProductAccountKeys, setBoundProductAccountKeys] = useState([]);
 
   useEffect(() => {
     const loadEbayAccounts = async () => {
@@ -46,10 +86,9 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
         setEbayAccounts(accounts);
         setActiveEbayAccountId(status.activeEbayAccountId || null);
         if (!isEditMode) {
-          const activeAcc = accounts.find((a) => a.id === status.activeEbayAccountId) || null;
-          const defaultId =
-            activeAcc?.tradingAccountId || activeAcc?.id || accounts[0]?.tradingAccountId || accounts[0]?.id || '';
-          setSelectedEbayAccountId(defaultId);
+          const activeAcc = findMatchingAccount(accounts, [status.activeEbayAccountId]);
+          const defaultAccount = activeAcc || accounts[0] || null;
+          setSelectedEbayAccountId(getPreferredAccountValue(defaultAccount));
         }
       } catch {
         setEbayAccounts([]);
@@ -83,9 +122,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
           ...profitOptions,
           adRate: (parseFloat(nextData.adRate) || 0) / 100,
         }));
-        // Default account selection for edit: keep bound account if present, else active.
-        const boundAccountId = product.ebayTradingAccountId || product.ebayAccountId || '';
-        setSelectedEbayAccountId((prev) => prev || boundAccountId || activeEbayAccountId || '');
+        setBoundProductAccountKeys(getProductAccountKeys(product));
       } catch (error) {
         setAlert({ type: 'error', message: t('productFormPage.failedLoad') });
       } finally {
@@ -95,6 +132,14 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
 
     fetchProduct();
   }, [isEditMode, productId]);
+
+  useEffect(() => {
+    if (!isEditMode || !boundProductAccountKeys.length || !ebayAccounts.length) return;
+    const matchedAccount = findMatchingAccount(ebayAccounts, boundProductAccountKeys);
+    if (matchedAccount) {
+      setSelectedEbayAccountId(getPreferredAccountValue(matchedAccount));
+    }
+  }, [isEditMode, boundProductAccountKeys, ebayAccounts]);
 
   useEffect(() => {
     setCalculatedProfit(
@@ -152,10 +197,9 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       formDataObj.append('adRate', formData.adRate || '0');
       formDataObj.append('userEmail', formData.userEmail);
       if (selectedEbayAccountId) {
-        formDataObj.append('ebayAccountId', selectedEbayAccountId);
-        const selectedAcc = ebayAccounts.find(
-          (a) => a.id === selectedEbayAccountId || a.tradingAccountId === selectedEbayAccountId
-        );
+        const selectedAcc = findMatchingAccount(ebayAccounts, [selectedEbayAccountId]);
+        const selectedAccountValue = getPreferredAccountValue(selectedAcc || {});
+        formDataObj.append('ebayAccountId', selectedAccountValue);
         if (selectedAcc?.tradingAccountId) {
           formDataObj.append('tradingAccountId', selectedAcc.tradingAccountId);
         }
@@ -281,12 +325,16 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
                 disabled={loading}
                 required
               >
-                {ebayAccounts.map((acc) => (
-                  <option key={acc.id} value={acc.tradingAccountId || acc.id}>
-                    {acc.connectionName || acc.username || acc.profileUserId || t('productFormPage.unknownAccount')}
-                    {acc.id === activeEbayAccountId ? ` ${t('productFormPage.activeAccountSuffix')}` : ''}
-                  </option>
-                ))}
+                {ebayAccounts.map((acc) => {
+                  const optionValue = getPreferredAccountValue(acc);
+                  const isActiveAccount = getAccountKeys(acc).includes(trimAccountValue(activeEbayAccountId));
+                  return (
+                    <option key={optionValue} value={optionValue}>
+                      {acc.connectionName || acc.username || acc.profileUserId || t('productFormPage.unknownAccount')}
+                      {isActiveAccount ? ` ${t('productFormPage.activeAccountSuffix')}` : ''}
+                    </option>
+                  );
+                })}
               </select>
               <p className="text-xs text-slate-500 mt-1">
                 {t('productFormPage.usedForSync')}
