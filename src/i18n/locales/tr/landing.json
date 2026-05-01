@@ -1,9 +1,15 @@
 {
+  "navigation": {
+    "features": "Özellikler",
+    "plans": "Planlar",
+    "contact": "İletişim"
+  },
   "hero": {
     "eyebrow": "Otomatikleştirilmiş Satıcı Platformu",
     "title": "Amazon fiyatlarını izleyin. eBay'e listeleyin. Tekrarlayın.",
     "subtitle": "Amazon'daki ürünleri izleyin, Checkila analitikleri ile fırsatları analiz edin ve eBay'e yayınlayın — hepsi tek bir iş akışında.",
-    "cta": "Ücretsiz Başlayın"
+    "cta": "Ücretsiz Başlayın",
+    "viewPlans": "Planları Görüntüle"
   },
   "features": {
     "tracking": {
@@ -18,8 +24,14 @@
       "title": "Listeleme kontrolü ve destek",
       "description": "Her taslağı düzenlenebilir, organize ve destekli tutun."
     }
-  },
-  "stats": {
+  },  "workflowSection": {
+    "eyebrow": "İş Akışı Şekli",
+    "title": "Keşif, karşilaştırma ve başlatma için temiz bir dizi.",
+    "operationalClarity": "Operasyonel Netlik",
+    "clarity1": "İzleme sayılarını ve günlük aramaları ilk ekrandan görünür tutun.",
+    "clarity2": "Yükseltmelerin basit görünmesi için premium plan ızgarasını kullanın.",
+    "clarity3": "Sayfayı esnek tutun, böylece kendi resimleriniz ve gelecek bölümler temiz bir şekilde uyuşabilir."
+  },  "stats": {
     "tracking": "Amazon fiyat izleme",
     "trackingValue": "Ürünleri daha hızlı izleyin",
     "analysis": "Checkila Analizi",
@@ -78,7 +90,10 @@
   "cta": {
     "needHelp": "Seçim konusunda yardıma mı ihtiyacınız var?",
     "startWithPlan": "Haciminize uygun planla başlayın, sonra iş akışı kendisini kanıtladığında ölçeği artırın.",
-    "ctaButton": "Başlayın"
+    "ctaButton": "Başlayın",
+    "ready": "Devam etmeye hazır mısınız?",
+    "readyDescription": "Portali açın veya planları inceledikten sonra özel bir uyum isteyin.",
+    "reviewPlans": "Planları İncele"
   },
   "contact": {
     "title": "Sorularınız mı var?",

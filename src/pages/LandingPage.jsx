@@ -128,12 +128,12 @@ function PlanCard({ plan, onSubscribe }) {
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm text-slate-300 line-through">{displayPrice}</p>
                 <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-100">
-                  Save {discountPercent}%
+                  {t('pricing:planCard.save', { percent: discountPercent })}
                 </span>
               </div>
               <div className="mt-1 flex items-end gap-2">
                 <span className="text-3xl font-semibold tracking-tight text-white">{discountedDisplay}</span>
-                <span className="text-xs text-slate-400">special offer</span>
+                <span className="text-xs text-slate-400">{t('pricing:planCard.specialOffer')}</span>
               </div>
             </>
           ) : (
@@ -336,13 +336,13 @@ export default function LandingPage() {
             </div>
             <nav className="hidden items-center gap-6 text-sm text-slate-300 md:flex">
               <a href="#features" className="transition hover:text-white">
-                Features
+                {t('landing:navigation.features')}
               </a>
               <a href="#plans" className="transition hover:text-white">
-                Plans
+                {t('landing:navigation.plans')}
               </a>
               <a href="#contact" className="transition hover:text-white">
-                Contact
+                {t('landing:navigation.contact')}
               </a>
             </nav>
             <div className="flex items-center gap-3">
@@ -381,7 +381,7 @@ export default function LandingPage() {
                   href="#plans"
                   className="inline-flex items-center rounded-xl border border-white/15 px-5 py-3 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/10"
                 >
-                  View plans
+                  {t('landing:hero.viewPlans')}
                 </a>
               </div>
 
@@ -439,9 +439,9 @@ export default function LandingPage() {
 
           <div className="mt-6 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
             <div className="rounded-[2rem] border border-white/10 bg-slate-900/75 p-6 shadow-xl shadow-black/25 backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Workflow shape</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{t('landing:workflowSection.eyebrow')}</p>
               <h3 className="mt-3 text-2xl font-semibold tracking-tight text-white md:text-3xl">
-                A clean sequence for discovery, comparison, and launch.
+                {t('landing:workflowSection.title')}
               </h3>
               <div className="mt-6 grid gap-4 md:grid-cols-3">
                 {workflowSteps.map((step, index) => (
@@ -459,19 +459,19 @@ export default function LandingPage() {
             </div>
 
             <div className="rounded-[2rem] border border-white/10 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 p-6 shadow-xl shadow-black/20 backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.24em] text-cyan-100">Operational clarity</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-cyan-100">{t('landing:workflowSection.operationalClarity')}</p>
               <ul className="mt-5 space-y-4 text-sm text-slate-200">
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
-                  <span>Keep tracking counts and daily lookups visible from the first screen.</span>
+                  <span>{t('landing:workflowSection.clarity1')}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
-                  <span>Use a premium plan grid to make upgrades feel simple, not crowded.</span>
+                  <span>{t('landing:workflowSection.clarity2')}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
-                  <span>Keep the page flexible so your own images and future sections can slot in cleanly.</span>
+                  <span>{t('landing:workflowSection.clarity3')}</span>
                 </li>
               </ul>
             </div>
@@ -646,9 +646,9 @@ export default function LandingPage() {
 
             <div className="flex flex-col justify-between gap-4 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5">
               <div>
-                <p className="text-sm font-medium text-slate-200">Ready to continue?</p>
+                <p className="text-sm font-medium text-slate-200">{t('landing:cta.ready')}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-400">
-                  Open the portal or ask for a custom fit after you review the plans.
+                  {t('landing:cta.readyDescription')}
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -663,7 +663,7 @@ export default function LandingPage() {
                   href="#plans"
                   className="inline-flex items-center rounded-xl border border-white/15 px-5 py-3 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/10"
                 >
-                  Review plans
+                  {t('landing:cta.reviewPlans')}
                 </a>
               </div>
             </div>

@@ -1,9 +1,15 @@
 {
+  "navigation": {
+    "features": "Features",
+    "plans": "Plans",
+    "contact": "Contact"
+  },
   "hero": {
     "eyebrow": "Automated Reseller Platform",
     "title": "Monitor Amazon pricing. List to eBay. Repeat.",
     "subtitle": "Track products across Amazon, analyze opportunities with Checkila intelligence, and publish to eBay—all in one workflow.",
-    "cta": "Get Started Free"
+    "cta": "Get Started Free",
+    "viewPlans": "View plans"
   },
   "features": {
     "tracking": {
@@ -18,6 +24,14 @@
       "title": "Listing control and support",
       "description": "Keep every draft editable, organized, and supported by responsive service coverage."
     }
+  },
+  "workflowSection": {
+    "eyebrow": "Workflow shape",
+    "title": "A clean sequence for discovery, comparison, and launch.",
+    "operationalClarity": "Operational clarity",
+    "clarity1": "Keep tracking counts and daily lookups visible from the first screen.",
+    "clarity2": "Use a premium plan grid to make upgrades feel simple, not crowded.",
+    "clarity3": "Keep the page flexible so your own images and future sections can slot in cleanly."
   },
   "stats": {
     "tracking": "Amazon price tracking",
@@ -78,7 +92,10 @@
   "cta": {
     "needHelp": "Need help choosing?",
     "startWithPlan": "Start with the plan that matches your volume, then scale when the workflow proves itself.",
-    "ctaButton": "Get Started"
+    "ctaButton": "Get Started",
+    "ready": "Ready to continue?",
+    "readyDescription": "Open the portal or ask for a custom fit after you review the plans.",
+    "reviewPlans": "Review plans"
   },
   "contact": {
     "title": "Have questions?",

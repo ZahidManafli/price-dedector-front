@@ -6,7 +6,9 @@
     "featured": "Featured",
     "subscribe": "Subscribe",
     "select": "Select Plan",
-    "features": "Features"
+    "features": "Features",
+    "save": "Save {{percent}}%",
+    "specialOffer": "special offer"
   },
   "subscription": {
     "trackProducts": "Track up to {{count}} Amazon products",

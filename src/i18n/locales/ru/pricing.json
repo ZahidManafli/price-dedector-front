@@ -6,7 +6,9 @@
     "featured": "Рекомендуемый",
     "subscribe": "Подписаться",
     "select": "Выбрать план",
-    "features": "Функции"
+    "features": "Функции",
+    "save": "Экономь {{percent}}%",
+    "specialOffer": "специальное предложение"
   },
   "subscription": {
     "trackProducts": "Отслеживайте до {{count}} товаров Amazon",

@@ -1,9 +1,15 @@
 {
+  "navigation": {
+    "features": "Xüsusiyyətlər",
+    "plans": "Planlar",
+    "contact": "Əlaqə"
+  },
   "hero": {
     "eyebrow": "Avtomatlaşdırılmış Satıcı Platforması",
     "title": "Amazon qiymətlərini izləyin. eBay-ə qoşun. Təkrarlayın.",
     "subtitle": "Amazon-da məhsulları izləyin, Checkila kəşfiyyatı ilə imkanları təhlil edin və eBay-ə dərc edin — hamısını bir iş axınında.",
-    "cta": "Başlayın (Pulsuz)"
+    "cta": "Başlayın (Pulsuz)",
+    "viewPlans": "Planları Görün"
   },
   "features": {
     "tracking": {
@@ -18,6 +24,14 @@
       "title": "Siyahı nəzarəti və dəstəyi",
       "description": "Hər qarayı redaktə edilə bilən, təşkil olunmuş və dəstəkli saxlayın."
     }
+  },
+  "workflowSection": {
+    "eyebrow": "Iş Axınının Fiğuru",
+    "title": "Kəş, muqayisə və başlatının çã bir ardıcıllıq.",
+    "operationalClarity": "Operasional Aydınlıq",
+    "clarity1": "İzləmə saylarını və gündəlik axtırışı ilk ekrandan görmə.",
+    "clarity2": "Premium plan qəfəsindən istifadə edərək yüksəlişlər sadə görünün.",
+    "clarity3": "Səhifəyi esnek saxlayın ki, öz şəkilləriniz və gələcək bölmələr təmizlik ilə dərc oluna bilsin."
   },
   "stats": {
     "tracking": "Amazon qiymət izləmə",
@@ -78,7 +92,10 @@
   "cta": {
     "needHelp": "Seçməkdə kömək lazımdır?",
     "startWithPlan": "Həcminizə uyğun planla başlayın, sonra iş axını özünü sübut etdikdə miqyas artırın.",
-    "ctaButton": "Başlamaq"
+    "ctaButton": "Başlayın",
+    "ready": "Davam etməyə hazırsınız?",
+    "readyDescription": "Portalı açın və ya planları nəzardən keçirdikdən sonra fərdi uyğunlaşma istəyin.",
+    "reviewPlans": "Planları nəzardən keçirin"
   },
   "contact": {
     "title": "Suallarınız varsa?",

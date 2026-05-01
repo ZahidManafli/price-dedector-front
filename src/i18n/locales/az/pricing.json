@@ -6,7 +6,9 @@
     "featured": "Seçilmiş",
     "subscribe": "Abunə Olun",
     "select": "Planı Seçin",
-    "features": "Xüsusiyyətlər"
+    "features": "Xüsusiyyətlər",
+    "save": "%{{percent}} Az Verin",
+    "specialOffer": "xüsusi təklif"
   },
   "subscription": {
     "trackProducts": "{{count}} Amazon məhsuludə qədər izləyin",

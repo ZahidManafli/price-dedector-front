@@ -6,7 +6,9 @@
     "featured": "Öne Çıkanlar",
     "subscribe": "Abone Ol",
     "select": "Planı Seçin",
-    "features": "Özellikler"
+    "features": "Özellikler",
+    "save": "%{{percent}} Kazan",
+    "specialOffer": "özel teklif"
   },
   "subscription": {
     "trackProducts": "{{count}}'e kadar Amazon ürünü izleyin",
