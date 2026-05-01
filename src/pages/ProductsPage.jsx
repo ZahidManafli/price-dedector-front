@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { productAPI, settingsAPI } from '../services/api';
@@ -17,6 +17,7 @@ export default function ProductsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
   const [limits, setLimits] = useState(null);
+  const [ebayFilter, setEbayFilter] = useState('ALL');
 
   useEffect(() => {
     fetchProducts();
@@ -61,6 +62,16 @@ export default function ProductsPage() {
     productsRemaining !== null &&
     productsRemaining !== undefined &&
     productsRemaining <= 0;
+
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const hasEbayLink = Boolean(String(product.ebayItemId || '').trim() || String(product.ebayLink || '').trim());
+
+      if (ebayFilter === 'WITH_EBAY') return hasEbayLink;
+      if (ebayFilter === 'WITHOUT_EBAY') return !hasEbayLink;
+      return true;
+    });
+  }, [products, ebayFilter]);
 
   return (
     <div className="page-shell">
@@ -129,6 +140,36 @@ export default function ProductsPage() {
         </div>
       </div>
 
+      <div className="glass-card mb-5 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Filter by eBay</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Show products that are linked or not linked to eBay.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { key: 'ALL', label: 'All products' },
+            { key: 'WITH_EBAY', label: 'With eBay' },
+            { key: 'WITHOUT_EBAY', label: 'Without eBay' },
+          ].map((option) => {
+            const active = ebayFilter === option.key;
+            return (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setEbayFilter(option.key)}
+                className={`rounded-full px-3 py-1.5 text-sm border transition ${
+                  active
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white/70 text-slate-700 border-slate-300 hover:bg-white dark:bg-slate-900/70 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800'
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {loading ? (
         <LoadingSpinner />
       ) : products.length === 0 ? (
@@ -152,9 +193,16 @@ export default function ProductsPage() {
             {isProductQuotaReached ? t('productsPage.quotaReachedLabel') : t('productsPage.addFirstProduct')}
           </button>
         </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="glass-card text-center py-10">
+          <p className="text-xl text-slate-500 dark:text-slate-300 mb-3">No products match this eBay filter.</p>
+          <button type="button" onClick={() => setEbayFilter('ALL')} className="btn-secondary">
+            Show all products
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
-          {products.map((product) => (
+          {filteredProducts.map((product) => (
             <ProductCard
               key={product.id}
               product={product}
