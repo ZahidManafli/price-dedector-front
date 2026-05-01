@@ -176,6 +176,8 @@ export default function SettingsPage() {
       await ebayAPI.disconnect();
       setEbayStatus((prev) => ({ ...prev, connected: false, accountId: null }));
       setAlert({ type: 'success', message: t('settingsPage.disconnectedEbay') || 'Disconnected eBay account' });
+      // Notify sidebar to update
+      window.dispatchEvent(new Event('ebay:updated'));
     } catch (error) {
       setAlert({
         type: 'error',
@@ -228,6 +230,8 @@ export default function SettingsPage() {
       const nextStatus = ebayRes.data || {};
       setEbayStatus(nextStatus);
       setAlert({ type: 'success', message: t('settingsPage.activeEbayUpdated') || 'Active eBay account updated' });
+      // Notify sidebar to update active eBay account display
+      window.dispatchEvent(new Event('ebay:updated'));
     } catch (error) {
       setAlert({
         type: 'error',
@@ -255,6 +259,8 @@ export default function SettingsPage() {
       setNameDrafts(drafts);
       setLimits(limitsRes?.data || limits);
       setAlert({ type: 'success', message: t('settingsPage.eBayDeleted') || 'eBay account deleted' });
+      // Notify sidebar to update
+      window.dispatchEvent(new Event('ebay:updated'));
     } catch (error) {
       setAlert({
         type: 'error',
