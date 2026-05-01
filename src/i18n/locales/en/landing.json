@@ -8,8 +8,13 @@
     "eyebrow": "Automated Reseller Platform",
     "title": "Monitor Amazon pricing. List to eBay. Repeat.",
     "subtitle": "Track products across Amazon, analyze opportunities with Checkila intelligence, and publish to eBay—all in one workflow.",
-    "cta": "Get Started Free",
+    "cta": "Get Started",
     "viewPlans": "View plans"
+  },
+  "partners":{
+    "eyebrow":"Our Partners",
+    "title":"Trusted by Leading Platforms",
+    "description":"We partner with industry-leading companies to bring you the best solutions and services"
   },
   "features": {
     "tracking": {
@@ -101,5 +106,11 @@
     "title": "Have questions?",
     "description": "Get in touch with our team",
     "contactUs": "Contact Us"
+  },
+  "partners": {
+    "eyebrow": "Our Partners",
+    "title": "Trusted by Leading Platforms",
+    "description": "We partner with industry-leading companies to bring you the best solutions and services",
+    "error": "Failed to load partners"
   }
 }

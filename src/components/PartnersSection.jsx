@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { partnerAPI } from '../services/api';
+import { useTranslation } from 'react-i18next';
 
 function PartnersSection() {
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { t } = useTranslation('landing');
 
   useEffect(() => {
     const loadPartners = async () => {
@@ -15,7 +17,7 @@ function PartnersSection() {
         setPartners(res.data.data || []);
       } catch (err) {
         console.error('Error loading partners:', err);
-        setError('Failed to load partners');
+        setError(t('landing:partners.error'));
       } finally {
         setLoading(false);
       }
@@ -34,13 +36,13 @@ function PartnersSection() {
         {/* Section Header */}
         <div className="flex flex-col items-center text-center gap-3 mb-12">
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
-            Our Partners
+            {t('landing:partners.eyebrow')}
           </div>
           <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-white">
-            Trusted by Leading Platforms
+            {t('landing:partners.title')}
           </h2>
           <p className="max-w-2xl text-sm leading-7 text-slate-300 md:text-base">
-            We partner with industry-leading companies to bring you the best solutions and services
+            {t('landing:partners.description')}
           </p>
         </div>
 
