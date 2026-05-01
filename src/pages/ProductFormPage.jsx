@@ -200,8 +200,12 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
         const selectedAcc = findMatchingAccount(ebayAccounts, [selectedEbayAccountId]);
         const selectedAccountValue = getPreferredAccountValue(selectedAcc || {});
         formDataObj.append('ebayAccountId', selectedAccountValue);
+        if (selectedAcc?.id) {
+          formDataObj.append('ebayAccountInternalId', selectedAcc.id);
+        }
         if (selectedAcc?.tradingAccountId) {
           formDataObj.append('tradingAccountId', selectedAcc.tradingAccountId);
+          formDataObj.append('ebayTradingAccountId', selectedAcc.tradingAccountId);
         }
       }
 
