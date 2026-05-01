@@ -14,7 +14,8 @@
   "partners": {
     "eyebrow": "Tərəfdaşlarımız",
     "title": "Aparıcı Platformalar Bizə Etibar Edir",
-    "description": "Sizə ən yaxşı xidmətləri təqdim etmək üçün aparıcı şirkətlərlə əməkdaşlıq edirik"
+    "description": "Sizə ən yaxşı xidmətləri təqdim etmək üçün aparıcı şirkətlərlə əməkdaşlıq edirik",
+    "error": "Tərəfdaşlar yüklənərkən xəta"
   },
   "features": {
     "tracking": {
@@ -105,10 +106,5 @@
   "contact": {
     "title": "Suallarınız var?",
     "description": "Komandamızla əlaqə saxlayın",
-    "contactUs": "Bizimlə əlaqə"  },
-  "partners": {
-    "eyebrow": "Bizim Tərəfdaşlar",
-    "title": "Tərəvəl Platformlar Tərəfindən İnanılı",
-    "description": "Sizə ən yaxşı həllər və xidmətlər gətirmək üçün sənayedə aparıcı şirkətlərlə tərəfdaş olduq",
-    "error": "Tərəfdaşlar yüklənərkən xəta"  }
+    "contactUs": "Bizimlə əlaqə"  }
 }

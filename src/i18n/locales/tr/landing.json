@@ -14,7 +14,8 @@
   "partners": {
     "eyebrow": "Ortaklarımız",
     "title": "Önde Gelen Platformlar Tarafından Tercih Ediliyor",
-    "description": "Size en iyi çözümleri sunmak için sektörün lider şirketleriyle iş birliği yapıyoruz"
+    "description": "Size en iyi çözümleri sunmak için sektörün lider şirketleriyle iş birliği yapıyoruz",
+    "error": "Ortakları yükleme hatası"
   },
   "features": {
     "tracking": {
@@ -106,11 +107,5 @@
     "title": "Sorularınız mı var?",
     "description": "Ekibimizle iletişime geçin",
     "contactUs": "Bize ulaşın"
-  },
-  "partners": {
-    "eyebrow": "Ortaklarımız",
-    "title": "Önde Gelen Platformlar Tarafından Güvenilir",
-    "description": "Sana en iyi çözümleri ve hizmetleri getirmek için endüstri lideri şirketlerle ortaklık yaptık",
-    "error": "Ortakları yükleme hatası"
   }
 }

@@ -14,7 +14,8 @@
   "partners":{
     "eyebrow":"Our Partners",
     "title":"Trusted by Leading Platforms",
-    "description":"We partner with industry-leading companies to bring you the best solutions and services"
+    "description":"We partner with industry-leading companies to bring you the best solutions and services",
+    "error": "Failed to load partners"
   },
   "features": {
     "tracking": {
@@ -106,11 +107,5 @@
     "title": "Have questions?",
     "description": "Get in touch with our team",
     "contactUs": "Contact Us"
-  },
-  "partners": {
-    "eyebrow": "Our Partners",
-    "title": "Trusted by Leading Platforms",
-    "description": "We partner with industry-leading companies to bring you the best solutions and services",
-    "error": "Failed to load partners"
   }
 }
