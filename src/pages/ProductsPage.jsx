@@ -79,13 +79,21 @@ export default function ProductsPage() {
     const matchesAccount = (product, account) => {
       const productAccountIds = [
         product?.ebayAccountId,
-        product?.ebayTradingAccountId,
         product?.ebayAccountInternalId,
+        product?.ebayTradingAccountId,
+        product?.ebayProfileUserId,
       ]
         .filter(Boolean)
         .map((value) => String(value).trim());
 
-      const accountIds = [account?.id, account?.tradingAccountId, account?.profileUserId]
+      const accountIds = [
+        account?.id,
+        account?.accountId,
+        account?.tradingAccountId,
+        account?.profileUserId,
+        account?.username,
+        account?.connectionName,
+      ]
         .filter(Boolean)
         .map((value) => String(value).trim());
 
@@ -95,7 +103,13 @@ export default function ProductsPage() {
     return products.filter((product) => {
       if (ebayFilter === 'ALL') return true;
 
-      const selectedAccount = ebayAccounts.find((account) => String(account.id || '').trim() === ebayFilter);
+      const selectedAccount = ebayAccounts.find((account) => {
+        const accountKeys = [account?.id, account?.accountId, account?.tradingAccountId, account?.profileUserId, account?.username]
+          .filter(Boolean)
+          .map((value) => String(value).trim());
+
+        return accountKeys.includes(ebayFilter);
+      });
       if (!selectedAccount) return true;
 
       return matchesAccount(product, selectedAccount);
@@ -106,7 +120,7 @@ export default function ProductsPage() {
     () =>
       ebayAccounts
         .map((account) => ({
-          id: String(account.id || '').trim(),
+          id: String(account.id || account.accountId || account.tradingAccountId || account.profileUserId || account.username || '').trim(),
           label: account.connectionName || account.username || account.profileUserId || t('productsPage.unknownAccount'),
         }))
         .filter((option) => option.id),
