@@ -105,19 +105,19 @@ export default function ProductDetailPage() {
             <h1 className="text-2xl font-semibold mb-3 tracking-tight">{product.productName}</h1>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
-                <p className="text-blue-100 text-sm">Amazon Price</p>
+                <p className="text-blue-100 text-sm">{t('productDetailPage.amazonPrice')}</p>
                 <p className="text-xl font-bold">{formatCurrency(product.currentAmazonPrice)}</p>
               </div>
               <div>
-                <p className="text-blue-100 text-sm">eBay Price</p>
+                <p className="text-blue-100 text-sm">{t('productDetailPage.ebayPrice')}</p>
                 <p className="text-xl font-bold">{formatCurrency(product.currentEbayPrice)}</p>
               </div>
               <div>
-                <p className="text-blue-100 text-sm">Profit</p>
+                <p className="text-blue-100 text-sm">{t('productDetailPage.profit')}</p>
                 <p className="text-xl font-bold">{formatCurrency(product.profit)}</p>
               </div>
               <div>
-                <p className="text-blue-100 text-sm">Last Updated</p>
+                <p className="text-blue-100 text-sm">{t('productDetailPage.lastUpdated')}</p>
                 <p className="text-xs mt-2">{formatDate(product.lastUpdated)}</p>
               </div>
             </div>
@@ -127,7 +127,7 @@ export default function ProductDetailPage() {
           <div className="p-4 md:p-5 space-y-5">
             {/* Links */}
             <div>
-              <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Product Links</h2>
+              <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('productDetailPage.productLinks')}</h2>
               <div className="space-y-2">
                 <a
                   href={amazonUrl}
@@ -135,7 +135,7 @@ export default function ProductDetailPage() {
                   rel="noopener noreferrer"
                   className={`flex items-center gap-2 hover:underline ${isDark ? 'text-blue-400' : 'text-blue-600'}`}
                 >
-                  🔗 Amazon {amazonAsin ? `(${amazonAsin})` : 'Link'}
+                  🔗 {t('productDetailPage.amazon')} {amazonAsin ? `(${amazonAsin})` : t('productDetailPage.link')}
                 </a>
                 <a
                   href={ebayUrl}
@@ -143,7 +143,7 @@ export default function ProductDetailPage() {
                   rel="noopener noreferrer"
                   className={`flex items-center gap-2 hover:underline ${isDark ? 'text-blue-400' : 'text-blue-600'}`}
                 >
-                  🔗 eBay {ebayItemId ? `(${ebayItemId})` : 'Link'}
+                  🔗 {t('productDetailPage.ebay')} {ebayItemId ? `(${ebayItemId})` : t('productDetailPage.link')}
                 </a>
               </div>
             </div>
@@ -151,16 +151,16 @@ export default function ProductDetailPage() {
             {/* Price History */}
             {history.length > 0 && (
               <div>
-                <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Price History</h2>
+                <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('productDetailPage.priceHistory')}</h2>
                 <div className={`overflow-x-auto border rounded-lg ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                   <table className="w-full text-sm">
                     <thead className={isDark ? 'bg-slate-800/90' : 'bg-slate-100'}>
                       <tr>
-                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>Date</th>
-                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>Amazon</th>
-                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>eBay</th>
-                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>Profit</th>
-                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>Difference</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>{t('productDetailPage.date')}</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>{t('productDetailPage.amazon')}</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>{t('productDetailPage.ebay')}</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>{t('productDetailPage.profit')}</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>{t('productDetailPage.difference')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -198,13 +198,13 @@ export default function ProductDetailPage() {
                 className="rounded-xl bg-emerald-600 text-white px-6 py-3 hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
               >
                 {compareLoading && <Loader2 size={16} className="animate-spin" />}
-                {compareLoading ? 'Comparing...' : 'Compare Prices Now'}
+                {compareLoading ? t('productDetailPage.comparing') : t('productDetailPage.compareNow')}
               </button>
               <button
                 onClick={() => navigate(`/edit-product/${productId}`)}
                 className="btn-primary"
               >
-                Edit Product
+                {t('productDetailPage.editProduct')}
               </button>
             </div>
           </div>
