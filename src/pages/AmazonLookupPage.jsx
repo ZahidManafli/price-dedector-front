@@ -11,6 +11,7 @@ import {
   isValidAmazonAsin,
 } from '../utils/helpers';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import {
   Link as LinkIcon,
   Image as ImageIcon,
@@ -41,6 +42,7 @@ function useDebouncedAutoLookup({ amazonAsin, autoLookupEnabled, onLookup }) {
 
 export default function AmazonLookupPage() {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [amazonAsin, setAmazonAsin] = useState('');
   const [autoLookupEnabled, setAutoLookupEnabled] = useState(true);
 
@@ -130,14 +132,14 @@ export default function AmazonLookupPage() {
     if (isLookupQuotaReached) {
       setAlert({
         type: 'warning',
-        message: 'Amazon lookup quota reached. Ask admin to increase your limit or wait for reset.',
+        message: t('amazonLookupPage.quotaReached'),
       });
       return;
     }
 
     const normalizedAsin = extractAmazonAsin(asinValue);
     if (!isValidAmazonAsin(normalizedAsin)) {
-      setAlert({ type: 'warning', message: 'Please enter a valid Amazon ASIN (10 characters).' });
+      setAlert({ type: 'warning', message: t('amazonLookupPage.invalidAsin') });
       return;
     }
 
@@ -166,12 +168,12 @@ export default function AmazonLookupPage() {
         message:
           error.response?.data?.error ||
           error.message ||
-          'Failed to lookup Amazon product. Please check the ASIN and try again.',
+          t('amazonLookupPage.failedLookup'),
       });
     } finally {
       setLoading(false);
     }
-  }, [isLookupQuotaReached]);
+  }, [isLookupQuotaReached, t]);
 
   const fetchHistory = useCallback(async () => {
     try {
@@ -213,7 +215,7 @@ export default function AmazonLookupPage() {
   const onSubmit = (e) => {
     e.preventDefault();
     if (!canLookup) {
-      setAlert({ type: 'warning', message: 'Please enter a valid Amazon ASIN (10 characters).' });
+      setAlert({ type: 'warning', message: t('amazonLookupPage.invalidAsin') });
       return;
     }
     lookup(extractAmazonAsin(amazonAsin));
@@ -222,7 +224,7 @@ export default function AmazonLookupPage() {
   const openListingModal = useCallback(async () => {
     const asin = result?.asin || extractAmazonAsin(amazonAsin);
     if (!asin) {
-      setAlert({ type: 'warning', message: 'No ASIN found for this result.' });
+      setAlert({ type: 'warning', message: t('amazonLookupPage.noAsinFound') });
       return;
     }
 
@@ -249,10 +251,10 @@ export default function AmazonLookupPage() {
       setListingError(
         error?.response?.data?.error ||
           error?.message ||
-          'Failed to prepare eBay listing draft.'
+          t('amazonLookupPage.failedPrepareDraft')
       );
     }
-  }, [amazonAsin, result]);
+  }, [amazonAsin, result, t]);
 
   const updateDraft = useCallback(async (updates) => {
     if (!listingDraft?.id) return;
@@ -263,12 +265,12 @@ export default function AmazonLookupPage() {
       setListingDraft(response?.data?.draft || listingDraft);
     } catch (error) {
       setListingError(
-        error?.response?.data?.error || error?.message || 'Failed to update listing draft.'
+        error?.response?.data?.error || error?.message || t('amazonLookupPage.failedUpdateDraft')
       );
     } finally {
       setIsUpdatingDraft(false);
     }
-  }, [listingDraft]);
+  }, [listingDraft, t]);
 
   const submitListing = useCallback(async () => {
     if (!listingDraft?.id) return;
@@ -278,34 +280,34 @@ export default function AmazonLookupPage() {
       const response = await ebayAPI.submitListingDraft(listingDraft.id);
       setListingSubmission(response?.data?.submission || null);
       setListingDraft((prev) => ({ ...prev, ...(response?.data?.payload || {}) }));
-      setAlert({ type: 'success', message: 'eBay listing created successfully.' });
+      setAlert({ type: 'success', message: t('amazonLookupPage.listingCreated') });
     } catch (error) {
       setListingError(
-        error?.response?.data?.error || error?.message || 'Failed to submit listing to eBay.'
+        error?.response?.data?.error || error?.message || t('amazonLookupPage.failedSubmitListing')
       );
     } finally {
       setIsSubmittingListing(false);
     }
-  }, [listingDraft]);
+  }, [listingDraft, t]);
 
   const addToProductsAfterListing = useCallback(async (email) => {
     const trimmedEmail = String(email || '').trim();
     if (!trimmedEmail) {
-      setListingError('Email is required to add this listing to products.');
+      setListingError(t('amazonLookupPage.emailRequired'));
       return;
     }
 
     const asin = listingDraft?.asin || result?.asin || extractAmazonAsin(amazonAsin);
     const ebayItemId = String(listingSubmission?.itemId || '').match(/\d{9,15}/)?.[0] || '';
     if (!asin || !ebayItemId) {
-      setListingError('Could not extract ASIN or eBay Item ID for product creation.');
+      setListingError(t('amazonLookupPage.missingProductData'));
       return;
     }
 
     const amazonPrice = Number(result?.price?.usd || 0);
     const ebayPrice = Number(listingDraft?.price || 0);
     if (!(amazonPrice > 0 && ebayPrice > 0)) {
-      setListingError('Amazon and eBay prices must be greater than zero to add product.');
+      setListingError(t('amazonLookupPage.pricesMustBeGreater'));
       return;
     }
 
@@ -321,27 +323,27 @@ export default function AmazonLookupPage() {
     setListingError('');
     try {
       await productAPI.create(formData);
-      setAlert({ type: 'success', message: 'Listing was added to products successfully.' });
+      setAlert({ type: 'success', message: t('amazonLookupPage.addedToProducts') });
       setIsListingModalOpen(false);
       setListingSubmission(null);
       setListingDraft(null);
     } catch (error) {
       setListingError(
-        error?.response?.data?.error || error?.message || 'Failed to add listing to products.'
+        error?.response?.data?.error || error?.message || t('amazonLookupPage.failedAddListing')
       );
     } finally {
       setIsAddingProduct(false);
     }
-  }, [amazonAsin, listingDraft, listingSubmission, result]);
+  }, [amazonAsin, listingDraft, listingSubmission, result, t]);
 
   return (
     <div className="page-shell">
       <div className="max-w-6xl mx-auto">
         <div className="mb-5 flex flex-col md:flex-row md:items-end md:justify-between gap-3">
           <div>
-            <h1 className="page-title">Amazon Lookup</h1>
+            <h1 className="page-title">{t('amazonLookupPage.title')}</h1>
             <p className="page-subtitle">
-              Enter an Amazon ASIN to instantly get images, description, and price.
+              {t('amazonLookupPage.subtitle')}
             </p>
           </div>
 
@@ -353,7 +355,7 @@ export default function AmazonLookupPage() {
                 onChange={(e) => setAutoLookupEnabled(e.target.checked)}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded"
               />
-              <span className="text-slate-700">Auto lookup (paste)</span>
+              <span className="text-slate-700">{t('amazonLookupPage.autoLookup')}</span>
             </label>
           </div>
         </div>
@@ -378,7 +380,7 @@ export default function AmazonLookupPage() {
               <div className="flex-1">
                 <div className="text-xs text-blue-100 flex items-center gap-2 mb-2">
                   <SearchIcon size={14} />
-                  Amazon ASIN
+                  {t('amazonLookupPage.asinLabel')}
                 </div>
                 <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-3">
                   <div className="flex-1 flex items-center gap-2 rounded-xl border border-white/10 bg-white/95 px-3 py-2">
@@ -391,7 +393,7 @@ export default function AmazonLookupPage() {
                           // Let submit handler run.
                         }
                       }}
-                      placeholder="B09836X9RR"
+                      placeholder={t('amazonLookupPage.inputPlaceholder')}
                       className="w-full bg-transparent outline-none text-slate-800 text-sm"
                       type="text"
                     />
@@ -406,11 +408,11 @@ export default function AmazonLookupPage() {
                       {loading ? (
                         <>
                           <span className="inline-block h-4 w-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
-                          Checking...
+                          {t('amazonLookupPage.checking')}
                         </>
                       ) : (
                         <>
-                          Check
+                          {t('amazonLookupPage.check')}
                           <SearchIcon size={14} />
                         </>
                       )}
@@ -434,11 +436,11 @@ export default function AmazonLookupPage() {
 
                 <div className="mt-2 text-xs text-slate-200">
                   {lookupQuota?.remainingThisWeek === null || lookupQuota?.remainingThisWeek === undefined ? (
-                    <>Lookup quota: Unlimited. Tip: Press Enter to check immediately.</>
+                    <>{t('amazonLookupPage.quotaUnlimited')}</>
                   ) : (
                     <>
-                      Lookup quota: {lookupQuota.remainingThisWeek} left this week
-                      {lookupQuota.resetAt ? ` (resets ${new Date(lookupQuota.resetAt).toLocaleString()})` : ''}.
+                      {t('amazonLookupPage.quotaLeft', { count: lookupQuota.remainingThisWeek })}
+                      {lookupQuota.resetAt ? ` ${t('amazonLookupPage.quotaResets', { date: new Date(lookupQuota.resetAt).toLocaleString() })}` : ''}.
                     </>
                   )}
                 </div>
@@ -453,26 +455,26 @@ export default function AmazonLookupPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="glass-card p-4 md:p-5">
                   <div className="text-xs font-semibold text-blue-600 mb-2">
-                    Instant Results
+                    {t('amazonLookupPage.instantResultsTitle')}
                   </div>
                   <p className="text-sm text-slate-600">
-                    Enter an Amazon ASIN and the app extracts price, images, and description.
+                    {t('amazonLookupPage.instantResultsDesc')}
                   </p>
                 </div>
                 <div className="glass-card p-4 md:p-5">
                   <div className="text-xs font-semibold text-blue-600 mb-2">
-                    Image Gallery
+                    {t('amazonLookupPage.imageGalleryTitle')}
                   </div>
                   <p className="text-sm text-slate-600">
-                    Choose different product images before saving or comparing.
+                    {t('amazonLookupPage.imageGalleryDesc')}
                   </p>
                 </div>
                 <div className="glass-card p-4 md:p-5">
                   <div className="text-xs font-semibold text-blue-600 mb-2">
-                    Price in Seconds
+                    {t('amazonLookupPage.priceInSecondsTitle')}
                   </div>
                   <p className="text-sm text-slate-600">
-                    Live extraction with fallback parsing for varying Amazon layouts.
+                    {t('amazonLookupPage.priceInSecondsDesc')}
                   </p>
                 </div>
               </div>
@@ -484,7 +486,7 @@ export default function AmazonLookupPage() {
                     <div className="flex items-center justify-between gap-3">
                       <div className={`text-sm font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                         <ImageIcon size={16} className="text-blue-600" />
-                        Product images
+                        {t('amazonLookupPage.productImagesTitle')}
                       </div>
                       <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                         {result?.images?.length ? `${activeImageIdx + 1}/${result.images.length}` : '—'}
@@ -498,7 +500,7 @@ export default function AmazonLookupPage() {
                         <div className={`rounded-lg p-3 border ${isDark ? 'bg-slate-950 border-slate-700' : 'bg-white border-slate-200'}`}>
                           <img
                             src={result.images[activeImageIdx]}
-                            alt={result.title || 'Amazon product image'}
+                            alt={result.title || t('amazonLookupPage.productImageAlt')}
                             className={`w-full h-[320px] object-contain rounded-md ${isDark ? 'bg-slate-900' : 'bg-white'}`}
                           />
                         </div>
@@ -515,11 +517,11 @@ export default function AmazonLookupPage() {
                               );
                               setAlert({
                                 type: ok ? 'success' : 'warning',
-                                message: ok ? 'Image download started!' : 'Opened image in a new tab (save manually).',
+                                message: ok ? t('amazonLookupPage.imageDownloadStarted') : t('amazonLookupPage.openedImageNewTab'),
                               });
                             }}
                           >
-                            Download active
+                            {t('amazonLookupPage.downloadActive')}
                           </button>
 
                           <button
@@ -535,14 +537,14 @@ export default function AmazonLookupPage() {
                                     `${(result.title || 'amazon-product').slice(0, 40)}-${i + 1}.jpg`
                                   );
                                 }
-                                setAlert({ type: 'success', message: 'Downloading images...' });
+                                setAlert({ type: 'success', message: t('amazonLookupPage.downloadingImages') });
                               } catch {
-                                setAlert({ type: 'warning', message: 'Some downloads may have failed. Try single download.' });
+                                setAlert({ type: 'warning', message: t('amazonLookupPage.someDownloadsFailed') });
                               }
                             }}
                             disabled={!result.images.length}
                           >
-                            Download all
+                            {t('amazonLookupPage.downloadAll')}
                           </button>
                         </div>
 
@@ -567,7 +569,7 @@ export default function AmazonLookupPage() {
                       </div>
                     ) : (
                       <div className={`text-center py-10 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                        No images found for this ASIN.
+                        {t('amazonLookupPage.noImages')}
                       </div>
                     )}
                   </div>
@@ -582,18 +584,18 @@ export default function AmazonLookupPage() {
                           {result.title}
                         </h2>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                          Extracted from your Amazon ASIN
+                          {t('amazonLookupPage.extractedFromAsin')}
                         </p>
                       </div>
 
                       <div className="flex flex-col items-start md:items-end">
-                        <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Amazon price</div>
+                        <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{t('amazonLookupPage.amazonPrice')}</div>
                         <div className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                           {formatCurrency(result?.price?.usd ?? 0)}
                         </div>
                         {result?.price?.currency && result.price.currency !== 'USD' && (
                           <div className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                            Raw: {Number(result.price.raw).toFixed(2)} {result.price.currency}
+                            {t('amazonLookupPage.raw')}{' '}{Number(result.price.raw).toFixed(2)} {result.price.currency}
                           </div>
                         )}
 
@@ -601,7 +603,7 @@ export default function AmazonLookupPage() {
                           <div className="mt-2 text-xs">
                             <div className="flex items-center gap-2">
                               <span className="inline-flex items-center px-2 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">
-                                Subscribe & Save
+                                {t('amazonLookupPage.subscribeAndSave')}
                               </span>
                               <span className={`font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                                 {formatCurrency(result.price.subscribedUsd)}
@@ -620,7 +622,7 @@ export default function AmazonLookupPage() {
                         className="btn-secondary inline-flex items-center gap-2"
                       >
                         <LinkIcon size={14} />
-                        Open on Amazon
+                        {t('amazonLookupPage.openOnAmazon')}
                       </a>
                       <button
                         type="button"
@@ -629,24 +631,24 @@ export default function AmazonLookupPage() {
                             await navigator.clipboard.writeText(
                               buildAmazonProductUrl(result?.asin || extractAmazonAsin(amazonAsin))
                             );
-                            setAlert({ type: 'success', message: 'Link copied!' });
+                            setAlert({ type: 'success', message: t('amazonLookupPage.copied') });
                           } catch {
                             setAlert({
                               type: 'warning',
-                              message: 'Could not copy URL on this browser.',
+                              message: t('amazonLookupPage.couldNotCopy'),
                             });
                           }
                         }}
                         className="btn-secondary inline-flex items-center gap-2"
                       >
-                        Copy URL
+                        {t('amazonLookupPage.copyUrl')}
                       </button>
                     </div>
                   </div>
 
                   <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
                     <h3 className={`text-lg font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                      Description
+                      {t('amazonLookupPage.descriptionTitle')}
                     </h3>
 
                     {result.description ? (
@@ -664,7 +666,7 @@ export default function AmazonLookupPage() {
                       </ul>
                     ) : (
                       <div className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                        No description/bullets were found on this page.
+                        {t('amazonLookupPage.noDescription')}
                       </div>
                     )}
                   </div>
@@ -672,12 +674,12 @@ export default function AmazonLookupPage() {
                     {/* Profit Planner */}
                     <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
                       <h3 className={`text-lg font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                        Profit Planner (eBay price)
+                        {t('amazonLookupPage.profitPlannerTitle')}
                       </h3>
 
                       <div className="flex flex-col gap-3">
                         <label className={`block text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
-                          Target profit you want to make (USD)
+                          {t('amazonLookupPage.targetProfitLabel')}
                         </label>
                         <input
                           type="number"
@@ -686,7 +688,7 @@ export default function AmazonLookupPage() {
                           step="0.01"
                           value={targetProfit}
                           onChange={(e) => setTargetProfit(e.target.value)}
-                          placeholder="e.g. 20.00"
+                          placeholder={t('amazonLookupPage.targetProfitPlaceholder')}
                           className="input-base"
                         />
 
@@ -699,20 +701,20 @@ export default function AmazonLookupPage() {
                             disabled={result?.price?.subscribedUsd == null}
                           />
                           <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
-                            Use Subscribe &amp; Save price (if available)
+                            {t('amazonLookupPage.useSubscribedPrice')}
                           </span>
                         </label>
 
                         <div className={`rounded-lg p-3 border ${isDark ? 'bg-slate-950 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                           <div className="flex items-center justify-between gap-3 flex-wrap">
                             <div className="min-w-[180px]">
-                              <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Amazon cost used</p>
+                              <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{t('amazonLookupPage.amazonCostUsed')}</p>
                               <p className={`font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                                 {result?.price ? formatCurrency(profitPlanner.cogs || 0) : '—'}
                               </p>
                             </div>
                             <div className="min-w-[220px]">
-                              <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>eBay listing price (sale price)</p>
+                              <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{t('amazonLookupPage.ebayListingPrice')}</p>
                               <p className={`text-xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                                 {profitPlanner.ebayPrice > 0 ? formatCurrency(profitPlanner.ebayPrice) : '—'}
                               </p>
@@ -721,11 +723,11 @@ export default function AmazonLookupPage() {
 
                           {profitPlanner.ebayPrice > 0 ? (
                             <p className={`text-xs mt-2 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                              Based on fee model: final value fee + managed payment fee (shipping/ad/other costs assumed 0).
+                              {t('amazonLookupPage.basedOnFeeModel')}
                             </p>
                           ) : (
                             <p className={`text-xs mt-2 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                              Enter a target profit to calculate the eBay price.
+                              {t('amazonLookupPage.enterTargetProfit')}
                             </p>
                           )}
                         </div>
@@ -735,12 +737,12 @@ export default function AmazonLookupPage() {
                   <div className="flex flex-col sm:flex-row gap-2 justify-end">
                     <button
                       type="button"
-                      onClick={() => setAlert({ type: 'info', message: 'List on eBay is available soon.' })}
+                      onClick={() => setAlert({ type: 'info', message: t('amazonLookupPage.listOnEbaySoon') })}
                       className="btn-primary"
                       disabled
-                      title="Available soon"
+                      title={t('amazonLookupPage.availableSoon')}
                     >
-                      List on eBay - Available soon
+                      {t('amazonLookupPage.listOnEbayButton')}
                     </button>
                     <button
                       type="button"
@@ -752,7 +754,7 @@ export default function AmazonLookupPage() {
                       }}
                       className="btn-secondary"
                     >
-                      Check another ASIN
+                      {t('amazonLookupPage.checkAnotherAsin')}
                     </button>
                     <RouterLink
                       to="/add-product"
@@ -762,7 +764,7 @@ export default function AmazonLookupPage() {
                         amazonTitle: result.title,
                       }}
                     >
-                      Save to tracking
+                      {t('amazonLookupPage.saveToTracking')}
                       <SearchIcon size={14} />
                     </RouterLink>
                   </div>
@@ -774,14 +776,14 @@ export default function AmazonLookupPage() {
               <div className={`mt-4 rounded-xl border p-3 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
                 <div className="flex items-center justify-between gap-2 mb-3">
                   <h3 className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                    Recent Amazon searches
+                    {t('amazonLookupPage.recentSearches')}
                   </h3>
                   <button
                     type="button"
                     onClick={fetchHistory}
                     className="btn-secondary text-xs px-3 py-1.5"
                   >
-                    Refresh
+                    {t('amazonLookupPage.refresh')}
                   </button>
                 </div>
                 <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
@@ -819,7 +821,7 @@ export default function AmazonLookupPage() {
                             {item.priceUsd != null ? formatCurrency(item.priceUsd) : '—'}
                           </p>
                           <p className={`text-[11px] ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                            {item.cached ? 'cached' : 'live'} · {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}
+                            {item.cached ? t('amazonLookupPage.cached') : t('amazonLookupPage.live')} · {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}
                           </p>
                         </div>
                       </div>
