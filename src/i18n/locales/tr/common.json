@@ -90,6 +90,39 @@
   "loading": {
     "data": "Veriler yükleniyor..."
   },
+  "productsPage": {
+    "title": "Ürünler",
+    "subtitle": "İzlenen öğelerinizi yönetin ve performansı izleyin.",
+    "openAnalysis": "Checkila Analizini Aç",
+    "addProduct": "Ürün Ekle",
+    "unlimited": "Sınırsız",
+    "left": "kaldı",
+    "noProductsYet": "Henüz ürün yok",
+    "addFirstProduct": "İlk ürününüzü ekleyin",
+    "quotaReached": "Ürün kotası tamamlandı. Bir ürünü silin veya yöneticiden limitinizi artırmasını isteyin.",
+    "deleteConfirm": "Bu ürünü silmek istediğinizden emin misiniz?",
+    "deleted": "Ürün başarıyla silindi",
+    "failedLoad": "Ürünler yüklenemedi",
+    "failedDelete": "Ürün silinemedi",
+    "quotaReachedLabel": "Ürün kotası tamamlandı",
+    "filterByEbayAccount": "Bağlı eBay hesabına göre filtrele",
+    "filterByEbayAccountDescription": "Bağlı eBay hesaplarınızdan birine ait ürünleri gösterin.",
+    "allConnectedAccounts": "Tüm bağlı hesaplar",
+    "noProductsMatchFilter": "Bu hesap filtresine uyan ürün yok.",
+    "showAllProducts": "Tüm ürünleri göster",
+    "unknownAccount": "Bilinmeyen hesap"
+  },
+  "productCard": {
+    "compare": "Karşılaştır",
+    "edit": "Düzenle",
+    "delete": "Sil",
+    "open": "Aç",
+    "profit": "Kâr",
+    "amazon": "Amazon",
+    "ebay": "eBay",
+    "previousImage": "Önceki resim",
+    "nextImage": "Sonraki resim"
+  },
   "marketCompare": {
     "title": "Karşılaştırma Paneli",
     "clear": "Temizle",

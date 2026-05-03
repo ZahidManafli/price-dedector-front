@@ -147,7 +147,19 @@
     "filterByEbayAccountDescription": "Show products that belong to one of your connected eBay accounts.",
     "allConnectedAccounts": "All connected accounts",
     "noProductsMatchFilter": "No products match this account filter.",
-    "showAllProducts": "Show all products"
+    "showAllProducts": "Show all products",
+    "unknownAccount": "Unknown account"
+  },
+  "productCard": {
+    "compare": "Compare",
+    "edit": "Edit",
+    "delete": "Delete",
+    "open": "Open",
+    "profit": "Profit",
+    "amazon": "Amazon",
+    "ebay": "eBay",
+    "previousImage": "Previous image",
+    "nextImage": "Next image"
   },
   "productDetailPage": {
     "failedLoad": "Failed to load product details",

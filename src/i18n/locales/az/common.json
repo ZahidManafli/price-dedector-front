@@ -90,6 +90,39 @@
   "loading": {
     "data": "Məlumatlar yüklənir..."
   },
+  "productsPage": {
+    "title": "Məhsullar",
+    "subtitle": "Həm sayılan məhsullarınızı idarə edin və performansı izləyin.",
+    "openAnalysis": "Checkila Analitikasını Aç",
+    "addProduct": "Məhsul Əlavə Et",
+    "unlimited": "Sınırsız",
+    "left": "qaldı",
+    "noProductsYet": "Hələ məhsul yok",
+    "addFirstProduct": "İlk məhsulunuzu əlavə edin",
+    "quotaReached": "Məhsul kvotası tamamlandı. Bir məhsulu silin və ya admindən limitinizi artırmasını istəyin.",
+    "deleteConfirm": "Bu məhsulu silmək istədiyinizdən əminsiniz?",
+    "deleted": "Məhsul uğurla silindi",
+    "failedLoad": "Məhsullar yüklənə bilmədi",
+    "failedDelete": "Məhsul silinə bilmədi",
+    "quotaReachedLabel": "Məhsul kvotası tamamlandı",
+    "filterByEbayAccount": "Bağlanan eBay hesabına görə filter",
+    "filterByEbayAccountDescription": "Bağlanan eBay hesaplarınızdan birinə aid məhsulları göstərin.",
+    "allConnectedAccounts": "Bütün bağlanan hesaplar",
+    "noProductsMatchFilter": "Bu hesab filtrinə uyğun məhsul yok.",
+    "showAllProducts": "Bütün məhsulları göstər",
+    "unknownAccount": "Naməlum hesap"
+  },
+  "productCard": {
+    "compare": "Müqayisə Et",
+    "edit": "Redaktə Et",
+    "delete": "Sil",
+    "open": "Aç",
+    "profit": "Mənfəət",
+    "amazon": "Amazon",
+    "ebay": "eBay",
+    "previousImage": "Əvvəlki şəkil",
+    "nextImage": "Sonrakı şəkil"
+  },
   "marketCompare": {
     "title": "Müqayisə paneli",
     "clear": "Təmizlə",

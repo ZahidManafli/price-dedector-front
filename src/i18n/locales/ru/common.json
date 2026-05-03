@@ -90,6 +90,39 @@
   "loading": {
     "data": "Загрузка данных..."
   },
+  "productsPage": {
+    "title": "Товары",
+    "subtitle": "Управляйте отслеживаемыми товарами и следите за производительностью.",
+    "openAnalysis": "Открыть анализ Checkila",
+    "addProduct": "Добавить товар",
+    "unlimited": "Без ограничений",
+    "left": "осталось",
+    "noProductsYet": "Товаров еще нет",
+    "addFirstProduct": "Добавьте ваш первый товар",
+    "quotaReached": "Достигнута квота товаров. Удалите один товар или попросите администратора увеличить ваш лимит.",
+    "deleteConfirm": "Вы уверены, что хотите удалить этот товар?",
+    "deleted": "Товар успешно удален",
+    "failedLoad": "Не удалось загрузить товары",
+    "failedDelete": "Не удалось удалить товар",
+    "quotaReachedLabel": "Достигнута квота товаров",
+    "filterByEbayAccount": "Фильтр по подключенному аккаунту eBay",
+    "filterByEbayAccountDescription": "Показать товары, относящиеся к одному из ваших подключенных аккаунтов eBay.",
+    "allConnectedAccounts": "Все подключенные аккаунты",
+    "noProductsMatchFilter": "Нет товаров, соответствующих этому фильтру аккаунта.",
+    "showAllProducts": "Показать все товары",
+    "unknownAccount": "Неизвестный аккаунт"
+  },
+  "productCard": {
+    "compare": "Сравнить",
+    "edit": "Редактировать",
+    "delete": "Удалить",
+    "open": "Открыть",
+    "profit": "Прибыль",
+    "amazon": "Amazon",
+    "ebay": "eBay",
+    "previousImage": "Предыдущее изображение",
+    "nextImage": "Следующее изображение"
+  },
   "marketCompare": {
     "title": "Панель сравнения",
     "clear": "Очистить",

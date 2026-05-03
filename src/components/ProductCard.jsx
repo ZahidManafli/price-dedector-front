@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   ArrowRight,
@@ -18,6 +19,7 @@ import { useTheme } from '../context/ThemeContext';
 
 export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const profit = calculateProfit(product.currentEbayPrice, product.currentAmazonPrice, {
     taxRate: 0.06,
     fvfRate: 0.136,
@@ -59,6 +61,7 @@ export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
               ? 'border-slate-700 bg-slate-900/95 text-slate-200 hover:bg-slate-800'
               : 'border-slate-300 bg-white/95 hover:bg-white'
           }`}
+          title={t('productCard.edit')}
         >
           <EllipsisVertical size={16} />
         </button>
@@ -79,7 +82,7 @@ export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
               }`}
             >
               <RefreshCw size={14} />
-              Compare
+              {t('productCard.compare')}
             </button>
             <button
               type="button"
@@ -92,7 +95,7 @@ export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
               }`}
             >
               <Pencil size={14} />
-              Edit
+              {t('productCard.edit')}
             </button>
             <button
               type="button"
@@ -105,7 +108,7 @@ export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
               }`}
             >
               <Trash2 size={14} />
-              Delete
+              {t('productCard.delete')}
             </button>
           </div>
         )}
@@ -131,6 +134,7 @@ export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
                     ? 'bg-slate-900/90 border-slate-700 text-slate-200 hover:bg-slate-800'
                     : 'bg-white/90 border-slate-200 hover:bg-white'
                 }`}
+                title={t('productCard.previousImage')}
               >
                 <ArrowLeft size={14} />
               </button>
@@ -144,6 +148,7 @@ export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
                     ? 'bg-slate-900/90 border-slate-700 text-slate-200 hover:bg-slate-800'
                     : 'bg-white/90 border-slate-200 hover:bg-white'
                 }`}
+                title={t('productCard.nextImage')}
               >
                 <ArrowRight size={14} />
               </button>
@@ -177,7 +182,7 @@ export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
             <div className="flex items-center justify-between">
               <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                 <Store size={12} />
-                Amazon
+                {t('productCard.amazon')}
               </span>
               <DollarSign size={12} className="text-slate-400" />
             </div>
@@ -189,7 +194,7 @@ export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
             <div className="flex items-center justify-between">
               <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                 <ShoppingCart size={12} />
-                eBay
+                {t('productCard.ebay')}
               </span>
               <DollarSign size={12} className="text-slate-400" />
             </div>
@@ -217,7 +222,7 @@ export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
             ) : (
               <TrendingDown size={16} className="text-rose-600" />
             )}
-            <span className={`text-[11px] uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Profit</span>
+            <span className={`text-[11px] uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('productCard.profit')}</span>
           </div>
           <span
             className={`text-sm font-bold ${
@@ -235,7 +240,7 @@ export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
             className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition text-sm flex items-center justify-center gap-1.5"
           >
             <ArrowUpRight size={14} />
-            Open
+            {t('productCard.open')}
           </button>
 
         </div>
