@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { ebayAPI } from '../services/api';
 
 export default function ListingDetailPage() {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const location = useLocation();
   const initialListing = location?.state?.listing || null;
   const [listing, setListing] = useState(initialListing);
@@ -200,7 +202,7 @@ export default function ListingDetailPage() {
     const listingId = keyFacts.listingId;
     if (!listingId || listingId === '-') return;
     if (!titleDraft.trim()) {
-      setSaveError('Title cannot be empty.');
+      setSaveError(t('listingDetailPage.emptyTitle'));
       setSaveSuccess('');
       return;
     }
@@ -220,9 +222,9 @@ export default function ListingDetailPage() {
           },
         };
       });
-      setSaveSuccess('Title updated successfully.');
+      setSaveSuccess(t('listingDetailPage.titleUpdated'));
     } catch (err) {
-      setSaveError(err?.response?.data?.error || err?.message || 'Failed to update title.');
+      setSaveError(err?.response?.data?.error || err?.message || t('listingDetailPage.failedUpdateTitle'));
     } finally {
       setSaveTitleLoading(false);
     }
@@ -233,7 +235,7 @@ export default function ListingDetailPage() {
     if (!listingId || listingId === '-') return;
     const parsed = Number(priceDraft);
     if (!Number.isFinite(parsed) || parsed <= 0) {
-      setSaveError('Enter a valid positive price.');
+      setSaveError(t('listingDetailPage.enterValidPrice'));
       setSaveSuccess('');
       return;
     }
@@ -257,7 +259,7 @@ export default function ListingDetailPage() {
       });
       setSaveSuccess('Price updated successfully.');
     } catch (err) {
-      setSaveError(err?.response?.data?.error || err?.message || 'Failed to update price.');
+      setSaveError(err?.response?.data?.error || err?.message || t('listingDetailPage.failedUpdatePrice'));
     } finally {
       setSavePriceLoading(false);
     }
@@ -267,7 +269,7 @@ export default function ListingDetailPage() {
     if (!listingId || listingId === '-') return;
     const parsedStock = Number(quantityDraft);
     if (!Number.isInteger(parsedStock) || parsedStock < 0) {
-      setSaveError('Enter a valid stock count (0 or greater).');
+      setSaveError(t('listingDetailPage.enterValidQuantity'));
       setSaveSuccess('');
       return;
     }
@@ -295,7 +297,7 @@ export default function ListingDetailPage() {
       setQuantityDraft(String(parsedStock));
       setSaveSuccess('Stock count updated successfully.');
     } catch (err) {
-      setSaveError(err?.response?.data?.error || err?.message || 'Failed to update stock count.');
+      setSaveError(err?.response?.data?.error || err?.message || t('listingDetailPage.failedUpdateQuantity'));
     } finally {
       setSaveQtyLoading(false);
     }
@@ -305,7 +307,7 @@ export default function ListingDetailPage() {
     if (!listingId || listingId === '-') return;
     const parsedAutoStock = Number(autoStockQuantity);
     if (!Number.isInteger(parsedAutoStock) || parsedAutoStock <= 0) {
-      setSaveError('Enter a valid auto stock count greater than 0.');
+      setSaveError(t('listingDetailPage.enterValidAutoStock'));
       setSaveSuccess('');
       return;
     }
@@ -321,9 +323,9 @@ export default function ListingDetailPage() {
       const rule = response?.data?.data || null;
       setAutoStockEnabled(true);
       setAutoStockQuantity(rule?.assignedQuantity != null ? String(rule.assignedQuantity) : String(parsedAutoStock));
-      setSaveSuccess('Auto stock rule saved successfully.');
+      setSaveSuccess(t('listingDetailPage.autoStockSaved'));
     } catch (err) {
-      setSaveError(err?.response?.data?.error || err?.message || 'Failed to save auto stock rule.');
+      setSaveError(err?.response?.data?.error || err?.message || t('listingDetailPage.failedAutoStock'));
     } finally {
       setAutoStockSaving(false);
     }
@@ -353,10 +355,10 @@ export default function ListingDetailPage() {
       await ebayAPI.deleteListingAutoStockRule(listingId);
       setAutoStockEnabled(false);
       setAutoStockQuantity('');
-      setSaveSuccess('Auto stock rule removed.');
+      setSaveSuccess(t('listingDetailPage.autoStockRemoved'));
     } catch (err) {
       setAutoStockEnabled(true);
-      setSaveError(err?.response?.data?.error || err?.message || 'Failed to remove auto stock rule.');
+      setSaveError(err?.response?.data?.error || err?.message || t('listingDetailPage.failedAutoStock'));
     } finally {
       setAutoStockSaving(false);
     }
@@ -366,10 +368,10 @@ export default function ListingDetailPage() {
     return (
       <div className="page-shell">
         <div className={`rounded-xl border p-6 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-900'}`}>
-          <p className="mb-4">Listing details are unavailable. Open this page from the Listings table.</p>
+          <p className="mb-4">{t('listingDetailPage.unavailable')}</p>
           <Link to="/listings" className="btn-secondary inline-flex items-center gap-2">
             <ArrowLeft size={16} />
-            Back to Listings
+            {t('listingDetailPage.backToListings')}
           </Link>
         </div>
       </div>
@@ -381,7 +383,7 @@ export default function ListingDetailPage() {
       <div className="mb-4 flex items-center justify-between gap-3">
         <Link to="/listings" className="btn-secondary inline-flex items-center gap-2">
           <ArrowLeft size={16} />
-          Back
+          {t('listingDetailPage.back')}
         </Link>
         {keyFacts.url ? (
           <a
@@ -390,7 +392,7 @@ export default function ListingDetailPage() {
             rel="noreferrer"
             className="btn-primary inline-flex items-center gap-2"
           >
-            View on eBay
+            {t('listingDetailPage.viewOnEbay')}
             <ExternalLink size={16} />
           </a>
         ) : null}
@@ -428,32 +430,32 @@ export default function ListingDetailPage() {
                   <img src={selectedImage} alt={keyFacts.title} className="w-full h-[540px] object-contain" />
                 ) : (
                   <div className="h-[540px] flex items-center justify-center text-sm opacity-70">
-                    No image
+                    {t('listingDetailPage.noImage')}
                   </div>
                 )}
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div className={`rounded-2xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-                <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Shipping, returns & policies</h2>
+                <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('listingDetailPage.shippingReturnsTitle')}</h2>
                 <div className={`space-y-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                  <p><span className="font-semibold">Ships to:</span> {trading?.shipToLocations || '-'}</p>
-                  <p><span className="font-semibold">Buyer protection:</span> {trading?.buyerProtection || '-'}</p>
-                  <p><span className="font-semibold">Returns accepted:</span> {trading?.returnsAccepted || '-'}</p>
-                  <p><span className="font-semibold">Return window:</span> {trading?.returnsWithin || '-'}</p>
-                  <p><span className="font-semibold">Return shipping paid by:</span> {trading?.shippingPaidBy || '-'}</p>
-                  <p><span className="font-semibold">Buyer responsible shipping:</span> {trading?.buyerResponsibleShipping || '-'}</p>
+                  <p><span className="font-semibold">{t('listingDetailPage.shipsTo')}:</span> {trading?.shipToLocations || '-'}</p>
+                  <p><span className="font-semibold">{t('listingDetailPage.buyerProtection')}:</span> {trading?.buyerProtection || '-'}</p>
+                  <p><span className="font-semibold">{t('listingDetailPage.returnsAccepted')}:</span> {trading?.returnsAccepted || '-'}</p>
+                  <p><span className="font-semibold">{t('listingDetailPage.returnWindow')}:</span> {trading?.returnsWithin || '-'}</p>
+                  <p><span className="font-semibold">{t('listingDetailPage.returnShippingPaidBy')}:</span> {trading?.shippingPaidBy || '-'}</p>
+                  <p><span className="font-semibold">{t('listingDetailPage.buyerResponsibleShipping')}:</span> {trading?.buyerResponsibleShipping || '-'}</p>
                 </div>
               </div>
               <div className={`rounded-2xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-                <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Listing health</h2>
+                <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('listingDetailPage.listingHealthTitle')}</h2>
                 <div className={`space-y-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                  <p><span className="font-semibold">Listing duration:</span> {trading?.listingDuration || '-'}</p>
-                  <p><span className="font-semibold">Time left:</span> {trading?.timeLeft || '-'}</p>
-                  <p><span className="font-semibold">AutoPay:</span> {trading?.autoPay || '-'}</p>
-                  <p><span className="font-semibold">Secure description:</span> {trading?.secureDescription || '-'}</p>
-                  <p><span className="font-semibold">Hide from search:</span> {trading?.hideFromSearch || '-'}</p>
-                  <p><span className="font-semibold">Location defaulted:</span> {trading?.locationDefaulted || '-'}</p>
+                  <p><span className="font-semibold">{t('listingDetailPage.listingDuration')}:</span> {trading?.listingDuration || '-'}</p>
+                  <p><span className="font-semibold">{t('listingDetailPage.timeLeft')}:</span> {trading?.timeLeft || '-'}</p>
+                  <p><span className="font-semibold">{t('listingDetailPage.autoPay')}:</span> {trading?.autoPay || '-'}</p>
+                  <p><span className="font-semibold">{t('listingDetailPage.secureDescription')}:</span> {trading?.secureDescription || '-'}</p>
+                  <p><span className="font-semibold">{t('listingDetailPage.hideFromSearch')}:</span> {trading?.hideFromSearch || '-'}</p>
+                  <p><span className="font-semibold">{t('listingDetailPage.locationDefaulted')}:</span> {trading?.locationDefaulted || '-'}</p>
                 </div>
               </div>
             </div>
@@ -463,36 +465,36 @@ export default function ListingDetailPage() {
               {keyFacts.title}
             </h1>
             <div className={`mt-4 pb-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Price</p>
+              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('listingDetailPage.priceLabel')}</p>
               <p className={`text-4xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                 {trading?.currentPrice || keyFacts.price}
               </p>
               <p className={`mt-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                Status: <span className="font-semibold">{trading?.listingStatus || keyFacts.status}</span>
+                {t('listingDetailPage.status')}: <span className="font-semibold">{trading?.listingStatus || keyFacts.status}</span>
               </p>
             </div>
             <div className={`mt-4 space-y-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-              <p><span className="font-semibold">Listing ID:</span> {keyFacts.listingId}</p>
-              <p><span className="font-semibold">Condition:</span> {trading?.condition || meta.condition || '-'}</p>
-              <p><span className="font-semibold">Stock Count:</span> {stockCount} <span className="opacity-70 ml-1">(Quantity Sold: {trading?.quantitySold || 0})</span></p>
-              <p><span className="font-semibold">Best Offer:</span> {trading?.bestOfferEnabled || '-'} {trading?.bestOfferCount ? `(${trading.bestOfferCount})` : ''}</p>
-              <p><span className="font-semibold">Watch / Bids:</span> {trading?.bidCount || 0}</p>
-              <p><span className="font-semibold">Brand:</span> {meta.category || trading?.categoryName || '-'}</p>
-              <p><span className="font-semibold">Start:</span> {trading?.startTime ? new Date(trading.startTime).toLocaleDateString() : '-'}</p>
-              <p><span className="font-semibold">End:</span> {trading?.endTime ? new Date(trading.endTime).toLocaleDateString() : '-'}</p>
-              <p><span className="font-semibold">Location:</span> {trading?.location || meta.location || '-'} {trading?.postalCode ? `(${trading.postalCode})` : ''}</p>
+              <p><span className="font-semibold">{t('listingDetailPage.listingIdLabel')}:</span> {keyFacts.listingId}</p>
+              <p><span className="font-semibold">{t('listingDetailPage.condition')}:</span> {trading?.condition || meta.condition || '-'}</p>
+              <p><span className="font-semibold">{t('listingDetailPage.stockCountLabel')}:</span> {stockCount} <span className="opacity-70 ml-1">({t('listingDetailPage.quantitySold')}: {trading?.quantitySold || 0})</span></p>
+              <p><span className="font-semibold">{t('listingDetailPage.bestOffer')}:</span> {trading?.bestOfferEnabled || '-'} {trading?.bestOfferCount ? `(${trading.bestOfferCount})` : ''}</p>
+              <p><span className="font-semibold">{t('listingDetailPage.watchBids')}:</span> {trading?.bidCount || 0}</p>
+              <p><span className="font-semibold">{t('listingDetailPage.brand')}:</span> {meta.category || trading?.categoryName || '-'}</p>
+              <p><span className="font-semibold">{t('listingDetailPage.start')}:</span> {trading?.startTime ? new Date(trading.startTime).toLocaleDateString() : '-'}</p>
+              <p><span className="font-semibold">{t('listingDetailPage.end')}:</span> {trading?.endTime ? new Date(trading.endTime).toLocaleDateString() : '-'}</p>
+              <p><span className="font-semibold">{t('listingDetailPage.location')}:</span> {trading?.location || meta.location || '-'} {trading?.postalCode ? `(${trading.postalCode})` : ''}</p>
             </div>
             <div className={`mt-4 rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-900/60' : 'border-slate-200 bg-slate-50'}`}>
-              <p className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Seller profiles</p>
-              <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Shipping: {trading?.sellerShippingProfile || '-'}</p>
-              <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Return: {trading?.sellerReturnProfile || '-'}</p>
-              <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Payment: {trading?.sellerPaymentProfile || '-'}</p>
+              <p className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{t('listingDetailPage.sellerProfilesTitle')}</p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('listingDetailPage.shipping')}: {trading?.sellerShippingProfile || '-'}</p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('listingDetailPage.returning')}: {trading?.sellerReturnProfile || '-'}</p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('listingDetailPage.payment')}: {trading?.sellerPaymentProfile || '-'}</p>
             </div>
             <div className={`mt-4 rounded-xl border p-4 ${isDark ? 'border-slate-700 bg-slate-900/60' : 'border-slate-200 bg-slate-50'}`}>
-              <p className={`text-sm font-semibold mb-3 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Quick edit listing</p>
+              <p className={`text-sm font-semibold mb-3 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{t('listingDetailPage.quickEditTitle')}</p>
               <div className="space-y-3">
                 <div>
-                  <label className={`block text-xs mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Title</label>
+                  <label className={`block text-xs mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('listingDetailPage.titleLabel')}</label>
                   <input
                     type="text"
                     value={titleDraft}
@@ -509,11 +511,11 @@ export default function ListingDetailPage() {
                     disabled={saveTitleLoading}
                     className="btn-secondary mt-2"
                   >
-                    {saveTitleLoading ? 'Updating title...' : 'Update title'}
+                    {saveTitleLoading ? t('listingDetailPage.updatingTitle') : t('listingDetailPage.updateTitle')}
                   </button>
                 </div>
                 <div>
-                  <label className={`block text-xs mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Price (USD)</label>
+                  <label className={`block text-xs mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('listingDetailPage.priceLabel2')}</label>
                   <input
                     type="number"
                     min="0"
@@ -532,11 +534,11 @@ export default function ListingDetailPage() {
                     disabled={savePriceLoading}
                     className="btn-secondary mt-2"
                   >
-                    {savePriceLoading ? 'Updating price...' : 'Update price'}
+                    {savePriceLoading ? t('listingDetailPage.updatingPrice') : t('listingDetailPage.updatePrice')}
                   </button>
                 </div>
                 <div>
-                  <label className={`block text-xs mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Stock Count</label>
+                  <label className={`block text-xs mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('listingDetailPage.stockCountLabel2')}</label>
                   <input
                     type="number"
                     min="0"
@@ -555,7 +557,7 @@ export default function ListingDetailPage() {
                     disabled={saveQtyLoading}
                     className="btn-secondary mt-2"
                   >
-                    {saveQtyLoading ? 'Updating stock count...' : 'Update stock count'}
+                    {saveQtyLoading ? t('listingDetailPage.updatingQuantity') : t('listingDetailPage.updateQuantity')}
                   </button>
                 </div>
                 <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-950/40' : 'border-slate-200 bg-white'}`}>
@@ -567,15 +569,15 @@ export default function ListingDetailPage() {
                       disabled={autoStockSaving || autoStockLoading}
                       className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                     />
-                    Auto stock
+                    {t('listingDetailPage.autoStock')}
                   </label>
                   <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    If this listing reaches 0, the cron restores it to the quantity you assign here.
+                    {t('listingDetailPage.autoStockDescription')}
                   </p>
                   {autoStockEnabled ? (
                     <div className="mt-3">
                       <label className={`block text-xs mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                        Auto stock count
+                        {t('listingDetailPage.autoStockCount')}
                       </label>
                       <input
                         type="number"
@@ -595,13 +597,13 @@ export default function ListingDetailPage() {
                         disabled={autoStockSaving}
                         className="btn-secondary mt-2"
                       >
-                        {autoStockSaving ? 'Saving auto stock...' : 'Save auto stock'}
+                        {autoStockSaving ? t('listingDetailPage.savingAutoStock') : t('listingDetailPage.saveAutoStock')}
                       </button>
                     </div>
                   ) : null}
                   {autoStockLoading ? (
                     <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      Loading auto stock rule...
+                      {t('listingDetailPage.loadingAutoStock')}
                     </p>
                   ) : null}
                 </div>

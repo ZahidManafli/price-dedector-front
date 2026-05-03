@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ebayAPI } from '../services/api';
 import Alert from '../components/Alert';
 import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal, Trash2 } from 'lucide-react';
@@ -8,6 +9,7 @@ import { useTheme } from '../context/ThemeContext';
 export default function ListingsPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [ebayStatus, setEbayStatus] = useState({ connected: false });
   const [showConnectModal, setShowConnectModal] = useState(false);
@@ -77,7 +79,7 @@ export default function ListingsPage() {
       }
     } catch (err) {
       if (requestId !== listingsRequestRef.current) return;
-      const msg = err?.response?.data?.error || 'Failed to load eBay listings';
+      const msg = err?.response?.data?.error || t('listingsPage.failedLoad');
       setError(msg);
     } finally {
       if (requestId === listingsRequestRef.current) {
@@ -100,7 +102,7 @@ export default function ListingsPage() {
       ...(!rawEbayListingId ? { inventoryOnly: 'true' } : {}),
     };
 
-    const ok = window.confirm('Delete this listing from eBay?');
+    const ok = window.confirm(t('listingsPage.deleteConfirm'));
     if (!ok) return;
 
     try {
@@ -108,7 +110,7 @@ export default function ListingsPage() {
       await ebayAPI.deleteListing(deleteId, params);
       await loadListings({ forceRefresh: true });
     } catch (err) {
-      const msg = err?.response?.data?.error || 'Failed to delete listing';
+      const msg = err?.response?.data?.error || t('listingsPage.failedDelete');
       setError(msg);
     } finally {
       setDeletingListingId('');
@@ -126,7 +128,7 @@ export default function ListingsPage() {
       if (!authUrl) throw new Error('Missing eBay auth URL');
       window.location.href = authUrl;
     } catch (err) {
-      const msg = err?.response?.data?.error || 'Failed to start eBay connection';
+      const msg = err?.response?.data?.error || t('listingsPage.failedConnect');
       setError(msg);
     }
   };
@@ -292,16 +294,16 @@ export default function ListingsPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className={`page-title flex items-center gap-2 ${isDark ? 'text-slate-100' : ''}`}>
           <Package size={18} />
-          Listings
+          {t('listingsPage.title')}
         </h1>
         {ebayStatus.connected ? (
           <div className={`text-sm flex items-center gap-3 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
             {(ebayStatus.activeAccountLabel || ebayStatus.accountId) ? (
               <span className={`inline-flex items-center rounded-full px-3 py-2 text-md border ${isDark ? 'border-emerald-700 bg-emerald-900/30 text-emerald-200' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
-                Active: <span className="ml-1 font-semibold">{ebayStatus.activeAccountLabel || ebayStatus.accountId}</span>
+                {t('listingsPage.active')}: <span className="ml-1 font-semibold">{ebayStatus.activeAccountLabel || ebayStatus.accountId}</span>
               </span>
             ) : null}
-            {typeof total === 'number' ? `Total: ${total}` : null}
+            {typeof total === 'number' ? `${t('listingsPage.total')}: ${total}` : null}
           </div>
         ) : null}
       </div>
@@ -316,18 +318,18 @@ export default function ListingsPage() {
         <>
           {/* Fallback content in case modal is dismissed */}
           <div className={`rounded-xl p-6 text-center border ${isDark ? 'bg-slate-900/60 border-slate-700' : 'glass-card'}`}>
-            <p className={`${isDark ? 'text-slate-300' : 'text-slate-600'} mb-4`}>Connect your eBay account to view your listings.</p>
+            <p className={`${isDark ? 'text-slate-300' : 'text-slate-600'} mb-4`}>{t('listingsPage.connectPrompt')}</p>
             <button type="button" onClick={handleConnect} className="btn-primary inline-flex items-center gap-2">
               <Link2 size={16} />
-              Connect eBay
+              {t('listingsPage.connectButton')}
             </button>
           </div>
           {showConnectModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
               <div className={`w-full max-w-md p-6 rounded-xl border ${isDark ? 'bg-slate-900/80 border-slate-700' : 'glass-card'}`}>
-                <h2 className={`text-lg font-semibold mb-2 ${isDark ? 'text-slate-100' : ''}`}>eBay Sign-in Required</h2>
+                <h2 className={`text-lg font-semibold mb-2 ${isDark ? 'text-slate-100' : ''}`}>{t('listingsPage.signinRequired')}</h2>
                 <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  You need to connect your eBay account to access your listings.
+                  {t('listingsPage.signinDescription')}
                 </p>
                 <div className="flex gap-3 justify-end">
                   <button
@@ -335,11 +337,11 @@ export default function ListingsPage() {
                     className="btn-secondary"
                     onClick={() => setShowConnectModal(false)}
                   >
-                    Close
+                    {t('common.close')}
                   </button>
                   <button type="button" className="btn-primary inline-flex items-center gap-2" onClick={handleConnect}>
                     <Link2 size={16} />
-                    Connect eBay
+                    {t('listingsPage.connectButton')}
                   </button>
                 </div>
               </div>
@@ -350,15 +352,15 @@ export default function ListingsPage() {
         <>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Showing</p>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('listingsPage.showing')}</p>
             <p className={`text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{filteredItems.length}</p>
           </div>
           <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Active</p>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('listingsPage.activeLabel')}</p>
             <p className={`text-2xl font-bold ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{activeCount}</p>
           </div>
           <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Completed</p>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('listingsPage.completed')}</p>
             <p className={`text-2xl font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{completedCount}</p>
           </div>
         </div>
@@ -369,7 +371,7 @@ export default function ListingsPage() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by title or listing ID..."
+                placeholder={t('listingsPage.searchPlaceholder')}
                 className={`w-full rounded-lg pl-9 pr-3 py-2 text-sm border ${
                   isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
                 }`}
@@ -384,9 +386,9 @@ export default function ListingsPage() {
                   isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
                 }`}
               >
-                <option value="ALL">All status</option>
-                <option value="ACTIVE">Active</option>
-                <option value="COMPLETED">Completed</option>
+                <option value="ALL">{t('listingsPage.allStatus')}</option>
+                <option value="ACTIVE">{t('listingsPage.statusActive')}</option>
+                <option value="COMPLETED">{t('listingsPage.statusCompleted')}</option>
               </select>
             </label>
           </div>
@@ -396,13 +398,13 @@ export default function ListingsPage() {
             <table className={`min-w-full ${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
               <thead className={`${isDark ? 'bg-slate-800/70' : 'bg-slate-50'}`}>
                 <tr>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Image</th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('title', 'Title')}</th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('listingId', 'Listing ID')}</th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('price', 'Price')}</th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('quantity', 'Stock Count')}</th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('sold', 'Sold')}</th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('status', 'Status')}</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{t('listingsPage.image')}</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('title', t('listingsPage.title'))}</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('listingId', t('listingsPage.listingId'))}</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('price', t('listingsPage.price'))}</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('quantity', t('listingsPage.stockCount'))}</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('sold', t('listingsPage.sold'))}</th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{sortLabel('status', t('listingsPage.status'))}</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -449,7 +451,7 @@ export default function ListingsPage() {
                               }
                               className={`inline-flex items-center gap-1 ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`}
                             >
-                              Details
+                              {t('listingsPage.details')}
                             </button>
                             <button
                               type="button"
@@ -460,10 +462,10 @@ export default function ListingsPage() {
                                   ? 'border-red-900/50 text-red-300 hover:bg-red-950/40'
                                   : 'border-red-200 text-red-700 hover:bg-red-50'
                               }`}
-                              title="Delete listing"
+                              title={t('listingsPage.deleteListing')}
                             >
                               <Trash2 size={14} />
-                              {deleteKey && deletingListingId === deleteKey ? 'Deleting' : 'Delete'}
+                              {deleteKey && deletingListingId === deleteKey ? t('listingsPage.deleting') : t('listingsPage.delete')}
                             </button>
                           </div>
                         </td>
@@ -474,7 +476,7 @@ export default function ListingsPage() {
                 {pagedItems.length === 0 && (
                   <tr>
                     <td colSpan={8} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      No listings found for current filters.
+                      {t('listingsPage.noListings')}
                     </td>
                   </tr>
                 )}
@@ -484,7 +486,7 @@ export default function ListingsPage() {
 
           <div className={`flex items-center justify-between px-4 py-3 border-t ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}>
             <div className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-              Page {page + 1}
+              {t('listingsPage.page')} {page + 1}
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -493,7 +495,7 @@ export default function ListingsPage() {
                 disabled={!canPrev || fetchingPage}
                 className="btn-secondary"
               >
-                Previous
+                {t('listingsPage.previous')}
               </button>
               <button
                 type="button"
@@ -501,7 +503,7 @@ export default function ListingsPage() {
                 disabled={!canNext || fetchingPage}
                 className="btn-secondary"
               >
-                Next
+                {t('listingsPage.next')}
               </button>
             </div>
           </div>
