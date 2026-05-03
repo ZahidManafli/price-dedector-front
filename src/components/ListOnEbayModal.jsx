@@ -11,12 +11,6 @@ function markdownToPlainText(md) {
     .replace(/\s+/g, ' ')
     .trim();
 }
-
-// Utility: Wrap in CDATA, removing any existing CDATA
-function wrapDescriptionCdata(desc) {
-  const cleaned = String(desc).replace(/<!\[CDATA\[|\]\]>/g, '');
-  return `<![CDATA[${cleaned}]]>`;
-}
 /**
  * ListOnEbayModal.jsx  (updated)
  *
@@ -433,8 +427,8 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
         // Always build a new scrapedData object, never mutate or spread scrapedOverride
         const newScrapedData = {
           title: form.title.trim(),
-          // Convert Markdown to plain text and wrap in CDATA for safety
-          description: wrapDescriptionCdata(markdownToPlainText(form.description.trim() || form.title.trim())),
+          // Convert Markdown to plain text for safety
+          description: markdownToPlainText(form.description.trim() || form.title.trim()),
           price: Number(form.price),
           quantity: Math.max(1, Number(form.quantity) || 1),
           categoryId: form.categoryId.trim(),
@@ -473,8 +467,8 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
 
       const res = await ebayAPI.quickList({
         title: form.title.trim(),
-        // Convert Markdown to plain text and wrap in CDATA for safety
-        description: wrapDescriptionCdata(markdownToPlainText(form.description.trim() || form.title.trim())),
+        // Convert Markdown to plain text for safety
+        description: markdownToPlainText(form.description.trim() || form.title.trim()),
         price: Number(form.price),
         quantity: Math.max(1, Number(form.quantity) || 1),
         categoryId: form.categoryId.trim(),

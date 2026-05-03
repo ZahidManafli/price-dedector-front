@@ -11,12 +11,6 @@ function markdownToPlainText(md) {
     .replace(/\s+/g, ' ')
     .trim();
 }
-
-// Utility: Wrap in CDATA, removing any existing CDATA
-function wrapDescriptionCdata(desc) {
-  const cleaned = String(desc).replace(/<!\[CDATA\[|\]\]>/g, '');
-  return `<![CDATA[${cleaned}]]>`;
-}
 /**
  * EbayBucket.jsx
  *
@@ -248,8 +242,8 @@ export function BucketDrawer({
           itemSpecificsObj = scraped.itemSpecifics;
         }
 
-        // Convert Markdown to plain text and wrap in CDATA for safety
-        const safeDescription = wrapDescriptionCdata(markdownToPlainText(scraped.description || itm.title || ''));
+        // Convert Markdown to plain text for safety
+        const safeDescription = markdownToPlainText(scraped.description || itm.title || '');
 
         const payload = {
           title: scraped.title || itm.title || '',
