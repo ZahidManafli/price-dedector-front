@@ -120,7 +120,7 @@ export default function OrdersPage() {
 
         await loadPage(0);
       } catch (err) {
-        setError(err?.response?.data?.error || err?.message || 'Failed to load orders');
+        setError(err?.response?.data?.error || err?.message || t('ordersPage.failedLoad'));
       } finally {
         setLoading(false);
       }
@@ -187,7 +187,7 @@ export default function OrdersPage() {
       }
     } catch (err) {
       if (requestId !== ordersRequestRef.current) return;
-      setError(err?.response?.data?.error || err?.message || 'Failed to load eBay orders');
+      setError(err?.response?.data?.error || err?.message || t('ordersPage.failedLoad'));
       setOrders([]);
       setPageCursors((prev) => {
         const next = [...prev];
@@ -208,7 +208,7 @@ export default function OrdersPage() {
       if (!authUrl) throw new Error('Missing eBay auth URL');
       window.location.href = authUrl;
     } catch (err) {
-      setError(err?.response?.data?.error || err?.message || 'Failed to start eBay connection');
+      setError(err?.response?.data?.error || err?.message || t('ordersPage.failedConnect'));
     }
   };
 
@@ -231,7 +231,7 @@ export default function OrdersPage() {
           <div className={`text-sm flex items-center gap-3 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
             {(ebayStatus.activeAccountLabel || ebayStatus.accountId) ? (
               <span className={`inline-flex items-center rounded-full px-3 py-2 text-md border ${isDark ? 'border-emerald-700 bg-emerald-900/30 text-emerald-200' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
-                Active: <span className="ml-1 font-semibold">{ebayStatus.activeAccountLabel || ebayStatus.accountId}</span>
+                {t('ordersPage.activeAccount')}: <span className="ml-1 font-semibold">{ebayStatus.activeAccountLabel || ebayStatus.accountId}</span>
               </span>
             ) : null}
             {typeof total === 'number' ? `${t('ordersPage.table.total')}: ${total}` : null}

@@ -136,7 +136,7 @@ export default function OrderDetailPage() {
       setTracking(response?.data?.tracking || null);
     } catch (error) {
       if (error?.response?.status !== 404) {
-        setTrackingError(error?.response?.data?.error || 'Failed to load tracking status');
+        setTrackingError(error?.response?.data?.error || t('orderDetailPage.tracking.loadFailed'));
       }
     } finally {
       setIsLoadingTracking(false);
@@ -158,9 +158,9 @@ export default function OrderDetailPage() {
         destination_postal_code: trackingForm.destination_postal_code,
       });
       setTracking(response?.data?.tracking || null);
-      setTrackingMessage('Tracking registered successfully.');
+      setTrackingMessage(t('orderDetailPage.tracking.registerSuccess'));
     } catch (error) {
-      setTrackingError(error?.response?.data?.error || 'Failed to register tracking');
+      setTrackingError(error?.response?.data?.error || t('orderDetailPage.tracking.registerFailed'));
     } finally {
       setIsRegisteringTracking(false);
     }
@@ -175,9 +175,9 @@ export default function OrderDetailPage() {
     try {
       const response = await ebayAPI.refreshOrderTracking(summary.id);
       setTracking(response?.data?.tracking || null);
-      setTrackingMessage('Tracking refreshed.');
+      setTrackingMessage(t('orderDetailPage.tracking.refreshSuccess'));
     } catch (error) {
-      setTrackingError(error?.response?.data?.error || 'Failed to refresh tracking');
+      setTrackingError(error?.response?.data?.error || t('orderDetailPage.tracking.refreshFailed'));
     } finally {
       setIsRefreshingTracking(false);
     }
@@ -196,9 +196,9 @@ export default function OrderDetailPage() {
         lineItems: selectedLineItemsPayload,
       });
       setTracking(response?.data?.tracking || tracking || null);
-      setTrackingMessage('Tracking uploaded to eBay fulfillment successfully.');
+      setTrackingMessage(t('orderDetailPage.tracking.uploadSuccess'));
     } catch (error) {
-      setTrackingError(error?.response?.data?.error || 'Failed to upload tracking to eBay');
+      setTrackingError(error?.response?.data?.error || t('orderDetailPage.tracking.uploadFailed'));
     } finally {
       setIsUploadingToEbay(false);
     }
@@ -261,7 +261,7 @@ export default function OrderDetailPage() {
           </div>
           <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{summary.buyer}</p>
           <p className={`text-xs mt-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('orderDetailPage.email')} {buyerDetails.email}</p>
-          <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('orderDetailPage.phone')} {buyerDetails.phone}</p>
+          <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('orderDetailPage.phoneLabel')} {buyerDetails.phone}</p>
           <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('orderDetailPage.productTitle')} {buyerDetails.productTitle}</p>
           <p className={`text-xs mt-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('orderDetailPage.cancelReason')} {buyerDetails.cancelReason}</p>
           <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('orderDetailPage.cancelInitiator')} {buyerDetails.cancelInitiator}</p>
@@ -320,11 +320,11 @@ export default function OrderDetailPage() {
             </p>
             <p className={`${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{shipping.country}</p>
             {shipping.phone && (
-              <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Phone: {shipping.phone}</p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('orderDetailPage.phoneLabel')} {shipping.phone}</p>
             )}
             {shipping.service && (
               <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Service: {shipping.service}
+                {t('orderDetailPage.serviceLabel')} {shipping.service}
               </p>
             )}
           </div>
@@ -389,7 +389,7 @@ export default function OrderDetailPage() {
                 value={trackingForm.amazonTrackingNumber}
                 onChange={(e) => handleTrackingInput('amazonTrackingNumber', e.target.value)}
                 className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                placeholder="Paste your Amazon TBA code here"
+                placeholder={t('orderDetailPage.tracking.tbaPlaceholder')}
               />
             </label>
             <label className="text-sm">
@@ -408,7 +408,7 @@ export default function OrderDetailPage() {
             </summary>
             <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
               <label className="text-sm">
-                <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>order_number</span>
+                <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('orderDetailPage.tracking.orderNumberLabel')}</span>
                 <input
                   value={trackingForm.order_number}
                   onChange={(e) => handleTrackingInput('order_number', e.target.value)}
@@ -416,16 +416,16 @@ export default function OrderDetailPage() {
                 />
               </label>
               <label className="text-sm">
-                <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>destination_country_iso3</span>
+                <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('orderDetailPage.tracking.destinationCountryLabel')}</span>
                 <input
                   value={trackingForm.destination_country_iso3}
                   onChange={(e) => handleTrackingInput('destination_country_iso3', e.target.value.toUpperCase())}
                   className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                  placeholder="e.g. USA"
+                  placeholder={t('orderDetailPage.tracking.destinationCountryPlaceholder', { defaultValue: 'e.g. USA' })}
                 />
               </label>
               <label className="text-sm">
-                <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>destination_postal_code</span>
+                <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('orderDetailPage.tracking.postalCodeLabel')}</span>
                 <input
                   value={trackingForm.destination_postal_code}
                   onChange={(e) => handleTrackingInput('destination_postal_code', e.target.value)}
@@ -433,12 +433,12 @@ export default function OrderDetailPage() {
                 />
               </label>
               <label className="text-sm">
-                <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Shipped date (for eBay upload)</span>
+                <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('orderDetailPage.tracking.shippedDateLabel')}</span>
                 <input
                   value={trackingForm.shippedDate}
                   onChange={(e) => handleTrackingInput('shippedDate', e.target.value)}
                   className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                  placeholder="ISO8601 date-time"
+                  placeholder={t('orderDetailPage.tracking.shippedDatePlaceholder')}
                 />
               </label>
             </div>
@@ -508,22 +508,22 @@ export default function OrderDetailPage() {
           {tracking ? (
             <div>
               <p className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                VDTrack Number: <span className="font-semibold">{tracking.vdtrackNumber || '-'}</span>
+                {t('orderDetailPage.tracking.vdtrackNumberLabel', { defaultValue: 'VDTrack Number:' })} <span className="font-semibold">{tracking.vdtrackNumber || '-'}</span>
               </p>
               <p className={`text-sm mt-1 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                VDTrack Status: <span className="font-semibold">{tracking.vdtrackStatus || tracking.statusMessage || '-'}</span>
+                {t('orderDetailPage.tracking.vdtrackStatusLabel', { defaultValue: 'VDTrack Status:' })} <span className="font-semibold">{tracking.vdtrackStatus || tracking.statusMessage || '-'}</span>
               </p>
               <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Scraped page: {tracking.sourceUrl || (tracking.trackingNumber ? `https://www.vdtrack.com/tracker/${tracking.trackingNumber}` : '-')}
+                {t('orderDetailPage.tracking.scrapedPageLabel', { defaultValue: 'Scraped page:' })} {tracking.sourceUrl || (tracking.trackingNumber ? `https://www.vdtrack.com/tracker/${tracking.trackingNumber}` : '-')}
               </p>
               <p className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                Status: <span className="font-semibold">{tracking.statusMessage || '-'}</span>
+                {t('orderDetailPage.tracking.statusLabel', { defaultValue: 'Status:' })} <span className="font-semibold">{tracking.statusMessage || '-'}</span>
               </p>
               <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Tracking: {tracking.trackingNumber || '-'} | Slug: {tracking.slug || '-'}
+                {t('orderDetailPage.tracking.trackingNumberLabel', { defaultValue: 'Tracking:' })} {tracking.trackingNumber || '-'} | {t('orderDetailPage.tracking.slugLabel', { defaultValue: 'Slug:' })} {tracking.slug || '-'}
               </p>
               <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Last poll: {tracking.lastPolledAt || '-'} | Next poll: {tracking.nextPollAt || '-'}
+                {t('orderDetailPage.tracking.lastPollLabel', { defaultValue: 'Last poll:' })} {tracking.lastPolledAt || '-'} | {t('orderDetailPage.tracking.nextPollLabel', { defaultValue: 'Next poll:' })} {tracking.nextPollAt || '-'}
               </p>
 
               <div className="mt-3 space-y-2 max-h-48 overflow-auto pr-1">
@@ -533,7 +533,7 @@ export default function OrderDetailPage() {
                     className={`rounded-lg border px-3 py-2 ${isDark ? 'border-slate-700 bg-slate-900/30' : 'border-slate-200 bg-slate-50'}`}
                   >
                     <p className={`text-xs font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                      {checkpoint?.message || checkpoint?.tag || 'Checkpoint'}
+                      {checkpoint?.message || checkpoint?.tag || t('orderDetailPage.tracking.checkpointLabel', { defaultValue: 'Checkpoint' })}
                     </p>
                     <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                       {checkpoint?.checkpoint_time || checkpoint?.created_at || checkpoint?.event_time || '-'}
