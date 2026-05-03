@@ -2,12 +2,14 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ebayAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
 import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal } from 'lucide-react';
 
 export default function OrdersPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const isOrderCancelled = (order) => {
     const cancellation = order?.cancelStatus || order?.orderCancelStatus || order?.cancellation || {};
@@ -223,7 +225,7 @@ export default function OrdersPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="page-title flex items-center gap-2">
           <Package size={18} />
-          Orders
+          {t('ordersPage.title')}
         </h1>
         {ebayStatus.connected ? (
           <div className={`text-sm flex items-center gap-3 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
@@ -232,7 +234,7 @@ export default function OrdersPage() {
                 Active: <span className="ml-1 font-semibold">{ebayStatus.activeAccountLabel || ebayStatus.accountId}</span>
               </span>
             ) : null}
-            {typeof total === 'number' ? `Total: ${total}` : null}
+            {typeof total === 'number' ? `${t('ordersPage.table.total')}: ${total}` : null}
           </div>
         ) : null}
       </div>
@@ -250,12 +252,12 @@ export default function OrdersPage() {
               isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-white border-slate-200'
             }`}
           >
-            <p className={`${isDark ? 'text-slate-300' : 'text-slate-600'} mb-4`}>
-              Connect your eBay account to view your shipment orders.
+              <p className={`${isDark ? 'text-slate-300' : 'text-slate-600'} mb-4`}> 
+              {t('ordersPage.connectPrompt')}
             </p>
             <button type="button" onClick={handleConnect} className="btn-primary inline-flex items-center gap-2">
               <Link2 size={16} />
-              Connect eBay
+              {t('ordersPage.connectButton')}
             </button>
           </div>
 
@@ -267,14 +269,14 @@ export default function OrdersPage() {
                 }`}
               >
                 <h2 className="text-lg font-semibold mb-2" style={{ color: isDark ? '#e2e8f0' : undefined }}>
-                  eBay Sign-in Required
+                  {t('ordersPage.signinRequired')}
                 </h2>
                 <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  You must connect eBay (seller account) to view orders.
+                  {t('ordersPage.signinDescription')}
                 </p>
                 <div className="flex gap-3 justify-end">
                   <button type="button" className="btn-secondary" onClick={() => setShowConnectModal(false)}>
-                    Close
+                    {t('listingModal.close')}
                   </button>
                   <button
                     type="button"
@@ -282,7 +284,7 @@ export default function OrdersPage() {
                     onClick={handleConnect}
                   >
                     <Link2 size={16} />
-                    Connect eBay
+                    {t('ordersPage.connectButton')}
                   </button>
                 </div>
               </div>
@@ -293,19 +295,19 @@ export default function OrdersPage() {
         <>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
           <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Showing</p>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('ordersPage.showing')}</p>
             <p className={`text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{filteredOrders.length}</p>
           </div>
           <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Paid</p>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('ordersPage.paid')}</p>
             <p className={`text-2xl font-bold ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{stats.paid}</p>
           </div>
           <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Shipped</p>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('ordersPage.shipped')}</p>
             <p className={`text-2xl font-bold ${isDark ? 'text-indigo-300' : 'text-indigo-700'}`}>{stats.fulfilled}</p>
           </div>
           <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Refunded</p>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('ordersPage.refunded')}</p>
             <p className={`text-2xl font-bold ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{stats.refunded}</p>
           </div>
         </div>
@@ -316,7 +318,7 @@ export default function OrdersPage() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search ID, buyer, item..."
+                placeholder={t('ordersPage.searchPlaceholder')}
                 className={`w-full rounded-lg pl-9 pr-3 py-2 text-sm border ${
                   isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
                 }`}
@@ -331,9 +333,9 @@ export default function OrdersPage() {
                   isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
                 }`}
               >
-                <option value="ALL">All payment</option>
-                <option value="PAID">PAID</option>
-                <option value="FULLY_REFUNDED">FULLY_REFUNDED</option>
+                <option value="ALL">{t('ordersPage.filter.allPayment')}</option>
+                <option value="PAID">{t('ordersPage.filter.paid')}</option>
+                <option value="FULLY_REFUNDED">{t('ordersPage.filter.fullyRefunded')}</option>
               </select>
             </label>
             <label className="relative">
@@ -345,10 +347,10 @@ export default function OrdersPage() {
                   isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
                 }`}
               >
-                <option value="ALL">All shipment</option>
-                <option value="NOT_STARTED">NOT_STARTED</option>
-                <option value="ORDER_CANCELLED">ORDER_CANCELLED</option>
-                <option value="FULFILLED">FULFILLED</option>
+                <option value="ALL">{t('ordersPage.filter.allShipment')}</option>
+                <option value="NOT_STARTED">{t('ordersPage.filter.notStarted')}</option>
+                <option value="ORDER_CANCELLED">{t('ordersPage.filter.orderCancelled')}</option>
+                <option value="FULFILLED">{t('ordersPage.filter.fulfilled')}</option>
               </select>
             </label>
           </div>
@@ -363,16 +365,16 @@ export default function OrdersPage() {
               <thead className={isDark ? 'bg-slate-800/70' : 'bg-slate-50'}>
                 <tr>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    {sortLabel('orderId', 'Order ID')}
+                    {sortLabel('orderId', t('ordersPage.table.orderId'))}
                   </th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    {sortLabel('payment', 'Payment')}
+                    {sortLabel('payment', t('ordersPage.table.payment'))}
                   </th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    {sortLabel('fulfillment', 'Shipment')}
+                    {sortLabel('fulfillment', t('ordersPage.table.shipment'))}
                   </th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    {sortLabel('total', 'Total')}
+                    {sortLabel('total', t('ordersPage.table.total'))}
                   </th>
                   <th className="px-4 py-3" />
                 </tr>
@@ -414,7 +416,7 @@ export default function OrdersPage() {
                             }
                             className={`inline-flex items-center gap-1 ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`}
                           >
-                            Details
+                            {t('ordersPage.table.details')}
                           </button>
                         </td>
                       </tr>
@@ -424,8 +426,8 @@ export default function OrdersPage() {
 
                 {filteredOrders.length === 0 && (
                   <tr>
-                    <td colSpan={5} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      No orders found for current filters.
+                      <td colSpan={5} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {t('ordersPage.empty')}
                     </td>
                   </tr>
                 )}
@@ -434,7 +436,7 @@ export default function OrdersPage() {
           </div>
 
           <div className={`flex items-center justify-between px-4 py-3 border-t ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}>
-            <div className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Page {page + 1}</div>
+            <div className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{t('ordersPage.pagination.page', { page: page + 1 })}</div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -442,7 +444,7 @@ export default function OrdersPage() {
                 disabled={page <= 0 || fetchingPage}
                 className="btn-secondary"
               >
-                Previous
+                {t('ordersPage.pagination.previous')}
               </button>
               <button
                 type="button"
@@ -450,7 +452,7 @@ export default function OrdersPage() {
                 disabled={!canNext || fetchingPage}
                 className="btn-secondary"
               >
-                Next
+                {t('ordersPage.pagination.next')}
               </button>
             </div>
           </div>

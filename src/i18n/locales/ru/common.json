@@ -321,5 +321,90 @@
     "emptyTitle": "Название не может быть пустым.",
     "enterValidQuantity": "Введите действительное количество остатка (0 или больше).",
     "enterValidAutoStock": "Введите действительное автоматическое количество остатка больше 0."
+  },
+  "ordersPage": {
+    "title": "Orders",
+    "failedLoad": "Failed to load eBay orders",
+    "connectPrompt": "Connect your eBay account to view your shipment orders.",
+    "connectButton": "Connect eBay",
+    "signinRequired": "eBay Sign-in Required",
+    "signinDescription": "You must connect eBay (seller account) to view orders.",
+    "showing": "Showing",
+    "paid": "Paid",
+    "shipped": "Shipped",
+    "refunded": "Refunded",
+    "searchPlaceholder": "Search ID, buyer, item...",
+    "filter": {
+      "allPayment": "All payment",
+      "paid": "PAID",
+      "fullyRefunded": "FULLY_REFUNDED",
+      "allShipment": "All shipment",
+      "notStarted": "NOT_STARTED",
+      "orderCancelled": "ORDER_CANCELLED",
+      "fulfilled": "FULFILLED"
+    },
+    "table": {
+      "orderId": "Order ID",
+      "payment": "Payment",
+      "shipment": "Shipment",
+      "total": "Total",
+      "details": "Details"
+    },
+    "empty": "No orders found for current filters.",
+    "pagination": {
+      "page": "Page {{page}}",
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "orderDetailPage": {
+    "noOrder": {
+      "unavailable": "Order details are unavailable. Open this page from the Orders table.",
+      "backToOrders": "Back to Orders"
+    },
+    "back": "Back",
+    "title": "Order Detail",
+    "buyer": "Buyer",
+    "email": "Email:",
+    "phone": "Phone:",
+    "productTitle": "Product title:",
+    "cancelReason": "Cancel reason:",
+    "cancelInitiator": "Cancel initiator:",
+    "cancelRequested": "Cancel requested:",
+    "cancelCompleted": "Cancel completed:",
+    "payment": "Payment",
+    "shipment": "Shipment",
+    "orderTotal": "Order Total",
+    "created": "Created:",
+    "modified": "Last update:",
+    "lineItems": "Line items ({{count}})",
+    "qty": "Qty:",
+    "shippingAndPayment": "Shipping & payment",
+    "shipTo": "Ship to",
+    "service": "Service:",
+    "paymentSummary": "Payment summary",
+    "method": "Method:",
+    "ref": "Ref:",
+    "payout": "Payout to seller:",
+    "marketplaceFees": "Marketplace fees:",
+    "feeBasis": "Fee basis:",
+    "refunded": "Refunded:",
+    "tracking": {
+      "title": "Tracking workflow",
+      "tbaLabel": "TBA Tracking Code",
+      "orderIdAuto": "Order ID (Auto)",
+      "advancedSummary": "Advanced options (optional)",
+      "selectItems": "Select line items to upload to eBay fulfillment",
+      "registerTracking": "Register Tracking",
+      "refreshTracking": "Refresh Tracking",
+      "uploadToEbay": "Upload to eBay Fulfillment",
+      "reloadTracking": "Reload Tracking",
+      "noCheckpoints": "No checkpoints yet.",
+      "noTracking": "No tracking record found for this order yet.",
+      "registering": "Registering...",
+      "refreshing": "Refreshing...",
+      "uploading": "Uploading...",
+      "loading": "Loading..."
+    }
   }
 }
