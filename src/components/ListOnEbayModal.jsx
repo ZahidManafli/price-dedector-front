@@ -26,6 +26,8 @@ function markdownToPlainText(md) {
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ebayAPI, dewisoAPI } from '../services/api';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
 
 const CONDITION_OPTIONS = [
   { id: 1000, label: 'New' },
@@ -251,6 +253,8 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const quillRef = useRef(null);
+  const quillContainerRef = useRef(null);
 
   // ── 1. Fetch seller policies ───────────────────────────────────────────────
   useEffect(() => {
@@ -371,6 +375,44 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
     setForm((prev) => ({ ...prev, paymentPolicyId, returnPolicyId, fulfillmentPolicyId }));
   }, [sellerPolicies]);
 
+  // Initialize Quill editor once
+  useEffect(() => {
+    if (!quillContainerRef.current || quillRef.current) return;
+    const q = new Quill(quillContainerRef.current, {
+      theme: 'snow',
+      modules: {
+        toolbar: [
+          [{ header: [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          ['blockquote', 'code-block'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['link', 'image'],
+          [{ align: [] }],
+          ['clean'],
+        ],
+      },
+    });
+    quillRef.current = q;
+    if (form.description) q.clipboard.dangerouslyPasteHTML(form.description);
+    return () => {
+      quillRef.current = null;
+    };
+  }, [quillContainerRef]);
+
+  // Sync form.description into Quill when it changes (e.g. scrapedOverride)
+  useEffect(() => {
+    if (quillRef.current) {
+      const html = form.description || '';
+      const editorHtml = quillRef.current.root?.innerHTML || '';
+      if (editorHtml !== html) quillRef.current.clipboard.dangerouslyPasteHTML(html);
+    }
+  }, [form.description]);
+
+  const getDescriptionHtml = () => {
+    if (quillRef.current) return (quillRef.current.root?.innerHTML || '').trim();
+    return (form.description || '').trim();
+  };
+
   const handleImageEdited = ({ displayUrl, ebayUrl }) => {
     const idx = editingImageIdx;
     setDisplayUrls((prev) => {
@@ -428,7 +470,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
         const newScrapedData = {
           title: form.title.trim(),
           // Convert Markdown to plain text for safety
-          description: markdownToPlainText(form.description.trim() || form.title.trim()),
+          description: getDescriptionHtml() || markdownToPlainText(form.title.trim()),
           price: Number(form.price),
           quantity: Math.max(1, Number(form.quantity) || 1),
           categoryId: form.categoryId.trim(),
@@ -466,9 +508,9 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
       });
 
       const res = await ebayAPI.quickList({
-        title: form.title.trim(),
-        // Convert Markdown to plain text for safety
-        description: markdownToPlainText(form.description.trim() || form.title.trim()),
+      title: form.title.trim(),
+      // Description (HTML from Quill) — fallback to plain text title
+      description: getDescriptionHtml() || markdownToPlainText(form.title.trim()),
         price: Number(form.price),
         quantity: Math.max(1, Number(form.quantity) || 1),
         categoryId: form.categoryId.trim(),
@@ -632,7 +674,12 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
                 </div>
                 <div>
                   <label className={labelClass}>Description</label>
-                  <textarea name="description" value={form.description} onChange={handleChange} rows={3} className={`${inputClass} resize-none`} placeholder="Item description" disabled={submitting} />
+                  <div
+                    ref={quillContainerRef}
+                    className={`rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} max-h-40 overflow-y-auto`}
+                    data-placeholder="Item description"
+                  />
+                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>HTML description will be sent to eBay.</p>
                 </div>
               </div>
 

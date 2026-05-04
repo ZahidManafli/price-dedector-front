@@ -23,7 +23,8 @@
     "react-router-dom": "^6.20.0",
     "recharts": "^2.10.0",
     "sweetalert2": "^11.26.24",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "quill": "^2.0.3"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.0",
