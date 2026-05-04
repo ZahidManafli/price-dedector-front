@@ -367,7 +367,7 @@ export default function SettingsPage() {
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <h2 className={`text-lg font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
               <ShieldCheck size={16} />
-              Account Security
+              {t('settingsPage.accountSecurity')}
             </h2>
             <div className="grid gap-3 md:grid-cols-3">
               <input
@@ -501,10 +501,10 @@ export default function SettingsPage() {
                 isDark ? 'text-slate-100' : 'text-slate-900'
               }`}>
                 <Link2 size={16} />
-                eBay Integration
+                {t('settingsPage.ebayIntegration')}
               </h2>
               <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                Connect your eBay account to auto-update listing prices when Amazon prices change.
+                {t('settingsPage.ebayIntegrationDescription')}
               </p>
               <div className={`inline-flex rounded-xl p-1 mb-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-100 border border-slate-200'}`}>
                 <button
@@ -518,7 +518,7 @@ export default function SettingsPage() {
                         : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Connection
+                  {t('settingsPage.connectionTab')}
                 </button>
                 <button
                   type="button"
@@ -531,7 +531,7 @@ export default function SettingsPage() {
                         : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Seller details
+                  {t('settingsPage.sellerDetailsTab')}
                 </button>
               </div>
               {ebayTab === 'overview' ? (
@@ -543,14 +543,14 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-2">
                       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${ebayStatus.connected ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
                         {ebayStatus.connected && <CheckCircle2 size={14} />}
-                        {ebayStatus.connected ? 'Connected' : 'Not connected'}
+                        {ebayStatus.connected ? t('settingsPage.connected') : t('settingsPage.notConnected')}
                       </span>
                     </div>
                     {/* Hide noisy environment text like 'sandbox' */}
                   </div>
                   {ebayStatus.activeAccountLabel && (
                     <p className={`text-sm mt-2 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                      Active account: <span className="font-medium">{ebayStatus.activeAccountLabel}</span>
+                      {t('settingsPage.activeAccount')}: <span className="font-medium">{ebayStatus.activeAccountLabel}</span>
                     </p>
                   )}
                 </div>
@@ -560,14 +560,14 @@ export default function SettingsPage() {
                 isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'
               }`}>
                 <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                  eBay account slots
+                  {t('settingsPage.ebayAccountSlots')}
                 </p>
                 <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  Connected: {limits?.ebayAccounts?.connected ?? (Array.isArray(ebayStatus.ebayAccounts) ? ebayStatus.ebayAccounts.filter((a) => !!a?.connected).length : 0)}
-                  {limits?.ebayAccounts?.limit != null ? ` / ${limits.ebayAccounts.limit}` : ' (unlimited)'}
+                  {t('settingsPage.connectedCount')}: {limits?.ebayAccounts?.connected ?? (Array.isArray(ebayStatus.ebayAccounts) ? ebayStatus.ebayAccounts.filter((a) => !!a?.connected).length : 0)}
+                  {limits?.ebayAccounts?.limit != null ? ` / ${limits.ebayAccounts.limit}` : ` (${t('settingsPage.unlimited')})`}
                 </p>
                 <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  Remaining: {limits?.ebayAccounts?.remaining == null ? 'Unlimited' : limits.ebayAccounts.remaining}
+                  {t('settingsPage.remaining')}: {limits?.ebayAccounts?.remaining == null ? t('settingsPage.unlimited') : limits.ebayAccounts.remaining}
                 </p>
               </div>
 
@@ -577,7 +577,7 @@ export default function SettingsPage() {
                 }`}>
                   <div className={`text-sm font-semibold mb-2 flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                     <Users size={14} />
-                    Active eBay account
+                    {t('settingsPage.activeEbayAccount')}
                   </div>
                   <div className="space-y-2">
                     {ebayStatus.ebayAccounts.map((acc) => {
@@ -615,7 +615,7 @@ export default function SettingsPage() {
                                     ? 'bg-slate-900 border-slate-700 text-slate-100'
                                     : 'bg-white border-slate-300 text-slate-900'
                                 }`}
-                                placeholder="Connection name"
+                                placeholder={t('settingsPage.connectionNamePlaceholder')}
                               />
                               <button
                                 type="button"
@@ -627,13 +627,13 @@ export default function SettingsPage() {
                                     : 'border-indigo-200 text-indigo-700 hover:bg-indigo-50'
                                 }`}
                               >
-                                Save name
+                                {t('settingsPage.saveName')}
                               </button>
                             </div>
                             <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                              {connected ? 'Connected' : 'Disconnected'}
-                              {acc.updatedAt ? ` · Updated ${new Date(acc.updatedAt).toLocaleString()}` : ''}
-                              {tradingAccountId ? ` · AccountID ${tradingAccountId}` : ''}
+                              {connected ? t('settingsPage.connected') : t('settingsPage.disconnected')}
+                              {acc.updatedAt ? ` · ${t('settingsPage.updated')} ${new Date(acc.updatedAt).toLocaleString()}` : ''}
+                              {tradingAccountId ? ` · ${t('settingsPage.accountId')} ${tradingAccountId}` : ''}
                             </div>
                           </div>
                           <div className="flex items-center gap-2 pl-3">
@@ -647,11 +647,11 @@ export default function SettingsPage() {
                                   : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
                               }`}
                             >
-                              Set active
+                              {t('settingsPage.setActive')}
                             </button>
                             {isActive && (
                               <span className={`text-xs font-semibold ${isDark ? 'text-emerald-200' : 'text-emerald-700'}`}>
-                                Active
+                                {t('settingsPage.active')}
                               </span>
                             )}
                             {connected && <CheckCircle2 size={16} className={isDark ? 'text-emerald-300' : 'text-emerald-600'} />}
@@ -664,9 +664,9 @@ export default function SettingsPage() {
                                   ? 'border-rose-800 text-rose-200 hover:bg-rose-900/30'
                                   : 'border-rose-200 text-rose-700 hover:bg-rose-50'
                               }`}
-                              title="Delete account"
+                              title={t('settingsPage.deleteAccount')}
                             >
-                              Delete
+                              {t('settingsPage.delete')}
                             </button>
                           </div>
                         </div>
@@ -674,7 +674,7 @@ export default function SettingsPage() {
                     })}
                   </div>
                   <p className={`text-xs mt-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                    Listings, orders, and edit actions will use your active eBay account.
+                    {t('settingsPage.activeEbayAccountNote')}
                   </p>
                 </div>
               )}
@@ -687,7 +687,7 @@ export default function SettingsPage() {
                         disabled={ebayLoading || (limits?.ebayAccounts?.remaining != null && limits.ebayAccounts.remaining <= 0)}
                         className="rounded-xl bg-indigo-600 text-white px-5 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
                       >
-                        {ebayLoading ? 'Connecting...' : 'Connect eBay'}
+                        {ebayLoading ? t('settingsPage.connecting') : t('settingsPage.connectEbay')}
                       </button>
                     ) : (
                       <>
@@ -697,18 +697,18 @@ export default function SettingsPage() {
                           onClick={handleConnectEbay}
                           disabled={ebayLoading || (limits?.ebayAccounts?.remaining != null && limits.ebayAccounts.remaining <= 0)}
                           className="rounded-xl bg-indigo-600 text-white px-5 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
-                          title="Connect another eBay account (will be added to your saved accounts)"
+                          title={t('settingsPage.connectAnotherEbayTitle')}
                         >
-                          {ebayLoading ? 'Connecting...' : 'Connect another eBay'}
+                          {ebayLoading ? t('settingsPage.connecting') : t('settingsPage.connectAnotherEbay')}
                         </button>
                         <button
                           type="button"
                           onClick={handleDisconnectEbay}
                           disabled={ebayLoading}
                           className="rounded-xl bg-red-600 text-white px-5 py-2.5 hover:bg-red-700 transition disabled:opacity-50"
-                          title="Disconnect the legacy single-account connection (kept for backward compatibility)"
+                          title={t('settingsPage.disconnectLegacyTitle')}
                         >
-                          {ebayLoading ? 'Disconnecting...' : 'Disconnect (legacy)'}
+                          {ebayLoading ? t('settingsPage.disconnecting') : t('settingsPage.disconnectLegacy')}
                         </button>
                       </>
                     )}
@@ -720,10 +720,10 @@ export default function SettingsPage() {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                          Seller snapshot
+                          {t('settingsPage.sellerSnapshot')}
                         </p>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                          Saved when the account connected. Reconnect to refresh this data.
+                          {t('settingsPage.sellerSnapshotHint')}
                         </p>
                       </div>
                       <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
@@ -733,60 +733,60 @@ export default function SettingsPage() {
 
                     <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                       <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-900/60' : 'bg-white'}`}>
-                        <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Connection</p>
+                        <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('settingsPage.connection')}</p>
                         <p className={`mt-1 text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{activeEbayAccount?.connectionName || activeEbayAccount?.username || activeEbayAccount?.profileUserId || 'Unknown'}</p>
-                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Account ID: {activeEbayAccount?.tradingAccountId || activeEbayAccount?.profileUserId || activeEbayAccount?.accountId || '—'}</p>
-                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Environment: {activeEbayAccount?.environment || ebayStatus.environment || '—'}</p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('settingsPage.accountId')}: {activeEbayAccount?.tradingAccountId || activeEbayAccount?.profileUserId || activeEbayAccount?.accountId || '—'}</p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('settingsPage.environment')}: {activeEbayAccount?.environment || ebayStatus.environment || '—'}</p>
                       </div>
                       <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-900/60' : 'bg-white'}`}>
-                        <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Seller registration</p>
+                        <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('settingsPage.sellerRegistration')}</p>
                         <p className={`mt-1 text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                          {activeSellerSnapshot?.sellerRegistrationCompleted === true ? 'Completed' : activeSellerSnapshot?.sellerRegistrationCompleted === false ? 'Not completed' : 'Unknown'}
+                          {activeSellerSnapshot?.sellerRegistrationCompleted === true ? t('settingsPage.completed') : activeSellerSnapshot?.sellerRegistrationCompleted === false ? t('settingsPage.notCompleted') : t('settingsPage.unknown')}
                         </p>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                          Selling limit: {activeSellerSnapshot?.sellingLimit?.amount ? `${activeSellerSnapshot.sellingLimit.amount.value} ${activeSellerSnapshot.sellingLimit.amount.currency}` : '—'}
+                          {t('settingsPage.sellingLimit')}: {activeSellerSnapshot?.sellingLimit?.amount ? `${activeSellerSnapshot.sellingLimit.amount.value} ${activeSellerSnapshot.sellingLimit.amount.currency}` : '—'}
                         </p>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                          Quantity limit: {activeSellerSnapshot?.sellingLimit?.quantity ?? '—'}
+                          {t('settingsPage.quantityLimit')}: {activeSellerSnapshot?.sellingLimit?.quantity ?? '—'}
                         </p>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                          Business policies: {activeEbayAccount?.userPreferencesSummary?.sellerProfileOptedIn ? 'Enabled' : activeEbayAccount?.userPreferencesSummary?.sellerProfileOptedIn === false ? 'Disabled' : 'Unknown'}
+                          {t('settingsPage.businessPolicies')}: {activeEbayAccount?.userPreferencesSummary?.sellerProfileOptedIn ? t('settingsPage.enabled') : activeEbayAccount?.userPreferencesSummary?.sellerProfileOptedIn === false ? t('settingsPage.disabled') : t('settingsPage.unknown')}
                         </p>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                          eBay good standing: {activeTradingUserSummary?.ebayGoodStanding === true ? 'Yes' : activeTradingUserSummary?.ebayGoodStanding === false ? 'No' : 'Unknown'}
+                          {t('settingsPage.ebayGoodStanding')}: {activeTradingUserSummary?.ebayGoodStanding === true ? t('settingsPage.yes') : activeTradingUserSummary?.ebayGoodStanding === false ? t('settingsPage.no') : t('settingsPage.unknown')}
                         </p>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                          Feedback: {activeTradingUserSummary?.feedbackScore ?? '—'} ({activeTradingUserSummary?.positiveFeedbackPercent ?? '—'}%)
+                          {t('settingsPage.feedback')}: {activeTradingUserSummary?.feedbackScore ?? '—'} ({activeTradingUserSummary?.positiveFeedbackPercent ?? '—'}%)
                         </p>
                       </div>
                       <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-900/60' : 'bg-white'}`}>
-                        <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Policies</p>
+                        <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('settingsPage.policies')}</p>
                         <p className={`mt-1 text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                          Custom: {activeSellerSnapshot?.policyCounts?.customPolicies ?? 0}
+                          {t('settingsPage.custom')}: {activeSellerSnapshot?.policyCounts?.customPolicies ?? 0}
                         </p>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                          Fulfillment: {activeSellerSnapshot?.policyCounts?.fulfillmentPolicies ?? 0} · Payment: {activeSellerSnapshot?.policyCounts?.paymentPolicies ?? 0}
+                          {t('settingsPage.fulfillment')}: {activeSellerSnapshot?.policyCounts?.fulfillmentPolicies ?? 0} · {t('settingsPage.payment')}: {activeSellerSnapshot?.policyCounts?.paymentPolicies ?? 0}
                         </p>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                          Return: {activeSellerSnapshot?.policyCounts?.returnPolicies ?? 0}
+                          {t('settingsPage.return')}: {activeSellerSnapshot?.policyCounts?.returnPolicies ?? 0}
                         </p>
                       </div>
                       <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-900/60' : 'bg-white'}`}>
-                        <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Rate tables</p>
+                        <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('settingsPage.rateTables')}</p>
                         <p className={`mt-1 text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                           {activeSellerSnapshot?.policyCounts?.rateTables ?? 0}
                         </p>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                          Marketplace: {activeSellerSnapshot?.marketplaceId || '—'}
+                          {t('settingsPage.marketplace')}: {activeSellerSnapshot?.marketplaceId || '—'}
                         </p>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                          Country: {activeSellerSnapshot?.countryCode || 'All'}
+                          {t('settingsPage.country')}: {activeSellerSnapshot?.countryCode || t('settingsPage.all')}
                         </p>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                          Billing state: {activeTradingAccountSummary?.accountState || '—'}
+                          {t('settingsPage.billingState')}: {activeTradingAccountSummary?.accountState || '—'}
                         </p>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                          Invoice balance: {activeTradingAccountSummary?.invoiceBalance || '—'}
+                          {t('settingsPage.invoiceBalance')}: {activeTradingAccountSummary?.invoiceBalance || '—'}
                         </p>
                       </div>
                     </div>
@@ -794,7 +794,7 @@ export default function SettingsPage() {
 
                   {Array.isArray(activeSellerSnapshot?.errors) && activeSellerSnapshot.errors.length > 0 && (
                     <div className={`rounded-lg p-3 ${isDark ? 'bg-amber-950/30 border border-amber-800' : 'bg-amber-50 border border-amber-200'}`}>
-                      <p className={`text-sm font-semibold ${isDark ? 'text-amber-200' : 'text-amber-900'}`}>Partial snapshot warnings</p>
+                      <p className={`text-sm font-semibold ${isDark ? 'text-amber-200' : 'text-amber-900'}`}>{t('settingsPage.partialSnapshotWarnings')}</p>
                       <ul className={`mt-2 space-y-1 text-xs ${isDark ? 'text-amber-100' : 'text-amber-800'}`}>
                         {activeSellerSnapshot.errors.map((err, index) => (
                           <li key={`${err.resource || 'error'}-${index}`}>{err.resource}: {err.message}</li>
@@ -806,11 +806,11 @@ export default function SettingsPage() {
                   {['customPolicies', 'fulfillmentPolicies', 'paymentPolicies', 'returnPolicies', 'rateTables'].map((section) => {
                     const items = Array.isArray(activeSellerSnapshot?.[section]) ? activeSellerSnapshot[section] : [];
                     const labels = {
-                      customPolicies: 'Custom policies',
-                      fulfillmentPolicies: 'Fulfillment policies',
-                      paymentPolicies: 'Payment policies',
-                      returnPolicies: 'Return policies',
-                      rateTables: 'Shipping rate tables',
+                      customPolicies: t('settingsPage.customPolicies'),
+                      fulfillmentPolicies: t('settingsPage.fulfillmentPolicies'),
+                      paymentPolicies: t('settingsPage.paymentPolicies'),
+                      returnPolicies: t('settingsPage.returnPolicies'),
+                      rateTables: t('settingsPage.shippingRateTables'),
                     };
                     return (
                       <div key={section} className={`rounded-lg p-3 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'}`}>
@@ -823,48 +823,48 @@ export default function SettingsPage() {
                               <div key={item.customPolicyId || item.fulfillmentPolicyId || item.paymentPolicyId || item.returnPolicyId || item.rateTableId || item.name} className={`rounded-md p-3 ${isDark ? 'bg-slate-900/60' : 'bg-white'}`}>
                                 {section === 'customPolicies' && (
                                   <>
-                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.label || item.name || 'Custom policy'}</p>
+                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.label || item.name || t('settingsPage.customPolicy')}</p>
                                     <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>ID: {item.customPolicyId || '—'}</p>
-                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Type: {item.policyType || '—'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('settingsPage.type')}: {item.policyType || '—'}</p>
                                   </>
                                 )}
                                 {section === 'fulfillmentPolicies' && (
                                   <>
-                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.name || 'Fulfillment policy'}</p>
+                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.name || t('settingsPage.fulfillmentPolicy')}</p>
                                     <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>ID: {item.fulfillmentPolicyId || '—'}</p>
-                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Marketplace: {item.marketplaceId || '—'}</p>
-                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Shipping options: {Array.isArray(item.shippingOptions) ? item.shippingOptions.length : 0}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('settingsPage.marketplace')}: {item.marketplaceId || '—'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('settingsPage.shippingOptions')}: {Array.isArray(item.shippingOptions) ? item.shippingOptions.length : 0}</p>
                                   </>
                                 )}
                                 {section === 'paymentPolicies' && (
                                   <>
-                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.name || 'Payment policy'}</p>
+                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.name || t('settingsPage.paymentPolicy')}</p>
                                     <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>ID: {item.paymentPolicyId || '—'}</p>
-                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Description: {item.description || '—'}</p>
-                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Methods: {Array.isArray(item.paymentMethods) ? item.paymentMethods.map((method) => method.paymentMethodType).filter(Boolean).join(', ') || '—' : '—'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('settingsPage.description')}: {item.description || '—'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('settingsPage.methods')}: {Array.isArray(item.paymentMethods) ? item.paymentMethods.map((method) => method.paymentMethodType).filter(Boolean).join(', ') || '—' : '—'}</p>
                                   </>
                                 )}
                                 {section === 'returnPolicies' && (
                                   <>
-                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.name || 'Return policy'}</p>
+                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.name || t('settingsPage.returnPolicy')}</p>
                                     <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>ID: {item.returnPolicyId || '—'}</p>
-                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Returns accepted: {item.returnsAccepted ? 'Yes' : 'No'}</p>
-                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Period: {item.returnPeriod?.value ? `${item.returnPeriod.value} ${item.returnPeriod.unit || ''}`.trim() : '—'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('settingsPage.returnsAccepted')}: {item.returnsAccepted ? t('settingsPage.yes') : t('settingsPage.no')}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('settingsPage.period')}: {item.returnPeriod?.value ? `${item.returnPeriod.value} ${item.returnPeriod.unit || ''}`.trim() : '—'}</p>
                                   </>
                                 )}
                                 {section === 'rateTables' && (
                                   <>
-                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.name || 'Rate table'}</p>
+                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.name || t('settingsPage.rateTable')}</p>
                                     <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>ID: {item.rateTableId || '—'}</p>
-                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Country: {item.countryCode || '—'}</p>
-                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Locality: {item.locality || '—'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('settingsPage.country')}: {item.countryCode || '—'}</p>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('settingsPage.locality')}: {item.locality || '—'}</p>
                                   </>
                                 )}
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>No saved {labels[section].toLowerCase()} found for this account.</p>
+                          <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('settingsPage.noSavedSection', { section: labels[section].toLowerCase() })}</p>
                         )}
                       </div>
                     );
@@ -887,10 +887,10 @@ export default function SettingsPage() {
                   }`}
                 >
                   <Link2 size={16} />
-                  Amazon Login
+                  {t('settingsPage.amazonLogin')}
                 </h2>
                 <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  Connect your Amazon account.
+                  {t('settingsPage.amazonLoginDescription')}
                 </p>
 
                 <div
@@ -905,12 +905,12 @@ export default function SettingsPage() {
                       }`}
                     >
                       {amazonStatus.connected && <CheckCircle2 size={14} />}
-                      {amazonStatus.connected ? 'Connected' : 'Not connected'}
+                      {amazonStatus.connected ? t('settingsPage.connected') : t('settingsPage.notConnected')}
                     </span>
 
                     {!amazonStatus.connected ? (
                       <button type="button" onClick={handleConnectAmazon} className="btn-primary" disabled={amazonLoading}>
-                        {amazonLoading ? 'Connecting...' : 'Connect Amazon'}
+                        {amazonLoading ? t('settingsPage.connecting') : t('settingsPage.connectAmazon')}
                       </button>
                     ) : (
                       <button
@@ -919,7 +919,7 @@ export default function SettingsPage() {
                         className="btn-secondary"
                         disabled={amazonLoading}
                       >
-                        {amazonLoading ? 'Disconnecting...' : 'Disconnect'}
+                        {amazonLoading ? t('settingsPage.disconnecting') : t('settingsPage.disconnect')}
                       </button>
                     )}
                   </div>
@@ -927,11 +927,11 @@ export default function SettingsPage() {
                   {amazonStatus.connected && amazonStatus.profile && (
                     <div className={`mt-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                       <div>
-                        Amazon user: <span className="font-medium">{amazonStatus.profile.name || amazonStatus.profile.email || 'Unknown'}</span>
+                        {t('settingsPage.amazonUser')}: <span className="font-medium">{amazonStatus.profile.name || amazonStatus.profile.email || t('settingsPage.unknown')}</span>
                       </div>
                       {amazonStatus.profile.email && (
                         <div className="text-xs mt-1 opacity-80">
-                          Email: <span className="font-medium">{amazonStatus.profile.email}</span>
+                          {t('settingsPage.email')}: <span className="font-medium">{amazonStatus.profile.email}</span>
                         </div>
                       )}
                     </div>
@@ -949,7 +949,7 @@ export default function SettingsPage() {
                     disabled={loading}
                     className="btn-primary"
                   >
-                    {loading ? 'Saving...' : 'Save Settings'}
+                    {loading ? t('settingsPage.saving') : t('settingsPage.saveSettings')}
                   </button>
                 )}
                 <button
@@ -957,7 +957,7 @@ export default function SettingsPage() {
                   onClick={() => navigate('/dashboard')}
                   className="btn-secondary"
                 >
-                  Back
+                  {t('back')}
                 </button>
               </div>
             </div>
@@ -969,19 +969,19 @@ export default function SettingsPage() {
           <div className="glass-card p-3">
             <p className={`text-sm font-medium flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
               <Mail size={14} />
-              Notification Channel
+              {t('settingsPage.notificationChannel')}
             </p>
             <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              Email alerts for price changes and sync events.
+              {t('settingsPage.notificationChannelDescription')}
             </p>
           </div>
           <div className="glass-card p-3">
             <p className={`text-sm font-medium flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
               <ShieldCheck size={14} />
-              Account Security
+              {t('settingsPage.accountSecurity')}
             </p>
             <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              OAuth tokens are stored server-side and refreshed automatically.
+              {t('settingsPage.accountSecurityNote')}
             </p>
           </div>
         </div>
@@ -998,8 +998,8 @@ export default function SettingsPage() {
             email: user?.email || '',
             phoneNumber: user?.phoneNumber || user?.phone || '',
           }}
-          submitLabel={requestModal?.requestType === 'update_credits' ? 'Send Credit Request' : 'Send Reset Request'}
-          onSuccess={() => setAlert({ type: 'success', message: 'Request sent to admin' })}
+          submitLabel={requestModal?.requestType === 'update_credits' ? t('settingsPage.sendCreditRequest') : t('settingsPage.sendResetRequest')}
+          onSuccess={() => setAlert({ type: 'success', message: t('settingsPage.requestSentToAdmin') })}
         />
       </div>
     </div>
