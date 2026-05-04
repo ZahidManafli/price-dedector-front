@@ -246,18 +246,36 @@ export default function LandingPage() {
     const applySuggestedLanguage = async () => {
       try {
         const existingUserLanguage = localStorage.getItem('userLanguage');
-        const existingI18nLanguage = localStorage.getItem('i18nextLng');
-        if (existingUserLanguage || existingI18nLanguage) return;
+        const geoLanguageApplied = localStorage.getItem('_geoLanguageApplied');
+        
+        // Only apply geo suggestion if no user language saved AND we haven't already tried
+        if (existingUserLanguage || geoLanguageApplied) return;
 
         const resp = await partnerAPI.getPublic();
         const suggested = String(resp?.data?.suggestedLanguage || '').trim().toLowerCase();
+        const geo = resp?.data?.geo || {};
+        
+        // Store the suggestion from backend for debugging
+        localStorage.setItem('_geoSuggestedLanguage', suggested);
+        localStorage.setItem('_geoCountry', geo.country || '');
+        
         const supported = ['en', 'az', 'ru', 'tr'];
         if (!cancelled && supported.includes(suggested)) {
           await changeLanguage(suggested);
           localStorage.setItem('i18nextLng', suggested);
+          localStorage.setItem('userLanguage', suggested);
+          localStorage.setItem('_geoLanguageApplied', 'true');
+          console.log(`[Landing] Applied geo-suggested language: ${suggested} for country: ${geo.country}`);
+        } else {
+          // Mark as attempted even if suggestion was invalid, to prevent retries
+          localStorage.setItem('_geoLanguageApplied', 'true');
+          if (suggested) {
+            console.warn(`[Landing] Unsupported geo-suggested language: ${suggested}`);
+          }
         }
-      } catch {
-        // Keep default language when geo lookup fails.
+      } catch (error) {
+        console.error('[Landing] Failed to apply geo-suggested language:', error?.message);
+        localStorage.setItem('_geoLanguageApplied', 'true');
       }
     };
 
