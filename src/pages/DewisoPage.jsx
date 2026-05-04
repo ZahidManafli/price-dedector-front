@@ -6,66 +6,58 @@ import { useTheme } from '../context/ThemeContext';
 /* ─────────────────────────────────────────────────────────────────────────────
    DEFAULT HTML TEMPLATE
 ───────────────────────────────────────────────────────────────────────────── */
-const AWESOME_DEFAULT_HTML = `<html lang="en"><head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>1-Column Ebay Template dewiso.com</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
-    <style>
-        body { margin: 0 !important; padding: 0 !important; font-size: 18px; }
-        * { margin: 0; padding: 0; }
-        img { max-width: 100%; }
-        .primary-text-color { color: #ffffff; }
-        .secondary-color-text { color: #000000; }
-        .secondary-color-bg { background-color: #F5F5F5; }
-        .container { max-width: 800px !important; }
-        .content__gallery { width: 100%; max-width: 800px; margin: 0 auto; text-align: center; }
-        .thumb__float { display: block; cursor: pointer; width: 100px; height: 100px; border: none; box-shadow: none; transition: opacity 0.3s; }
-        .thumb__float:hover { opacity: 0.8; }
-        .thumb__wrapper { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-        .thumb__wrapper img { max-width: 100%; max-height: 100%; object-fit: cover; }
-        .slider__wrapper { width: 100%; height: auto; aspect-ratio: 16/9; max-height: 400px; overflow: hidden; position: relative; border: none; outline: none; }
-        .slider { display: flex; width: 300%; height: 100%; transition: transform 0.3s ease-in-out; transform: translateX(0); }
-        .slider > div { width: 33.333%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; background-color: inherit; border: none; outline: none; }
-        .thumb1:focus ~ .slider__wrapper .slider { transform: translateX(0%); }
-        .thumb2:focus ~ .slider__wrapper .slider { transform: translateX(-33.333%); }
-        .thumb3:focus ~ .slider__wrapper .slider { transform: translateX(-66.666%); }
-        .thumb1:hover ~ .slider__wrapper .slider { transform: translateX(0%); }
-        .thumb2:hover ~ .slider__wrapper .slider { transform: translateX(-33.333%); }
-        .thumb3:hover ~ .slider__wrapper .slider { transform: translateX(-66.666%); }
-        .thumb__float:focus { outline: none; opacity: 0.7; }
-        @media (max-width: 768px) { .slider__wrapper { max-height: 300px; } .thumb__float { width: 75px; height: 75px; } .thumb__container { gap: 5px; } }
-    </style>
-</head>
-<body id="border-color" style="border: 1px solid #2A0948; margin: 0; padding: 0;">
-<div id="title-part" class="py-3" style="background: #2A0948;">
-<div class="container" style="max-width: 800px;">
-<div class="row"><div class="col-12">
+// NOTE: No inline style="background:..." on title/copyright — colors come from CSS vars injected by buildFullHtml
+const ONE_COL_BODY = `
+<div id="title-part" class="py-3">
+<div class="container"><div class="row"><div class="col-12">
 <h1 class="primary-text-color">Insert item title here (click on text)</h1>
 </div></div></div></div>
 <div id="description-container" class="secondary-color-bg pb-3 pt-4">
-<div class="container" style="max-width: 800px;">
-<div class="row">
+<div class="container"><div class="row">
 <div id="image-gallery" class="col-12 mb-4">
 <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image" title="Product Image" />
 </div>
 <div id="description-part" class="col-12 secondary-color-text">
-<div class="secondary-color-text">
-<p>Carefully describe your item. Focus on benefits, not features! Hold your readers attention by limiting all paragraphs to three sentences or less. Your description doesn't need a thousand words. Get to the point and provide the most important info. Be enthusiastic when you list all the reasons everyone should buy your item. You want to make the customer feel comfortable shopping with you.</p>
-<br />
+<p>Carefully describe your item. Focus on benefits, not features! Hold your readers attention by limiting all paragraphs to three sentences or less. Your description doesn't need a thousand words.</p>
+<br/>
 <p><strong>Features and further details</strong></p>
-<p>After the benefits you can follow up with an overview of the features and (technical) details.</p>
 <ul>
 <li><strong>Additional Features:</strong> Lorem ipsum dolor sit amet, consetetur sadipscing elitr.</li>
 <li><strong>Details:</strong> Lorem ipsum dolor sit amet, consetetur sadipscing elitr.</li>
 <li><strong>Package Includes:</strong> Lorem ipsum dolor sit amet, consetetur sadipscing elitr.</li>
 </ul>
-</div></div></div></div></div>
-<div id="copyright-part" class="py-3" style="background: #2A0948;">
-<div class="container primary-text-color" style="font-size: 90%;">
+</div></div></div></div>
+<div id="copyright-part" class="py-3">
+<div class="container primary-text-color" style="font-size:90%;">
 <div>Free ebay template editor by <b>dewiso.com</b></div>
-</div></div>
-</body></html>`;
+</div></div>`;
+
+const TWO_COL_BODY = `
+<div id="title-part" class="py-3">
+<div class="container"><div class="row"><div class="col-12">
+<h1 class="primary-text-color">Insert item title here (click on text)</h1>
+</div></div></div></div>
+<div id="description-container" class="secondary-color-bg pb-3 pt-4">
+<div class="container"><div class="row">
+<div id="image-gallery" class="col-12 col-md-6 mb-4">
+<img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image" title="Product Image" />
+</div>
+<div id="description-part" class="col-12 col-md-6 secondary-color-text">
+<p>Carefully describe your item. Focus on benefits, not features! Hold your readers attention by limiting all paragraphs to three sentences or less.</p>
+<br/>
+<p><strong>Features and further details</strong></p>
+<ul>
+<li><strong>Additional Features:</strong> Lorem ipsum dolor sit amet, consetetur sadipscing elitr.</li>
+<li><strong>Details:</strong> Lorem ipsum dolor sit amet, consetetur sadipscing elitr.</li>
+<li><strong>Package Includes:</strong> Lorem ipsum dolor sit amet, consetetur sadipscing elitr.</li>
+</ul>
+</div></div></div></div>
+<div id="copyright-part" class="py-3">
+<div class="container primary-text-color" style="font-size:90%;">
+<div>Free ebay template editor by <b>dewiso.com</b></div>
+</div></div>`;
+
+const AWESOME_DEFAULT_HTML = ONE_COL_BODY; // kept for backward compat
 
 /* ─────────────────────────────────────────────────────────────────────────────
    HELPERS
@@ -85,6 +77,7 @@ function buildFullHtml(bodyHtml, { navBg, navText, contentBg, contentText }) {
   return `<!doctype html><html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
 <style>
   :root {
     --nav-bg: ${navBg};
@@ -92,16 +85,16 @@ function buildFullHtml(bodyHtml, { navBg, navText, contentBg, contentText }) {
     --content-bg: ${contentBg};
     --content-text: ${contentText};
   }
-  body { margin: 0; padding: 0; font-size: 18px; background: var(--content-bg); color: var(--content-text); }
+  body { margin: 0 !important; padding: 0 !important; font-size: 18px; background: var(--content-bg); color: var(--content-text); }
   img { max-width: 100%; }
-  #title-part { background: var(--nav-bg); color: var(--nav-text); }
-  .primary-text-color { color: var(--nav-text); }
-  .secondary-color-text { color: var(--content-text); }
-  .secondary-color-bg { background-color: var(--content-bg); }
-  .container { max-width: 800px !important; margin: 0 auto; }
-  #copyright-part { background: var(--nav-bg); color: var(--nav-text); }
+  /* Use !important to override any inline style="background:..." left in user-edited HTML */
+  #title-part    { background: var(--nav-bg) !important; color: var(--nav-text) !important; }
+  #copyright-part{ background: var(--nav-bg) !important; color: var(--nav-text) !important; }
+  .primary-text-color   { color: var(--nav-text) !important; }
+  .secondary-color-text { color: var(--content-text) !important; }
+  .secondary-color-bg   { background-color: var(--content-bg) !important; }
+  .container { max-width: 800px !important; margin-left: auto !important; margin-right: auto !important; }
 </style>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
 </head><body>${bodyHtml}</body></html>`;
 }
 
@@ -374,7 +367,7 @@ export default function DewisoPage() {
 
   // Template meta
   const [templateName, setTemplateName] = useState('My Dewiso Template');
-  const [bodyHtml, setBodyHtml] = useState(() => extractEditableHtml(AWESOME_DEFAULT_HTML));
+  const [bodyHtml, setBodyHtml] = useState(() => ONE_COL_BODY);
 
   // History
   const [history, setHistory] = useState([]);
@@ -472,17 +465,34 @@ export default function DewisoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ── Re-inject on theme/layout change (NOT on bodyHtml change — that would
-     fight the user's edits). We skip when user is actively editing. ── */
-  const prevThemeKey = useRef('');
+  /* ── Live-update CSS vars in iframe when colors change ──
+     Instead of full writeIframe (which destroys edits), we just patch
+     the :root CSS variables directly in the iframe's document. ── */
   useEffect(() => {
-    const key = `${navBg}|${navText}|${contentBg}|${contentText}|${layout}`;
-    if (key === prevThemeKey.current) return;
-    prevThemeKey.current = key;
-    if (isEditingRef.current) return;
-    writeIframe(fullHtml);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navBg, navText, contentBg, contentText, layout]);
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc) return;
+    // Find or create our theme <style> tag
+    let styleEl = doc.getElementById('__dewiso_theme__');
+    if (!styleEl) {
+      styleEl = doc.createElement('style');
+      styleEl.id = '__dewiso_theme__';
+      doc.head?.appendChild(styleEl);
+    }
+    styleEl.textContent = `
+      :root {
+        --nav-bg: ${navBg} !important;
+        --nav-text: ${navText} !important;
+        --content-bg: ${contentBg} !important;
+        --content-text: ${contentText} !important;
+      }
+      #title-part     { background: ${navBg} !important; color: ${navText} !important; }
+      #copyright-part { background: ${navBg} !important; color: ${navText} !important; }
+      .primary-text-color   { color: ${navText} !important; }
+      .secondary-color-text { color: ${contentText} !important; }
+      .secondary-color-bg   { background-color: ${contentBg} !important; }
+      body { background: ${contentBg} !important; color: ${contentText} !important; }
+    `;
+  }, [navBg, navText, contentBg, contentText]);
 
   /* ── Handlers ── */
   const handleUploadHtmlFile = async (e) => {
@@ -610,7 +620,20 @@ export default function DewisoPage() {
                 <button
                   key={l}
                   className={`btn-secondary text-xs ${layout === l ? 'ring-2 ring-indigo-500' : ''}`}
-                  onClick={() => setLayout(l)}
+                  onClick={() => {
+                    setLayout(l);
+                    // Load the correct default body when switching layouts
+                    if (l === 'one_col') {
+                      setBodyHtml(ONE_COL_BODY);
+                      writeIframe(buildFullHtml(ONE_COL_BODY, { navBg, navText, contentBg, contentText }));
+                      setAlert({ type: 'success', message: '1-Column template loaded' });
+                    } else if (l === 'two_col') {
+                      setBodyHtml(TWO_COL_BODY);
+                      writeIframe(buildFullHtml(TWO_COL_BODY, { navBg, navText, contentBg, contentText }));
+                      setAlert({ type: 'success', message: '2-Columns template loaded' });
+                    }
+                    // 'own_html' keeps whatever is currently in the editor
+                  }}
                 >
                   {l === 'one_col' ? '1-Column' : l === 'two_col' ? '2-Columns' : 'Own HTML'}
                 </button>
@@ -683,9 +706,9 @@ export default function DewisoPage() {
               <button
                 className="btn-secondary text-xs"
                 onClick={() => {
-                  const extracted = extractEditableHtml(AWESOME_DEFAULT_HTML);
-                  setBodyHtml(extracted);
-                  writeIframe(buildFullHtml(extracted, { navBg, navText, contentBg, contentText }));
+                  const body = layout === 'two_col' ? TWO_COL_BODY : ONE_COL_BODY;
+                  setBodyHtml(body);
+                  writeIframe(buildFullHtml(body, { navBg, navText, contentBg, contentText }));
                   setAlert({ type: 'success', message: 'Default template loaded' });
                 }}
               >
