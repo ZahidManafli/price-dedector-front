@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
@@ -24,6 +24,7 @@ export default function ListingDetailPage() {
   const [autoStockSaving, setAutoStockSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState('');
+  const skipQuantityDraftSyncRef = useRef(false);
 
   const keyFacts = useMemo(() => {
     if (!listing) return {};
@@ -161,6 +162,10 @@ export default function ListingDetailPage() {
       (trading?.currentPrice ? String(trading.currentPrice).split(' ')[0] : '');
     setTitleDraft(currentTitle);
     setPriceDraft(currentPrice ? String(currentPrice) : '');
+    if (skipQuantityDraftSyncRef.current) {
+      skipQuantityDraftSyncRef.current = false;
+      return;
+    }
     setQuantityDraft(stockCount !== '' && stockCount != null ? String(stockCount) : '');
   }, [listing, trading?.currentPrice, stockCount]);
 
@@ -278,6 +283,7 @@ export default function ListingDetailPage() {
     setSaveError('');
     setSaveSuccess('');
     try {
+      skipQuantityDraftSyncRef.current = true;
       await ebayAPI.updateListing(listingId, { quantity: quantityToSend });
       setListing((prev) => {
         if (!prev) return prev;
@@ -297,6 +303,7 @@ export default function ListingDetailPage() {
       setQuantityDraft(String(parsedStock));
       setSaveSuccess('Stock count updated successfully.');
     } catch (err) {
+      skipQuantityDraftSyncRef.current = false;
       setSaveError(err?.response?.data?.error || err?.message || t('listingDetailPage.failedUpdateQuantity'));
     } finally {
       setSaveQtyLoading(false);
