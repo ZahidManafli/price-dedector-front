@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { History, LayoutGrid, List, RefreshCw, Search, SearchCheck } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -51,6 +52,7 @@ function buildAmazonSearchUrlFromTitle(title) {
 }
 
 export default function MarketAnalysisPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -635,14 +637,14 @@ export default function MarketAnalysisPage() {
     <div className="page-shell space-y-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="page-title">Checkila Analysis</h1>
+          <h1 className="page-title">{t('marketAnalysisPage.title')}</h1>
           <p className="page-subtitle">
-            Discover market listings with Checkila Analysis and compare pricing opportunities before adding products.
+            {t('marketAnalysisPage.subtitle')}
           </p>
         </div>
         <button type="button" onClick={() => searchNow(params)} className="btn-secondary flex items-center gap-2">
           <RefreshCw size={14} />
-          Refresh
+          {t('marketAnalysisPage.refresh')}
         </button>
         <button
           type="button"
@@ -651,10 +653,10 @@ export default function MarketAnalysisPage() {
           className="btn-secondary flex items-center gap-2"
         >
           <RefreshCw size={14} />
-          Refresh From eBay
+          {t('marketAnalysisPage.refreshFromEbay')}
         </button>
         <button type="button" onClick={clearCache} className="btn-secondary flex items-center gap-2">
-          Clear Cache
+          {t('marketAnalysisPage.clearCache')}
         </button>
       </header>
 
@@ -663,7 +665,7 @@ export default function MarketAnalysisPage() {
           type="error"
           message={error}
           autoClose={false}
-          actionLabel="Retry Search"
+          actionLabel={t('marketAnalysisPage.retrySearch')}
           onAction={() => searchNow(params)}
           onClose={() => setError(null)}
         />
@@ -684,23 +686,23 @@ export default function MarketAnalysisPage() {
 
       <section className="grid grid-cols-2 md:grid-cols-5 gap-2">
         <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">Results</p>
+          <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.results')}</p>
           <p className="text-lg font-semibold">{filteredResults.length || 0}</p>
         </div>
         <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">Average Item</p>
+          <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.averageItem')}</p>
           <p className="text-lg font-semibold">{formatCurrency(metrics.averagePrice)}</p>
         </div>
         <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">Median</p>
+          <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.median')}</p>
           <p className="text-lg font-semibold">{formatCurrency(metrics.medianPrice)}</p>
         </div>
         <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">Range</p>
+          <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.range')}</p>
           <p className="text-lg font-semibold">{formatCurrency(metrics.minPrice)} - {formatCurrency(metrics.maxPrice)}</p>
         </div>
         <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">Free Shipping</p>
+          <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.freeShipping')}</p>
           <p className="text-lg font-semibold">{metrics.withFreeShipping}%</p>
         </div>
       </section>
@@ -709,24 +711,24 @@ export default function MarketAnalysisPage() {
         <div className="lg:col-span-12 space-y-4">
           <div className="flex justify-end gap-2">
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-950/70 px-3 py-2">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-300 whitespace-nowrap">Profit calc</span>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-300 whitespace-nowrap">{t('marketAnalysisPage.profitCalc')}</span>
               <input
                 type="number" min="0" step="0.01"
                 value={calcAmazonPrice} onChange={(e) => setCalcAmazonPrice(e.target.value)}
-                placeholder="Amazon" className="input-base w-[96px] h-9 text-xs"
+                placeholder={t('marketAnalysisPage.profitAmazon')} className="input-base w-[96px] h-9 text-xs"
               />
               <input
                 type="number" min="0" step="0.01"
                 value={calcEbayPrice} onChange={(e) => setCalcEbayPrice(e.target.value)}
-                placeholder="eBay" className="input-base w-[96px] h-9 text-xs"
+                placeholder={t('marketAnalysisPage.profitEbay')} className="input-base w-[96px] h-9 text-xs"
               />
               <input
                 type="number" min="0" step="0.01"
                 value={calcAdRate} onChange={(e) => setCalcAdRate(e.target.value)}
-                placeholder="Add %" className="input-base w-[88px] h-9 text-xs"
+                placeholder={t('marketAnalysisPage.profitRate')} className="input-base w-[88px] h-9 text-xs"
               />
               <div className="min-w-[88px] text-xs font-semibold text-slate-900 dark:text-slate-100">
-                {inlineProfit === null ? 'Profit —' : `Profit ${formatCurrency(inlineProfit)}`}
+                {inlineProfit === null ? t('marketAnalysisPage.profitNone') : `${t('marketAnalysisPage.profitLabel')} ${formatCurrency(inlineProfit)}`}
               </div>
             </div>
             <button
@@ -746,12 +748,12 @@ export default function MarketAnalysisPage() {
           </div>
 
           {loading ? (
-            <LoadingSpinner message="Searching eBay marketplace listings..." />
+            <LoadingSpinner message={t('marketAnalysisPage.loading')} />
           ) : sortedResults.length === 0 ? (
             <div className="glass-card p-10 text-center">
               <SearchCheck size={28} className="mx-auto text-slate-400" />
               <p className="mt-3 text-slate-600 dark:text-slate-300">
-                No listings found for your current filters.
+                {t('marketAnalysisPage.emptyResults')}
               </p>
             </div>
           ) : (
@@ -775,35 +777,35 @@ export default function MarketAnalysisPage() {
                   <table className="min-w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-200 dark:border-slate-700">
-                        <th className="text-left p-3">Image</th>
+                        <th className="text-left p-3">{t('marketAnalysisPage.imageHeader')}</th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('title')} className="hover:underline">
-                            {renderSortLabel('Title', 'title')}
+                            {renderSortLabel(t('marketAnalysisPage.titleHeader'), 'title')}
                           </button>
                         </th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('seller')} className="hover:underline">
-                            {renderSortLabel('Seller', 'seller')}
+                            {renderSortLabel(t('marketAnalysisPage.sellerHeader'), 'seller')}
                           </button>
                         </th>
-                        <th className="text-left p-3">Feedback Score</th>
+                        <th className="text-left p-3">{t('marketAnalysisPage.feedbackScoreHeader')}</th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('condition')} className="hover:underline">
-                            {renderSortLabel('Condition', 'condition')}
+                            {renderSortLabel(t('marketAnalysisPage.conditionHeader'), 'condition')}
                           </button>
                         </th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('soldQuantity')} className="hover:underline">
-                            {renderSortLabel('Sold Qty', 'soldQuantity')}
+                            {renderSortLabel(t('marketAnalysisPage.soldHeader'), 'soldQuantity')}
                           </button>
                         </th>
-                        <th className="text-left p-3">See History</th>
+                        <th className="text-left p-3">{t('marketAnalysisPage.historyHeader')}</th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('priceValue')} className="hover:underline">
-                            {renderSortLabel('Item Price', 'priceValue')}
+                            {renderSortLabel(t('marketAnalysisPage.priceHeader'), 'priceValue')}
                           </button>
                         </th>
-                        <th className="text-left p-3">Actions</th>
+                        <th className="text-left p-3">{t('marketAnalysisPage.actionsHeader')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -814,7 +816,7 @@ export default function MarketAnalysisPage() {
                               {item.imageUrl ? (
                                 <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400">N/A</div>
+                                <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400">{t('marketAnalysisPage.noImage')}</div>
                               )}
                             </div>
                           </td>
@@ -823,7 +825,7 @@ export default function MarketAnalysisPage() {
                               type="button"
                               onClick={() => item.itemWebUrl && window.open(item.itemWebUrl, '_blank', 'noopener,noreferrer')}
                               className="text-left hover:underline"
-                              title={item.itemWebUrl ? 'Open on eBay' : 'eBay link unavailable'}
+                              title={item.itemWebUrl ? t('marketAnalysisPage.openOnEbay') : t('marketAnalysisPage.ebayLinkUnavailable')}
                             >
                               {item.title}
                             </button>
@@ -834,7 +836,7 @@ export default function MarketAnalysisPage() {
                               onClick={() => handleSellerClick(item.sellerName)}
                               className="text-blue-700 dark:text-blue-400 hover:underline"
                             >
-                              {item.sellerName || 'Unknown'}
+                              {item.sellerName || t('marketAnalysisPage.unknownSeller')}
                             </button>
                             {renderSellerCountryFlag(item.sellerCountryCode)}
                           </td>
@@ -844,8 +846,8 @@ export default function MarketAnalysisPage() {
                             {item?.soldLoading ? (
                               <span
                                 className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent align-middle"
-                                aria-label="Loading sold quantity"
-                                title="Loading sold quantity"
+                                aria-label={t('marketAnalysisPage.loadingSoldQuantity')}
+                                title={t('marketAnalysisPage.loadingSoldQuantity')}
                               />
                             ) : (
                               Number(item.soldQuantity || 0)
@@ -856,8 +858,8 @@ export default function MarketAnalysisPage() {
                               type="button"
                               className="btn-secondary inline-flex items-center justify-center"
                               onClick={() => openDetailsInNewTab(item)}
-                              title="See history"
-                              aria-label="See history"
+                              title={t('marketAnalysisPage.seeHistory')}
+                              aria-label={t('marketAnalysisPage.seeHistory')}
                             >
                               <History size={14} />
                             </button>
@@ -884,12 +886,12 @@ export default function MarketAnalysisPage() {
                                     type="button"
                                     className="btn-secondary"
                                     onClick={() => handleTitleSearch(item)}
-                                    title="Search this title in new tab"
+                                    title={t('marketAnalysisPage.searchTitleNewTab')}
                                   >
                                     <Search size={14} />
                                   </button>
                                   <button type="button" className="btn-primary" onClick={() => handleInspect(item)}>
-                                    Details
+                                    {t('marketAnalysisPage.details')}
                                   </button>
                                   {amazonSearchUrl && (
                                     <a
@@ -897,8 +899,8 @@ export default function MarketAnalysisPage() {
                                       target="_blank"
                                       rel="noreferrer"
                                       className="btn-secondary"
-                                      title="Search on Amazon"
-                                      aria-label="Search on Amazon"
+                                      title={t('marketAnalysisPage.searchOnAmazon')}
+                                      aria-label={t('marketAnalysisPage.searchOnAmazon')}
                                     >
                                       <img src={AMAZON_ICON_URL} alt="Amazon" className="h-3.5 w-3.5" loading="lazy" />
                                     </a>
@@ -908,15 +910,15 @@ export default function MarketAnalysisPage() {
                                     className="btn-secondary"
                                     onClick={() => handleSellSimilar(item)}
                                   >
-                                    Sell Similar
+                                    {t('marketAnalysisPage.sellSimilar')}
                                   </button>
                                   <button
                                     type="button"
                                     className="btn-primary"
                                     onClick={() => handleListOnEbay(item)}
-                                    title="List this item on your eBay account"
+                                    title={t('marketAnalysisPage.listOnEbayTitle')}
                                   >
-                                    List on eBay
+                                    {t('marketAnalysisPage.listOnEbay')}
                                   </button>
                                 </div>
                               );
@@ -931,11 +933,11 @@ export default function MarketAnalysisPage() {
 
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm text-slate-500 dark:text-slate-300">
-                  Showing {sortedResults.length} result(s)
+                  {t('marketAnalysisPage.showingResults', { count: sortedResults.length })}
                 </p>
                 <div className="flex gap-2">
                   <button type="button" className="btn-secondary" onClick={onPrevPage} disabled={params.offset <= 0}>
-                    Previous
+                    {t('marketAnalysisPage.previous')}
                   </button>
                   <button
                     type="button"
@@ -943,7 +945,7 @@ export default function MarketAnalysisPage() {
                     onClick={onNextPage}
                     disabled={params.offset + params.limit >= (total || 0)}
                   >
-                    Next
+                    {t('marketAnalysisPage.next')}
                   </button>
                 </div>
               </div>

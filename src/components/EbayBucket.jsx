@@ -26,6 +26,7 @@ function markdownToPlainText(md) {
  */
 
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ShoppingBasket, X, Trash2, ExternalLink, Loader2, CheckCircle2, Package, ChevronRight, AlertCircle } from 'lucide-react';
 import ListOnEbayModal from './ListOnEbayModal';
 
@@ -108,11 +109,12 @@ export function useBucket() {
 // Floating action button shown on the page. Click → opens drawer.
 
 export function BucketTrigger({ count, onClick, isDark }) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
       onClick={onClick}
-      title={`Open Listing Bucket (${count} item${count !== 1 ? 's' : ''})`}
+      title={t('bucket.triggerTitle', { count })}
       className={`
         fixed bottom-6 right-6 z-40
         flex items-center gap-2
@@ -125,10 +127,10 @@ export function BucketTrigger({ count, onClick, isDark }) {
           : 'bg-blue-600 hover:bg-blue-700 text-white'
         }
       `}
-      aria-label={`Listing bucket with ${count} items`}
+      aria-label={t('bucket.triggerAriaLabel', { count })}
     >
       <ShoppingBasket size={18} />
-      <span>Bucket</span>
+      <span>{t('bucket.label')}</span>
       {count > 0 && (
         <span className="
           inline-flex items-center justify-center
@@ -147,11 +149,12 @@ export function BucketTrigger({ count, onClick, isDark }) {
 // Small bucket icon button shown per row. Scrapes then adds to bucket.
 
 export function AddToBucketButton({ item, onAdd, isDark, isInBucket, isScraping }) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
       onClick={() => onAdd(item)}
-      title={isInBucket ? 'Already in bucket — click to re-scrape' : 'Add to listing bucket'}
+      title={isInBucket ? t('bucket.alreadyInBucket') : t('bucket.addToBucket')}
       disabled={isScraping}
       className={`
         inline-flex items-center justify-center
@@ -167,7 +170,7 @@ export function AddToBucketButton({ item, onAdd, isDark, isInBucket, isScraping 
             : 'bg-white border-slate-300 text-slate-500 hover:border-blue-400 hover:text-blue-600'
         }
       `}
-      aria-label={isInBucket ? 'Update bucket item' : 'Add to bucket'}
+      aria-label={isInBucket ? t('bucket.updateBucketItem') : t('bucket.addToBucket')}
     >
       {isScraping ? (
         <Loader2 size={14} className="animate-spin" />

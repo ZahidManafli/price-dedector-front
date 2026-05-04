@@ -1,26 +1,5 @@
 import React from 'react';
-
-const sortOptions = [
-  { value: '', label: 'Best Match' },
-  { value: 'price', label: 'Price: Low to High' },
-  { value: '-price', label: 'Price: High to Low' },
-  { value: 'newlyListed', label: 'Newly Listed' },
-  { value: 'endingSoonest', label: 'Ending Soonest' },
-];
-
-const conditionOptions = [
-  { value: 'ALL', label: 'All Conditions' },
-  { value: 'NEW', label: 'New' },
-  { value: 'USED', label: 'Used' },
-  { value: 'LIKE_NEW', label: 'Like New' },
-];
-
-const buyingOptions = [
-  { value: '', label: 'All Buying Options' },
-  { value: 'FIXED_PRICE', label: 'Buy It Now' },
-  { value: 'AUCTION', label: 'Auction' },
-  { value: 'BEST_OFFER', label: 'Best Offer' },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function MarketSearchBar({
   params,
@@ -32,6 +11,26 @@ export default function MarketSearchBar({
   recentSellers = [],
   recentTitles = [],
 }) {
+  const { t } = useTranslation();
+  const sortOptions = [
+    { value: '', label: t('marketSearchBar.bestMatch') },
+    { value: 'price', label: t('marketSearchBar.priceLowHigh') },
+    { value: '-price', label: t('marketSearchBar.priceHighLow') },
+    { value: 'newlyListed', label: t('marketSearchBar.newlyListed') },
+    { value: 'endingSoonest', label: t('marketSearchBar.endingSoonest') },
+  ];
+  const conditionOptions = [
+    { value: 'ALL', label: t('marketSearchBar.allConditions') },
+    { value: 'NEW', label: t('marketSearchBar.new') },
+    { value: 'USED', label: t('marketSearchBar.used') },
+    { value: 'LIKE_NEW', label: t('marketSearchBar.likeNew') },
+  ];
+  const buyingOptions = [
+    { value: '', label: t('marketSearchBar.allBuyingOptions') },
+    { value: 'FIXED_PRICE', label: t('marketSearchBar.buyItNow') },
+    { value: 'AUCTION', label: t('marketSearchBar.auction') },
+    { value: 'BEST_OFFER', label: t('marketSearchBar.bestOffer') },
+  ];
   const setValue = (key, value) => onChange((prev) => ({ ...prev, [key]: value }));
 
   return (
@@ -44,10 +43,10 @@ export default function MarketSearchBar({
     >
       <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
         <div className="md:col-span-4">
-          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">Keyword</label>
+          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.keyword')}</label>
           <input
             className="input-base"
-            placeholder="Search products (ex: drone, iphone, lego)"
+            placeholder={t('marketSearchBar.keywordPlaceholder')}
             value={params.q}
             list="recent-checkila-titles"
             onChange={(e) => setValue('q', e.target.value)}
@@ -60,7 +59,7 @@ export default function MarketSearchBar({
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">Category ID</label>
+          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.categoryId')}</label>
           <input
             className="input-base"
             placeholder="179697"
@@ -70,7 +69,7 @@ export default function MarketSearchBar({
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">Condition</label>
+          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.condition')}</label>
           <select
             className="input-base"
             value={params.condition}
@@ -83,7 +82,7 @@ export default function MarketSearchBar({
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">Buying</label>
+          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.buying')}</label>
           <select
             className="input-base"
             value={params.buyingOptions}
@@ -96,7 +95,7 @@ export default function MarketSearchBar({
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">Sort</label>
+          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.sort')}</label>
           <select className="input-base" value={params.sort} onChange={(e) => setValue('sort', e.target.value)}>
             {sortOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -107,7 +106,7 @@ export default function MarketSearchBar({
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mt-3 items-end">
         <div className="md:col-span-2">
-          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">Min Price</label>
+          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.minPrice')}</label>
           <input
             className="input-base"
             type="number"
@@ -118,7 +117,7 @@ export default function MarketSearchBar({
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">Max Price</label>
+          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.maxPrice')}</label>
           <input
             className="input-base"
             type="number"
@@ -129,10 +128,10 @@ export default function MarketSearchBar({
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">Seller</label>
+          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.seller')}</label>
           <input
             className="input-base"
-            placeholder="seller username"
+            placeholder={t('marketSearchBar.sellerPlaceholder')}
             value={params.sellerUsername || ''}
             list="recent-checkila-sellers"
             onChange={(e) => setValue('sellerUsername', e.target.value)}
@@ -145,7 +144,7 @@ export default function MarketSearchBar({
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">Per Page</label>
+          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.perPage')}</label>
           <select className="input-base" value={params.limit} onChange={(e) => setValue('limit', Number(e.target.value))}>
             <option value={12}>12</option>
             <option value={24}>24</option>
@@ -161,16 +160,16 @@ export default function MarketSearchBar({
             onChange={(e) => setValue('freeShipping', e.target.checked)}
           />
           <label htmlFor="freeShipping" className="text-sm text-slate-600 dark:text-slate-300">
-            Free shipping only
+            {t('marketSearchBar.freeShippingOnly')}
           </label>
         </div>
 
         <div className="md:col-span-2 flex justify-end">
           <button type="submit" disabled={disabled} className="btn-primary w-full md:w-auto">
-            Run Checkila Analysis
+            {t('marketSearchBar.runAnalysis')}
             {typeof searchCost === 'number' ? ` (${searchCost} credit${searchCost > 1 ? 's' : ''})` : ''}
             {marketCreditsRemaining !== null && marketCreditsRemaining !== undefined
-              ? ` • Remaining: ${marketCreditsRemaining}`
+              ? ` • ${t('marketSearchBar.remaining')}: ${marketCreditsRemaining}`
               : ''}
           </button>
         </div>

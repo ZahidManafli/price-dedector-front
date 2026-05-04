@@ -1,9 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowDownAZ, ArrowLeft, ArrowUpAZ, ExternalLink, History, LayoutGrid, List, Search, Store } from 'lucide-react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ListOnEbayModal from '../components/ListOnEbayModal';
+import { useBucket, BucketTrigger, BucketDrawer, AddToBucketButton } from '../components/EbayBucket';
 import { browseAPI } from '../services/api';
 import { countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
 
@@ -38,12 +41,6 @@ function normalizeSummary(summary) {
   };
 }
 
-const sellerSortOptions = [
-  { value: 'soldQuantity', label: 'Sold Qty' },
-  { value: 'title', label: 'Title' },
-  { value: 'condition', label: 'Condition' },
-  { value: 'priceValue', label: 'Item Price' },
-];
 const AMAZON_ICON_URL = 'https://www.amazon.com/favicon.ico';
 
 function buildAmazonSearchUrlFromTitle(title) {
@@ -53,6 +50,7 @@ function buildAmazonSearchUrlFromTitle(title) {
 }
 
 export default function MarketListingDetailPage() {
+  const { t } = useTranslation();
   const { itemId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -71,6 +69,10 @@ export default function MarketListingDetailPage() {
   const [sellerSoldQuantityDeferred, setSellerSoldQuantityDeferred] = useState(false);
   const [sellerPendingSoldItems, setSellerPendingSoldItems] = useState([]);
   const [sellerSoldLoadingByItemId, setSellerSoldLoadingByItemId] = useState({});
+  const [ebayListModal, setEbayListModal] = useState(null);
+  const bucket = useBucket();
+  const [bucketOpen, setBucketOpen] = useState(false);
+  const [scrapingIds, setScrapingIds] = useState(new Set());
 
   const backQuery = useMemo(() => {
     const q = searchParams.get('q') || '';
@@ -140,6 +142,66 @@ export default function MarketListingDetailPage() {
       ''
   );
   const detailAmazonSearchUrl = buildAmazonSearchUrlFromTitle(detail?.title);
+  const sellerSortOptions = [
+    { value: 'soldQuantity', label: t('marketListingDetailPage.soldQty') },
+    { value: 'title', label: t('marketListingDetailPage.title') },
+    { value: 'condition', label: t('marketListingDetailPage.condition') },
+    { value: 'priceValue', label: t('marketListingDetailPage.itemPrice') },
+  ];
+
+  const handleListOnEbay = useCallback((item) => {
+    setEbayListModal(item);
+  }, []);
+
+  const handleAddToBucket = useCallback(async (item) => {
+    const itemIdValue = item?.id;
+    if (!itemIdValue) return;
+
+    setScrapingIds((prev) => new Set([...prev, itemIdValue]));
+
+    try {
+      let scrapedData = {
+        title: item.title || '',
+        price: item.priceValue || 0,
+        pictureUrls: item.imageUrl ? [item.imageUrl] : [],
+        categoryId: '',
+        categoryName: '',
+        itemSpecifics: [],
+        conditionId: 1000,
+        quantity: 1,
+        currency: 'USD',
+        freeShipping: true,
+        dispatchTimeMax: 3,
+      };
+
+      if (item.itemWebUrl) {
+        try {
+          const res = await browseAPI.scrapeItemDetails(item.itemWebUrl);
+          const scraped = res?.data || {};
+          if (scraped?.success) {
+            scrapedData = {
+              ...scrapedData,
+              categoryId: scraped.categoryId || '',
+              categoryName: scraped.categoryName || '',
+              itemSpecifics: scraped.itemSpecifics || [],
+              pictureUrls: scraped.pictureUrls?.length ? scraped.pictureUrls : scrapedData.pictureUrls,
+            };
+          }
+        } catch (scrapeErr) {
+          console.warn('[market-detail bucket] scrape failed, using basic data:', scrapeErr?.message);
+        }
+      }
+
+      bucket.addToBucket(item, scrapedData);
+      setBucketOpen(true);
+    } finally {
+      setScrapingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(itemIdValue);
+        return next;
+      });
+    }
+  }, [bucket]);
 
   const openExternalItem = (url) => {
     const next = String(url || '').trim();
@@ -177,12 +239,12 @@ export default function MarketListingDetailPage() {
     }
 
     const result = await Swal.fire({
-      title: 'Open eBay Sell Similar?',
-      text: 'You are about to continue this action on eBay. For account safety and suspension prevention, please make sure your browser is currently using the correct eBay seller profile before proceeding.',
+      title: t('marketListingDetailPage.openEbaySellSimilarTitle'),
+      text: t('marketListingDetailPage.openEbaySellSimilarText'),
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Proceed to eBay',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: t('marketListingDetailPage.proceedToEbay'),
+      cancelButtonText: t('marketListingDetailPage.cancel'),
       reverseButtons: true,
       focusCancel: true,
     });
@@ -196,7 +258,7 @@ export default function MarketListingDetailPage() {
   const handleLoadSellerListings = async (nextOffset = 0) => {
     const sellerUsername = String(detail?.seller?.username || '').trim();
     if (!sellerUsername) {
-      setSellerError('Seller username is not available for this listing.');
+      setSellerError(t('marketListingDetailPage.sellerUsernameUnavailable'));
       return;
     }
 
@@ -223,7 +285,7 @@ export default function MarketListingDetailPage() {
       setSellerTotal(Number(payload?.total || 0));
       setSellerOffset(nextOffset);
     } catch (err) {
-      setSellerError(err?.response?.data?.error || err?.message || 'Failed to load seller listings');
+      setSellerError(err?.response?.data?.error || err?.message || t('marketListingDetailPage.failedToLoadSellerListings'));
       setSellerListings([]);
       setSellerSoldQuantityDeferred(false);
       setSellerPendingSoldItems([]);
@@ -429,7 +491,7 @@ export default function MarketListingDetailPage() {
   };
 
   if (loading) {
-    return <LoadingSpinner message="Loading listing details..." />;
+    return <LoadingSpinner message={t('marketListingDetailPage.loadingListingDetails')} />;
   }
 
   return (
@@ -441,7 +503,7 @@ export default function MarketListingDetailPage() {
           className="btn-secondary flex items-center gap-2"
         >
           <ArrowLeft size={14} />
-          Back to Checkila Analysis
+          {t('marketListingDetailPage.backToAnalysis')}
         </button>
         <div className="flex items-center gap-2">
           <button
@@ -449,7 +511,7 @@ export default function MarketListingDetailPage() {
             className="btn-secondary"
             onClick={() => handleSellSimilar(detail)}
           >
-            Sell Similar
+            {t('marketListingDetailPage.sellSimilar')}
           </button>
           {detailAmazonSearchUrl && (
             <a
@@ -457,16 +519,16 @@ export default function MarketListingDetailPage() {
               target="_blank"
               rel="noreferrer"
               className="btn-secondary flex items-center gap-2"
-              title="Search on Amazon"
-              aria-label="Search on Amazon"
+              title={t('marketListingDetailPage.searchOnAmazon')}
+              aria-label={t('marketListingDetailPage.searchOnAmazon')}
             >
               <img src={AMAZON_ICON_URL} alt="Amazon" className="h-4 w-4" loading="lazy" />
               Amazon
             </a>
           )}
-          {detail?.itemWebUrl && (
+            {detail?.itemWebUrl && (
             <a href={detail.itemWebUrl} target="_blank" rel="noreferrer" className="btn-primary flex items-center gap-2">
-              Open on eBay
+              {t('marketListingDetailPage.openOnEbay')}
               <ExternalLink size={14} />
             </a>
           )}
@@ -485,11 +547,11 @@ export default function MarketListingDetailPage() {
                 type="button"
                 onClick={() => openExternalItem(detail?.itemWebUrl)}
                 className="text-left text-xl font-semibold text-slate-900 dark:text-slate-100 line-clamp-2 hover:underline"
-                title={detail?.itemWebUrl ? 'Open on eBay' : 'eBay link unavailable'}
+                title={detail?.itemWebUrl ? t('marketListingDetailPage.openOnEbay') : t('marketListingDetailPage.ebayLinkUnavailable')}
               >
                 {detail.title}
               </button>
-              <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{detail.shortDescription || 'Detailed market listing insights'}</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{detail.shortDescription || t('marketListingDetailPage.detailSubtitle')}</p>
             </div>
 
             <div className="p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -498,48 +560,48 @@ export default function MarketListingDetailPage() {
                   {detail?.image?.imageUrl ? (
                     <img src={detail.image.imageUrl} alt={detail.title} className="w-full h-[300px] object-cover" />
                   ) : (
-                    <div className="h-[300px] flex items-center justify-center text-slate-400 text-sm">No image</div>
+                    <div className="h-[300px] flex items-center justify-center text-slate-400 text-sm">{t('marketListingDetailPage.noImage')}</div>
                   )}
                 </div>
               </div>
 
               <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                  <p className="text-xs text-slate-500 dark:text-slate-300">Item Price</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketListingDetailPage.itemPrice')}</p>
                   <p className="text-xl font-semibold">{formatCurrency(Number(detail?.price?.value || 0))}</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                  <p className="text-xs text-slate-500 dark:text-slate-300">Condition</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketListingDetailPage.condition')}</p>
                   <p className="text-xl font-semibold">{detail?.condition || 'N/A'}</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                  <p className="text-xs text-slate-500 dark:text-slate-300">Seller</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketListingDetailPage.seller')}</p>
                   <button
                     type="button"
                     onClick={handleLoadSellerListings}
                     className="mt-1 text-left text-xl font-semibold text-blue-700 dark:text-blue-400 hover:underline"
                   >
-                    {detail?.seller?.username || 'Unknown seller'}
+                    {detail?.seller?.username || t('marketListingDetailPage.unknownSeller')}
                   </button>
                   {sellerCountryFlag ? <span className="ml-2 align-middle">{sellerCountryFlag}</span> : null}
                 </div>
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                  <p className="text-xs text-slate-500 dark:text-slate-300">Sold Count</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketListingDetailPage.soldCount')}</p>
                   <p className="text-xl font-semibold">{sold}</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                  <p className="text-xs text-slate-500 dark:text-slate-300">Selling Success</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketListingDetailPage.sellingSuccess')}</p>
                   <p className="text-xl font-semibold">{successRate !== null ? `${successRate}%` : 'N/A'}</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 md:col-span-2">
-                  <p className="text-xs text-slate-500 dark:text-slate-300">Selling History</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketListingDetailPage.sellingHistory')}</p>
                   <a
                     href={`https://www.ebay.com/bin/purchasehistory?item=${encodeURIComponent(purchaseHistoryItemId)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="btn-secondary inline-flex items-center gap-2 mt-2"
                   >
-                    See selling history
+                    {t('marketListingDetailPage.seeSellingHistory')}
                     <ExternalLink size={14} />
                   </a>
                 </div>
@@ -551,7 +613,7 @@ export default function MarketListingDetailPage() {
             <div className="flex items-center justify-between gap-3 mb-3">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Store size={18} />
-                Seller Listings
+                {t('marketListingDetailPage.sellerListings')}
               </h2>
               <div className="flex items-center gap-2">
                 <button
@@ -560,7 +622,7 @@ export default function MarketListingDetailPage() {
                   className={`btn-secondary flex items-center gap-1 ${sellerViewMode === 'list' ? 'ring-2 ring-blue-300' : ''}`}
                 >
                   <List size={14} />
-                  List
+                  {t('marketListingDetailPage.list')}
                 </button>
                 <button
                   type="button"
@@ -568,7 +630,7 @@ export default function MarketListingDetailPage() {
                   className={`btn-secondary flex items-center gap-1 ${sellerViewMode === 'card' ? 'ring-2 ring-blue-300' : ''}`}
                 >
                   <LayoutGrid size={14} />
-                  Card
+                  {t('marketListingDetailPage.card')}
                 </button>
                 <select
                   className="input-base w-[160px]"
@@ -583,12 +645,12 @@ export default function MarketListingDetailPage() {
                   type="button"
                   className="btn-secondary"
                   onClick={toggleSellerSortDirection}
-                  title={`Sort ${sellerSortConfig.direction === 'asc' ? 'descending' : 'ascending'}`}
+                  title={sellerSortConfig.direction === 'asc' ? t('marketListingDetailPage.sortDescending') : t('marketListingDetailPage.sortAscending')}
                 >
                   {sellerSortConfig.direction === 'asc' ? <ArrowUpAZ size={14} /> : <ArrowDownAZ size={14} />}
                 </button>
                 <button type="button" className="btn-secondary" onClick={() => handleLoadSellerListings(0)}>
-                  Load seller listings
+                  {t('marketListingDetailPage.loadSellerListings')}
                 </button>
               </div>
             </div>
@@ -600,9 +662,9 @@ export default function MarketListingDetailPage() {
             )}
 
             {sellerLoading ? (
-              <LoadingSpinner message="Loading seller listings..." />
+              <LoadingSpinner message={t('marketListingDetailPage.loadingSellerListings')} />
             ) : sortedSellerListings.length === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-slate-300">Click seller name or "Load seller listings" to fetch matching seller inventory.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-300">{t('marketListingDetailPage.emptySellerListings')}</p>
             ) : (
               sellerViewMode === 'card' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -615,20 +677,20 @@ export default function MarketListingDetailPage() {
                         {item.imageUrl ? (
                           <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">No image</div>
+                          <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">{t('marketListingDetailPage.noImage')}</div>
                         )}
                       </div>
                       <button
                         type="button"
                         onClick={() => openExternalItem(item.itemWebUrl)}
                         className="text-left text-sm font-semibold line-clamp-2 text-slate-900 dark:text-slate-100 hover:underline"
-                        title={item.itemWebUrl ? 'Open on eBay' : 'eBay link unavailable'}
+                        title={item.itemWebUrl ? t('marketListingDetailPage.openOnEbay') : t('marketListingDetailPage.ebayLinkUnavailable')}
                       >
-                        {item.title}
+                              {item.title}
                       </button>
-                      <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">{item.condition}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">{item.condition || t('marketListingDetailPage.na')}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
-                        Sold Qty: <span className="font-semibold">{renderSellerSoldValue(item)}</span>
+                        {t('marketListingDetailPage.soldQty')}: <span className="font-semibold">{renderSellerSoldValue(item)}</span>
                       </p>
                       <div className="mt-2 flex items-center gap-2">
                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
@@ -640,8 +702,8 @@ export default function MarketListingDetailPage() {
                             target="_blank"
                             rel="noreferrer"
                             className="btn-secondary text-xs px-2 py-1"
-                            title="Search on Amazon"
-                            aria-label="Search on Amazon"
+                            title={t('marketListingDetailPage.searchOnAmazon')}
+                            aria-label={t('marketListingDetailPage.searchOnAmazon')}
                           >
                             <img src={AMAZON_ICON_URL} alt="Amazon" className="h-3.5 w-3.5" loading="lazy" />
                           </a>
@@ -650,13 +712,13 @@ export default function MarketListingDetailPage() {
                           type="button"
                           className="btn-secondary text-xs px-2 py-1"
                           onClick={() => handleSellerItemHistory(item)}
-                          title="See history"
-                          aria-label="See history"
+                          title={t('marketListingDetailPage.seeHistory')}
+                          aria-label={t('marketListingDetailPage.seeHistory')}
                           disabled={!resolvePurchaseHistoryItemIdFromItem(item)}
                         >
                           <History size={14} />
                         </button>
-                        <button type="button" className="btn-secondary text-xs px-2 py-1" onClick={() => handleSearchItem(item)} title="Search this title">
+                        <button type="button" className="btn-secondary text-xs px-2 py-1" onClick={() => handleSearchItem(item)} title={t('marketListingDetailPage.searchThisTitle')}>
                           <Search size={14} />
                         </button>
                       </div>
@@ -668,28 +730,28 @@ export default function MarketListingDetailPage() {
                   <table className="min-w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-200 dark:border-slate-700">
-                        <th className="text-left p-3">Image</th>
-                        <th className="text-left p-3">
+                        <th className="text-left p-3">{t('marketListingDetailPage.image')}</th>
+                              <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSellerSort('title')} className="hover:underline">
-                            {renderSellerSortLabel('Title', 'title')}
+                            {renderSellerSortLabel(t('marketListingDetailPage.title'), 'title')}
                           </button>
                         </th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSellerSort('condition')} className="hover:underline">
-                            {renderSellerSortLabel('Condition', 'condition')}
+                            {renderSellerSortLabel(t('marketListingDetailPage.condition'), 'condition')}
                           </button>
                         </th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSellerSort('soldQuantity')} className="hover:underline">
-                            {renderSellerSortLabel('Sold Qty', 'soldQuantity')}
+                            {renderSellerSortLabel(t('marketListingDetailPage.soldQty'), 'soldQuantity')}
                           </button>
                         </th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSellerSort('priceValue')} className="hover:underline">
-                            {renderSellerSortLabel('Item Price', 'priceValue')}
+                            {renderSellerSortLabel(t('marketListingDetailPage.itemPrice'), 'priceValue')}
                           </button>
                         </th>
-                        <th className="text-left p-3">Actions</th>
+                        <th className="text-left p-3">{t('marketListingDetailPage.actions')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -718,21 +780,28 @@ export default function MarketListingDetailPage() {
                           <td className="p-3 font-medium">{renderSellerSoldValue(item)}</td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>
                           <td className="p-3">
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
                               <Link
                                 to={`/market-analysis/item/${encodeURIComponent(item.id)}?sellerUsername=${encodeURIComponent(detail?.seller?.username || '')}`}
                                 className="btn-primary"
                               >
-                                Details
+                                {t('marketListingDetailPage.details')}
                               </Link>
+                              <AddToBucketButton
+                                item={item}
+                                onAdd={handleAddToBucket}
+                                isDark={isDark}
+                                isInBucket={bucket.items.some((b) => b.id === item.id)}
+                                isScraping={scrapingIds.has(item.id)}
+                              />
                               {buildAmazonSearchUrlFromTitle(item?.title) && (
                                 <a
                                   href={buildAmazonSearchUrlFromTitle(item?.title)}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="btn-secondary"
-                                  title="Search on Amazon"
-                                  aria-label="Search on Amazon"
+                                  title={t('marketListingDetailPage.searchOnAmazon')}
+                                  aria-label={t('marketListingDetailPage.searchOnAmazon')}
                                 >
                                   <img src={AMAZON_ICON_URL} alt="Amazon" className="h-3.5 w-3.5" loading="lazy" />
                                 </a>
@@ -741,21 +810,25 @@ export default function MarketListingDetailPage() {
                                 type="button"
                                 className="btn-secondary"
                                 onClick={() => handleSellerItemHistory(item)}
-                                title="See history"
-                                aria-label="See history"
+                                title={t('marketListingDetailPage.seeHistory')}
+                                aria-label={t('marketListingDetailPage.seeHistory')}
                                 disabled={!resolvePurchaseHistoryItemIdFromItem(item)}
                               >
                                 <History size={14} />
                               </button>
-                              <button type="button" className="btn-secondary" onClick={() => handleSearchItem(item)} title="Search this title">
+                              <button type="button" className="btn-secondary" onClick={() => handleSearchItem(item)} title={t('marketListingDetailPage.searchThisTitle')}>
                                 <Search size={14} />
+                              </button>
+                              <button type="button" className="btn-secondary" onClick={() => handleSellSimilar(item)}>
+                                {t('marketListingDetailPage.sellSimilar')}
                               </button>
                               <button
                                 type="button"
-                                className="btn-secondary"
-                                onClick={() => handleSellSimilar(item)}
+                                className="btn-primary"
+                                onClick={() => handleListOnEbay(item)}
+                                title={t('marketListingDetailPage.listOnEbayTitle')}
                               >
-                                Sell Similar
+                                {t('marketListingDetailPage.listOnEbay')}
                               </button>
                             </div>
                           </td>
@@ -769,7 +842,7 @@ export default function MarketListingDetailPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
               <p className="text-sm text-slate-500 dark:text-slate-300">
-                Showing {sellerListings.length} result(s)
+                {t('marketListingDetailPage.showingResults', { count: sellerListings.length })}
               </p>
               <div className="flex gap-2">
                 <button
@@ -778,7 +851,7 @@ export default function MarketListingDetailPage() {
                   onClick={() => handleLoadSellerListings(Math.max(0, sellerOffset - sellerLimit))}
                   disabled={sellerLoading || sellerOffset <= 0}
                 >
-                  Previous
+                  {t('marketListingDetailPage.previous')}
                 </button>
                 <button
                   type="button"
@@ -786,13 +859,35 @@ export default function MarketListingDetailPage() {
                   onClick={() => handleLoadSellerListings(sellerOffset + sellerLimit)}
                   disabled={sellerLoading || sellerOffset + sellerLimit >= (sellerTotal || 0)}
                 >
-                  Next
+                  {t('marketListingDetailPage.next')}
                 </button>
               </div>
             </div>
           </section>
         </>
       )}
+
+      {ebayListModal && (
+        <ListOnEbayModal
+          item={ebayListModal}
+          isDark={isDark}
+          onClose={() => setEbayListModal(null)}
+        />
+      )}
+
+      <BucketTrigger count={bucket.items.length} onClick={() => setBucketOpen(true)} isDark={isDark} />
+
+      <BucketDrawer
+        open={bucketOpen}
+        onClose={() => setBucketOpen(false)}
+        items={bucket.items}
+        successfulListings={bucket.successfulListings}
+        onRemove={bucket.removeFromBucket}
+        onClear={bucket.clearBucket}
+        onAddSuccessfulListing={bucket.addSuccessfulListing}
+        onUpdateItem={bucket.updateBucketItem}
+        isDark={isDark}
+      />
     </div>
   );
 }
