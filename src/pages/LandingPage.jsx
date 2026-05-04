@@ -209,6 +209,7 @@ function normalizePlan(raw = {}) {
 
 export default function LandingPage() {
   const { t } = useTranslation(['landing', 'common', 'pricing']);
+  const { changeLanguage } = useLanguage();
   const [activeTab, setActiveTab] = useState('subscription');
   const [plans, setPlans] = useState([]);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
@@ -226,44 +227,7 @@ export default function LandingPage() {
         }
       } catch {
         if (!cancelled) {
-        return () => {
-          cancelled = true;
-        };
           setPlans([]);
-
-      // On first landing, request public data (IP-based) to suggest default language
-      useEffect(() => {
-        let cancelled = false;
-        const applySuggestedLanguage = async () => {
-          try {
-            // Only apply if user has no explicit preference saved
-            const existing = localStorage.getItem('userLanguage');
-            if (existing) return;
-
-            const resp = await settingsAPI.getPublicData();
-            const suggested = resp?.data?.suggestedLanguage;
-            if (!cancelled && suggested && suggested !== undefined && suggested !== null) {
-              // Use LanguageContext changeLanguage which sets localStorage.userLanguage
-              try {
-                changeLanguage(suggested);
-                // ensure i18next cache key present
-                try {
-                  localStorage.setItem('i18nextLng', suggested);
-                } catch {}
-              } catch (e) {
-                console.error('Failed to apply suggested language', e);
-              }
-            }
-          } catch (err) {
-            // ignore errors silently
-          }
-        };
-
-        applySuggestedLanguage();
-        return () => {
-          cancelled = true;
-        };
-      }, []);
         }
       }
     };
@@ -273,6 +237,35 @@ export default function LandingPage() {
       cancelled = true;
     };
   }, []);
+
+  // On first landing, request public data (IP-based) to suggest default language.
+  // Apply only when user has not chosen a language before.
+  useEffect(() => {
+    let cancelled = false;
+
+    const applySuggestedLanguage = async () => {
+      try {
+        const existingUserLanguage = localStorage.getItem('userLanguage');
+        const existingI18nLanguage = localStorage.getItem('i18nextLng');
+        if (existingUserLanguage || existingI18nLanguage) return;
+
+        const resp = await settingsAPI.getPublicData();
+        const suggested = String(resp?.data?.suggestedLanguage || '').trim().toLowerCase();
+        const supported = ['en', 'az', 'ru', 'tr'];
+        if (!cancelled && supported.includes(suggested)) {
+          await changeLanguage(suggested);
+          localStorage.setItem('i18nextLng', suggested);
+        }
+      } catch {
+        // Keep default language when geo lookup fails.
+      }
+    };
+
+    applySuggestedLanguage();
+    return () => {
+      cancelled = true;
+    };
+  }, [changeLanguage]);
 
   const planSource = plans.length > 0 ? plans : [];
 

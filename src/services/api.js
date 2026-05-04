@@ -17,6 +17,7 @@ api.interceptors.request.use((config) => {
     url.startsWith('/auth') ||
     url.startsWith('/health') ||
     url.startsWith('/settings/plans/public') ||
+    url.startsWith('/settings/public-data') ||
     url.startsWith('/settings/currency-rates') ||
     url === '/settings/subscription-requests' ||
     url.startsWith('/settings/subscription-requests/update-credits') ||
@@ -90,7 +91,7 @@ export const settingsAPI = {
   updatePreferences: (data) => api.put('/settings/preferences', data),
   getLimits: () => api.get('/settings/limits'),
   getPublicPlans: () => api.get('/settings/plans/public'),
-  getPublicData: () => api.get('/public-data'),
+  getPublicData: () => api.get('/settings/public-data'),
   getCurrencyRates: () => api.get('/settings/currency-rates'),
   submitSubscriptionRequest: (data) => api.post('/settings/subscription-requests', data),
   submitUpdateCreditRequest: (data) => api.post('/settings/subscription-requests/update-credits', data),
