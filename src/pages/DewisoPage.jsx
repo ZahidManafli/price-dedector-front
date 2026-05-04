@@ -232,6 +232,7 @@ export default function DewisoPage() {
 
   const quillRef = useRef(null);
   const quillContainerRef = useRef(null);
+  const previewRef = useRef(null);
 
   useEffect(() => {
     const load = async () => {
@@ -273,6 +274,43 @@ export default function DewisoPage() {
       setOwnHtml(quill.root.innerHTML);
     });
   }, []);
+
+  useEffect(() => {
+    if (!previewRef.current) return;
+
+    const handleInput = () => {
+      const newHtml = previewRef.current.innerHTML;
+      setOwnHtml(newHtml);
+      if (quillRef.current) {
+        quillRef.current.clipboard.dangerouslyPasteHTML(newHtml);
+      }
+    };
+
+    const handleContentChange = () => {
+      const newHtml = previewRef.current.innerHTML;
+      setOwnHtml(newHtml);
+      if (quillRef.current) {
+        quillRef.current.clipboard.dangerouslyPasteHTML(newHtml);
+      }
+    };
+
+    previewRef.current.addEventListener('input', handleInput);
+    previewRef.current.addEventListener('blur', handleContentChange);
+    return () => {
+      if (previewRef.current) {
+        previewRef.current.removeEventListener('input', handleInput);
+        previewRef.current.removeEventListener('blur', handleContentChange);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!previewRef.current) return;
+    const wasEditing = document.activeElement === previewRef.current;
+    if (!wasEditing) {
+      previewRef.current.innerHTML = generatedHtml;
+    }
+  }, [generatedHtml]);
 
   const generatedHtml = useMemo(() => {
     if (layout === 'own_html') {
@@ -404,6 +442,24 @@ export default function DewisoPage() {
       setAlert({ type: 'success', message: 'Copied link to clipboard' });
     } catch {
       setAlert({ type: 'warning', message: 'Could not copy link automatically' });
+    }
+  };
+
+  const downloadHtml = () => {
+    const filename = `${templateName || 'dewiso'}.html`;
+    const link = document.createElement('a');
+    link.href = `data:text/html;charset=utf-8,${encodeURIComponent(generatedHtml)}`;
+    link.download = filename;
+    link.click();
+    setAlert({ type: 'success', message: `Downloaded ${filename}` });
+  };
+
+  const copyHtmlToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(generatedHtml);
+      setAlert({ type: 'success', message: 'HTML copied to clipboard' });
+    } catch {
+      setAlert({ type: 'error', message: 'Could not copy HTML to clipboard' });
     }
   };
 
@@ -552,11 +608,28 @@ export default function DewisoPage() {
           </div>
         </div>
 
-        <div className={`xl:col-span-7 rounded-2xl border overflow-hidden ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-white border-slate-200'}`}>
-          <div className={`px-4 py-2 border-b text-sm ${isDark ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-700'}`}>
-            Live Preview
+        <div className={`xl:col-span-7 rounded-2xl border overflow-hidden flex flex-col ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className={`px-4 py-2 border-b text-sm flex justify-between items-center ${isDark ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-700'}`}>
+            <span>Live Preview (Click to edit)</span>
+            <div className="flex gap-2">
+              <button type="button" className="text-xs btn-secondary px-2 py-1" onClick={copyHtmlToClipboard}>
+                Copy HTML
+              </button>
+              <button type="button" className="text-xs btn-secondary px-2 py-1" onClick={downloadHtml}>
+                Download HTML
+              </button>
+            </div>
           </div>
-          <iframe title="Dewiso Preview" srcDoc={generatedHtml} className="w-full h-[760px] bg-white" />
+          <div
+            ref={previewRef}
+            contentEditable
+            suppressContentEditableWarning
+            className="flex-1 overflow-auto p-6 bg-white outline-none focus:outline-none text-base"
+            style={{
+              whiteSpace: 'pre-wrap',
+              wordWrap: 'break-word',
+            }}
+          />
         </div>
       </div>
     </div>
