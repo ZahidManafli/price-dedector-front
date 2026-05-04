@@ -13,7 +13,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { settingsAPI } from '../services/api';
+import { partnerAPI, settingsAPI } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import PartnersSection from '../components/PartnersSection';
@@ -249,7 +249,7 @@ export default function LandingPage() {
         const existingI18nLanguage = localStorage.getItem('i18nextLng');
         if (existingUserLanguage || existingI18nLanguage) return;
 
-        const resp = await settingsAPI.getPublicData();
+        const resp = await partnerAPI.getPublic();
         const suggested = String(resp?.data?.suggestedLanguage || '').trim().toLowerCase();
         const supported = ['en', 'az', 'ru', 'tr'];
         if (!cancelled && supported.includes(suggested)) {
