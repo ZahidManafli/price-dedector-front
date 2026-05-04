@@ -159,7 +159,7 @@ export default function SettingsPage() {
       setEbayLoading(true);
       const response = await ebayAPI.getConnectUrl();
       const authUrl = response?.data?.authUrl;
-      if (!authUrl) throw new Error('Missing eBay auth URL');
+      if (!authUrl) throw new Error(t('settingsPage.missingEbayAuthUrl') || 'Missing eBay auth URL');
       window.location.href = authUrl;
     } catch (error) {
       setAlert({
@@ -193,7 +193,7 @@ export default function SettingsPage() {
       setAmazonLoading(true);
       const response = await amazonOAuthAPI.getConnectUrl();
       const authUrl = response?.data?.authUrl;
-      if (!authUrl) throw new Error('Missing Amazon auth URL');
+      if (!authUrl) throw new Error(t('settingsPage.missingAmazonAuthUrl') || 'Missing Amazon auth URL');
       window.location.href = authUrl;
     } catch (error) {
       setAlert({
@@ -582,7 +582,7 @@ export default function SettingsPage() {
                   <div className="space-y-2">
                     {ebayStatus.ebayAccounts.map((acc) => {
                       const isActive = acc.id && ebayStatus.activeEbayAccountId === acc.id;
-                      const label = acc.connectionName || acc.username || acc.profileUserId || 'Unknown';
+                      const label = acc.connectionName || acc.username || acc.profileUserId || t('settingsPage.unknown');
                       const tradingAccountId = acc.tradingAccountId || null;
                       const connected = !!acc.connected;
                       return (
@@ -701,15 +701,6 @@ export default function SettingsPage() {
                         >
                           {ebayLoading ? t('settingsPage.connecting') : t('settingsPage.connectAnotherEbay')}
                         </button>
-                        <button
-                          type="button"
-                          onClick={handleDisconnectEbay}
-                          disabled={ebayLoading}
-                          className="rounded-xl bg-red-600 text-white px-5 py-2.5 hover:bg-red-700 transition disabled:opacity-50"
-                          title={t('settingsPage.disconnectLegacyTitle')}
-                        >
-                          {ebayLoading ? t('settingsPage.disconnecting') : t('settingsPage.disconnectLegacy')}
-                        </button>
                       </>
                     )}
                   </div>
@@ -727,14 +718,14 @@ export default function SettingsPage() {
                         </p>
                       </div>
                       <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                        Fetched: {activeSellerSnapshot?.fetchedAt ? new Date(activeSellerSnapshot.fetchedAt).toLocaleString() : '—'}
+                        {t('settingsPage.fetched')}: {activeSellerSnapshot?.fetchedAt ? new Date(activeSellerSnapshot.fetchedAt).toLocaleString() : '—'}
                       </div>
                     </div>
 
                     <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                       <div className={`rounded-lg p-3 ${isDark ? 'bg-slate-900/60' : 'bg-white'}`}>
                         <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('settingsPage.connection')}</p>
-                        <p className={`mt-1 text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{activeEbayAccount?.connectionName || activeEbayAccount?.username || activeEbayAccount?.profileUserId || 'Unknown'}</p>
+                        <p className={`mt-1 text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{activeEbayAccount?.connectionName || activeEbayAccount?.username || activeEbayAccount?.profileUserId || t('settingsPage.unknown')}</p>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('settingsPage.accountId')}: {activeEbayAccount?.tradingAccountId || activeEbayAccount?.profileUserId || activeEbayAccount?.accountId || '—'}</p>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('settingsPage.environment')}: {activeEbayAccount?.environment || ebayStatus.environment || '—'}</p>
                       </div>

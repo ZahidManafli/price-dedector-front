@@ -590,6 +590,13 @@
     }
   },
   "settingsPage": {
+    "title": "Настройки",
+    "fetched": "Получено",
+    "environment": "Окружение",
+    "missingEbayAuthUrl": "Отсутствует URL авторизации eBay",
+    "missingAmazonAuthUrl": "Отсутствует URL авторизации Amazon",
+    "connectAmazon": "Подключить Amazon",
+    "disconnect": "Отключить",
     "accountSecurity": "Безопасность аккаунта",
     "ebayIntegration": "Интеграция eBay",
     "ebayIntegrationDescription": "Подключите аккаунт eBay, чтобы автоматически обновлять цены объявлений при изменении цен Amazon.",

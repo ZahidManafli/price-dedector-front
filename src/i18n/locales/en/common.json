@@ -385,6 +385,12 @@
     "updating": "Updating Product..."
   },  "settingsPage": {
     "title": "Settings",
+    "fetched": "Fetched",
+    "environment": "Environment",
+    "missingEbayAuthUrl": "Missing eBay auth URL",
+    "missingAmazonAuthUrl": "Missing Amazon auth URL",
+    "connectAmazon": "Connect Amazon",
+    "disconnect": "Disconnect",
     "security": "Account Security",
     "plans": "Subscription & Credits",
     "ebay": "eBay Connections",

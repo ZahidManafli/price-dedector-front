@@ -590,6 +590,13 @@
     }
   },
   "settingsPage": {
+    "title": "Ayarlar",
+    "fetched": "Alındı",
+    "environment": "Mühit",
+    "missingEbayAuthUrl": "eBay autentifikasiya URL-i yoxdur",
+    "missingAmazonAuthUrl": "Amazon autentifikasiya URL-i yoxdur",
+    "connectAmazon": "Amazonu Qoş",
+    "disconnect": "Bağlantını Kəs",
     "accountSecurity": "Hesab təhlükəsizliyi",
     "ebayIntegration": "eBay inteqrasiyası",
     "ebayIntegrationDescription": "Amazon qiymətləri dəyişdikdə elan qiymətlərini avtomatik yeniləmək üçün eBay hesabınızı qoşun.",

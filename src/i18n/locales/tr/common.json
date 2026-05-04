@@ -588,6 +588,13 @@
     }
   },
   "settingsPage": {
+    "title": "Ayarlar",
+    "fetched": "Alındı",
+    "environment": "Ortam",
+    "missingEbayAuthUrl": "eBay yetkilendirme URL'si eksik",
+    "missingAmazonAuthUrl": "Amazon yetkilendirme URL'si eksik",
+    "connectAmazon": "Amazon'u Bağla",
+    "disconnect": "Bağlantıyı Kes",
     "accountSecurity": "Hesap güvenliği",
     "ebayIntegration": "eBay entegrasyonu",
     "ebayIntegrationDescription": "Amazon fiyatları değiştiğinde ilan fiyatlarını otomatik güncellemek için eBay hesabınızı bağlayın.",
