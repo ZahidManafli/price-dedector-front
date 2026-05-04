@@ -347,7 +347,7 @@
     "sortDescending": "Azalan sırala",
     "sortAscending": "Artan sırala",
     "sellerUsernameUnavailable": "Bu ilan için satıcı adı mevcut değil.",
-      "sellSimilarRequiresId": "Benzerini Sat için geçerli sayısal bir eBay ilan ID'si (Item ID) gereklidir.",
+    "sellSimilarRequiresId": "Benzerini Sat için geçerli sayısal bir eBay ilan ID'si (Item ID) gereklidir.",
     "failedToLoadSellerListings": "Satıcı ilanları yüklenemedi",
     "openEbaySellSimilarTitle": "eBay Sell Similar açılsın mı?",
     "openEbaySellSimilarText": "Bu işlemi eBay üzerinde sürdürmek üzeresiniz. Hesap güvenliği ve askıya alma riskini azaltmak için lütfen tarayıcınızın doğru eBay satıcı profilini kullandığından emin olun.",
@@ -382,7 +382,8 @@
     "list": "eBay'de listele",
     "saving": "Kaydediliyor...",
     "listing": "Listeleniyor...",
-    "failedToList": "eBay'de listeleme başarısız"  },
+    "failedToList": "eBay'de listeleme başarısız"
+  },
   "listingsPage": {
     "title": "İlanlar",
     "failedLoad": "eBay ilanları yüklenemedi",
@@ -549,7 +550,8 @@
     "enterValidPrice": "Geçerli bir pozitif fiyat girin.",
     "emptyTitle": "Başlık boş olamaz.",
     "enterValidQuantity": "Geçerli bir stok miktarı girin (0 veya daha fazla).",
-    "enterValidAutoStock": "0'dan büyük geçerli bir otomatik stok miktarı girin."  },
+    "enterValidAutoStock": "0'dan büyük geçerli bir otomatik stok miktarı girin."
+  },
   "ordersPage": {
     "title": "Siparişler",
     "failedLoad": "eBay siparişleri yüklenemedi",
@@ -682,7 +684,49 @@
     "accountSecurityNote": "OAuth belirteçleri sunucu tarafında saklanır ve otomatik olarak yenilenir.",
     "sendCreditRequest": "Kredi isteği gönder",
     "sendResetRequest": "Sıfırlama isteği gönder",
-    "requestSentToAdmin": "İstek yöneticiye gönderildi"
+    "requestSentToAdmin": "İstek yöneticiye gönderildi",
+    "activeEbayUpdated": "Aktif eBay hesabı güncellendi",
+    "amazon": "Amazon",
+    "changePassword": "Şifreyi Değiştir",
+    "confirmNewPassword": "Yeni şifreyi onayla",
+    "connectionLimitReached": "eBay hesap bağlantı limitine ulaşıldı. Limitinizi artırmak için yöneticiye başvurun.",
+    "connectionNameEmpty": "Bağlantı adı boş olamaz",
+    "currentPassword": "Mevcut şifre",
+    "dailySummary": "Günlük özet",
+    "deleteEbayAccount": "Bu eBay hesabını silmek istediğinizden emin misiniz? Bu işlem hesabın bağlantısını keser ve kayıtlı hesaplarınızdan kaldırır.",
+    "disconnectedAmazon": "Amazon hesabının bağlantısı kesildi",
+    "disconnectedEbay": "eBay hesabının bağlantısı kesildi",
+    "eBayDeleted": "eBay hesabı silindi",
+    "eBayNameUpdated": "eBay bağlantı adı güncellendi",
+    "ebay": "eBay",
+    "emailNotifications": "E-posta bildirimleri",
+    "failedChangePassword": "Şifre değiştirilemedi",
+    "failedDeleteEbay": "eBay hesabı silinemedi",
+    "failedSaveSettings": "Ayarlar kaydedilemedi",
+    "failedSetActiveEbay": "Aktif eBay hesabı ayarlanamadı",
+    "failedToDisconnectAmazon": "Amazon bağlantısı kesilemedi",
+    "failedToDisconnectEbay": "eBay bağlantısı kesilemedi",
+    "failedToStartAmazon": "Amazon bağlantısı başlatılamadı",
+    "failedToStartEbay": "eBay bağlantısı başlatılamadı",
+    "failedUpdateEbayName": "eBay bağlantı adı güncellenemedi",
+    "instant": "Anlık",
+    "newPassword": "Yeni şifre",
+    "notificationFrequency": "Bildirim sıklığı",
+    "notifications": "Bildirimler",
+    "passwordMismatch": "Şifreler eşleşmiyor",
+    "passwordTooShort": "Şifre en az 8 karakter olmalıdır",
+    "passwordUpdated": "Şifre başarıyla güncellendi",
+    "plans": "Planlar",
+    "pleaseFillPassword": "Lütfen tüm şifre alanlarını doldurun",
+    "refreshSubscription": "Aboneliğinizi sıfırlamak ve kullanım limitlerini yenilemek için isteyin.",
+    "requestCreditTopUp": "Kredi İsteği",
+    "requestMoreCredits": "Mevcut planınız için ek kredi talep edin.",
+    "requestSubscriptionReset": "Abonelik Sıfırlama İsteği",
+    "security": "Güvenlik",
+    "sendEmailWhenPricesChange": "Fiyatlar değiştiğinde e-posta gönder",
+    "settingsSaved": "Ayarlar başarıyla kaydedildi!",
+    "updating": "Güncelleniyor...",
+    "weeklySummary": "Haftalık özet"
   },
   "orderDetailPage": {
     "noOrder": {
@@ -807,8 +851,7 @@
     "twoColumnsTemplateLoaded": "2 sütun şablonu yüklendi",
     "chooseImageAction": "Tamam: görsel URL’sini girin.\nİptal: dosya yükleyin (gömülü düzenleyicide desteklenmez, kenar çubuğunu kullanın).",
     "imageLabel": "Görsel {{index}}"
-  }
-  ,
+  },
   "adminPanelPage": {
     "title": "Yönetim Paneli",
     "adminUsers": "Yönetici kullanıcılar",
@@ -973,5 +1016,6 @@
       "dewiso": "Dewiso",
       "settings": "Settings"
     }
-  }
+  },
+  "back": "Geri"
 }

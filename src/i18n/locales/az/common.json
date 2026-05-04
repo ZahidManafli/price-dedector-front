@@ -684,7 +684,49 @@
     "accountSecurityNote": "OAuth tokenləri server tərəfində saxlanılır və avtomatik yenilənir.",
     "sendCreditRequest": "Kredit sorğusu göndər",
     "sendResetRequest": "Sıfırlama sorğusu göndər",
-    "requestSentToAdmin": "Sorğu administratora göndərildi"
+    "requestSentToAdmin": "Sorğu administratora göndərildi",
+    "activeEbayUpdated": "Fəal eBay hesabı yeniləndi",
+    "amazon": "Amazon",
+    "changePassword": "Şifrəni dəyiş",
+    "confirmNewPassword": "Yeni şifrəni təsdiqlə",
+    "connectionLimitReached": "eBay hesab bağlantı limitinə çatıldı. Limiti artırmaq üçün adminə müraciət edin.",
+    "connectionNameEmpty": "Bağlantı adı boş ola bilməz",
+    "currentPassword": "Cari şifrə",
+    "dailySummary": "Günlük xülasə",
+    "deleteEbayAccount": "Bu eBay hesabını silmək istədiyinizə əminsiniz? Bu, hesabın bağlantısını kəsəcək və yadda saxlanmış hesablarınızdan siləcək.",
+    "disconnectedAmazon": "Amazon hesabının bağlantısı kəsildi",
+    "disconnectedEbay": "eBay hesabının bağlantısı kəsildi",
+    "eBayDeleted": "eBay hesabı silindi",
+    "eBayNameUpdated": "eBay bağlantı adı yeniləndi",
+    "ebay": "eBay",
+    "emailNotifications": "E-poçt bildirişləri",
+    "failedChangePassword": "Şifrə dəyişdirilə bilmədi",
+    "failedDeleteEbay": "eBay hesabı silinə bilmədi",
+    "failedSaveSettings": "Ayarlar saxlanıla bilmədi",
+    "failedSetActiveEbay": "Fəal eBay hesabı təyin edilə bilmədi",
+    "failedToDisconnectAmazon": "Amazon bağlantısı kəsilə bilmədi",
+    "failedToDisconnectEbay": "eBay bağlantısı kəsilə bilmədi",
+    "failedToStartAmazon": "Amazon bağlantısı başladıla bilmədi",
+    "failedToStartEbay": "eBay bağlantısı başladıla bilmədi",
+    "failedUpdateEbayName": "eBay bağlantı adı yenilənə bilmədi",
+    "instant": "Ani",
+    "newPassword": "Yeni şifrə",
+    "notificationFrequency": "Bildiriş tezliyi",
+    "notifications": "Bildirişlər",
+    "passwordMismatch": "Şifrələr uyğun gəlmir",
+    "passwordTooShort": "Şifrə ən azı 8 simvol olmalıdır",
+    "passwordUpdated": "Şifrə uğurla yeniləndi",
+    "plans": "Planlar",
+    "pleaseFillPassword": "Zəhmət olmasa bütün şifrə sahələrini doldurun",
+    "refreshSubscription": "Abunəliyinizi sıfırlamaq və istifadə limitlərini yeniləmək üçün sorğu göndərin.",
+    "requestCreditTopUp": "Kredit Sorğusu",
+    "requestMoreCredits": "Cari planınız üçün əlavə kredit tələb edin.",
+    "requestSubscriptionReset": "Abunəlik Sıfırlama Sorğusu",
+    "security": "Təhlükəsizlik",
+    "sendEmailWhenPricesChange": "Qiymətlər dəyişdikdə e-poçt göndər",
+    "settingsSaved": "Ayarlar uğurla saxlanıldı!",
+    "updating": "Yenilənir...",
+    "weeklySummary": "Həftəlik xülasə"
   },
   "orderDetailPage": {
     "noOrder": {
@@ -809,8 +851,7 @@
     "twoColumnsTemplateLoaded": "2 sütun şablonu yükləndi",
     "chooseImageAction": "OK: şəkil URL-sini daxil edin.\nLəğv et: fayl yükləyin (iframe daxilində dəstəklənmir, yan paneldən istifadə edin).",
     "imageLabel": "Şəkil {{index}}"
-  }
-  ,
+  },
   "adminPanelPage": {
     "title": "İdarəetmə Paneli",
     "adminUsers": "Administrator istifadəçilər",
@@ -975,5 +1016,6 @@
       "dewiso": "Dewiso",
       "settings": "Settings"
     }
-  }
+  },
+  "back": "Geri"
 }

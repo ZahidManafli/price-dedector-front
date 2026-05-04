@@ -383,7 +383,8 @@
     "emailHint": "You'll receive alerts when prices change",
     "adding": "Adding Product...",
     "updating": "Updating Product..."
-  },  "settingsPage": {
+  },
+  "settingsPage": {
     "title": "Settings",
     "fetched": "Fetched",
     "environment": "Environment",
@@ -503,7 +504,24 @@
     "notificationFrequency": "Notification Frequency",
     "instant": "Instant",
     "dailySummary": "Daily Summary",
-    "weeklySummary": "Weekly Summary"
+    "weeklySummary": "Weekly Summary",
+    "activeEbayUpdated": "Active eBay account updated",
+    "connectionLimitReached": "Your eBay account connection limit has been reached. Ask your admin to increase your quota.",
+    "connectionNameEmpty": "Connection name cannot be empty",
+    "deleteEbayAccount": "Delete this eBay account? This will disconnect it and remove it from your saved accounts.",
+    "disconnectedAmazon": "Amazon account disconnected",
+    "disconnectedEbay": "eBay account disconnected",
+    "eBayDeleted": "eBay account deleted",
+    "eBayNameUpdated": "eBay connection name updated",
+    "failedDeleteEbay": "Failed to delete eBay account",
+    "failedSaveSettings": "Failed to save settings",
+    "failedSetActiveEbay": "Failed to set active eBay account",
+    "failedToDisconnectAmazon": "Failed to disconnect Amazon",
+    "failedToDisconnectEbay": "Failed to disconnect eBay",
+    "failedToStartAmazon": "Failed to start Amazon connection",
+    "failedToStartEbay": "Failed to start eBay connection",
+    "failedUpdateEbayName": "Failed to update eBay connection name",
+    "settingsSaved": "Settings saved successfully!"
   },
   "common": {
     "loading": "Loading...",
@@ -728,8 +746,8 @@
     "emptyTitle": "Title cannot be empty.",
     "enterValidQuantity": "Enter a valid stock count (0 or greater).",
     "enterValidAutoStock": "Enter a valid auto stock count greater than 0."
-  }
-  ,"ordersPage": {
+  },
+  "ordersPage": {
     "title": "Orders",
     "failedLoad": "Failed to load eBay orders",
     "failedConnect": "Failed to start eBay connection",
@@ -889,8 +907,7 @@
     "twoColumnsTemplateLoaded": "2-Columns template loaded",
     "chooseImageAction": "OK: enter image URL.\nCancel: upload file (not supported in iframe, use sidebar).",
     "imageLabel": "Image {{index}}"
-  }
-  ,
+  },
   "adminPanelPage": {
     "title": "Admin Panel",
     "adminUsers": "Admin users",
@@ -1046,7 +1063,6 @@
     "notificationQueuedSuccessfully": "Notification queued successfully",
     "failedToSendNotification": "Failed to send notification",
     "adminPanelPage": "Admin Panel",
-    "products": "Products",
     "listings": "Listings",
     "orders": "Orders",
     "amazonLookup": "Amazon Lookup",
@@ -1064,5 +1080,6 @@
       "dewiso": "Dewiso",
       "settings": "Settings"
     }
-  }
+  },
+  "back": "Back"
 }
