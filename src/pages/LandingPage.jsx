@@ -226,7 +226,44 @@ export default function LandingPage() {
         }
       } catch {
         if (!cancelled) {
+        return () => {
+          cancelled = true;
+        };
           setPlans([]);
+
+      // On first landing, request public data (IP-based) to suggest default language
+      useEffect(() => {
+        let cancelled = false;
+        const applySuggestedLanguage = async () => {
+          try {
+            // Only apply if user has no explicit preference saved
+            const existing = localStorage.getItem('userLanguage');
+            if (existing) return;
+
+            const resp = await settingsAPI.getPublicData();
+            const suggested = resp?.data?.suggestedLanguage;
+            if (!cancelled && suggested && suggested !== undefined && suggested !== null) {
+              // Use LanguageContext changeLanguage which sets localStorage.userLanguage
+              try {
+                changeLanguage(suggested);
+                // ensure i18next cache key present
+                try {
+                  localStorage.setItem('i18nextLng', suggested);
+                } catch {}
+              } catch (e) {
+                console.error('Failed to apply suggested language', e);
+              }
+            }
+          } catch (err) {
+            // ignore errors silently
+          }
+        };
+
+        applySuggestedLanguage();
+        return () => {
+          cancelled = true;
+        };
+      }, []);
         }
       }
     };

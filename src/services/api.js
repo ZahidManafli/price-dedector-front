@@ -90,6 +90,7 @@ export const settingsAPI = {
   updatePreferences: (data) => api.put('/settings/preferences', data),
   getLimits: () => api.get('/settings/limits'),
   getPublicPlans: () => api.get('/settings/plans/public'),
+  getPublicData: () => api.get('/public-data'),
   getCurrencyRates: () => api.get('/settings/currency-rates'),
   submitSubscriptionRequest: (data) => api.post('/settings/subscription-requests', data),
   submitUpdateCreditRequest: (data) => api.post('/settings/subscription-requests/update-credits', data),
