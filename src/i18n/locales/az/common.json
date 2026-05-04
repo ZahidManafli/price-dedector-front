@@ -40,6 +40,21 @@
     "loggingIn": "Daxil olunur...",
     "requestSent": "Sorğunuz qəbul edildi. Admin tezliklə sizinlə əlaqə saxlayacaq."
   },
+  "ebayCalculatorPage": {
+    "title": "eBay Mənfəət Kalkulyatoru",
+    "subtitle": "Komissiya quruluşunuza və hədəf marjanıza əsasən tövsiyə olunan eBay satış qiymətini hesablayın.",
+    "inputPanelTitle": "Giriş Paneli",
+    "amazonCostLabel": "Amazon xərci (COGS)",
+    "ebayPriceLabel": "eBay qiyməti",
+    "addRateLabel": "Reklam faizi (%)",
+    "liveResultsTitle": "Canlı Nəticələr",
+    "estimatedProfitLabel": "Təxmini mənfəət",
+    "currentPriceLabel": "Daxil edilmiş cari qiymət",
+    "netProfitLabel": "Xalis mənfəət",
+    "healthCheckTitle": "Yoxlama",
+    "denominatorLabel": "Məxrəc dəyəri",
+    "denominatorHint": "Düzgün qiymət çıxışı üçün məxrəci 0-dan yuxarı saxlayın."
+  },
   "signupPage": {
     "title": "Hesab yarat",
     "subtitle": "Məhsulları daha ağıllı şəkildə izləməyə başlayın",

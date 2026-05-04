@@ -40,6 +40,21 @@
     "loggingIn": "Giriş yapılıyor...",
     "requestSent": "Talebiniz alındı. Yönetici yakında sizinle iletişime geçecektir."
   },
+  "ebayCalculatorPage": {
+    "title": "eBay Kâr Hesaplayıcı",
+    "subtitle": "Ücret yapınız ve hedef marjınıza göre önerilen eBay satış fiyatını hesaplayın.",
+    "inputPanelTitle": "Girdi Paneli",
+    "amazonCostLabel": "Amazon maliyeti (COGS)",
+    "ebayPriceLabel": "eBay fiyatı",
+    "addRateLabel": "Reklam oranı (%)",
+    "liveResultsTitle": "Canlı Sonuçlar",
+    "estimatedProfitLabel": "Tahmini kâr",
+    "currentPriceLabel": "Girilen mevcut fiyat",
+    "netProfitLabel": "Net kâr",
+    "healthCheckTitle": "Sağlık kontrolü",
+    "denominatorLabel": "Payda değeri",
+    "denominatorHint": "Geçerli fiyat çıktısı için paydayı 0'ın üzerinde tutun."
+  },
   "signupPage": {
     "title": "Hesap oluştur",
     "subtitle": "Ürünleri daha akıllı şekilde takip etmeye başla",

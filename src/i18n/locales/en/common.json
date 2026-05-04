@@ -40,6 +40,21 @@
     "loggingIn": "Logging in...",
     "requestSent": "Your request is seen. Admin will reach you soon."
   },
+  "ebayCalculatorPage": {
+    "title": "eBay Profit Calculator",
+    "subtitle": "Calculate a recommended eBay sale price using your fee structure and target margin.",
+    "inputPanelTitle": "Input Panel",
+    "amazonCostLabel": "Amazon cost (COGS)",
+    "ebayPriceLabel": "eBay price",
+    "addRateLabel": "Ad rate (%)",
+    "liveResultsTitle": "Live Results",
+    "estimatedProfitLabel": "Estimated Profit",
+    "currentPriceLabel": "Current entered price",
+    "netProfitLabel": "Net profit",
+    "healthCheckTitle": "Health Check",
+    "denominatorLabel": "Denominator value",
+    "denominatorHint": "Keep the denominator above 0 for valid pricing output."
+  },
   "signupPage": {
     "title": "Create account",
     "subtitle": "Start tracking products in a smarter way",

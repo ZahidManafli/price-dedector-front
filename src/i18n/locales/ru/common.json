@@ -40,6 +40,21 @@
     "loggingIn": "Вход...",
     "requestSent": "Ваш запрос получен. Администратор скоро свяжется с вами."
   },
+  "ebayCalculatorPage": {
+    "title": "Калькулятор прибыли eBay",
+    "subtitle": "Рассчитайте рекомендуемую цену продажи на eBay с учетом вашей структуры комиссий и целевой маржи.",
+    "inputPanelTitle": "Панель ввода",
+    "amazonCostLabel": "Стоимость Amazon (COGS)",
+    "ebayPriceLabel": "Цена eBay",
+    "addRateLabel": "Ставка рекламы (%)",
+    "liveResultsTitle": "Результаты в реальном времени",
+    "estimatedProfitLabel": "Ожидаемая прибыль",
+    "currentPriceLabel": "Текущая введенная цена",
+    "netProfitLabel": "Чистая прибыль",
+    "healthCheckTitle": "Проверка",
+    "denominatorLabel": "Значение знаменателя",
+    "denominatorHint": "Держите знаменатель выше 0, чтобы получить корректный результат цены."
+  },
   "signupPage": {
     "title": "Создать аккаунт",
     "subtitle": "Начните отслеживать товары более эффективно",
