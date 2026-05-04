@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
+import { useTranslation } from 'react-i18next';
 import { adminAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -48,15 +49,15 @@ function defaultEditForUser(u) {
   };
 }
 
-const PLAN_TAB_OPTIONS = [
-  { key: TAB_KEYS.PRODUCTS, label: 'Products' },
-  { key: TAB_KEYS.LISTINGS, label: 'Listings' },
-  { key: TAB_KEYS.ORDERS, label: 'Orders' },
-  { key: TAB_KEYS.AMAZON_LOOKUP, label: 'Amazon Lookup' },
-  { key: TAB_KEYS.EBAY_CALCULATOR, label: 'eBay Calculator' },
-  { key: TAB_KEYS.MARKET_ANALYSIS, label: 'Checkila Analysis' },
-  { key: TAB_KEYS.DEWISO, label: 'Dewiso' },
-  { key: TAB_KEYS.SETTINGS, label: 'Settings' },
+const PLAN_TAB_KEYS = [
+  TAB_KEYS.PRODUCTS,
+  TAB_KEYS.LISTINGS,
+  TAB_KEYS.ORDERS,
+  TAB_KEYS.AMAZON_LOOKUP,
+  TAB_KEYS.EBAY_CALCULATOR,
+  TAB_KEYS.MARKET_ANALYSIS,
+  TAB_KEYS.DEWISO,
+  TAB_KEYS.SETTINGS,
 ];
 
 function defaultPlanForm() {
@@ -83,6 +84,7 @@ function defaultPlanForm() {
 
 export default function AdminPanelPage() {
   const { isDark } = useTheme();
+  const { t } = useTranslation('common');
   const [activeTab, setActiveTab] = useState('users');
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
@@ -141,7 +143,7 @@ export default function AdminPanelPage() {
         setAlert(null);
         await refreshData();
       } catch (err) {
-        setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to load admin data' });
+        setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToLoadAdminData') });
       } finally {
         setLoading(false);
       }
@@ -158,7 +160,7 @@ export default function AdminPanelPage() {
     setAlert(null);
 
     if (!createForm.email || !createForm.password || !createForm.name) {
-      setAlert({ type: 'warning', message: 'Email, password, and name are required' });
+      setAlert({ type: 'warning', message: t('adminPanelPage.emailPasswordNameRequired') });
       return;
     }
 
@@ -194,9 +196,9 @@ export default function AdminPanelPage() {
       });
 
       await refreshData();
-      setAlert({ type: 'success', message: 'User created successfully' });
+      setAlert({ type: 'success', message: t('adminPanelPage.userCreatedSuccessfully') });
     } catch (err) {
-      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to create user' });
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToCreateUser') });
     } finally {
       setLoading(false);
     }
@@ -227,9 +229,9 @@ export default function AdminPanelPage() {
 
       await refreshData();
       setResetUsage({});
-      setAlert({ type: 'success', message: 'User limits updated' });
+      setAlert({ type: 'success', message: t('adminPanelPage.userLimitsUpdated') });
     } catch (err) {
-      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to update limits' });
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToUpdateLimits') });
     } finally {
       setLoading(false);
     }
@@ -240,7 +242,7 @@ export default function AdminPanelPage() {
     setAlert(null);
 
     if (!planForm.name.trim()) {
-      setAlert({ type: 'warning', message: 'Plan name is required' });
+      setAlert({ type: 'warning', message: t('adminPanelPage.planNameRequired') });
       return;
     }
 
@@ -281,9 +283,9 @@ export default function AdminPanelPage() {
 
       await refreshData();
       setPlanForm(defaultPlanForm());
-      setAlert({ type: 'success', message: 'Plan saved successfully' });
+      setAlert({ type: 'success', message: t('adminPanelPage.planSavedSuccessfully') });
     } catch (err) {
-      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to save plan' });
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToSavePlan') });
     } finally {
       setLoading(false);
     }
@@ -327,9 +329,9 @@ export default function AdminPanelPage() {
         adminNote: action.adminNote || '',
       });
       await refreshData();
-      setAlert({ type: 'success', message: 'Request approved and user created/updated' });
+      setAlert({ type: 'success', message: t('adminPanelPage.requestApproved') });
     } catch (err) {
-      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to approve request' });
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToApproveRequest') });
     } finally {
       setLoading(false);
     }
@@ -341,9 +343,9 @@ export default function AdminPanelPage() {
       setLoading(true);
       await adminAPI.rejectSubscriptionRequest(requestId, { adminNote: action.adminNote || '' });
       await refreshData();
-      setAlert({ type: 'success', message: 'Request rejected' });
+      setAlert({ type: 'success', message: t('adminPanelPage.requestRejected') });
     } catch (err) {
-      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to reject request' });
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToRejectRequest') });
     } finally {
       setLoading(false);
     }
@@ -369,23 +371,23 @@ export default function AdminPanelPage() {
   }, [users, userSearch, userBlockFilter]);
   const handleBlockUser = async (userId) => {
     const { value: reason } = await Swal.fire({
-      title: 'Block user',
+      title: t('adminPanelPage.blockUserTitle'),
       input: 'text',
-      inputLabel: 'Reason (optional)',
-      inputPlaceholder: 'Reason for blocking',
+      inputLabel: t('adminPanelPage.blockReasonLabel'),
+      inputPlaceholder: t('adminPanelPage.blockReasonPlaceholder'),
       showCancelButton: true,
-      confirmButtonText: 'Block',
+      confirmButtonText: t('adminPanelPage.block'),
       confirmButtonColor: '#dc2626',
-      inputValidator: (v) => v.length > 255 ? 'Reason too long' : undefined,
+      inputValidator: (v) => v.length > 255 ? t('adminPanelPage.reasonTooLong') : undefined,
     });
     if (reason === undefined) return;
     try {
       setLoading(true);
       await adminAPI.blockUser(userId, reason);
       await refreshData();
-      setAlert({ type: 'success', message: 'User blocked.' });
+      setAlert({ type: 'success', message: t('adminPanelPage.userBlocked') });
     } catch (err) {
-      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to block user' });
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToBlockUser') });
     } finally {
       setLoading(false);
     }
@@ -396,9 +398,9 @@ export default function AdminPanelPage() {
       setLoading(true);
       await adminAPI.unblockUser(userId);
       await refreshData();
-      setAlert({ type: 'success', message: 'User unblocked.' });
+      setAlert({ type: 'success', message: t('adminPanelPage.userUnblocked') });
     } catch (err) {
-      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to unblock user' });
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToUnblockUser') });
     } finally {
       setLoading(false);
     }
@@ -410,7 +412,7 @@ export default function AdminPanelPage() {
       const res = await adminAPI.getUserIpHistory(user.id);
       setIpModal({ open: true, user, ipHistory: res?.data?.ipHistory || [] });
     } catch (err) {
-      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to load IP history' });
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToLoadIpHistory') });
     } finally {
       setLoading(false);
     }
@@ -473,10 +475,10 @@ export default function AdminPanelPage() {
       setLoading(true);
       await adminAPI.refreshSubscriptions(all ? { selectAll: true } : { userIds: selectedUserIds });
       await refreshData();
-      setAlert({ type: 'success', message: 'Subscription period refreshed (+1 month) and usage reset.' });
+      setAlert({ type: 'success', message: t('adminPanelPage.subscriptionsRefreshed') });
       if (!all) setSelectedUserIds([]);
     } catch (err) {
-      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to refresh subscriptions' });
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToRefreshSubscriptions') });
     } finally {
       setLoading(false);
     }
@@ -485,14 +487,14 @@ export default function AdminPanelPage() {
   const onDeleteUsers = async (all = false) => {
     const hasTarget = all || selectedUserIds.length > 0;
     if (!hasTarget) {
-      setAlert({ type: 'warning', message: 'Select users first.' });
+      setAlert({ type: 'warning', message: t('adminPanelPage.selectUsersFirst') });
       return;
     }
 
     const confirmed = window.confirm(
       all
-        ? 'Are you sure you want to remove ALL users? This also removes their products.'
-        : 'Are you sure you want to remove selected users? This also removes their products.'
+        ? t('adminPanelPage.confirmRemoveAllUsers')
+        : t('adminPanelPage.confirmRemoveSelectedUsers')
     );
     if (!confirmed) return;
 
@@ -501,9 +503,9 @@ export default function AdminPanelPage() {
       await adminAPI.deleteUsers(all ? { selectAll: true } : { userIds: selectedUserIds });
       await refreshData();
       setSelectedUserIds([]);
-      setAlert({ type: 'success', message: all ? 'All users removed.' : 'Selected users removed.' });
+      setAlert({ type: 'success', message: all ? t('adminPanelPage.allUsersRemoved') : t('adminPanelPage.selectedUsersRemoved') });
     } catch (err) {
-      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to remove users' });
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToRemoveUsers') });
     } finally {
       setLoading(false);
     }
@@ -511,7 +513,7 @@ export default function AdminPanelPage() {
 
   const onDeleteSingleUser = async (userId) => {
     const confirmed = window.confirm(
-      'Are you sure you want to remove this user? This also removes their products.'
+      t('adminPanelPage.confirmRemoveSingleUser')
     );
     if (!confirmed) return;
 
@@ -520,9 +522,9 @@ export default function AdminPanelPage() {
       await adminAPI.deleteUsers({ userIds: [userId] });
       await refreshData();
       setSelectedUserIds((prev) => prev.filter((id) => id !== userId));
-      setAlert({ type: 'success', message: 'User removed.' });
+      setAlert({ type: 'success', message: t('adminPanelPage.userRemoved') });
     } catch (err) {
-      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to remove user' });
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToRemoveUser') });
     } finally {
       setLoading(false);
     }
@@ -530,14 +532,14 @@ export default function AdminPanelPage() {
 
   const onPurgeSearchCache = async () => {
     const labelMap = {
-      '3d': 'within 3 days',
-      '7d': 'within 7 days',
-      '1m': 'within 1 month',
-      '1y': 'within 1 year',
-      all: 'all search records',
+      '3d': t('adminPanelPage.within3Days'),
+      '7d': t('adminPanelPage.within7Days'),
+      '1m': t('adminPanelPage.within1Month'),
+      '1y': t('adminPanelPage.within1Year'),
+      all: t('adminPanelPage.allSearchRecords'),
     };
     const label = labelMap[dangerWindow] || dangerWindow;
-    const confirmed = window.confirm(`Delete ${label} from SQL? This cannot be undone.`);
+    const confirmed = window.confirm(t('adminPanelPage.confirmDeleteSearchRecords', { label }));
     if (!confirmed) return;
 
     try {
@@ -546,10 +548,10 @@ export default function AdminPanelPage() {
       const response = await adminAPI.purgeSearchCache({ window: dangerWindow });
       setAlert({
         type: 'success',
-        message: response?.data?.message || 'Search cache deleted successfully',
+        message: response?.data?.message || t('adminPanelPage.searchCacheDeletedSuccessfully'),
       });
     } catch (err) {
-      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to delete search cache' });
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToDeleteSearchCache') });
     } finally {
       setDangerSubmitting(false);
     }
@@ -559,11 +561,11 @@ export default function AdminPanelPage() {
     e.preventDefault();
     setAlert(null);
     if (!notifForm.header.trim()) {
-      setAlert({ type: 'warning', message: 'Notification header is required' });
+      setAlert({ type: 'warning', message: t('adminPanelPage.notificationHeaderRequired') });
       return;
     }
     if (!notifForm.message.trim()) {
-      setAlert({ type: 'warning', message: 'Notification message is required' });
+      setAlert({ type: 'warning', message: t('adminPanelPage.notificationMessageRequired') });
       return;
     }
     try {
@@ -573,11 +575,11 @@ export default function AdminPanelPage() {
         message: notifForm.message.trim(),
       });
       setNotifForm({ header: '', message: '' });
-      setAlert({ type: 'success', message: res?.data?.message || 'Notification queued successfully' });
+      setAlert({ type: 'success', message: res?.data?.message || t('adminPanelPage.notificationQueuedSuccessfully') });
       // Refresh history after a short delay to allow DB write
       setTimeout(() => refreshData(), 1500);
     } catch (err) {
-      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to send notification' });
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToSendNotification') });
     } finally {
       setNotifSending(false);
     }
@@ -590,10 +592,10 @@ export default function AdminPanelPage() {
           <div>
             <h1 className="page-title flex items-center gap-2">
               <ShieldCheck size={20} className="text-blue-600" />
-              Admin Panel
+              {t('adminPanelPage.title')}
             </h1>
             <p className="page-subtitle">
-              Admin users: <span className="font-semibold">{adminCount}</span>
+              {t('adminPanelPage.adminUsers')}: <span className="font-semibold">{adminCount}</span>
             </p>
           </div>
         </div>
@@ -603,37 +605,37 @@ export default function AdminPanelPage() {
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'users' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
             onClick={() => setActiveTab('users')}
           >
-            Users
+            {t('adminPanelPage.usersTab')}
           </button>
           <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'requests' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
             onClick={() => setActiveTab('requests')}
           >
-            Requests
+            {t('adminPanelPage.requestsTab')}
           </button>
           <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'plans' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
             onClick={() => setActiveTab('plans')}
           >
-            Plans
+            {t('adminPanelPage.plansTab')}
           </button>
           <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'partners' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
             onClick={() => setActiveTab('partners')}
           >
-            Partners
+            {t('adminPanelPage.partnersTab')}
           </button>
           <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'notifications' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
             onClick={() => setActiveTab('notifications')}
           >
-            Notifications
+            {t('adminPanelPage.notificationsTab')}
           </button>
           <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'danger' ? 'bg-red-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
             onClick={() => setActiveTab('danger')}
           >
-            Danger Zone
+            {t('adminPanelPage.dangerZoneTab')}
           </button>
         </div>
 
@@ -650,28 +652,28 @@ export default function AdminPanelPage() {
             <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
               <div className="flex items-center gap-2 mb-4">
                 <UserPlus size={18} className="text-blue-600" />
-                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Create User</h2>
+                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('adminPanelPage.createUser')}</h2>
               </div>
 
               <form onSubmit={onCreateUser} className="space-y-3">
-                <input value={createForm.name} onChange={(e) => setCreateForm((p) => ({ ...p, name: e.target.value }))} className="input-base" placeholder="Name" type="text" />
-                <input value={createForm.email} onChange={(e) => setCreateForm((p) => ({ ...p, email: e.target.value }))} className="input-base" placeholder="Email" type="email" />
-                <input value={createForm.password} onChange={(e) => setCreateForm((p) => ({ ...p, password: e.target.value }))} className="input-base" placeholder="Temporary password" type="password" />
+                <input value={createForm.name} onChange={(e) => setCreateForm((p) => ({ ...p, name: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.name')} type="text" />
+                <input value={createForm.email} onChange={(e) => setCreateForm((p) => ({ ...p, email: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.email')} type="email" />
+                <input value={createForm.password} onChange={(e) => setCreateForm((p) => ({ ...p, password: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.temporaryPassword')} type="password" />
 
                 <select value={createForm.role} onChange={(e) => setCreateForm((p) => ({ ...p, role: e.target.value }))} className="input-base">
-                  <option value="user">user</option>
-                  <option value="admin">admin</option>
+                  <option value="user">{t('adminPanelPage.userRole')}</option>
+                  <option value="admin">{t('adminPanelPage.adminRole')}</option>
                 </select>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <input value={createForm.amazonLookupRequestLimitPerWeek} onChange={(e) => setCreateForm((p) => ({ ...p, amazonLookupRequestLimitPerWeek: e.target.value }))} className="input-base" placeholder="Amazon / week" type="number" min="0" />
-                  <input value={createForm.productsLimit} onChange={(e) => setCreateForm((p) => ({ ...p, productsLimit: e.target.value }))} className="input-base" placeholder="Products" type="number" min="0" />
+                  <input value={createForm.amazonLookupRequestLimitPerWeek} onChange={(e) => setCreateForm((p) => ({ ...p, amazonLookupRequestLimitPerWeek: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.amazonPerWeek')} type="number" min="0" />
+                  <input value={createForm.productsLimit} onChange={(e) => setCreateForm((p) => ({ ...p, productsLimit: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.products')} type="number" min="0" />
                 </div>
                 <input
                   value={createForm.marketAnalysisCreditsLimit}
                   onChange={(e) => setCreateForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))}
                   className="input-base"
-                  placeholder="Checkila Analysis credits"
+                  placeholder={t('adminPanelPage.checkilaCredits')}
                   type="number"
                   min="0"
                 />
@@ -679,14 +681,14 @@ export default function AdminPanelPage() {
                   value={createForm.ebayAccountsLimit}
                   onChange={(e) => setCreateForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))}
                   className="input-base"
-                  placeholder="eBay accounts limit"
+                  placeholder={t('adminPanelPage.ebayAccountsLimit')}
                   type="number"
                   min="0"
                 />
 
                 <button type="submit" className="btn-primary w-full py-3 flex items-center justify-center gap-2">
                   <Users size={16} />
-                  Create access
+                  {t('adminPanelPage.createAccess')}
                 </button>
               </form>
             </div>
@@ -694,7 +696,7 @@ export default function AdminPanelPage() {
             <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
               <div className="flex items-center gap-2 mb-4">
                 <Users size={18} className="text-blue-600" />
-                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Users</h2>
+                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('adminPanelPage.users')}</h2>
               </div>
 
               <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_auto_auto_auto_auto]">
@@ -704,20 +706,20 @@ export default function AdminPanelPage() {
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
                     className="input-base pl-9"
-                    placeholder="Search users by name, email, plan"
+                    placeholder={t('adminPanelPage.searchUsersPlaceholder')}
                   />
                 </div>
                 <button type="button" onClick={toggleSelectAllFiltered} className="btn-secondary px-3 py-2 text-xs">
-                  {allFilteredSelected ? 'Unselect all' : 'Select filtered'}
+                  {allFilteredSelected ? t('adminPanelPage.unselectAll') : t('adminPanelPage.selectFiltered')}
                 </button>
                 <button
                   type="button"
                   onClick={exportUsersToExcel}
                   disabled={filteredUsers.length === 0}
                   className="btn-secondary px-3 py-2 text-xs disabled:opacity-60"
-                  title="Exports the current filtered list"
+                  title={t('adminPanelPage.exportsCurrentFilteredList')}
                 >
-                  Export Excel
+                  {t('adminPanelPage.exportExcel')}
                 </button>
                 <select
                   value={userBlockFilter}
@@ -725,9 +727,9 @@ export default function AdminPanelPage() {
                   className="input-base text-xs"
                   style={{ minWidth: 120 }}
                 >
-                  <option value="all">All users</option>
-                  <option value="blocked">Blocked only</option>
-                  <option value="unblocked">Unblocked only</option>
+                  <option value="all">{t('adminPanelPage.allUsers')}</option>
+                  <option value="blocked">{t('adminPanelPage.blockedOnly')}</option>
+                  <option value="unblocked">{t('adminPanelPage.unblockedOnly')}</option>
                 </select>
                 <button
                   type="button"
@@ -735,7 +737,7 @@ export default function AdminPanelPage() {
                   disabled={selectedUserIds.length === 0}
                   className="btn-primary px-3 py-2 text-xs inline-flex items-center gap-1.5 disabled:opacity-60"
                 >
-                  <RefreshCw size={13} /> Refresh +1 month
+                  <RefreshCw size={13} /> {t('adminPanelPage.refreshPlusOneMonth')}
                 </button>
                 <button
                   type="button"
@@ -743,7 +745,7 @@ export default function AdminPanelPage() {
                   disabled={selectedUserIds.length === 0}
                   className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
                 >
-                  Remove selected
+                  {t('adminPanelPage.removeSelected')}
                 </button>
               </div>
 
@@ -753,14 +755,14 @@ export default function AdminPanelPage() {
                   onClick={() => onRefreshSubscriptions(true)}
                   className="btn-secondary px-3 py-2 text-xs"
                 >
-                  Refresh all users +1 month
+                  {t('adminPanelPage.refreshAllUsersPlusOneMonth')}
                 </button>
                 <button
                   type="button"
                   onClick={() => onDeleteUsers(true)}
                   className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100"
                 >
-                  Remove all users
+                  {t('adminPanelPage.removeAllUsers')}
                 </button>
               </div>
 
@@ -777,13 +779,13 @@ export default function AdminPanelPage() {
                             onChange={() => toggleSelectUser(u.id)}
                             className="mt-0.5"
                           />
-                          <span className="text-sm font-semibold">{u.name || 'User'} ({u.email})</span>
+                          <span className="text-sm font-semibold">{u.name || t('adminPanelPage.user')} ({u.email})</span>
                           {u.isBlocked && (
-                            <span className="ml-2 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold">Blocked</span>
+                            <span className="ml-2 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold">{t('adminPanelPage.blocked')}</span>
                           )}
                           {u.isUntouched && (
                             <span className="ml-2 px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
-                              Untouched
+                              {t('adminPanelPage.untouched')}
                             </span>
                           )}
                         </label>
@@ -792,36 +794,36 @@ export default function AdminPanelPage() {
                             type="button"
                             onClick={() => handleShowIpHistory(u)}
                             className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
-                            title="View IP history"
+                            title={t('adminPanelPage.viewIpHistory')}
                           >
-                            IPs
+                            {t('adminPanelPage.ips')}
                           </button>
                           {u.isBlocked ? (
                             <button
                               type="button"
                               onClick={() => handleUnblockUser(u.id)}
                               className="rounded-lg border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 hover:bg-green-100"
-                              title="Unblock user"
+                              title={t('adminPanelPage.unblockUser')}
                             >
-                              Unblock
+                              {t('adminPanelPage.unblock')}
                             </button>
                           ) : (
                             <button
                               type="button"
                               onClick={() => handleBlockUser(u.id)}
                               className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
-                              title="Block user"
+                              title={t('adminPanelPage.blockUser')}
                             >
-                              Block
+                              {t('adminPanelPage.block')}
                             </button>
                           )}
                           <button
                             type="button"
                             onClick={() => onDeleteSingleUser(u.id)}
                             className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 inline-flex items-center gap-1"
-                            title="Remove user"
+                            title={t('adminPanelPage.removeUser')}
                           >
-                            <Trash2 size={12} /> Remove
+                            <Trash2 size={12} /> {t('adminPanelPage.remove')}
                           </button>
                         </div>
                             {/* IP History Modal */}
@@ -830,28 +832,28 @@ export default function AdminPanelPage() {
                                 <div className={`rounded-xl shadow-lg max-w-lg w-full bg-white dark:bg-slate-900 border p-6 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                                   <div className="flex items-center justify-between mb-4">
                                     <div>
-                                      <div className="font-semibold text-lg">IP History for {ipModal.user?.email}</div>
-                                      {ipModal.user?.isBlocked && <div className="text-xs text-red-600 font-semibold">Blocked</div>}
+                                      <div className="font-semibold text-lg">{t('adminPanelPage.ipHistoryFor', { email: ipModal.user?.email })}</div>
+                                      {ipModal.user?.isBlocked && <div className="text-xs text-red-600 font-semibold">{t('adminPanelPage.blocked')}</div>}
                                     </div>
-                                    <button className="text-xl font-bold" onClick={() => setIpModal({ open: false, user: null, ipHistory: [] })}>✕</button>
+                                    <button className="text-xl font-bold" onClick={() => setIpModal({ open: false, user: null, ipHistory: [] })}>{t('adminPanelPage.close')}</button>
                                   </div>
                                   <div className="overflow-x-auto max-h-96">
                                     <table className="w-full text-xs border">
                                       <thead>
                                         <tr className="bg-slate-100 dark:bg-slate-800">
-                                          <th className="p-2 border">IP</th>
-                                          <th className="p-2 border">Country</th>
-                                          <th className="p-2 border">City</th>
-                                          <th className="p-2 border">Region</th>
-                                          <th className="p-2 border">Timezone</th>
-                                          <th className="p-2 border">Device</th>
-                                          <th className="p-2 border">Model</th>
-                                          <th className="p-2 border">Date</th>
+                                          <th className="p-2 border">{t('adminPanelPage.ip')}</th>
+                                          <th className="p-2 border">{t('adminPanelPage.country')}</th>
+                                          <th className="p-2 border">{t('adminPanelPage.city')}</th>
+                                          <th className="p-2 border">{t('adminPanelPage.region')}</th>
+                                          <th className="p-2 border">{t('adminPanelPage.timezone')}</th>
+                                          <th className="p-2 border">{t('adminPanelPage.device')}</th>
+                                          <th className="p-2 border">{t('adminPanelPage.model')}</th>
+                                          <th className="p-2 border">{t('adminPanelPage.date')}</th>
                                         </tr>
                                       </thead>
                                       <tbody>
                                         {ipModal.ipHistory.length === 0 ? (
-                                          <tr><td colSpan={8} className="text-center p-4">No IP history found.</td></tr>
+                                          <tr><td colSpan={8} className="text-center p-4">{t('adminPanelPage.noIpHistoryFound')}</td></tr>
                                         ) : (
                                           ipModal.ipHistory.map((row, idx) => (
                                             <tr key={idx}>
@@ -873,9 +875,9 @@ export default function AdminPanelPage() {
                               </div>
                             )}
                       </div>
-                      <div className="mt-1 text-xs text-slate-500">Plan: {u.selectedPlanName || 'Custom/none'}</div>
+                      <div className="mt-1 text-xs text-slate-500">{t('adminPanelPage.plan')}: {u.selectedPlanName || t('adminPanelPage.customNone')}</div>
                       <div className="mt-1 text-xs text-slate-500">
-                        Expires: {u.planExpiresAt ? new Date(u.planExpiresAt).toLocaleDateString() : 'N/A'}
+                        {t('adminPanelPage.expires')}: {u.planExpiresAt ? new Date(u.planExpiresAt).toLocaleDateString() : t('adminPanelPage.na')}
                       </div>
 
                       <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -933,7 +935,7 @@ export default function AdminPanelPage() {
                               checked={!!resetUsage[u.id]}
                               onChange={(e) => setResetUsage((prev) => ({ ...prev, [u.id]: e.target.checked }))}
                             />
-                            Reset Amazon usage now
+                            {t('adminPanelPage.resetAmazonUsageNow')}
                           </label>
                           <label className="text-xs flex items-center gap-2">
                             <input
@@ -946,7 +948,7 @@ export default function AdminPanelPage() {
                                 }))
                               }
                             />
-                            Reset Checkila Analysis credits usage now
+                            {t('adminPanelPage.resetCheckilaAnalysisCreditsUsageNow')}
                           </label>
                           <label className="text-xs flex items-center gap-2">
                             <input
@@ -959,13 +961,13 @@ export default function AdminPanelPage() {
                                 }))
                               }
                             />
-                            <span className="font-semibold text-purple-600">Untouched</span>
-                            <span className="text-slate-400">(unlimited IPs)</span>
+                            <span className="font-semibold text-purple-600">{t('adminPanelPage.untouched')}</span>
+                            <span className="text-slate-400">({t('adminPanelPage.unlimitedIps')})</span>
                           </label>
                         </div>
 
                         <button type="button" onClick={() => onSaveLimits(u.id)} className="btn-primary inline-flex items-center gap-2 px-4 py-2">
-                          <Pencil size={14} /> Save
+                          <Pencil size={14} /> {t('adminPanelPage.save')}
                         </button>
                       </div>
                     </div>
@@ -980,13 +982,13 @@ export default function AdminPanelPage() {
           <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
             <div className="flex items-center gap-2 mb-4">
               <ListChecks size={18} className="text-blue-600" />
-              <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                Requests ({pendingRequests.length} pending)
+                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                {t('adminPanelPage.requests')} ({pendingRequests.length} {t('adminPanelPage.pending')})
               </h2>
             </div>
 
             {requests.length === 0 ? (
-              <p className="text-sm text-slate-500">No requests found.</p>
+              <p className="text-sm text-slate-500">{t('adminPanelPage.noRequestsFound')}</p>
             ) : (
               <div className="space-y-3">
                 {requests.map((req) => {
@@ -1024,19 +1026,19 @@ export default function AdminPanelPage() {
                         ) : null}
                         {req.requestType === 'update_credits' && req.requestedCredits != null ? (
                           <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200">
-                            Credits: {req.requestedCredits}
+                            {t('adminPanelPage.credits')}: {req.requestedCredits}
                           </span>
                         ) : null}
                       </div>
 
-                      <p className="mt-2 text-xs text-slate-500">Plan: {req.planName || 'N/A'}{req.requestType === 'subscription' ? ` (${planCategoryLabel})` : ''}</p>
+                      <p className="mt-2 text-xs text-slate-500">{t('adminPanelPage.plan')}: {req.planName || t('adminPanelPage.na')}{req.requestType === 'subscription' ? ` (${planCategoryLabel})` : ''}</p>
                       {(req.planId === 'custom' || req.planCategory === 'custom') ? (
                         <div className="mt-2 rounded-lg border border-cyan-200 bg-cyan-50/70 p-2 text-xs text-slate-700 dark:border-cyan-900/40 dark:bg-cyan-900/20 dark:text-cyan-100">
-                          <p className="font-semibold">Custom requested limits</p>
+                          <p className="font-semibold">{t('adminPanelPage.customRequestedLimits')}</p>
                           <p className="mt-1">
-                            Amazon/week: {req.requestedLimits?.amazonLookupLimitPerWeek ?? 'N/A'} | Products: {req.requestedLimits?.productsLimit ?? 'N/A'} | Checkila Analysis credits: {req.requestedLimits?.marketAnalysisCreditsLimit ?? 'N/A'} | eBay accounts: {req.requestedLimits?.ebayAccountsLimit ?? 'N/A'}
+                            {t('adminPanelPage.amazonPerWeek')}: {req.requestedLimits?.amazonLookupLimitPerWeek ?? t('adminPanelPage.na')} | {t('adminPanelPage.products')}: {req.requestedLimits?.productsLimit ?? t('adminPanelPage.na')} | {t('adminPanelPage.checkilaAnalysisCredits')}: {req.requestedLimits?.marketAnalysisCreditsLimit ?? t('adminPanelPage.na')} | {t('adminPanelPage.ebayAccounts')}: {req.requestedLimits?.ebayAccountsLimit ?? t('adminPanelPage.na')}
                           </p>
-                          {req.customNote ? <p className="mt-1">Note: {req.customNote}</p> : null}
+                          {req.customNote ? <p className="mt-1">{t('adminPanelPage.note')}: {req.customNote}</p> : null}
                         </div>
                       ) : null}
 
@@ -1044,17 +1046,17 @@ export default function AdminPanelPage() {
                         <div className="mt-3 grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-2">
                           <input
                             type="text"
-                            placeholder="Admin note (optional)"
+                            placeholder={t('adminPanelPage.adminNoteOptional')}
                             value={action.adminNote || ''}
                             onChange={(e) => setRequestAction((prev) => ({ ...prev, [req.id]: { ...prev[req.id], adminNote: e.target.value } }))}
                             className="input-base"
                           />
-                          <button type="button" onClick={() => onApproveRequest(req.id)} className="btn-primary px-4 py-2">Approve</button>
-                          <button type="button" onClick={() => onRejectRequest(req.id)} className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100">Reject</button>
+                          <button type="button" onClick={() => onApproveRequest(req.id)} className="btn-primary px-4 py-2">{t('adminPanelPage.approve')}</button>
+                          <button type="button" onClick={() => onRejectRequest(req.id)} className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100">{t('adminPanelPage.reject')}</button>
                         </div>
                       ) : (
                         <div className="mt-3 text-xs text-slate-500">
-                          {req.status === 'approved' ? `Approved by ${req.approvedBy || 'admin'}` : `Rejected by ${req.rejectedBy || 'admin'}`}
+                          {req.status === 'approved' ? t('adminPanelPage.approvedBy', { name: req.approvedBy || 'admin' }) : t('adminPanelPage.rejectedBy', { name: req.rejectedBy || 'admin' })}
                         </div>
                       )}
                     </div>
@@ -1071,20 +1073,20 @@ export default function AdminPanelPage() {
               <div className="flex items-center gap-2 mb-4">
                 <PackageOpen size={18} className="text-blue-600" />
                 <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                  {planForm.id ? 'Edit Plan' : 'Create Plan'}
+                  {planForm.id ? t('adminPanelPage.editPlan') : t('adminPanelPage.createPlan')}
                 </h2>
               </div>
 
               <form onSubmit={onSavePlan} className="space-y-3">
-                <input value={planForm.name} onChange={(e) => setPlanForm((p) => ({ ...p, name: e.target.value }))} className="input-base" placeholder="Plan name" type="text" />
+                <input value={planForm.name} onChange={(e) => setPlanForm((p) => ({ ...p, name: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.planName')} type="text" />
 
                 <div className="grid grid-cols-2 gap-3">
                   <select value={planForm.category} onChange={(e) => setPlanForm((p) => ({ ...p, category: e.target.value }))} className="input-base">
-                    <option value="subscription">subscription</option>
-                    <option value="analytics">analytics</option>
-                    <option value="amazon_monitoring">amazon_monitoring</option>
+                    <option value="subscription">{t('adminPanelPage.subscription')}</option>
+                    <option value="analytics">{t('adminPanelPage.analytics')}</option>
+                    <option value="amazon_monitoring">{t('adminPanelPage.amazonMonitoring')}</option>
                   </select>
-                  <input value={planForm.price} onChange={(e) => setPlanForm((p) => ({ ...p, price: e.target.value }))} className="input-base" placeholder="Price" type="text" />
+                  <input value={planForm.price} onChange={(e) => setPlanForm((p) => ({ ...p, price: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.price')} type="text" />
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
@@ -1092,7 +1094,7 @@ export default function AdminPanelPage() {
                     value={planForm.actualPrice}
                     onChange={(e) => setPlanForm((p) => ({ ...p, actualPrice: e.target.value }))}
                     className="input-base"
-                    placeholder="Actual price"
+                    placeholder={t('adminPanelPage.actualPrice')}
                     type="number"
                     min="0"
                     step="0.01"
@@ -1101,7 +1103,7 @@ export default function AdminPanelPage() {
                     value={planForm.discountedPrice}
                     onChange={(e) => setPlanForm((p) => ({ ...p, discountedPrice: e.target.value }))}
                     className="input-base"
-                    placeholder="Discounted price"
+                    placeholder={t('adminPanelPage.discountedPrice')}
                     type="number"
                     min="0"
                     step="0.01"
@@ -1110,22 +1112,22 @@ export default function AdminPanelPage() {
                     value={planForm.currency}
                     onChange={(e) => setPlanForm((p) => ({ ...p, currency: e.target.value.toUpperCase() }))}
                     className="input-base"
-                    placeholder="Currency"
+                    placeholder={t('adminPanelPage.currency')}
                     type="text"
                   />
                 </div>
 
-                <input value={planForm.duration} onChange={(e) => setPlanForm((p) => ({ ...p, duration: e.target.value }))} className="input-base" placeholder="Duration" type="text" />
-                <textarea value={planForm.description} onChange={(e) => setPlanForm((p) => ({ ...p, description: e.target.value }))} className="input-base min-h-[88px]" placeholder="Description" />
-                <textarea value={planForm.featuresText} onChange={(e) => setPlanForm((p) => ({ ...p, featuresText: e.target.value }))} className="input-base min-h-[110px]" placeholder="Features (one per line)" />
+                <input value={planForm.duration} onChange={(e) => setPlanForm((p) => ({ ...p, duration: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.duration')} type="text" />
+                <textarea value={planForm.description} onChange={(e) => setPlanForm((p) => ({ ...p, description: e.target.value }))} className="input-base min-h-[88px]" placeholder={t('adminPanelPage.description')} />
+                <textarea value={planForm.featuresText} onChange={(e) => setPlanForm((p) => ({ ...p, featuresText: e.target.value }))} className="input-base min-h-[110px]" placeholder={t('adminPanelPage.featuresOnePerLine')} />
 
                 <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-slate-50'}`}>
-                  <p className="text-sm font-semibold mb-2">Visible tabs for this plan</p>
+                  <p className="text-sm font-semibold mb-2">{t('adminPanelPage.visibleTabsForThisPlan')}</p>
                   <div className="grid grid-cols-2 gap-2">
-                    {PLAN_TAB_OPTIONS.map((tab) => {
-                      const checked = planForm.allowedTabs.includes(tab.key);
+                    {PLAN_TAB_KEYS.map((tabKey) => {
+                      const checked = planForm.allowedTabs.includes(tabKey);
                       return (
-                        <label key={tab.key} className="text-xs flex items-center gap-2">
+                        <label key={tabKey} className="text-xs flex items-center gap-2">
                           <input
                             type="checkbox"
                             checked={checked}
@@ -1133,28 +1135,28 @@ export default function AdminPanelPage() {
                               setPlanForm((prev) => ({
                                 ...prev,
                                 allowedTabs: e.target.checked
-                                  ? Array.from(new Set([...prev.allowedTabs, tab.key]))
-                                  : prev.allowedTabs.filter((item) => item !== tab.key),
+                                  ? Array.from(new Set([...prev.allowedTabs, tabKey]))
+                                  : prev.allowedTabs.filter((item) => item !== tabKey),
                               }))
                             }
                           />
-                          {tab.label}
+                          {t(`adminPanelPage.planTabs.${tabKey}`)}
                         </label>
                       );
                     })}
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">Dashboard is always visible and used as redirect target.</p>
+                  <p className="mt-2 text-xs text-slate-500">{t('adminPanelPage.dashboardAlwaysVisible')}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <input value={planForm.amazonLookupLimitPerWeek} onChange={(e) => setPlanForm((p) => ({ ...p, amazonLookupLimitPerWeek: e.target.value }))} className="input-base" placeholder="Amazon / week" type="number" min="0" />
-                  <input value={planForm.productsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, productsLimit: e.target.value }))} className="input-base" placeholder="Products" type="number" min="0" />
+                  <input value={planForm.amazonLookupLimitPerWeek} onChange={(e) => setPlanForm((p) => ({ ...p, amazonLookupLimitPerWeek: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.amazonPerWeek')} type="number" min="0" />
+                  <input value={planForm.productsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, productsLimit: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.products')} type="number" min="0" />
                 </div>
                 <input
                   value={planForm.marketAnalysisCreditsLimit}
                   onChange={(e) => setPlanForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))}
                   className="input-base"
-                  placeholder="Checkila Analysis credits"
+                  placeholder={t('adminPanelPage.checkilaAnalysisCredits')}
                   type="number"
                   min="0"
                 />
@@ -1162,18 +1164,18 @@ export default function AdminPanelPage() {
                   value={planForm.ebayAccountsLimit}
                   onChange={(e) => setPlanForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))}
                   className="input-base"
-                  placeholder="eBay accounts limit"
+                  placeholder={t('adminPanelPage.ebayAccountsLimit')}
                   type="number"
                   min="0"
                 />
 
-                <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={planForm.featured} onChange={(e) => setPlanForm((p) => ({ ...p, featured: e.target.checked }))} /> Featured</label>
-                <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={planForm.isActive} onChange={(e) => setPlanForm((p) => ({ ...p, isActive: e.target.checked }))} /> Active</label>
+                <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={planForm.featured} onChange={(e) => setPlanForm((p) => ({ ...p, featured: e.target.checked }))} /> {t('adminPanelPage.featured')}</label>
+                <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={planForm.isActive} onChange={(e) => setPlanForm((p) => ({ ...p, isActive: e.target.checked }))} /> {t('adminPanelPage.active')}</label>
 
-                <button type="submit" className="btn-primary w-full py-2.5">Save Plan</button>
+                <button type="submit" className="btn-primary w-full py-2.5">{t('adminPanelPage.savePlan')}</button>
                 {planForm.id ? (
                   <button type="button" onClick={() => setPlanForm(defaultPlanForm())} className="btn-secondary w-full py-2.5">
-                    Cancel edit
+                    {t('adminPanelPage.cancelEdit')}
                   </button>
                 ) : null}
               </form>
@@ -1182,7 +1184,7 @@ export default function AdminPanelPage() {
             <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
               <div className="flex items-center gap-2 mb-4">
                 <PackageOpen size={18} className="text-blue-600" />
-                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Plans</h2>
+                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('adminPanelPage.plans')}</h2>
               </div>
 
               <div className="space-y-3">
@@ -1191,13 +1193,13 @@ export default function AdminPanelPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold">{plan.name}</p>
-                        <p className="text-xs text-slate-500">{plan.category} • {plan.price || 'no price'} • {plan.duration || 'no duration'}</p>
-                        <p className="text-xs text-slate-500">Pricing: {plan.actualPrice ?? '-'} → {plan.discountedPrice ?? '-'} {plan.currency || 'AZN'}</p>
-                        <p className="mt-1 text-xs text-slate-500">Amazon/week: {plan.amazonLookupLimitPerWeek ?? 'unlimited'} | Products: {plan.productsLimit ?? 'unlimited'} | Checkila Analysis credits: {plan.marketAnalysisCreditsLimit ?? 'unlimited'} | eBay accounts: {plan.ebayAccountsLimit ?? 'unlimited'}</p>
-                        <p className="mt-1 text-xs text-slate-500">Visible tabs: {Array.isArray(plan.allowedTabs) ? plan.allowedTabs.join(', ') : 'all default tabs'}</p>
+                        <p className="text-xs text-slate-500">{plan.category} • {plan.price || t('adminPanelPage.noPrice')} • {plan.duration || t('adminPanelPage.noDuration')}</p>
+                        <p className="text-xs text-slate-500">{t('adminPanelPage.pricing')}: {plan.actualPrice ?? '-'} → {plan.discountedPrice ?? '-'} {plan.currency || 'AZN'}</p>
+                        <p className="mt-1 text-xs text-slate-500">{t('adminPanelPage.amazonPerWeek')}: {plan.amazonLookupLimitPerWeek ?? t('adminPanelPage.unlimited')} | {t('adminPanelPage.products')}: {plan.productsLimit ?? t('adminPanelPage.unlimited')} | {t('adminPanelPage.checkilaAnalysisCredits')}: {plan.marketAnalysisCreditsLimit ?? t('adminPanelPage.unlimited')} | {t('adminPanelPage.ebayAccounts')}: {plan.ebayAccountsLimit ?? t('adminPanelPage.unlimited')}</p>
+                        <p className="mt-1 text-xs text-slate-500">{t('adminPanelPage.visibleTabs')}: {Array.isArray(plan.allowedTabs) ? plan.allowedTabs.map((key) => t(`adminPanelPage.planTabs.${key}`)).join(', ') : t('adminPanelPage.allDefaultTabs')}</p>
                       </div>
                       <button type="button" className="btn-secondary px-3 py-1.5" onClick={() => startEditPlan(plan)}>
-                        Edit
+                        {t('adminPanelPage.edit')}
                       </button>
                     </div>
                   </div>
@@ -1228,18 +1230,18 @@ export default function AdminPanelPage() {
           <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle size={18} className="text-red-600" />
-              <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                Danger Zone
+                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                {t('adminPanelPage.dangerZone')}
               </h2>
             </div>
 
             <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              Delete searched records from SQL by age. This removes cached search data permanently.
+              {t('adminPanelPage.dangerZoneDescription')}
             </p>
 
             <div className={`rounded-xl border p-4 ${isDark ? 'border-red-900 bg-red-950/20' : 'border-red-200 bg-red-50'}`}>
               <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-red-200' : 'text-red-700'}`}>
-                Delete search records
+                {t('adminPanelPage.deleteSearchRecords')}
               </label>
               <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
                 <div>
@@ -1248,14 +1250,14 @@ export default function AdminPanelPage() {
                     onChange={(e) => setDangerWindow(e.target.value)}
                     className="input-base"
                   >
-                    <option value="3d">Within 3 days</option>
-                    <option value="7d">Within 7 days</option>
-                    <option value="1m">Within 1 month</option>
-                    <option value="1y">Within 1 year</option>
-                    <option value="all">All</option>
+                    <option value="3d">{t('adminPanelPage.within3Days')}</option>
+                    <option value="7d">{t('adminPanelPage.within7Days')}</option>
+                    <option value="1m">{t('adminPanelPage.within1Month')}</option>
+                    <option value="1y">{t('adminPanelPage.within1Year')}</option>
+                    <option value="all">{t('adminPanelPage.all')}</option>
                   </select>
                   <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    This action deletes matching rows from <span className="font-semibold">ebay_search_cache</span>.
+                    {t('adminPanelPage.deletesMatchingRowsFrom')} <span className="font-semibold">ebay_search_cache</span>.
                   </p>
                 </div>
                 <button
@@ -1264,7 +1266,7 @@ export default function AdminPanelPage() {
                   disabled={dangerSubmitting}
                   className="rounded-lg border border-red-600 bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
                 >
-                  {dangerSubmitting ? 'Deleting...' : 'Delete search data'}
+                  {dangerSubmitting ? t('adminPanelPage.deleting') : t('adminPanelPage.deleteSearchData')}
                 </button>
               </div>
             </div>
