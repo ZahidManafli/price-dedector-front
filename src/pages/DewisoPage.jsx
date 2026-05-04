@@ -328,6 +328,9 @@ export default function DewisoPage() {
   const quillRef = useRef(null);
   const quillContainerRef = useRef(null);
   const previewRef = useRef(null);
+  const previewEditingRef = useRef(false);
+  const previewImageInputRef = useRef(null);
+  const previewImageTargetRef = useRef(null);
 
   useEffect(() => {
     const load = async () => {
@@ -381,7 +384,12 @@ export default function DewisoPage() {
       }
     };
 
-    const handleContentChange = () => {
+    const handleFocus = () => {
+      previewEditingRef.current = true;
+    };
+
+    const handleBlur = () => {
+      previewEditingRef.current = false;
       const newHtml = previewRef.current.innerHTML;
       setOwnHtml(newHtml);
       if (quillRef.current) {
@@ -389,12 +397,44 @@ export default function DewisoPage() {
       }
     };
 
+    const handleClick = (event) => {
+      const image = event.target?.closest?.('img');
+      if (!image) return;
+
+      previewImageTargetRef.current = image;
+      const chooseUpload = window.confirm('OK: upload an image file for this image. Cancel: enter an image URL.');
+      if (chooseUpload) {
+        previewImageInputRef.current?.click();
+        return;
+      }
+
+      const imageUrl = window.prompt('Paste image URL');
+      if (imageUrl) {
+        image.setAttribute('src', imageUrl.trim());
+        const newHtml = previewRef.current.innerHTML;
+        setOwnHtml(newHtml);
+        if (quillRef.current) {
+          quillRef.current.clipboard.dangerouslyPasteHTML(newHtml);
+        }
+      }
+    };
+
+    const handleMouseDown = () => {
+      previewEditingRef.current = true;
+    };
+
     previewRef.current.addEventListener('input', handleInput);
-    previewRef.current.addEventListener('blur', handleContentChange);
+    previewRef.current.addEventListener('focus', handleFocus);
+    previewRef.current.addEventListener('blur', handleBlur);
+    previewRef.current.addEventListener('click', handleClick);
+    previewRef.current.addEventListener('mousedown', handleMouseDown);
     return () => {
       if (previewRef.current) {
         previewRef.current.removeEventListener('input', handleInput);
-        previewRef.current.removeEventListener('blur', handleContentChange);
+        previewRef.current.removeEventListener('focus', handleFocus);
+        previewRef.current.removeEventListener('blur', handleBlur);
+        previewRef.current.removeEventListener('click', handleClick);
+        previewRef.current.removeEventListener('mousedown', handleMouseDown);
       }
     };
   }, []);
@@ -420,8 +460,7 @@ export default function DewisoPage() {
 
   useEffect(() => {
     if (!previewRef.current) return;
-    const wasEditing = document.activeElement === previewRef.current;
-    if (!wasEditing) {
+    if (!previewEditingRef.current) {
       previewRef.current.innerHTML = extractEditableHtml(generatedHtml);
     }
   }, [generatedHtml]);
@@ -529,6 +568,41 @@ export default function DewisoPage() {
     }
   };
 
+  const handlePreviewImageFile = async (event) => {
+    const file = event.target.files?.[0];
+    const target = previewImageTargetRef.current;
+    if (!file || !target) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('images', file);
+      if (selectedHistoryId) {
+        formData.append('templateId', selectedHistoryId);
+      }
+
+      const res = await dewisoAPI.uploadImages(formData);
+      const item = Array.isArray(res?.data?.items) ? res.data.items[0] : null;
+      const nextUrl = item?.localUrl || item?.ebayUrl || '';
+      if (!nextUrl) {
+        setAlert({ type: 'error', message: 'Image upload failed' });
+        return;
+      }
+
+      target.setAttribute('src', nextUrl);
+      const newHtml = previewRef.current?.innerHTML || '';
+      setOwnHtml(newHtml);
+      if (quillRef.current) {
+        quillRef.current.clipboard.dangerouslyPasteHTML(newHtml);
+      }
+      setAlert({ type: 'success', message: 'Image updated in preview' });
+    } catch (error) {
+      setAlert({ type: 'error', message: error.response?.data?.error || 'Failed to upload image' });
+    } finally {
+      event.target.value = '';
+      previewImageTargetRef.current = null;
+    }
+  };
+
   const copyText = async (value) => {
     const text = String(value || '').trim();
     if (!text) return;
@@ -555,6 +629,12 @@ export default function DewisoPage() {
       setAlert({ type: 'success', message: 'HTML copied to clipboard' });
     } catch {
       setAlert({ type: 'error', message: 'Could not copy HTML to clipboard' });
+    }
+  };
+
+  const handlePreviewKeyDown = (event) => {
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+      previewEditingRef.current = true;
     }
   };
 
@@ -720,10 +800,18 @@ export default function DewisoPage() {
             contentEditable
             suppressContentEditableWarning
             className="flex-1 overflow-auto p-6 bg-white outline-none focus:outline-none text-base"
+            onKeyDown={handlePreviewKeyDown}
             style={{
               whiteSpace: 'pre-wrap',
               wordWrap: 'break-word',
             }}
+          />
+          <input
+            ref={previewImageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handlePreviewImageFile}
           />
         </div>
       </div>
