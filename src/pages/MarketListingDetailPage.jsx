@@ -7,6 +7,7 @@ import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ListOnEbayModal from '../components/ListOnEbayModal';
 import { useBucket, BucketTrigger, BucketDrawer, AddToBucketButton } from '../components/EbayBucket';
+import { useTheme } from '../context/ThemeContext';
 import { browseAPI } from '../services/api';
 import { countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
 
@@ -51,6 +52,7 @@ function buildAmazonSearchUrlFromTitle(title) {
 
 export default function MarketListingDetailPage() {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
   const { itemId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();

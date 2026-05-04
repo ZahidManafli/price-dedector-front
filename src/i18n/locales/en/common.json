@@ -139,6 +139,8 @@
     "freeShippingOnly": "Free shipping only",
     "runAnalysis": "Run Checkila Analysis",
     "remaining": "Remaining",
+    "credit_one": "{{count}} credit",
+    "credit_other": "{{count}} credits",
     "bestMatch": "Best Match",
     "priceLowHigh": "Price: Low to High",
     "priceHighLow": "Price: High to Low",

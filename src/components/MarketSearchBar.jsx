@@ -167,7 +167,7 @@ export default function MarketSearchBar({
         <div className="md:col-span-2 flex justify-end">
           <button type="submit" disabled={disabled} className="btn-primary w-full md:w-auto">
             {t('marketSearchBar.runAnalysis')}
-            {typeof searchCost === 'number' ? ` (${searchCost} credit${searchCost > 1 ? 's' : ''})` : ''}
+            {typeof searchCost === 'number' ? ` (${t('marketSearchBar.credit', { count: searchCost })})` : ''}
             {marketCreditsRemaining !== null && marketCreditsRemaining !== undefined
               ? ` • ${t('marketSearchBar.remaining')}: ${marketCreditsRemaining}`
               : ''}
