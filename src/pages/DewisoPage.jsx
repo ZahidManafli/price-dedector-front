@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
 import { dewisoAPI } from '../services/api';
 import Alert from '../components/Alert';
 import { useTheme } from '../context/ThemeContext';
@@ -82,7 +84,8 @@ const AWESOME_DEFAULT_HTML = `
 </section>
 `;
 
-function buildThemedPreviewHtml(rawHtml, { navBg, navText, contentBg, contentText }) {
+function buildThemedPreviewHtml(rawHtml, { navBg, navText, contentBg, contentText }, layout = 'two_col') {
+  const heroColumns = layout === 'one_col' ? '1fr' : layout === 'two_col' ? '1fr 1fr' : '1fr 1fr';
   const themeStyle = `
 <style>
   :root {
@@ -121,7 +124,7 @@ function buildThemedPreviewHtml(rawHtml, { navBg, navText, contentBg, contentTex
   .dewiso-title { margin: 14px 0 0; font-size: 46px; font-weight: 900; letter-spacing: .2px; }
   .dewiso-subtitle { margin: 10px 0 0; font-size: 18px; opacity: .95; }
   .dewiso-content { padding: 24px 30px; }
-  .dewiso-hero-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; margin-bottom: 18px; }
+  .dewiso-hero-wrap { display: grid; grid-template-columns: ${heroColumns}; gap: 20px; align-items: center; margin-bottom: 18px; }
   .dewiso-hero-copy { min-width: 0; }
   .dewiso-meta { margin-top: 14px; display: grid; gap: 6px; font-size: 15px; color: color-mix(in srgb, var(--dewiso-content-text) 72%, #ff8c00 28%); }
   .dewiso-card {
@@ -227,6 +230,9 @@ export default function DewisoPage() {
   const [uploadedImages, setUploadedImages] = useState([]);
   const [alert, setAlert] = useState(null);
 
+  const quillRef = useRef(null);
+  const quillContainerRef = useRef(null);
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -242,6 +248,32 @@ export default function DewisoPage() {
     load();
   }, []);
 
+  useEffect(() => {
+    if (!quillContainerRef.current) return;
+    if (quillRef.current) return; // Already initialized
+
+    const quill = new Quill(quillContainerRef.current, {
+      theme: 'snow',
+      modules: {
+        toolbar: [
+          ['bold', 'italic', 'underline', 'strike'],
+          ['blockquote', 'code-block'],
+          [{ header: 1 }, { header: 2 }],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['link', 'image'],
+          ['clean'],
+        ],
+      },
+      placeholder: 'Edit your HTML content here...',
+    });
+
+    quillRef.current = quill;
+
+    quill.on('text-change', () => {
+      setOwnHtml(quill.root.innerHTML);
+    });
+  }, []);
+
   const generatedHtml = useMemo(() => {
     if (layout === 'own_html') {
       return buildThemedPreviewHtml(ownHtml || AWESOME_DEFAULT_HTML, {
@@ -249,7 +281,7 @@ export default function DewisoPage() {
         navText,
         contentBg,
         contentText,
-      });
+      }, layout);
     }
 
     // For non-own layouts, use same beautiful template but keep mode metadata for future variants.
@@ -258,7 +290,7 @@ export default function DewisoPage() {
       navText,
       contentBg,
       contentText,
-    });
+    }, layout);
   }, [layout, ownHtml, navBg, navText, contentBg, contentText]);
 
   const handleUploadHtmlFile = async (event) => {
@@ -270,6 +302,9 @@ export default function DewisoPage() {
     }
     const text = await file.text();
     setOwnHtml(text);
+    if (quillRef.current) {
+      quillRef.current.clipboard.dangerouslyPasteHTML(text);
+    }
     setLayout('own_html');
     setAlert({ type: 'success', message: `Loaded ${file.name}` });
   };
@@ -302,6 +337,9 @@ export default function DewisoPage() {
     setTemplateName(item.name || 'Untitled Dewiso Template');
     setLayout(item.mode || 'own_html');
     setOwnHtml(item.html || '');
+    if (quillRef.current) {
+      quillRef.current.clipboard.dangerouslyPasteHTML(item.html || '');
+    }
     if (item.meta) {
       setNavBg(item.meta.navBg || '#2A0948');
       setNavText(item.meta.navText || '#ffffff');
@@ -420,18 +458,16 @@ export default function DewisoPage() {
                 onClick={() => {
                   setLayout('own_html');
                   setOwnHtml(AWESOME_DEFAULT_HTML);
+                  if (quillRef.current) {
+                    quillRef.current.clipboard.dangerouslyPasteHTML(AWESOME_DEFAULT_HTML);
+                  }
                   setAlert({ type: 'success', message: 'Awesome default HTML inserted' });
                 }}
               >
                 Use Awesome Default HTML
               </button>
             </div>
-            <textarea
-              className="input-base min-h-[220px]"
-              value={ownHtml}
-              onChange={(e) => setOwnHtml(e.target.value)}
-              placeholder="Paste your own HTML here..."
-            />
+            <div ref={quillContainerRef} className={`rounded-lg border min-h-[220px] ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-300'}`} />
 
             <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
               <p className={`text-sm font-semibold mb-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
