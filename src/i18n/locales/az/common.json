@@ -347,6 +347,7 @@
     "sortDescending": "Azalan sırala",
     "sortAscending": "Artan sırala",
     "sellerUsernameUnavailable": "Bu siyahı üçün satıcı adı mövcud deyil.",
+    "sellSimilarRequiresId": "Sell Similar üçün etibarlı rəqəmsal eBay elan ID-si (Item ID) tələb olunur.",
     "failedToLoadSellerListings": "Satıcı siyahıları yüklənə bilmədi",
     "openEbaySellSimilarTitle": "eBay Sell Similar açılsın?",
     "openEbaySellSimilarText": "Bu əməliyyatı eBay-də davam etdirəcəksiniz. Hesab təhlükəsizliyi və dayandırılma riskinin qarşısını almaq üçün brauzerinizin düzgün eBay satıcı profilindən istifadə etdiyinə əmin olun.",

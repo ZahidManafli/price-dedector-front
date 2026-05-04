@@ -347,6 +347,7 @@
     "sortDescending": "Azalan sırala",
     "sortAscending": "Artan sırala",
     "sellerUsernameUnavailable": "Bu ilan için satıcı adı mevcut değil.",
+      "sellSimilarRequiresId": "Benzerini Sat için geçerli sayısal bir eBay ilan ID'si (Item ID) gereklidir.",
     "failedToLoadSellerListings": "Satıcı ilanları yüklenemedi",
     "openEbaySellSimilarTitle": "eBay Sell Similar açılsın mı?",
     "openEbaySellSimilarText": "Bu işlemi eBay üzerinde sürdürmek üzeresiniz. Hesap güvenliği ve askıya alma riskini azaltmak için lütfen tarayıcınızın doğru eBay satıcı profilini kullandığından emin olun.",

@@ -594,16 +594,16 @@ export default function MarketAnalysisPage() {
   const handleSellSimilar = async (item) => {
     const listingId = resolveLegacyListingId(item);
     if (!listingId) {
-      setError('Sell Similar requires a live numeric eBay listing ID (Item ID).');
+      setError(t('marketListingDetailPage.sellSimilarRequiresId'));
       return;
     }
     const result = await Swal.fire({
-      title: 'Open eBay Sell Similar?',
-      text: 'You are about to continue this action on eBay. For account safety and suspension prevention, please make sure your browser is currently using the correct eBay seller profile before proceeding.',
+      title: t('marketListingDetailPage.openEbaySellSimilarTitle'),
+      text: t('marketListingDetailPage.openEbaySellSimilarText'),
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Proceed to eBay',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: t('marketListingDetailPage.proceedToEbay'),
+      cancelButtonText: t('marketListingDetailPage.cancel'),
       reverseButtons: true,
       focusCancel: true,
     });

@@ -347,6 +347,7 @@
     "sortDescending": "Сортировать по убыванию",
     "sortAscending": "Сортировать по возрастанию",
     "sellerUsernameUnavailable": "Имя продавца недоступно для этого объявления.",
+    "sellSimilarRequiresId": "Для Sell Similar требуются корректный числовой eBay Item ID (Item ID).",
     "failedToLoadSellerListings": "Не удалось загрузить объявления продавца",
     "openEbaySellSimilarTitle": "Открыть eBay Sell Similar?",
     "openEbaySellSimilarText": "Вы собираетесь продолжить это действие на eBay. Для безопасности аккаунта и предотвращения блокировки убедитесь, что браузер использует правильный профиль продавца eBay.",

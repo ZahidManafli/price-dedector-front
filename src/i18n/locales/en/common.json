@@ -254,6 +254,7 @@
     "sortDescending": "Sort descending",
     "sortAscending": "Sort ascending",
     "sellerUsernameUnavailable": "Seller username is not available for this listing.",
+    "sellSimilarRequiresId": "Sell Similar requires a live numeric eBay listing ID (Item ID).",
     "failedToLoadSellerListings": "Failed to load seller listings",
     "openEbaySellSimilarTitle": "Open eBay Sell Similar?",
     "openEbaySellSimilarText": "You are about to continue this action on eBay. For account safety and suspension prevention, please make sure your browser is currently using the correct eBay seller profile before proceeding.",
