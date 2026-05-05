@@ -277,7 +277,7 @@ function FloatingToolbar({ iframeRef }) {
         className="text-xs border border-slate-200 rounded px-1 py-1 bg-white text-slate-700 cursor-pointer"
         value={fontFamily}
         onChange={handleFontFamily}
-        onMouseDown={() => { saveSelection(); }}
+        onMouseDown={(e) => { e.stopPropagation(); saveSelection(); }}
         title={t('dewisoPage.fontFamily')}
       >
         {FONT_FAMILIES.map((f) => (
@@ -292,7 +292,7 @@ function FloatingToolbar({ iframeRef }) {
         className="text-xs border border-slate-200 rounded px-1 py-1 bg-white text-slate-700 cursor-pointer w-20"
         value={fontSize}
         onChange={handleFontSize}
-        onMouseDown={() => { saveSelection(); }}
+        onMouseDown={(e) => { e.stopPropagation(); saveSelection(); }}
         title={t('dewisoPage.fontSize')}
       >
         {FONT_SIZES.map((s) => (
