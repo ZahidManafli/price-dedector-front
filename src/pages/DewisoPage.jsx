@@ -30,7 +30,7 @@ const ONE_COL_BODY = `
 </div></div></div></div>
 <div id="copyright-part" class="py-3">
 <div class="container primary-text-color" style="font-size:90%;">
-<div>Free ebay template editor by <b>dewiso.com</b></div>
+<div>Free ebay template editor by <b>checkila.com</b></div>
 </div></div>`;
 
 const TWO_COL_BODY = `
@@ -55,7 +55,7 @@ const TWO_COL_BODY = `
 </div></div></div></div>
 <div id="copyright-part" class="py-3">
 <div class="container primary-text-color" style="font-size:90%;">
-<div>Free ebay template editor by <b>dewiso.com</b></div>
+<div>Free ebay template editor by <b>checkila.com</b></div>
 </div></div>`;
 
 const AWESOME_DEFAULT_HTML = ONE_COL_BODY; // kept for backward compat
