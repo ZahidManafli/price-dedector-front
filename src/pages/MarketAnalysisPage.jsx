@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { History, LayoutGrid, List, RefreshCw, Search, SearchCheck } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import MarketSearchBar from '../components/MarketSearchBar';
@@ -67,7 +66,6 @@ export default function MarketAnalysisPage() {
     setResults,
     searchNow,
     clearCache,
-    refreshFromEbay,
     credits,
     soldQuantityDeferred,
   } = useBrowseSearch({
@@ -499,7 +497,6 @@ export default function MarketAnalysisPage() {
       switch (key) {
         case 'title': return String(item.title || '').toLowerCase();
         case 'seller': return String(item.sellerName || '').toLowerCase();
-        case 'condition': return String(item.condition || '').toLowerCase();
         case 'soldQuantity': return Number(item.soldQuantity || 0);
         case 'priceValue': return Number(item.priceValue || 0);
         default: return '';
@@ -582,36 +579,6 @@ export default function MarketAnalysisPage() {
     openSearchInNewTab(nextParams);
   };
 
-  const resolveLegacyListingId = (item) => {
-    const candidates = [item?.legacyId, item?.raw?.legacyItemId, item?.raw?.itemId, item?.id];
-    for (const candidate of candidates) {
-      const normalized = String(candidate || '').trim().replace(/^v1\|/, '').replace(/\|0$/, '');
-      if (/^\d{9,15}$/.test(normalized)) return normalized;
-    }
-    return null;
-  };
-
-  const handleSellSimilar = async (item) => {
-    const listingId = resolveLegacyListingId(item);
-    if (!listingId) {
-      setError(t('marketListingDetailPage.sellSimilarRequiresId'));
-      return;
-    }
-    const result = await Swal.fire({
-      title: t('marketListingDetailPage.openEbaySellSimilarTitle'),
-      text: t('marketListingDetailPage.openEbaySellSimilarText'),
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: t('marketListingDetailPage.proceedToEbay'),
-      cancelButtonText: t('marketListingDetailPage.cancel'),
-      reverseButtons: true,
-      focusCancel: true,
-    });
-    if (!result.isConfirmed) return;
-    const url = `https://www.ebay.com/lstng?mode=SellLikeItem&itemId=${encodeURIComponent(listingId)}&sr=wn`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
-
   const onNextPage = () => {
     const nextParams = {
       ...params,
@@ -645,15 +612,6 @@ export default function MarketAnalysisPage() {
         <button type="button" onClick={() => searchNow(params)} className="btn-secondary flex items-center gap-2">
           <RefreshCw size={14} />
           {t('marketAnalysisPage.refresh')}
-        </button>
-        <button
-          type="button"
-          onClick={() => refreshFromEbay(params)}
-          disabled={loading}
-          className="btn-secondary flex items-center gap-2"
-        >
-          <RefreshCw size={14} />
-          {t('marketAnalysisPage.refreshFromEbay')}
         </button>
         <button type="button" onClick={clearCache} className="btn-secondary flex items-center gap-2">
           {t('marketAnalysisPage.clearCache')}
@@ -788,12 +746,7 @@ export default function MarketAnalysisPage() {
                             {renderSortLabel(t('marketAnalysisPage.sellerHeader'), 'seller')}
                           </button>
                         </th>
-                        <th className="text-left p-3">{t('marketAnalysisPage.feedbackScoreHeader')}</th>
-                        <th className="text-left p-3">
-                          <button type="button" onClick={() => toggleSort('condition')} className="hover:underline">
-                            {renderSortLabel(t('marketAnalysisPage.conditionHeader'), 'condition')}
-                          </button>
-                        </th>
+                        <th className="text-left p-3">F/Score</th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('soldQuantity')} className="hover:underline">
                             {renderSortLabel(t('marketAnalysisPage.soldHeader'), 'soldQuantity')}
@@ -841,7 +794,6 @@ export default function MarketAnalysisPage() {
                             {renderSellerCountryFlag(item.sellerCountryCode)}
                           </td>
                           <td className="p-3 font-medium">{Number(item.sellerFeedback || 0)}</td>
-                          <td className="p-3">{item.condition}</td>
                           <td className="p-3 font-medium">
                             {item?.soldLoading ? (
                               <span
@@ -870,29 +822,6 @@ export default function MarketAnalysisPage() {
                               const amazonSearchUrl = buildAmazonSearchUrlFromTitle(item?.title);
                               return (
                                 <div className="flex gap-2 flex-wrap items-center">
-                                  {/* ── Bucket icon — NEW ── */}
-                                  <AddToBucketButton
-                                    item={item}
-                                    onAdd={handleAddToBucket}
-                                    isDark={isDark}
-                                    isInBucket={bucketItemIds.has(item.id)}
-                                    isScraping={scrapingIds.has(item.id)}
-                                  />
-
-                                  <button type="button" className="btn-secondary" onClick={() => handleSelect(item)}>
-                                    {selectedIds.includes(item.id) ? 'Selected' : 'Compare'}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="btn-secondary"
-                                    onClick={() => handleTitleSearch(item)}
-                                    title={t('marketAnalysisPage.searchTitleNewTab')}
-                                  >
-                                    <Search size={14} />
-                                  </button>
-                                  <button type="button" className="btn-primary" onClick={() => handleInspect(item)}>
-                                    {t('marketAnalysisPage.details')}
-                                  </button>
                                   {amazonSearchUrl && (
                                     <a
                                       href={amazonSearchUrl}
@@ -905,12 +834,28 @@ export default function MarketAnalysisPage() {
                                       <img src={AMAZON_ICON_URL} alt="Amazon" className="h-3.5 w-3.5" loading="lazy" />
                                     </a>
                                   )}
+
+                                  <AddToBucketButton
+                                    item={item}
+                                    onAdd={handleAddToBucket}
+                                    isDark={isDark}
+                                    isInBucket={bucketItemIds.has(item.id)}
+                                    isScraping={scrapingIds.has(item.id)}
+                                  />
+
                                   <button
                                     type="button"
                                     className="btn-secondary"
-                                    onClick={() => handleSellSimilar(item)}
+                                    onClick={() => handleTitleSearch(item)}
+                                    title={t('marketAnalysisPage.searchTitleNewTab')}
                                   >
-                                    {t('marketAnalysisPage.sellSimilar')}
+                                    <Search size={14} />
+                                  </button>
+                                  <button type="button" className="btn-primary" onClick={() => handleInspect(item)}>
+                                    {t('marketAnalysisPage.details')}
+                                  </button>
+                                  <button type="button" className="btn-secondary" onClick={() => handleSelect(item)}>
+                                    {selectedIds.includes(item.id) ? 'Selected' : 'Compare'}
                                   </button>
                                   <button
                                     type="button"

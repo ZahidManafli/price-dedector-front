@@ -147,7 +147,6 @@ export default function MarketListingDetailPage() {
   const sellerSortOptions = [
     { value: 'soldQuantity', label: t('marketListingDetailPage.soldQty') },
     { value: 'title', label: t('marketListingDetailPage.title') },
-    { value: 'condition', label: t('marketListingDetailPage.condition') },
     { value: 'priceValue', label: t('marketListingDetailPage.itemPrice') },
   ];
 
@@ -342,8 +341,6 @@ export default function MarketListingDetailPage() {
       switch (key) {
         case 'title':
           return String(item.title || '').toLowerCase();
-        case 'condition':
-          return String(item.condition || '').toLowerCase();
         case 'soldQuantity':
           return item.soldQuantity === null ? -1 : Number(item.soldQuantity || 0);
         case 'priceValue':
@@ -739,11 +736,6 @@ export default function MarketListingDetailPage() {
                           </button>
                         </th>
                         <th className="text-left p-3">
-                          <button type="button" onClick={() => toggleSellerSort('condition')} className="hover:underline">
-                            {renderSellerSortLabel(t('marketListingDetailPage.condition'), 'condition')}
-                          </button>
-                        </th>
-                        <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSellerSort('soldQuantity')} className="hover:underline">
                             {renderSellerSortLabel(t('marketListingDetailPage.soldQty'), 'soldQuantity')}
                           </button>
@@ -778,7 +770,6 @@ export default function MarketListingDetailPage() {
                               {item.title}
                             </button>
                           </td>
-                          <td className="p-3">{item.condition}</td>
                           <td className="p-3 font-medium">{renderSellerSoldValue(item)}</td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>
                           <td className="p-3">

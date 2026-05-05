@@ -19,12 +19,6 @@ export default function MarketSearchBar({
     { value: 'newlyListed', label: t('marketSearchBar.newlyListed') },
     { value: 'endingSoonest', label: t('marketSearchBar.endingSoonest') },
   ];
-  const conditionOptions = [
-    { value: 'ALL', label: t('marketSearchBar.allConditions') },
-    { value: 'NEW', label: t('marketSearchBar.new') },
-    { value: 'USED', label: t('marketSearchBar.used') },
-    { value: 'LIKE_NEW', label: t('marketSearchBar.likeNew') },
-  ];
   const buyingOptions = [
     { value: '', label: t('marketSearchBar.allBuyingOptions') },
     { value: 'FIXED_PRICE', label: t('marketSearchBar.buyItNow') },
@@ -58,6 +52,22 @@ export default function MarketSearchBar({
           </datalist>
         </div>
 
+        <div className="md:col-span-4">
+          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.seller')}</label>
+          <input
+            className="input-base"
+            placeholder={t('marketSearchBar.sellerPlaceholder')}
+            value={params.sellerUsername || ''}
+            list="recent-checkila-sellers"
+            onChange={(e) => setValue('sellerUsername', e.target.value)}
+          />
+          <datalist id="recent-checkila-sellers">
+            {recentSellers.map((seller) => (
+              <option key={seller} value={seller} />
+            ))}
+          </datalist>
+        </div>
+
         <div className="md:col-span-2">
           <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.categoryId')}</label>
           <input
@@ -68,20 +78,7 @@ export default function MarketSearchBar({
           />
         </div>
 
-        <div className="md:col-span-2">
-          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.condition')}</label>
-          <select
-            className="input-base"
-            value={params.condition}
-            onChange={(e) => setValue('condition', e.target.value)}
-          >
-            {conditionOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="md:col-span-2">
+        <div className="md:col-span-1">
           <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.buying')}</label>
           <select
             className="input-base"
@@ -94,7 +91,7 @@ export default function MarketSearchBar({
           </select>
         </div>
 
-        <div className="md:col-span-2">
+        <div className="md:col-span-1">
           <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.sort')}</label>
           <select className="input-base" value={params.sort} onChange={(e) => setValue('sort', e.target.value)}>
             {sortOptions.map((opt) => (
@@ -125,22 +122,6 @@ export default function MarketSearchBar({
             value={params.maxPrice}
             onChange={(e) => setValue('maxPrice', e.target.value)}
           />
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.seller')}</label>
-          <input
-            className="input-base"
-            placeholder={t('marketSearchBar.sellerPlaceholder')}
-            value={params.sellerUsername || ''}
-            list="recent-checkila-sellers"
-            onChange={(e) => setValue('sellerUsername', e.target.value)}
-          />
-          <datalist id="recent-checkila-sellers">
-            {recentSellers.map((seller) => (
-              <option key={seller} value={seller} />
-            ))}
-          </datalist>
         </div>
 
         <div className="md:col-span-2">
