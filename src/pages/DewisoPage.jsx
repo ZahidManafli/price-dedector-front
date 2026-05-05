@@ -100,6 +100,239 @@ function buildFullHtml(bodyHtml, { navBg, navText, contentBg, contentText }) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   CHECKILA TEMPLATES  — psychologically engineered to convert browsers → buyers
+───────────────────────────────────────────────────────────────────────────── */
+const CHECKILA_TEMPLATES = [
+  {
+    id: 'luxe',
+    name: 'Template 1 — Luxe Pro',
+    navBg: '#0a0a0a',
+    navText: '#c9a84c',
+    contentBg: '#fafaf8',
+    contentText: '#1a1a1a',
+    body: `
+<div id="title-part" class="py-0">
+  <div style="background:linear-gradient(135deg,#0a0a0a 60%,#1c1408 100%);padding:36px 0 28px;">
+    <div class="container">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <span style="background:#c9a84c;color:#0a0a0a;font-size:11px;font-weight:700;letter-spacing:2px;padding:4px 12px;border-radius:2px;text-transform:uppercase;">✦ Premium Quality</span>
+        <span style="background:transparent;color:#c9a84c;font-size:11px;font-weight:600;letter-spacing:1px;border:1px solid #c9a84c44;padding:4px 12px;border-radius:2px;">Free Shipping</span>
+      </div>
+      <h1 style="color:#c9a84c;font-family:Georgia,serif;font-size:2.4rem;font-weight:700;margin:0 0 10px;line-height:1.2;letter-spacing:-0.5px;">Your Premium Product Title Here</h1>
+      <p style="color:#e8e0cc;font-size:1.05rem;margin:0;opacity:0.85;">Crafted for those who expect nothing but the best.</p>
+      <div style="display:flex;gap:24px;margin-top:18px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:6px;color:#c9a84c;font-size:13px;">⭐⭐⭐⭐⭐ <span style="color:#e8e0cc;opacity:0.7;font-size:12px;">4.9 (2,847 reviews)</span></div>
+        <div style="color:#6adf82;font-size:13px;font-weight:600;">✓ In Stock — Ships Today</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="description-container" class="secondary-color-bg pb-3 pt-0">
+  <div class="container">
+    <div style="background:#fff;border:1px solid #e8e0cc;border-radius:4px;padding:28px;margin:24px 0 20px;box-shadow:0 2px 20px rgba(0,0,0,0.06);">
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+        <span style="background:#fff8e7;color:#8b6914;border:1px solid #c9a84c55;font-size:12px;font-weight:600;padding:5px 14px;border-radius:3px;">🏆 Best Seller</span>
+        <span style="background:#f0fff4;color:#166534;border:1px solid #86efac;font-size:12px;font-weight:600;padding:5px 14px;border-radius:3px;">✓ Authenticity Guaranteed</span>
+        <span style="background:#fef2f2;color:#991b1b;border:1px solid #fca5a5;font-size:12px;font-weight:700;padding:5px 14px;border-radius:3px;">⏰ Only 7 Left!</span>
+      </div>
+      <div class="row">
+        <div id="image-gallery" class="col-12 col-md-6 mb-4">
+          <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image" style="border-radius:4px;border:1px solid #e8e0cc;" />
+        </div>
+        <div id="description-part" class="col-12 col-md-6" style="color:#1a1a1a;">
+          <h2 style="font-family:Georgia,serif;font-size:1.3rem;color:#0a0a0a;margin-bottom:12px;">Why Buyers Love This</h2>
+          <p style="font-size:0.95rem;line-height:1.7;color:#444;margin-bottom:16px;">Every detail has been perfected over years of refinement. This isn't just a product — it's an investment in quality that pays dividends every single day you own it.</p>
+          <div style="border-left:3px solid #c9a84c;padding-left:16px;margin:16px 0;font-style:italic;color:#666;font-size:0.9rem;">"Exceeded every expectation. The quality is immediately obvious. Worth every penny." — Verified Buyer</div>
+          <ul style="list-style:none;padding:0;margin:0;font-size:0.9rem;">
+            <li style="padding:7px 0;border-bottom:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>Superior Materials:</strong> Only the finest, most durable materials used.</span></li>
+            <li style="padding:7px 0;border-bottom:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>Expert Craftsmanship:</strong> Hand-inspected before every shipment.</span></li>
+            <li style="padding:7px 0;border-bottom:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>100% Satisfaction Guarantee:</strong> Love it or we make it right.</span></li>
+            <li style="padding:7px 0;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>Fast, Secure Shipping:</strong> Tracked delivery straight to your door.</span></li>
+          </ul>
+          <div style="background:linear-gradient(135deg,#0a0a0a,#2a1f05);color:#c9a84c;border-radius:4px;padding:16px;margin-top:20px;text-align:center;">
+            <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;opacity:0.7;margin-bottom:4px;">Limited Time Offer</div>
+            <div style="font-size:1.6rem;font-weight:700;font-family:Georgia,serif;">Save 30% Today</div>
+            <div style="font-size:0.8rem;opacity:0.7;margin-top:4px;">Offer expires when stock runs out</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;">
+      <div style="background:#fff;border:1px solid #e8e0cc;border-radius:4px;padding:18px;text-align:center;">
+        <div style="font-size:1.8rem;margin-bottom:6px;">🚚</div>
+        <div style="font-weight:700;font-size:0.85rem;color:#0a0a0a;">Free Shipping</div>
+        <div style="font-size:0.78rem;color:#888;margin-top:3px;">On all orders</div>
+      </div>
+      <div style="background:#fff;border:1px solid #e8e0cc;border-radius:4px;padding:18px;text-align:center;">
+        <div style="font-size:1.8rem;margin-bottom:6px;">🔒</div>
+        <div style="font-weight:700;font-size:0.85rem;color:#0a0a0a;">Secure Payment</div>
+        <div style="font-size:0.78rem;color:#888;margin-top:3px;">100% protected</div>
+      </div>
+      <div style="background:#fff;border:1px solid #e8e0cc;border-radius:4px;padding:18px;text-align:center;">
+        <div style="font-size:1.8rem;margin-bottom:6px;">↩️</div>
+        <div style="font-weight:700;font-size:0.85rem;color:#0a0a0a;">Easy Returns</div>
+        <div style="font-size:0.78rem;color:#888;margin-top:3px;">30-day guarantee</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="copyright-part" class="py-3">
+  <div class="container primary-text-color" style="font-size:90%;text-align:center;">
+    <div>Free ebay template editor by <b>checkila.com</b></div>
+  </div>
+</div>`,
+  },
+  {
+    id: 'bold',
+    name: 'Template 2 — Bold Seller',
+    navBg: '#0f3460',
+    navText: '#ffffff',
+    contentBg: '#f0f4ff',
+    contentText: '#0d1b2a',
+    body: `
+<div id="title-part" class="py-0">
+  <div style="background:linear-gradient(120deg,#0f3460 0%,#16213e 50%,#1a1a2e 100%);padding:32px 0 24px;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,#e94560 0%,transparent 70%);opacity:0.3;pointer-events:none;"></div>
+    <div class="container" style="position:relative;">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:#e94560;color:#fff;font-size:11px;font-weight:800;letter-spacing:2px;padding:5px 14px;border-radius:30px;text-transform:uppercase;margin-bottom:14px;">🔥 HOT DEAL — Ends Soon</div>
+      <h1 style="color:#ffffff;font-family:'Trebuchet MS',sans-serif;font-size:2.3rem;font-weight:800;margin:0 0 10px;line-height:1.15;text-shadow:0 2px 20px rgba(0,0,0,0.3);">Your Product Title — Make It Count</h1>
+      <p style="color:#b8c8e8;font-size:1rem;margin:0 0 16px;max-width:560px;">Join <strong style="color:#fff;">47,000+ happy customers</strong> who made the smart choice.</p>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;">
+        <div style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:10px 18px;backdrop-filter:blur(10px);">
+          <div style="color:#ffd700;font-size:18px;letter-spacing:2px;">★★★★★</div>
+          <div style="color:#b8c8e8;font-size:11px;margin-top:2px;">4.8 · 3,291 ratings</div>
+        </div>
+        <div style="color:#4ade80;font-weight:700;font-size:14px;">✓ Ships within 24 hours</div>
+        <div style="color:#fbbf24;font-weight:700;font-size:14px;">⚡ 23 sold in last hour</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="description-container" class="secondary-color-bg pb-3 pt-0">
+  <div class="container">
+    <div style="background:#e94560;color:#fff;padding:10px 20px;text-align:center;font-weight:700;font-size:0.88rem;letter-spacing:0.5px;border-radius:0 0 8px 8px;margin-bottom:20px;">
+      ⏰ Special price valid for <strong>today only</strong> — Don't miss out!
+    </div>
+    <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 30px rgba(15,52,96,0.12);margin-bottom:20px;">
+      <div class="row" style="margin:0;">
+        <div id="image-gallery" class="col-12 col-md-6" style="padding:0;">
+          <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image" style="width:100%;height:100%;object-fit:cover;display:block;min-height:240px;" />
+        </div>
+        <div id="description-part" class="col-12 col-md-6" style="padding:28px;color:#0d1b2a;">
+          <div style="background:linear-gradient(135deg,#fff8e1,#fffde7);border:1px solid #fbbf24;border-radius:8px;padding:14px 18px;margin-bottom:20px;">
+            <div style="font-size:0.78rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🏷️ Limited Time Price</div>
+            <div style="font-size:1.8rem;font-weight:800;color:#0f3460;">Great Value Today</div>
+            <div style="font-size:0.8rem;color:#666;margin-top:2px;">Regular buyers pay 40% more</div>
+          </div>
+          <p style="font-size:0.93rem;line-height:1.75;color:#334155;margin-bottom:16px;">This is exactly what you've been searching for. Don't settle for less when the best is right here — at a price that makes saying yes easy.</p>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#0f3460;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">1</span><span><strong>Premium Quality Guaranteed</strong> — you'll feel the difference immediately.</span></div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#0f3460;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">2</span><span><strong>Fast Tracked Delivery</strong> — know exactly where your order is.</span></div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#0f3460;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">3</span><span><strong>Risk-Free Purchase</strong> — not satisfied? We fix it, no questions.</span></div>
+          </div>
+          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 16px;font-size:0.82rem;color:#0c4a6e;line-height:1.5;">
+            💬 <em>"I was skeptical at first but this completely blew me away. Faster than expected, better than described!"</em><br/><strong>— Sarah M., Verified Buyer ⭐⭐⭐⭐⭐</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
+      <div style="background:#fff;border-radius:10px;padding:16px;text-align:center;border:1px solid #dbeafe;box-shadow:0 2px 8px rgba(15,52,96,0.08);">
+        <div style="font-size:1.6rem;">📦</div><div style="font-weight:700;font-size:0.83rem;color:#0f3460;margin-top:5px;">Fast Dispatch</div><div style="font-size:0.75rem;color:#64748b;">Same / next day</div>
+      </div>
+      <div style="background:#fff;border-radius:10px;padding:16px;text-align:center;border:1px solid #dbeafe;box-shadow:0 2px 8px rgba(15,52,96,0.08);">
+        <div style="font-size:1.6rem;">🛡️</div><div style="font-weight:700;font-size:0.83rem;color:#0f3460;margin-top:5px;">Buyer Protection</div><div style="font-size:0.75rem;color:#64748b;">eBay guaranteed</div>
+      </div>
+      <div style="background:#fff;border-radius:10px;padding:16px;text-align:center;border:1px solid #dbeafe;box-shadow:0 2px 8px rgba(15,52,96,0.08);">
+        <div style="font-size:1.6rem;">💯</div><div style="font-weight:700;font-size:0.83rem;color:#0f3460;margin-top:5px;">Positive Feedback</div><div style="font-size:0.75rem;color:#64748b;">Thousands of buyers</div>
+      </div>
+      <div style="background:#fff;border-radius:10px;padding:16px;text-align:center;border:1px solid #dbeafe;box-shadow:0 2px 8px rgba(15,52,96,0.08);">
+        <div style="font-size:1.6rem;">🎁</div><div style="font-weight:700;font-size:0.83rem;color:#0f3460;margin-top:5px;">Gift Ready</div><div style="font-size:0.75rem;color:#64748b;">Careful packaging</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="copyright-part" class="py-3">
+  <div class="container primary-text-color" style="font-size:90%;text-align:center;">
+    <div>Free ebay template editor by <b>checkila.com</b></div>
+  </div>
+</div>`,
+  },
+  {
+    id: 'fresh',
+    name: 'Template 3 — Fresh & Clean',
+    navBg: '#065f46',
+    navText: '#ecfdf5',
+    contentBg: '#f8fafc',
+    contentText: '#0f172a',
+    body: `
+<div id="title-part" class="py-0">
+  <div style="background:linear-gradient(135deg,#065f46 0%,#047857 50%,#059669 100%);padding:30px 0 24px;">
+    <div class="container">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <span style="background:#ecfdf5;color:#065f46;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;">🌿 Eco-Friendly</span>
+        <span style="background:rgba(255,255,255,0.15);color:#ecfdf5;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.25);">✓ Top Rated Seller</span>
+        <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;">⚡ Fast Dispatch</span>
+      </div>
+      <h1 style="color:#ffffff;font-family:'Trebuchet MS',sans-serif;font-size:2.2rem;font-weight:700;margin:0 0 10px;line-height:1.2;text-shadow:0 1px 10px rgba(0,0,0,0.2);">Your Product Name — Clean &amp; Clear</h1>
+      <p style="color:#a7f3d0;font-size:0.98rem;margin:0 0 14px;">Straightforward quality, honest value. Exactly what you need.</p>
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+        <span style="color:#fde68a;font-size:16px;letter-spacing:1px;">★★★★★</span>
+        <span style="color:#d1fae5;font-size:12px;">4.9 stars · 1,840 reviews</span>
+        <span style="color:#6ee7b7;font-weight:700;font-size:13px;">📦 Free P&amp;P Included</span>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="description-container" class="secondary-color-bg pb-3 pt-0">
+  <div class="container">
+    <div style="background:linear-gradient(90deg,#065f46,#059669);color:#fff;padding:10px 20px;text-align:center;font-size:0.85rem;font-weight:600;margin-bottom:20px;border-radius:0 0 10px 10px;">
+      🏷️ Best price on eBay — plus free postage!
+    </div>
+    <div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 24px rgba(6,95,70,0.1);margin-bottom:20px;">
+      <div class="row" style="margin:0;">
+        <div id="image-gallery" class="col-12 col-md-5" style="padding:24px 20px 24px 24px;">
+          <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image" style="border-radius:10px;border:1px solid #e2e8f0;width:100%;" />
+          <div style="display:flex;gap:6px;margin-top:12px;justify-content:center;flex-wrap:wrap;">
+            <span style="background:#f0fdf4;color:#065f46;border:1px solid #bbf7d0;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;">✓ 100% Authentic</span>
+            <span style="background:#f0fdf4;color:#065f46;border:1px solid #bbf7d0;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;">✓ Brand New</span>
+          </div>
+        </div>
+        <div id="description-part" class="col-12 col-md-7" style="padding:28px 24px 24px 8px;color:#0f172a;">
+          <h2 style="font-size:1.2rem;font-weight:700;color:#065f46;margin-bottom:12px;font-family:'Trebuchet MS',sans-serif;">What Makes This Special</h2>
+          <p style="font-size:0.92rem;line-height:1.75;color:#475569;margin-bottom:16px;">No fluff, no gimmicks. Just a product that does what it promises and arrives exactly as described. We believe in straightforward quality and honest dealings with every customer.</p>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
+            <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Premium Quality</strong> — carefully inspected and packed to perfection.</div></div>
+            <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Quick Delivery</strong> — dispatched promptly with full tracking.</div></div>
+            <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Hassle-Free Returns</strong> — we stand behind everything we sell.</div></div>
+            <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Trusted Seller</strong> — thousands of 5-star transactions.</div></div>
+          </div>
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #059669;border-radius:8px;padding:14px 16px;font-size:0.82rem;color:#064e3b;line-height:1.6;">
+            💬 <em>"Arrived quickly, well packaged and exactly as described. Already recommended to friends!"</em><br/><strong style="color:#065f46;">— James T. ⭐⭐⭐⭐⭐ Verified Purchase</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px;margin-bottom:20px;">
+      <h3 style="font-size:0.95rem;font-weight:700;color:#065f46;margin:0 0 14px;text-align:center;">Why Shop With Us?</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;">
+        <div style="text-align:center;padding:12px 8px;"><div style="font-size:1.5rem;">🌱</div><div style="font-weight:700;font-size:0.82rem;color:#0f172a;margin-top:6px;">Ethically Sourced</div></div>
+        <div style="text-align:center;padding:12px 8px;"><div style="font-size:1.5rem;">📬</div><div style="font-weight:700;font-size:0.82rem;color:#0f172a;margin-top:6px;">Free Postage</div></div>
+        <div style="text-align:center;padding:12px 8px;"><div style="font-size:1.5rem;">💬</div><div style="font-weight:700;font-size:0.82rem;color:#0f172a;margin-top:6px;">Fast Responses</div></div>
+        <div style="text-align:center;padding:12px 8px;"><div style="font-size:1.5rem;">🔁</div><div style="font-weight:700;font-size:0.82rem;color:#0f172a;margin-top:6px;">Easy Returns</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="copyright-part" class="py-3">
+  <div class="container primary-text-color" style="font-size:90%;text-align:center;">
+    <div>Free ebay template editor by <b>checkila.com</b></div>
+  </div>
+</div>`,
+  },
+];
+
+/* ─────────────────────────────────────────────────────────────────────────────
    FLOATING TOOLBAR COMPONENT
    This is the key fix — toolbar stays above the preview iframe/div and uses
    document.execCommand on the iframe's document so focus never leaves.
@@ -667,6 +900,21 @@ export default function DewisoPage() {
     }));
   };
 
+  const loadCheckilaTemplate = (tpl) => {
+    setSelectedHistoryId(null);
+    setTemplateName(tpl.name);
+    setLayout('two_col');
+    setNavBg(tpl.navBg);
+    setNavText(tpl.navText);
+    setContentBg(tpl.contentBg);
+    setContentText(tpl.contentText);
+    setBodyHtml(tpl.body);
+    writeIframe(buildFullHtml(tpl.body, {
+      navBg: tpl.navBg, navText: tpl.navText,
+      contentBg: tpl.contentBg, contentText: tpl.contentText,
+    }));
+  };
+
   const copyText = async (value) => {
     try {
       await navigator.clipboard.writeText(String(value || '').trim());
@@ -700,6 +948,36 @@ export default function DewisoPage() {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 mt-4">
         {/* ── LEFT PANEL ── */}
         <div className={`xl:col-span-4 rounded-2xl border p-4 space-y-4 ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-white border-slate-200'}`}>
+
+          {/* ── Checkila Templates ── */}
+          <div>
+            <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
+              ✦ Checkila Templates
+            </p>
+            <div className="space-y-2">
+              {CHECKILA_TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  onClick={() => loadCheckilaTemplate(tpl)}
+                  className="w-full text-left rounded-xl overflow-hidden border transition-all hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
+                  style={{ borderColor: tpl.navBg + '55' }}
+                >
+                  <div style={{ background: `linear-gradient(135deg, ${tpl.navBg}, ${tpl.navBg}cc)` }} className="px-3 py-2 flex items-center justify-between">
+                    <span style={{ color: tpl.navText, fontWeight: 700, fontSize: 12, letterSpacing: '0.5px' }}>{tpl.name}</span>
+                    <span style={{ background: tpl.navText + '22', color: tpl.navText, fontSize: 10, padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>Load →</span>
+                  </div>
+                  <div style={{ background: tpl.contentBg, padding: '6px 12px', display: 'flex', gap: 6 }}>
+                    {[tpl.navBg, tpl.navText, tpl.contentBg, tpl.contentText].map((c, i) => (
+                      <span key={i} style={{ width: 14, height: 14, background: c, borderRadius: '50%', border: '1px solid #0002', display: 'inline-block' }} />
+                    ))}
+                    <span style={{ fontSize: 10, color: tpl.contentText + 'aa', marginLeft: 4, alignSelf: 'center' }}>Psychologically optimized</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={`border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`} />
 
           {/* Layout selector */}
           <div>
@@ -830,28 +1108,44 @@ export default function DewisoPage() {
 
           {/* History */}
           <div>
-            <p className={`text-sm font-semibold mb-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('dewisoPage.history')}</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('dewisoPage.history')}</p>
+              <button
+                onClick={saveTemplate}
+                disabled={saving}
+                className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all"
+                style={{ background: saving ? '#94a3b8' : '#4f46e5', color: '#fff', opacity: saving ? 0.7 : 1 }}
+              >
+                {saving ? '⏳ Saving…' : '💾 Save Now'}
+              </button>
+            </div>
             <div className="max-h-52 overflow-auto space-y-2">
               {loadingHistory ? (
                 <p className="text-sm text-slate-500">{t('dewisoPage.loading')}</p>
               ) : history.length === 0 ? (
-                <p className="text-sm text-slate-500">{t('dewisoPage.noSavedTemplatesYet')}</p>
+                <div className={`rounded-xl border-2 border-dashed p-4 text-center ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                  <div className="text-2xl mb-1">📂</div>
+                  <p className="text-xs text-slate-500">No saved templates yet.<br/>Hit <strong>Save Now</strong> to keep your work.</p>
+                </div>
               ) : (
                 history.map((item) => (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => loadFromHistory(item)}
-                    className={`w-full text-left rounded-lg border px-3 py-2 text-sm ${
+                    className={`w-full text-left rounded-lg border px-3 py-2 text-sm transition-all hover:shadow-sm ${
                       selectedHistoryId === item.id
                         ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
                         : isDark
-                          ? 'border-slate-700 bg-slate-900 text-slate-200'
-                          : 'border-slate-200 bg-white text-slate-800'
+                          ? 'border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800'
+                          : 'border-slate-200 bg-white text-slate-800 hover:border-slate-300'
                     }`}
                   >
-                    <div className="font-semibold">{item.name}</div>
-                    <div className="text-xs opacity-70">{item.updatedAt ? new Date(item.updatedAt).toLocaleString() : ''}</div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="font-semibold truncate">{item.name}</div>
+                      {selectedHistoryId === item.id && <span className="text-indigo-500 text-xs flex-shrink-0">● Active</span>}
+                    </div>
+                    <div className="text-xs opacity-60 mt-0.5">{item.updatedAt ? new Date(item.updatedAt).toLocaleString() : ''}</div>
                   </button>
                 ))
               )}
