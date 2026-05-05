@@ -119,6 +119,8 @@ function FloatingToolbar({ iframeRef }) {
   const [activeFormats, setActiveFormats] = useState({});
   const [fontSize, setFontSize] = useState('18px');
   const [fontFamily, setFontFamily] = useState('system-ui, -apple-system, sans-serif');
+  const [textColor, setTextColor] = useState('#000000');
+  const [bgColor, setBgColor] = useState('#ffff00');
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const savedSelectionRef = useRef(null);
@@ -244,6 +246,18 @@ function FloatingToolbar({ iframeRef }) {
     applySpanStyle('fontFamily', family);
   };
 
+  const handleTextColor = (e) => {
+    const color = e.target.value;
+    setTextColor(color);
+    applySpanStyle('color', color);
+  };
+
+  const handleBgColor = (e) => {
+    const color = e.target.value;
+    setBgColor(color);
+    applySpanStyle('backgroundColor', color);
+  };
+
   const handleLink = () => {
     saveSelection();
     setShowLinkInput(true);
@@ -324,6 +338,40 @@ function FloatingToolbar({ iframeRef }) {
           <option key={s} value={s}>{s}</option>
         ))}
       </select>
+
+      <div className="w-px h-5 bg-slate-300 mx-1" />
+
+      {/* Text color */}
+      <label
+        className="flex items-center gap-1 cursor-pointer px-1 py-1 rounded border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs select-none"
+        title={t('dewisoPage.textColor') || 'Text color'}
+        onMouseDown={(e) => { e.stopPropagation(); captureRangeForSelect(); }}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11 3L5.5 17h2.25l1.12-3h6.25l1.12 3h2.25L13 3h-2zm-1.38 9L12 5.67 14.38 12H9.62z"/><rect x="3" y="19" width="18" height="3" rx="1" fill={textColor}/></svg>
+        <input
+          type="color"
+          className="w-0 h-0 opacity-0 absolute"
+          value={textColor}
+          onChange={handleTextColor}
+        />
+        <span style={{ width: 14, height: 4, background: textColor, borderRadius: 2, display: 'inline-block', border: '1px solid #ccc' }} />
+      </label>
+
+      {/* Background color */}
+      <label
+        className="flex items-center gap-1 cursor-pointer px-1 py-1 rounded border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs select-none"
+        title={t('dewisoPage.bgColor') || 'Highlight color'}
+        onMouseDown={(e) => { e.stopPropagation(); captureRangeForSelect(); }}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M16.56 8.94L7.62 0 6.21 1.41l2.38 2.38-5.15 5.15a1.49 1.49 0 0 0 0 2.12l5.5 5.5c.29.29.68.44 1.06.44s.77-.15 1.06-.44l5.5-5.5c.59-.58.59-1.53 0-2.12zM5.21 10L10 5.21 14.79 10H5.21zM19 11.5s-2 2.17-2 3.5c0 1.1.9 2 2 2s2-.9 2-2c0-1.33-2-3.5-2-3.5z"/><rect x="3" y="19" width="18" height="3" rx="1" fill={bgColor}/></svg>
+        <input
+          type="color"
+          className="w-0 h-0 opacity-0 absolute"
+          value={bgColor}
+          onChange={handleBgColor}
+        />
+        <span style={{ width: 14, height: 4, background: bgColor, borderRadius: 2, display: 'inline-block', border: '1px solid #ccc' }} />
+      </label>
 
       <div className="w-px h-5 bg-slate-300 mx-1" />
 
