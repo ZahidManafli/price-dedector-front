@@ -183,29 +183,54 @@ function FloatingToolbar({ iframeRef }) {
     return () => doc.removeEventListener('selectionchange', handler);
   }, [getIframeDoc, saveSelection, updateActiveFormats]);
 
+  // Separate ref to capture the selection right when the user opens the dropdown
+  const pendingRangeRef = useRef(null);
+
+  const captureRangeForSelect = useCallback(() => {
+    const doc = getIframeDoc();
+    if (!doc) return;
+    const sel = doc.getSelection();
+    if (sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed) {
+      pendingRangeRef.current = sel.getRangeAt(0).cloneRange();
+    } else if (savedSelectionRef.current && !savedSelectionRef.current.collapsed) {
+      pendingRangeRef.current = savedSelectionRef.current.cloneRange();
+    } else {
+      pendingRangeRef.current = null;
+    }
+  }, [getIframeDoc]);
+
   const applySpanStyle = useCallback((styleProp, styleValue) => {
     const doc = getIframeDoc();
     if (!doc) return;
-    restoreSelection();
+
+    // Use the range captured on mousedown (before dropdown stole focus)
+    const range = pendingRangeRef.current;
+    if (!range || range.collapsed) return;
+
+    // Restore selection so DOM ops work on the right spot
     const sel = doc.getSelection();
-    if (!sel || sel.rangeCount === 0) return;
-    const range = sel.getRangeAt(0);
-    if (range.collapsed) return;
+    sel.removeAllRanges();
+    sel.addRange(range);
+
     try {
-      const span = doc.createElement('span');
-      span[styleProp === 'fontSize' ? 'style' : 'style'][styleProp] = styleValue;
-      span.style[styleProp] = styleValue;
-      range.surroundContents(span);
-    } catch {
-      // surroundContents fails for multi-element selections; fall back to extractContents
       const frag = range.extractContents();
       const span = doc.createElement('span');
       span.style[styleProp] = styleValue;
       span.appendChild(frag);
       range.insertNode(span);
+      // Re-select the newly inserted span contents
+      const newRange = doc.createRange();
+      newRange.selectNodeContents(span);
+      sel.removeAllRanges();
+      sel.addRange(newRange);
+      savedSelectionRef.current = newRange.cloneRange();
+    } catch (err) {
+      console.warn('applySpanStyle failed', err);
     }
+
+    pendingRangeRef.current = null;
     iframeRef.current?.contentWindow?.focus();
-  }, [getIframeDoc, restoreSelection, iframeRef]);
+  }, [getIframeDoc, iframeRef]);
 
   const handleFontSize = (e) => {
     const size = e.target.value;
@@ -277,7 +302,7 @@ function FloatingToolbar({ iframeRef }) {
         className="text-xs border border-slate-200 rounded px-1 py-1 bg-white text-slate-700 cursor-pointer"
         value={fontFamily}
         onChange={handleFontFamily}
-        onMouseDown={(e) => { e.stopPropagation(); saveSelection(); }}
+        onMouseDown={(e) => { e.stopPropagation(); captureRangeForSelect(); }}
         title={t('dewisoPage.fontFamily')}
       >
         {FONT_FAMILIES.map((f) => (
@@ -292,7 +317,7 @@ function FloatingToolbar({ iframeRef }) {
         className="text-xs border border-slate-200 rounded px-1 py-1 bg-white text-slate-700 cursor-pointer w-20"
         value={fontSize}
         onChange={handleFontSize}
-        onMouseDown={(e) => { e.stopPropagation(); saveSelection(); }}
+        onMouseDown={(e) => { e.stopPropagation(); captureRangeForSelect(); }}
         title={t('dewisoPage.fontSize')}
       >
         {FONT_SIZES.map((s) => (
