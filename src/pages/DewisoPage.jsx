@@ -183,27 +183,40 @@ function FloatingToolbar({ iframeRef }) {
     return () => doc.removeEventListener('selectionchange', handler);
   }, [getIframeDoc, saveSelection, updateActiveFormats]);
 
-  const handleFontSize = (e) => {
-    const size = e.target.value;
-    setFontSize(size);
-    // execCommand fontSize only supports 1-7, so we wrap with a span
-    restoreSelection();
+  const applySpanStyle = useCallback((styleProp, styleValue) => {
     const doc = getIframeDoc();
     if (!doc) return;
+    restoreSelection();
     const sel = doc.getSelection();
     if (!sel || sel.rangeCount === 0) return;
     const range = sel.getRangeAt(0);
     if (range.collapsed) return;
-    const span = doc.createElement('span');
-    span.style.fontSize = size;
-    range.surroundContents(span);
+    try {
+      const span = doc.createElement('span');
+      span[styleProp === 'fontSize' ? 'style' : 'style'][styleProp] = styleValue;
+      span.style[styleProp] = styleValue;
+      range.surroundContents(span);
+    } catch {
+      // surroundContents fails for multi-element selections; fall back to extractContents
+      const frag = range.extractContents();
+      const span = doc.createElement('span');
+      span.style[styleProp] = styleValue;
+      span.appendChild(frag);
+      range.insertNode(span);
+    }
     iframeRef.current?.contentWindow?.focus();
+  }, [getIframeDoc, restoreSelection, iframeRef]);
+
+  const handleFontSize = (e) => {
+    const size = e.target.value;
+    setFontSize(size);
+    applySpanStyle('fontSize', size);
   };
 
   const handleFontFamily = (e) => {
     const family = e.target.value;
     setFontFamily(family);
-    execCmd('fontName', family);
+    applySpanStyle('fontFamily', family);
   };
 
   const handleLink = () => {
@@ -264,7 +277,7 @@ function FloatingToolbar({ iframeRef }) {
         className="text-xs border border-slate-200 rounded px-1 py-1 bg-white text-slate-700 cursor-pointer"
         value={fontFamily}
         onChange={handleFontFamily}
-        onMouseDown={(e) => { e.preventDefault(); saveSelection(); }}
+        onMouseDown={() => { saveSelection(); }}
         title={t('dewisoPage.fontFamily')}
       >
         {FONT_FAMILIES.map((f) => (
@@ -279,7 +292,7 @@ function FloatingToolbar({ iframeRef }) {
         className="text-xs border border-slate-200 rounded px-1 py-1 bg-white text-slate-700 cursor-pointer w-20"
         value={fontSize}
         onChange={handleFontSize}
-        onMouseDown={(e) => { e.preventDefault(); saveSelection(); }}
+        onMouseDown={() => { saveSelection(); }}
         title={t('dewisoPage.fontSize')}
       >
         {FONT_SIZES.map((s) => (
