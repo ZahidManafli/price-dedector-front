@@ -389,6 +389,9 @@ export default function LandingPage() {
               <a href="#plans" className="transition hover:text-white">
                 {t('landing:navigation.plans')}
               </a>
+              <a href="/ebay-calculator" className="transition hover:text-white">
+                {t('common:ebayCalculator')}
+              </a>
               <a href="#contact" className="transition hover:text-white">
                 {t('landing:navigation.contact')}
               </a>
