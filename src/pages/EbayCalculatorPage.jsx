@@ -112,7 +112,7 @@ export default function EbayCalculatorPage() {
                 </div>
                 <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-50 bg-slate-50'}`}>
                   <p className="text-xs text-slate-500">{t('ebayCalculatorPage.currentPriceLabel')}</p>
-                  <p className="text-2xl font-bold mt-1 text-white">
+                  <p className={`text-2xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     {formatCurrency(parsed.salePrice)}
                   </p>
                   <p className={`mt-1 text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
