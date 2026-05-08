@@ -183,14 +183,7 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/ebay-calculator"
-              element={
-                <ProtectedRoute requiredTab={TAB_KEYS.EBAY_CALCULATOR}>
-                  <EbayCalculatorPage />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/ebay-calculator" element={<EbayCalculatorPage />} />
             <Route
               path="/market-analysis"
               element={
