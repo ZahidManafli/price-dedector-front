@@ -20,7 +20,7 @@ export default function ListingsPage() {
   const [limit] = useState(25);
   const [fetchingPage, setFetchingPage] = useState(false);
   const [query, setQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ACTIVE');
   const [sortKey, setSortKey] = useState('title');
   const [sortDir, setSortDir] = useState('asc');
   const [deletingListingId, setDeletingListingId] = useState('');
