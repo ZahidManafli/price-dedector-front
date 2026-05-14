@@ -20,7 +20,7 @@ export default function ListingsPage() {
   const [limit] = useState(25);
   const [fetchingPage, setFetchingPage] = useState(false);
   const [query, setQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ACTIVE'); // default to ACTIVE — backend also enforces this
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [sortKey, setSortKey] = useState('title');
   const [sortDir, setSortDir] = useState('asc');
   const [deletingListingId, setDeletingListingId] = useState('');
@@ -303,7 +303,7 @@ export default function ListingsPage() {
                 {t('listingsPage.active')}: <span className="ml-1 font-semibold">{ebayStatus.activeAccountLabel || ebayStatus.accountId}</span>
               </span>
             ) : null}
-            {`${t('listingsPage.total')}: ${filteredItems.length}`}
+            {typeof total === 'number' ? `${t('listingsPage.total')}: ${total}` : null}
           </div>
         ) : null}
       </div>
