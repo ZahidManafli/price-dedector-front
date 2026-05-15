@@ -71,6 +71,8 @@ export default function MarketListingDetailPage() {
   const [sellerSoldQuantityDeferred, setSellerSoldQuantityDeferred] = useState(false);
   const [sellerPendingSoldItems, setSellerPendingSoldItems] = useState([]);
   const [sellerSoldLoadingByItemId, setSellerSoldLoadingByItemId] = useState({});
+  const [sellerSoldSevenDaysByItemId, setSellerSoldSevenDaysByItemId] = useState({});
+  const [sellerSoldSevenDaysLoadingByItemId, setSellerSoldSevenDaysLoadingByItemId] = useState({});
   const [ebayListModal, setEbayListModal] = useState(null);
   const bucket = useBucket();
   const [bucketOpen, setBucketOpen] = useState(false);
@@ -397,7 +399,73 @@ export default function MarketListingDetailPage() {
   useEffect(() => {
     if (!detail?.seller?.username) return;
     handleLoadSellerListings(0);
+    setSellerSoldSevenDaysByItemId({});
+    setSellerSoldSevenDaysLoadingByItemId({});
   }, [detail?.seller?.username]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const hydrate7DaySoldCounts = async () => {
+      if (!Array.isArray(sellerListings) || !sellerListings.length) return;
+
+      const pending = [];
+      for (const item of sellerListings) {
+        const key = String(item?.id || '').trim();
+        if (!key) continue;
+        if (Object.prototype.hasOwnProperty.call(sellerSoldSevenDaysByItemId, key)) continue;
+
+        const numericItemId = normalizeNumericItemId(
+          item?.legacyItemId || item?.id
+        );
+        if (numericItemId) {
+          pending.push({ key, itemId: numericItemId });
+        }
+      }
+
+      if (!pending.length) return;
+
+      const loadingMap = {};
+      for (const task of pending) {
+        loadingMap[task.key] = true;
+      }
+      setSellerSoldSevenDaysLoadingByItemId(loadingMap);
+
+      for (const task of pending) {
+        if (cancelled) break;
+        try {
+          const response = await browseAPI.get(`/ebay/item/${encodeURIComponent(task.itemId)}/sold-count-7-days`);
+          const count = Number(response?.data?.count || 0);
+          if (!cancelled) {
+            setSellerSoldSevenDaysByItemId((prev) => ({
+              ...prev,
+              [task.key]: Number.isFinite(count) ? count : 0,
+            }));
+          }
+        } catch {
+          if (!cancelled) {
+            setSellerSoldSevenDaysByItemId((prev) => ({
+              ...prev,
+              [task.key]: 0,
+            }));
+          }
+        } finally {
+          if (!cancelled) {
+            setSellerSoldSevenDaysLoadingByItemId((prev) => ({
+              ...prev,
+              [task.key]: false,
+            }));
+          }
+        }
+      }
+    };
+
+    hydrate7DaySoldCounts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sellerListings, sellerSoldSevenDaysByItemId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -487,6 +555,26 @@ export default function MarketListingDetailPage() {
     }
 
     return '0';
+  };
+
+  const renderSellerSoldSevenDaysValue = (item) => {
+    const key = String(item?.id || '').trim();
+    const isLoading = !!sellerSoldSevenDaysLoadingByItemId[key];
+    const count = sellerSoldSevenDaysByItemId[key];
+
+    if (count !== undefined && count !== null) {
+      return String(Number(count));
+    }
+
+    if (isLoading) {
+      return (
+        <span className="inline-flex items-center justify-center w-4 h-4" aria-label="Loading 7-day sold count">
+          <span className="w-3 h-3 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin" />
+        </span>
+      );
+    }
+
+    return '-';
   };
 
   if (loading) {
@@ -691,6 +779,9 @@ export default function MarketListingDetailPage() {
                       <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
                         {t('marketListingDetailPage.soldQty')}: <span className="font-semibold">{renderSellerSoldValue(item)}</span>
                       </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
+                        7-Day Sold: <span className="font-semibold">{renderSellerSoldSevenDaysValue(item)}</span>
+                      </p>
                       <div className="mt-2 flex items-center gap-2">
                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                           {formatCurrency(item.priceValue)}
@@ -740,6 +831,7 @@ export default function MarketListingDetailPage() {
                             {renderSellerSortLabel(t('marketListingDetailPage.soldQty'), 'soldQuantity')}
                           </button>
                         </th>
+                        <th className="text-left p-3">7-Day Sold</th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSellerSort('priceValue')} className="hover:underline">
                             {renderSellerSortLabel(t('marketListingDetailPage.itemPrice'), 'priceValue')}
@@ -771,6 +863,7 @@ export default function MarketListingDetailPage() {
                             </button>
                           </td>
                           <td className="p-3 font-medium">{renderSellerSoldValue(item)}</td>
+                          <td className="p-3 font-medium">{renderSellerSoldSevenDaysValue(item)}</td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>
                           <td className="p-3">
                             <div className="flex gap-2 flex-wrap">
