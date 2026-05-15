@@ -39,6 +39,19 @@ function parseQuantityCandidate(...values) {
   return 1;
 }
 
+function parseSoldCountCandidate(value) {
+  const text = normalizeText(value);
+  if (!text) return 1;
+  if (INTEGER_PATTERN.test(text)) {
+    return Math.max(0, Number.parseInt(text, 10));
+  }
+  const match = text.match(/\b(\d+)\b/);
+  if (match?.[1]) {
+    return Math.max(0, Number.parseInt(match[1], 10));
+  }
+  return 1;
+}
+
 export function normalizeNumericItemId(value) {
   const raw = String(value || '').trim();
   if (!raw) return '';
@@ -51,8 +64,8 @@ export function normalizeNumericItemId(value) {
 
 export function normalizePurchaseHistoryRow(row) {
   const buyer = normalizeText(row?.buyer);
-  const quantity = parseQuantityCandidate(row?.date, row?.quantity, row?.price);
-  const soldAt = parseDateCandidate(row?.price, row?.date, row?.quantity);
+  const quantity = parseQuantityCandidate(row?.date);
+  const soldAt = parseDateCandidate(row?.price);
   const price = normalizeText(row?.quantity || row?.price);
 
   return {
@@ -71,7 +84,7 @@ export function calculateLast7DaysSoldCount(rows, now = Date.now()) {
     if (!normalized.soldAt || normalized.soldAt.getTime() < cutoff) {
       return total;
     }
-    return total + Math.max(0, Number(normalized.quantity || 0));
+    return total + parseSoldCountCandidate(row?.date);
   }, 0);
 }
 
