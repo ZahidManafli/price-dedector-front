@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { History, LayoutGrid, List, RefreshCw, Search, SearchCheck } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -13,6 +13,7 @@ import { browseAPI, ebayAPI, settingsAPI } from '../services/api';
 import ListOnEbayModal from '../components/ListOnEbayModal';
 import PurchaseHistoryModal from '../components/PurchaseHistoryModal';
 import { useTheme } from '../context/ThemeContext';
+import { calculateLast7DaysSoldCount, fetchPurchaseHistoryRows, normalizeNumericItemId } from '../utils/purchaseHistory';
 // ── Bucket ────────────────────────────────────────────────────────────────────
 import { useBucket, BucketTrigger, BucketDrawer, AddToBucketButton } from '../components/EbayBucket';
 
@@ -68,7 +69,6 @@ export default function MarketAnalysisPage() {
     searchNow,
     clearCache,
     credits,
-    soldQuantityDeferred,
   } = useBrowseSearch({
     fieldgroups: 'ASPECT_REFINEMENTS,MATCHING_ITEMS',
   });
@@ -84,6 +84,7 @@ export default function MarketAnalysisPage() {
   const [soldLoadingByKey, setSoldLoadingByKey] = useState({});
   const [ebayListModal, setEbayListModal] = useState(null);
   const [historyModal, setHistoryModal] = useState(null);
+  const purchaseHistoryQueueRef = useRef(false);
   const { isDark } = useTheme();
 
   // ── Bucket state ─────────────────────────────────────────────────────────────
@@ -258,37 +259,8 @@ export default function MarketAnalysisPage() {
     setHistoryModal({ loading: true, jobId: null, data: null, error: null });
 
     try {
-      const res = await ebayAPI.post('/ebay/extension-scrape', { itemId });
-      const { jobId } = res.data || {};
-      if (!jobId) {
-        throw new Error('Missing jobId from backend');
-      }
-
-      setHistoryModal((prev) => ({ ...(prev || {}), loading: true, jobId }));
-
-      const maxAttempts = 15;
-      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        const pollRes = await ebayAPI.get(`/ebay/extension-scrape/${encodeURIComponent(jobId)}`);
-        const { status, data, error } = pollRes.data || {};
-
-        if (status === 'done') {
-          setHistoryModal({ loading: false, jobId, data: Array.isArray(data) ? data : [], error: null });
-          return;
-        }
-
-        if (status === 'error') {
-          setHistoryModal({ loading: false, jobId, data: null, error: error || 'Scrape failed' });
-          return;
-        }
-      }
-
-      setHistoryModal({
-        loading: false,
-        jobId: null,
-        data: null,
-        error: 'Extension did not respond in time. Make sure the extension is installed and logged in.',
-      });
+      const data = await fetchPurchaseHistoryRows(itemId);
+      setHistoryModal({ loading: false, jobId: itemId, data: Array.isArray(data) ? data : [], error: null });
     } catch (error) {
       setHistoryModal({
         loading: false,
@@ -320,6 +292,24 @@ export default function MarketAnalysisPage() {
       />
     );
   };
+
+  const resolvePurchaseHistoryItemId = useCallback((item) => {
+    const candidates = [
+      item?.legacyId,
+      item?.raw?.legacyItemId,
+      item?.id,
+      item?.raw?.itemId,
+      item?.itemWebUrl,
+      item?.raw?.itemWebUrl,
+    ];
+
+    for (const candidate of candidates) {
+      const normalized = normalizeNumericItemId(candidate);
+      if (normalized) return normalized;
+    }
+
+    return '';
+  }, []);
 
   useEffect(() => {
     const presetSearch = location.state?.presetSearch;
@@ -398,52 +388,30 @@ export default function MarketAnalysisPage() {
   }, []);
 
   useEffect(() => {
-    setSoldLoadingByKey({});
-  }, [soldQuantityDeferred, params, results.length]);
+    if (!Array.isArray(results) || !results.length) return;
 
-  useEffect(() => {
-    if (!soldQuantityDeferred || !Array.isArray(results) || !results.length) return;
-
-    let cancelled = false;
     const pending = [];
-
-    const toNumericItemId = (value) => {
-      const raw = String(value || '').trim();
-      if (!raw) return '';
-      if (/^\d{8,}$/.test(raw)) return raw;
-      const parts = raw.split('|');
-      if (parts.length >= 2 && /^\d{8,}$/.test(parts[1])) return parts[1];
-      const match = raw.match(/\/itm\/(?:[^/]+\/)?(\d{8,})/);
-      return match?.[1] ? String(match[1]) : '';
-    };
-
     for (const item of results) {
       const key = getResultKey(item);
       if (!key) continue;
       if (Object.prototype.hasOwnProperty.call(soldQuantityByKey, key)) continue;
-      const shouldRefetchSoldOnZero = item?.shouldRefetchSoldOnZero === true;
-      const hasKnownSoldQuantity = item?.soldQuantity !== null && item?.soldQuantity !== undefined;
-      if (hasKnownSoldQuantity && !shouldRefetchSoldOnZero) continue;
 
-      const numericItemId =
-        toNumericItemId(item?.legacyId) ||
-        toNumericItemId(item?.raw?.legacyItemId) ||
-        toNumericItemId(item?.id) ||
-        toNumericItemId(item?.raw?.itemId);
+      const itemId = resolvePurchaseHistoryItemId(item);
+      if (!itemId) continue;
 
-      pending.push({
-        key,
-        itemId: numericItemId,
-        legacyItemId: numericItemId,
-        itemWebUrl: String(item?.itemWebUrl || item?.raw?.itemWebUrl || '').trim(),
-      });
+      pending.push({ key, itemId });
     }
 
-    if (!pending.length) return;
+    if (!pending.length || purchaseHistoryQueueRef.current) return;
+
+    let cancelled = false;
+    purchaseHistoryQueueRef.current = true;
 
     setSoldLoadingByKey((prev) => {
       const next = { ...prev };
-      for (const entry of pending) next[entry.key] = true;
+      for (const entry of pending) {
+        next[entry.key] = true;
+      }
       return next;
     });
 
@@ -451,32 +419,16 @@ export default function MarketAnalysisPage() {
       for (const task of pending) {
         if (cancelled) break;
         try {
-          const response = await browseAPI.getSoldQuantity({
-            itemId: task.itemId,
-            legacyItemId: task.legacyItemId,
-            itemWebUrl: task.itemWebUrl,
-          });
-          const soldCount = Number(response?.data?.data?.soldCount || 0);
+          const rows = await fetchPurchaseHistoryRows(task.itemId);
+          const soldCount = calculateLast7DaysSoldCount(rows);
           if (!cancelled) {
-            setResults((prev) =>
-              prev.map((entry) =>
-                getResultKey(entry) === task.key
-                  ? { ...entry, soldQuantity: Number.isFinite(soldCount) ? soldCount : 0 }
-                  : entry
-              )
-            );
             setSoldQuantityByKey((prev) => ({
               ...prev,
-              [task.key]: Number.isFinite(soldCount) ? soldCount : 0,
+              [task.key]: soldCount,
             }));
           }
         } catch {
           if (!cancelled) {
-            setResults((prev) =>
-              prev.map((entry) =>
-                getResultKey(entry) === task.key ? { ...entry, soldQuantity: 0 } : entry
-              )
-            );
             setSoldQuantityByKey((prev) => ({ ...prev, [task.key]: 0 }));
           }
         } finally {
@@ -485,12 +437,17 @@ export default function MarketAnalysisPage() {
           }
         }
       }
-    })().catch(() => null);
+
+      purchaseHistoryQueueRef.current = false;
+    })().catch(() => {
+      purchaseHistoryQueueRef.current = false;
+    });
 
     return () => {
       cancelled = true;
+      purchaseHistoryQueueRef.current = false;
     };
-  }, [soldQuantityDeferred, results, getResultKey]);
+  }, [results, getResultKey, resolvePurchaseHistoryItemId, soldQuantityByKey]);
 
   const hydratedResults = useMemo(() => {
     return (Array.isArray(results) ? results : []).map((item) => {
@@ -783,7 +740,7 @@ export default function MarketAnalysisPage() {
                         <th className="text-left p-3">F/Score</th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('soldQuantity')} className="hover:underline">
-                            {renderSortLabel(t('marketAnalysisPage.soldHeader'), 'soldQuantity')}
+                            {renderSortLabel('Last 7d Sold', 'soldQuantity')}
                           </button>
                         </th>
                         <th className="text-left p-3">{t('marketAnalysisPage.historyHeader')}</th>

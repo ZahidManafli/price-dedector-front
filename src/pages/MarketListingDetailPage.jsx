@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDownAZ, ArrowLeft, ArrowUpAZ, ExternalLink, History, LayoutGrid, List, Search, Store } from 'lucide-react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -9,6 +9,7 @@ import ListOnEbayModal from '../components/ListOnEbayModal';
 import { useBucket, BucketTrigger, BucketDrawer, AddToBucketButton } from '../components/EbayBucket';
 import { useTheme } from '../context/ThemeContext';
 import { browseAPI } from '../services/api';
+import { calculateLast7DaysSoldCount, fetchPurchaseHistoryRows, normalizeNumericItemId } from '../utils/purchaseHistory';
 import { countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
 
 function normalizeSoldQuantity(value) {
@@ -16,16 +17,6 @@ function normalizeSoldQuantity(value) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed < 0) return null;
   return Math.floor(parsed);
-}
-
-function normalizeNumericItemId(value) {
-  const raw = String(value || '').trim();
-  if (!raw) return '';
-  if (/^\d{8,}$/.test(raw)) return raw;
-  const parts = raw.split('|');
-  if (parts.length >= 2 && /^\d{8,}$/.test(parts[1])) return parts[1];
-  const match = raw.match(/\/itm\/(?:[^/]+\/)?(\d{8,})/);
-  return match?.[1] ? String(match[1]) : '';
 }
 
 function normalizeSummary(summary) {
@@ -72,6 +63,7 @@ export default function MarketListingDetailPage() {
   const [sellerPendingSoldItems, setSellerPendingSoldItems] = useState([]);
   const [sellerSoldLoadingByItemId, setSellerSoldLoadingByItemId] = useState({});
   const [ebayListModal, setEbayListModal] = useState(null);
+  const sellerPurchaseHistoryQueueRef = useRef(false);
   const bucket = useBucket();
   const [bucketOpen, setBucketOpen] = useState(false);
   const [scrapingIds, setScrapingIds] = useState(new Set());
@@ -278,10 +270,9 @@ export default function MarketListingDetailPage() {
         ? payload.itemSummaries
         : [];
       const normalizedRows = rows.map(normalizeSummary);
-      const deferred = !!payload?.soldQuantityDeferred;
       setSellerListings(normalizedRows);
-      setSellerSoldQuantityDeferred(deferred);
-      setSellerPendingSoldItems(deferred ? normalizedRows.filter((item) => item?.soldQuantity === null) : []);
+      setSellerSoldQuantityDeferred(false);
+      setSellerPendingSoldItems(normalizedRows);
       setSellerSoldLoadingByItemId({});
       setSellerTotal(Number(payload?.total || 0));
       setSellerOffset(nextOffset);
@@ -403,9 +394,15 @@ export default function MarketListingDetailPage() {
     let cancelled = false;
 
     const hydrateDeferredSold = async () => {
-      if (!sellerSoldQuantityDeferred || !Array.isArray(sellerPendingSoldItems) || !sellerPendingSoldItems.length) {
+      if (!Array.isArray(sellerPendingSoldItems) || !sellerPendingSoldItems.length) {
         return;
       }
+
+      if (sellerPurchaseHistoryQueueRef.current) {
+        return;
+      }
+
+      sellerPurchaseHistoryQueueRef.current = true;
 
       const loadingMap = {};
       for (const item of sellerPendingSoldItems) {
@@ -419,13 +416,12 @@ export default function MarketListingDetailPage() {
       for (const item of sellerPendingSoldItems) {
         if (cancelled) break;
         const key = String(item?.id || '').trim();
-        const payload = {
-          itemId: normalizeNumericItemId(item?.id),
-          legacyItemId: normalizeNumericItemId(item?.legacyItemId),
-          itemWebUrl: String(item?.itemWebUrl || '').trim(),
-        };
+        const itemId =
+          normalizeNumericItemId(item?.id) ||
+          normalizeNumericItemId(item?.legacyItemId) ||
+          normalizeNumericItemId(item?.itemWebUrl);
 
-        if (!payload.itemId && !payload.legacyItemId && !payload.itemWebUrl) {
+        if (!itemId) {
           if (!cancelled && key) {
             setSellerSoldLoadingByItemId((prev) => ({ ...prev, [key]: false }));
           }
@@ -433,9 +429,9 @@ export default function MarketListingDetailPage() {
         }
 
         try {
-          const response = await browseAPI.getSoldQuantity(payload);
-          const soldCount = normalizeSoldQuantity(response?.data?.data?.soldCount);
-          if (!cancelled && key && soldCount !== null) {
+          const rows = await fetchPurchaseHistoryRows(itemId);
+          const soldCount = calculateLast7DaysSoldCount(rows);
+          if (!cancelled && key) {
             setSellerListings((prev) =>
               prev.map((row) =>
                 String(row?.id || '') === key
@@ -448,7 +444,18 @@ export default function MarketListingDetailPage() {
             );
           }
         } catch {
-          // Ignore per-row sold failures and keep the row nullable.
+          if (!cancelled && key) {
+            setSellerListings((prev) =>
+              prev.map((row) =>
+                String(row?.id || '') === key
+                  ? {
+                      ...row,
+                      soldQuantity: 0,
+                    }
+                  : row
+              )
+            );
+          }
         } finally {
           if (!cancelled && key) {
             setSellerSoldLoadingByItemId((prev) => ({ ...prev, [key]: false }));
@@ -460,14 +467,17 @@ export default function MarketListingDetailPage() {
         setSellerPendingSoldItems([]);
         setSellerSoldQuantityDeferred(false);
       }
+
+      sellerPurchaseHistoryQueueRef.current = false;
     };
 
     hydrateDeferredSold();
 
     return () => {
       cancelled = true;
+      sellerPurchaseHistoryQueueRef.current = false;
     };
-  }, [sellerPendingSoldItems, sellerSoldQuantityDeferred]);
+  }, [sellerPendingSoldItems]);
 
   const renderSellerSoldValue = (item) => {
     const key = String(item?.id || '').trim();
