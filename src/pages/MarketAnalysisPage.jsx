@@ -11,6 +11,7 @@ import useBrowseSearch from '../hooks/useBrowseSearch';
 import { calculateProfit, formatCurrency } from '../utils/helpers';
 import { browseAPI, ebayAPI, settingsAPI } from '../services/api';
 import ListOnEbayModal from '../components/ListOnEbayModal';
+import PurchaseHistoryModal from '../components/PurchaseHistoryModal';
 import { useTheme } from '../context/ThemeContext';
 // ── Bucket ────────────────────────────────────────────────────────────────────
 import { useBucket, BucketTrigger, BucketDrawer, AddToBucketButton } from '../components/EbayBucket';
@@ -82,6 +83,7 @@ export default function MarketAnalysisPage() {
   const [soldQuantityByKey, setSoldQuantityByKey] = useState({});
   const [soldLoadingByKey, setSoldLoadingByKey] = useState({});
   const [ebayListModal, setEbayListModal] = useState(null);
+  const [historyModal, setHistoryModal] = useState(null);
   const { isDark } = useTheme();
 
   // ── Bucket state ─────────────────────────────────────────────────────────────
@@ -249,21 +251,53 @@ export default function MarketAnalysisPage() {
     window.open(`/market-analysis?${query.toString()}`, '_blank', 'noopener,noreferrer');
   };
 
-  const openDetailsInNewTab = (item) => {
-    const itemId = String(
-      item?.legacyId ||
-        item?.legacyItemId ||
-        item?.raw?.legacyItemId ||
-        item?.raw?.itemId ||
-        item?.id ||
-        ''
-    )
-      .trim()
-      .replace(/^v1\|/, '')
-      .replace(/\|0$/, '');
+  const handleViewHistory = useCallback(async (item) => {
+    const itemId = String(item?.id || '').trim().replace(/^v1\|/, '').replace(/\|0$/, '');
     if (!itemId) return;
-    window.open(`https://www.ebay.com/bin/purchasehistory?item=${encodeURIComponent(itemId)}`, '_blank', 'noopener,noreferrer');
-  };
+
+    setHistoryModal({ loading: true, jobId: null, data: null, error: null });
+
+    try {
+      const res = await ebayAPI.post('/ebay/extension-scrape', { itemId });
+      const { jobId } = res.data || {};
+      if (!jobId) {
+        throw new Error('Missing jobId from backend');
+      }
+
+      setHistoryModal((prev) => ({ ...(prev || {}), loading: true, jobId }));
+
+      const maxAttempts = 15;
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        const pollRes = await ebayAPI.get(`/ebay/extension-scrape/${encodeURIComponent(jobId)}`);
+        const { status, data, error } = pollRes.data || {};
+
+        if (status === 'done') {
+          setHistoryModal({ loading: false, jobId, data: Array.isArray(data) ? data : [], error: null });
+          return;
+        }
+
+        if (status === 'error') {
+          setHistoryModal({ loading: false, jobId, data: null, error: error || 'Scrape failed' });
+          return;
+        }
+      }
+
+      setHistoryModal({
+        loading: false,
+        jobId: null,
+        data: null,
+        error: 'Extension did not respond in time. Make sure the extension is installed and logged in.',
+      });
+    } catch (error) {
+      setHistoryModal({
+        loading: false,
+        jobId: null,
+        data: null,
+        error: error?.response?.data?.error || error?.message || 'Request failed',
+      });
+    }
+  }, []);
 
   function getFlagUrl(countryCode) {
     const code = String(countryCode || '').trim().toLowerCase();
@@ -809,7 +843,7 @@ export default function MarketAnalysisPage() {
                             <button
                               type="button"
                               className="btn-secondary inline-flex items-center justify-center"
-                              onClick={() => openDetailsInNewTab(item)}
+                              onClick={() => handleViewHistory(item)}
                               title={t('marketAnalysisPage.seeHistory')}
                               aria-label={t('marketAnalysisPage.seeHistory')}
                             >
@@ -911,6 +945,13 @@ export default function MarketAnalysisPage() {
           item={ebayListModal}
           isDark={isDark}
           onClose={() => setEbayListModal(null)}
+        />
+      )}
+
+      {historyModal && (
+        <PurchaseHistoryModal
+          state={historyModal}
+          onClose={() => setHistoryModal(null)}
         />
       )}
 

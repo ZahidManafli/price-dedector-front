@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -98,6 +98,8 @@ export const settingsAPI = {
 };
 
 export const ebayAPI = {
+  get: (...args) => api.get(...args),
+  post: (...args) => api.post(...args),
   getConnectUrl: () => api.get('/ebay/connect'),
   completeCallback: (code, state) => api.post('/ebay/callback', { code, state }),
   getStatus: () => api.get('/ebay/status'),
