@@ -84,8 +84,6 @@ export default function MarketAnalysisPage() {
   const [soldLoadingByKey, setSoldLoadingByKey] = useState({});
   const [ebayListModal, setEbayListModal] = useState(null);
   const [historyModal, setHistoryModal] = useState(null);
-  const [soldSevenDaysByKey, setSoldSevenDaysByKey] = useState({});
-  const [soldSevenDaysLoadingByKey, setSoldSevenDaysLoadingByKey] = useState({});
   const { isDark } = useTheme();
 
   // ── Bucket state ─────────────────────────────────────────────────────────────
@@ -401,7 +399,6 @@ export default function MarketAnalysisPage() {
 
   useEffect(() => {
     setSoldLoadingByKey({});
-    setSoldSevenDaysLoadingByKey({});
   }, [soldQuantityDeferred, params, results.length]);
 
   useEffect(() => {
@@ -499,72 +496,13 @@ export default function MarketAnalysisPage() {
     return (Array.isArray(results) ? results : []).map((item) => {
       const key = getResultKey(item);
       const hasOverride = Object.prototype.hasOwnProperty.call(soldQuantityByKey, key);
-      const hasSevenDayOverride = Object.prototype.hasOwnProperty.call(soldSevenDaysByKey, key);
       return {
         ...item,
         soldQuantity: hasOverride ? soldQuantityByKey[key] : item.soldQuantity,
         soldLoading: Boolean(soldLoadingByKey[key]),
-        soldSevenDays: hasSevenDayOverride ? soldSevenDaysByKey[key] : 0,
-        soldSevenDaysLoading: Boolean(soldSevenDaysLoadingByKey[key]),
       };
     });
-  }, [results, soldQuantityByKey, soldLoadingByKey, soldSevenDaysByKey, soldSevenDaysLoadingByKey, getResultKey]);
-
-  useEffect(() => {
-    if (!Array.isArray(hydratedResults) || !hydratedResults.length) return;
-
-    let cancelled = false;
-    const pending = [];
-
-    for (const item of hydratedResults) {
-      const key = getResultKey(item);
-      if (!key) continue;
-      if (Object.prototype.hasOwnProperty.call(soldSevenDaysByKey, key)) continue;
-
-      const numericItemId =
-        String(item?.legacyId || item?.raw?.legacyItemId || item?.id || item?.raw?.itemId || '').trim()
-          .replace(/^v1\|/, '')
-          .replace(/\|0$/, '')
-          .match(/\d{8,}/)?.[0] || '';
-
-      if (numericItemId) {
-        pending.push({ key, itemId: numericItemId });
-      }
-    }
-
-    if (!pending.length) return;
-
-    setSoldSevenDaysLoadingByKey((prev) => {
-      const next = { ...prev };
-      for (const entry of pending) next[entry.key] = true;
-      return next;
-    });
-
-    (async () => {
-      for (const task of pending) {
-        if (cancelled) break;
-        try {
-          const response = await ebayAPI.get(`/ebay/item/${encodeURIComponent(task.itemId)}/sold-count-7-days`);
-          const count = Number(response?.data?.count || 0);
-          if (!cancelled) {
-            setSoldSevenDaysByKey((prev) => ({ ...prev, [task.key]: Number.isFinite(count) ? count : 0 }));
-          }
-        } catch {
-          if (!cancelled) {
-            setSoldSevenDaysByKey((prev) => ({ ...prev, [task.key]: 0 }));
-          }
-        } finally {
-          if (!cancelled) {
-            setSoldSevenDaysLoadingByKey((prev) => ({ ...prev, [task.key]: false }));
-          }
-        }
-      }
-    })().catch(() => null);
-
-    return () => {
-      cancelled = true;
-    };
-  }, [getResultKey, hydratedResults, soldSevenDaysByKey]);
+  }, [results, soldQuantityByKey, soldLoadingByKey, getResultKey]);
 
   const filteredResults = useMemo(() => {
     const seller = String(params.sellerUsername || '').trim().toLowerCase();
@@ -848,7 +786,6 @@ export default function MarketAnalysisPage() {
                             {renderSortLabel(t('marketAnalysisPage.soldHeader'), 'soldQuantity')}
                           </button>
                         </th>
-                        <th className="text-left p-3">7-Day Sold</th>
                         <th className="text-left p-3">{t('marketAnalysisPage.historyHeader')}</th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('priceValue')} className="hover:underline">
@@ -900,17 +837,6 @@ export default function MarketAnalysisPage() {
                               />
                             ) : (
                               Number(item.soldQuantity || 0)
-                            )}
-                          </td>
-                          <td className="p-3 font-medium">
-                            {item?.soldSevenDaysLoading ? (
-                              <span
-                                className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent align-middle"
-                                aria-label="Loading 7-day sold count"
-                                title="Loading 7-day sold count"
-                              />
-                            ) : (
-                              Number(item.soldSevenDays || 0)
                             )}
                           </td>
                           <td className="p-3">

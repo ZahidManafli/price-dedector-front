@@ -29,9 +29,9 @@ export default function PurchaseHistoryModal({ state, onClose }) {
 
         {!state.loading && !state.error && (
           Array.isArray(state.data) && state.data.length > 0 ? (
-            <div className="overflow-x-auto max-h-[400px] overflow-y-auto border border-slate-200 dark:border-slate-700 rounded">
+            <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800/50">
+                <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-slate-600 dark:text-slate-300">
                     <th className="p-2">Buyer</th>
                     <th className="p-2">Quantity</th>
