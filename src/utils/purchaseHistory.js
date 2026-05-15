@@ -2,6 +2,21 @@ import { ebayAPI } from '../services/api';
 
 const DATE_PATTERN = /\b\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\b/;
 const INTEGER_PATTERN = /^\d+$/;
+const HISTORY_DATE_PATTERN = /^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})\s+at\s+(\d{1,2}):(\d{2}):(\d{2})(am|pm)\s+([A-Za-z]{2,5})$/i;
+const MONTH_INDEX = {
+  jan: 0,
+  feb: 1,
+  mar: 2,
+  apr: 3,
+  may: 4,
+  jun: 5,
+  jul: 6,
+  aug: 7,
+  sep: 8,
+  oct: 9,
+  nov: 10,
+  dec: 11,
+};
 
 function normalizeText(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
@@ -22,6 +37,38 @@ function parseDateCandidate(...values) {
     if (!Number.isNaN(timestamp)) return new Date(timestamp);
   }
   return null;
+}
+
+function parseHistoryDate(value) {
+  const text = normalizeText(value);
+  if (!text) return null;
+
+  const match = text.match(HISTORY_DATE_PATTERN);
+  if (match) {
+    const day = Number.parseInt(match[1], 10);
+    const month = MONTH_INDEX[String(match[2]).slice(0, 3).toLowerCase()];
+    const year = Number.parseInt(match[3], 10);
+    let hour = Number.parseInt(match[4], 10);
+    const minute = Number.parseInt(match[5], 10);
+    const second = Number.parseInt(match[6], 10);
+    const meridiem = String(match[7]).toLowerCase();
+    const tz = String(match[8] || '').toUpperCase();
+
+    if (month === undefined || !Number.isFinite(day) || !Number.isFinite(year)) {
+      return null;
+    }
+
+    if (meridiem === 'pm' && hour !== 12) hour += 12;
+    if (meridiem === 'am' && hour === 12) hour = 0;
+
+    const offsetHours = tz === 'PST' ? 8 : 7;
+    const utcMs = Date.UTC(year, month, day, hour + offsetHours, minute, second);
+    return new Date(utcMs);
+  }
+
+  const isoLike = text.replace(/\s+at\s+/i, ' ').replace(/(\d)(am|pm)\b/i, '$1 $2');
+  const fallback = new Date(isoLike);
+  return Number.isNaN(fallback.getTime()) ? null : fallback;
 }
 
 function parseQuantityCandidate(...values) {
@@ -65,7 +112,7 @@ export function normalizeNumericItemId(value) {
 export function normalizePurchaseHistoryRow(row) {
   const buyer = normalizeText(row?.buyer);
   const quantity = parseQuantityCandidate(row?.date);
-  const soldAt = parseDateCandidate(row?.price);
+  const soldAt = parseHistoryDate(row?.price) || parseDateCandidate(row?.price);
   const price = normalizeText(row?.quantity || row?.price);
 
   return {
