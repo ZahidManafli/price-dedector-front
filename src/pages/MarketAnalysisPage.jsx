@@ -387,79 +387,13 @@ export default function MarketAnalysisPage() {
     return `title:${title}:${Number(item?.priceValue || 0).toFixed(2)}`;
   }, []);
 
-  useEffect(() => {
-    if (!Array.isArray(results) || !results.length) return;
-
-    const pending = [];
-    for (const item of results) {
-      const key = getResultKey(item);
-      if (!key) continue;
-      if (Object.prototype.hasOwnProperty.call(soldQuantityByKey, key)) continue;
-
-      const itemId = resolvePurchaseHistoryItemId(item);
-      if (!itemId) continue;
-
-      pending.push({ key, itemId });
-    }
-
-    if (!pending.length || purchaseHistoryQueueRef.current) return;
-
-    let cancelled = false;
-    purchaseHistoryQueueRef.current = true;
-
-    setSoldLoadingByKey((prev) => {
-      const next = { ...prev };
-      for (const entry of pending) {
-        next[entry.key] = true;
-      }
-      return next;
-    });
-
-    (async () => {
-      for (const task of pending) {
-        if (cancelled) break;
-        try {
-          const rows = await fetchPurchaseHistoryRows(task.itemId);
-          const soldCount = calculateLast7DaysSoldCount(rows);
-          if (!cancelled) {
-            setSoldQuantityByKey((prev) => ({
-              ...prev,
-              [task.key]: soldCount,
-            }));
-          }
-        } catch {
-          if (!cancelled) {
-            setSoldQuantityByKey((prev) => ({ ...prev, [task.key]: 0 }));
-          }
-        } finally {
-          if (!cancelled) {
-            setSoldLoadingByKey((prev) => ({ ...prev, [task.key]: false }));
-          }
-        }
-      }
-
-      purchaseHistoryQueueRef.current = false;
-    })().catch(() => {
-      purchaseHistoryQueueRef.current = false;
-    });
-
-    return () => {
-      cancelled = true;
-      purchaseHistoryQueueRef.current = false;
-    };
-  }, [results, getResultKey, resolvePurchaseHistoryItemId, soldQuantityByKey]);
-
   const hydratedResults = useMemo(() => {
-    return (Array.isArray(results) ? results : []).map((item) => {
-      const key = getResultKey(item);
-      const hasOverride = Object.prototype.hasOwnProperty.call(soldQuantityByKey, key);
-      return {
-        ...item,
-        soldQuantity: hasOverride ? soldQuantityByKey[key] : item.soldQuantity,
-        soldLoading: Boolean(soldLoadingByKey[key]),
-      };
-    });
-  }, [results, soldQuantityByKey, soldLoadingByKey, getResultKey]);
+    return (Array.isArray(results) ? results : []).map((item) => ({
+      ...item,
+      soldQuantity: item.soldQuantity ?? 0,
+      soldLoading: false,
+    }));
+  }, [results]);
 
   const filteredResults = useMemo(() => {
     const seller = String(params.sellerUsername || '').trim().toLowerCase();
