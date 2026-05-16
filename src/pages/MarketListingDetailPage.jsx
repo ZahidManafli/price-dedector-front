@@ -62,6 +62,7 @@ export default function MarketListingDetailPage() {
   const [sellerSortConfig, setSellerSortConfig] = useState({ key: 'soldQuantity', direction: 'desc' });
   const [sellerSoldQuantityDeferred, setSellerSoldQuantityDeferred] = useState(false);
   const [sellerPendingSoldItems, setSellerPendingSoldItems] = useState([]);
+  const [sellerSoldQuantityByItemId, setSellerSoldQuantityByItemId] = useState({});
   const [sellerSoldLoadingByItemId, setSellerSoldLoadingByItemId] = useState({});
   const [ebayListModal, setEbayListModal] = useState(null);
   const sellerPurchaseHistoryQueueRef = useRef(false);
@@ -276,6 +277,7 @@ export default function MarketListingDetailPage() {
       setSellerListings(normalizedRows);
       setSellerSoldQuantityDeferred(false);
       setSellerPendingSoldItems(normalizedRows);
+      setSellerSoldQuantityByItemId({});
       setSellerSoldLoadingByItemId({});
       setSellerTotal(Number(payload?.total || 0));
       setSellerOffset(nextOffset);
@@ -284,6 +286,7 @@ export default function MarketListingDetailPage() {
       setSellerListings([]);
       setSellerSoldQuantityDeferred(false);
       setSellerPendingSoldItems([]);
+      setSellerSoldQuantityByItemId({});
       setSellerSoldLoadingByItemId({});
       setSellerTotal(0);
       setSellerOffset(0);
@@ -341,7 +344,17 @@ export default function MarketListingDetailPage() {
   }, []);
 
   const sortedSellerListings = useMemo(() => {
-    const data = [...sellerListings];
+    const hydratedSellerListings = sellerListings.map((item) => {
+      const key = String(item?.id || '').trim();
+      const hasOverride = Object.prototype.hasOwnProperty.call(sellerSoldQuantityByItemId, key);
+      return {
+        ...item,
+        soldQuantity: hasOverride ? sellerSoldQuantityByItemId[key] : item.soldQuantity,
+        soldLoading: Boolean(sellerSoldLoadingByItemId[key]),
+      };
+    });
+
+    const data = [...hydratedSellerListings];
     const { key, direction } = sellerSortConfig;
     if (!key) return data;
 
@@ -371,7 +384,7 @@ export default function MarketListingDetailPage() {
     });
 
     return data;
-  }, [sellerListings, sellerSortConfig]);
+  }, [sellerListings, sellerSortConfig, sellerSoldQuantityByItemId, sellerSoldLoadingByItemId]);
 
   const toggleSellerSort = (key) => {
     setSellerSortConfig((prev) => {
@@ -440,19 +453,11 @@ export default function MarketListingDetailPage() {
           const rows = await fetchPurchaseHistoryRows(resolvedId);
           const soldCount = calculateLast7DaysSoldCount(rows);
           if (!cancelled && key) {
-            setSellerListings((prev) =>
-              prev.map((row) =>
-                String(row?.id || '') === key ? { ...row, soldQuantity: soldCount } : row
-              )
-            );
+            setSellerSoldQuantityByItemId((prev) => ({ ...prev, [key]: soldCount }));
           }
         } catch {
           if (!cancelled && key) {
-            setSellerListings((prev) =>
-              prev.map((row) =>
-                String(row?.id || '') === key ? { ...row, soldQuantity: 0 } : row
-              )
-            );
+            setSellerSoldQuantityByItemId((prev) => ({ ...prev, [key]: 0 }));
           }
         } finally {
           if (!cancelled && key) {
@@ -482,16 +487,16 @@ export default function MarketListingDetailPage() {
     const isLoading = !!sellerSoldLoadingByItemId[key];
     const soldQuantity = item?.soldQuantity;
 
-    if (soldQuantity !== null && soldQuantity !== undefined) {
-      return String(Number(soldQuantity));
-    }
-
     if (isLoading || sellerSoldQuantityDeferred) {
       return (
         <span className="inline-flex items-center justify-center w-4 h-4" aria-label="Loading sold quantity">
           <span className="w-3 h-3 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin" />
         </span>
       );
+    }
+
+    if (soldQuantity !== null && soldQuantity !== undefined) {
+      return String(Number(soldQuantity));
     }
 
     return '0';
