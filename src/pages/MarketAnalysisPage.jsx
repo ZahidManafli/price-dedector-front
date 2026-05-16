@@ -451,13 +451,18 @@ export default function MarketAnalysisPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results, getResultKey, resolvePurchaseHistoryItemId]);
 
+  // Confirm this is still in your hydratedResults (should be — don't change it):
   const hydratedResults = useMemo(() => {
-    return (Array.isArray(results) ? results : []).map((item) => ({
-      ...item,
-      soldQuantity: item.soldQuantity ?? 0,
-      soldLoading: false,
-    }));
-  }, [results]);
+    return (Array.isArray(results) ? results : []).map((item) => {
+      const key = getResultKey(item);
+      const hasOverride = Object.prototype.hasOwnProperty.call(soldQuantityByKey, key);
+      return {
+        ...item,
+        soldQuantity: hasOverride ? soldQuantityByKey[key] : item.soldQuantity,
+        soldLoading: Boolean(soldLoadingByKey[key]),  // ← must be here
+      };
+    });
+  }, [results, soldQuantityByKey, soldLoadingByKey, getResultKey]);
 
   const filteredResults = useMemo(() => {
     const seller = String(params.sellerUsername || '').trim().toLowerCase();

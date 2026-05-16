@@ -110,15 +110,15 @@ export function normalizeNumericItemId(value) {
 }
 
 export function normalizePurchaseHistoryRow(row) {
-  const buyer = normalizeText(row?.buyer);
-  const quantity = parseQuantityCandidate(row?.date);
-  const soldAt = parseHistoryDate(row?.price) || parseDateCandidate(row?.price);
-  const price = normalizeText(row?.quantity || row?.price);
+  const buyer    = normalizeText(row?.buyer);
+  const quantity = parseQuantityCandidate(row?.quantity);  // ✅ quantity from quantity
+  const soldAt   = parseHistoryDate(row?.date) || parseDateCandidate(row?.date); // ✅ date from date
+  const price    = normalizeText(row?.price);              // ✅ price from price
 
   return {
     buyer,
     quantity,
-    date: soldAt ? soldAt.toLocaleString() : normalizeText(row?.price || row?.date),
+    date: soldAt ? soldAt.toLocaleString() : normalizeText(row?.date),
     price,
     soldAt,
   };
