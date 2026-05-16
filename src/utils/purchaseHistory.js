@@ -111,14 +111,14 @@ export function normalizeNumericItemId(value) {
 
 export function normalizePurchaseHistoryRow(row) {
   const buyer    = normalizeText(row?.buyer);
-  const quantity = parseQuantityCandidate(row?.quantity);  // ✅ quantity from quantity
-  const soldAt   = parseHistoryDate(row?.date) || parseDateCandidate(row?.date); // ✅ date from date
-  const price    = normalizeText(row?.price);              // ✅ price from price
+  const quantity = parseQuantityCandidate(row?.date);  // ✅ Quantity from date field (e.g., "1" or "2")
+  const soldAt   = parseHistoryDate(row?.price) || parseDateCandidate(row?.price); // ✅ Timestamp from price field
+  const price    = normalizeText(row?.quantity);      // ✅ Price text from quantity field
 
   return {
     buyer,
     quantity,
-    date: soldAt ? soldAt.toLocaleString() : normalizeText(row?.date),
+    date: soldAt ? soldAt.toLocaleString() : normalizeText(row?.price),
     price,
     soldAt,
   };
@@ -131,7 +131,7 @@ export function calculateLast7DaysSoldCount(rows, now = Date.now()) {
     if (!normalized.soldAt || normalized.soldAt.getTime() < cutoff) {
       return total;
     }
-    return total + parseSoldCountCandidate(row?.date);
+    return total + normalized.quantity; // ✅ Use correctly parsed quantity
   }, 0);
 }
 
