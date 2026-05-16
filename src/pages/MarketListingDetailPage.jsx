@@ -8,7 +8,8 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ListOnEbayModal from '../components/ListOnEbayModal';
 import { useBucket, BucketTrigger, BucketDrawer, AddToBucketButton } from '../components/EbayBucket';
 import { useTheme } from '../context/ThemeContext';
-import { browseAPI } from '../services/api';
+import { browseAPI, ebayAPI } from '../services/api';
+import PurchaseHistoryModal from '../components/PurchaseHistoryModal';
 import { calculateLast7DaysSoldCount, fetchPurchaseHistoryRows, normalizeNumericItemId } from '../utils/purchaseHistory';
 import { countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
 
@@ -65,6 +66,8 @@ export default function MarketListingDetailPage() {
   const [ebayListModal, setEbayListModal] = useState(null);
   const sellerPurchaseHistoryQueueRef = useRef(false);
   const bucket = useBucket();
+  const [historyModal, setHistoryModal] = useState(null);
+// shape: null | { loading: bool, jobId: string|null, data: array|null, error: string|null }
   const [bucketOpen, setBucketOpen] = useState(false);
   const [scrapingIds, setScrapingIds] = useState(new Set());
 
@@ -313,15 +316,29 @@ export default function MarketListingDetailPage() {
     return '';
   };
 
-  const handleSellerItemHistory = (item) => {
-    const purchaseHistoryItemId = resolvePurchaseHistoryItemIdFromItem(item);
-    if (!purchaseHistoryItemId) return;
-    window.open(
-      `https://www.ebay.com/bin/purchasehistory?item=${encodeURIComponent(purchaseHistoryItemId)}`,
-      '_blank',
-      'noopener,noreferrer'
-    );
-  };
+  const handleSellerItemHistory = useCallback(async (item) => {
+    const resolvedItemId = resolvePurchaseHistoryItemIdFromItem(item);
+    if (!resolvedItemId) return;
+  
+    setHistoryModal({ loading: true, jobId: null, data: null, error: null });
+  
+    try {
+      const rows = await fetchPurchaseHistoryRows(resolvedItemId);
+      setHistoryModal({
+        loading: false,
+        jobId: resolvedItemId,
+        data: Array.isArray(rows) ? rows : [],
+        error: null,
+      });
+    } catch (err) {
+      setHistoryModal({
+        loading: false,
+        jobId: null,
+        data: null,
+        error: err?.response?.data?.error || err?.message || 'Request failed',
+      });
+    }
+  }, []);
 
   const sortedSellerListings = useMemo(() => {
     const data = [...sellerListings];
@@ -391,55 +408,41 @@ export default function MarketListingDetailPage() {
   }, [detail?.seller?.username]);
 
   useEffect(() => {
+    if (!Array.isArray(sellerPendingSoldItems) || !sellerPendingSoldItems.length) return;
+    if (sellerPurchaseHistoryQueueRef.current) return;
+  
     let cancelled = false;
-
-    const hydrateDeferredSold = async () => {
-      if (!Array.isArray(sellerPendingSoldItems) || !sellerPendingSoldItems.length) {
-        return;
-      }
-
-      if (sellerPurchaseHistoryQueueRef.current) {
-        return;
-      }
-
-      sellerPurchaseHistoryQueueRef.current = true;
-
-      const loadingMap = {};
-      for (const item of sellerPendingSoldItems) {
-        if (!item?.id) continue;
-        loadingMap[item.id] = true;
-      }
-      if (Object.keys(loadingMap).length) {
-        setSellerSoldLoadingByItemId(loadingMap);
-      }
-
+    sellerPurchaseHistoryQueueRef.current = true;
+  
+    const loadingMap = {};
+    for (const item of sellerPendingSoldItems) {
+      if (item?.id) loadingMap[item.id] = true;
+    }
+    if (Object.keys(loadingMap).length) {
+      setSellerSoldLoadingByItemId(loadingMap);
+    }
+  
+    (async () => {
       for (const item of sellerPendingSoldItems) {
         if (cancelled) break;
         const key = String(item?.id || '').trim();
-        const itemId =
+        const resolvedId =
           normalizeNumericItemId(item?.id) ||
           normalizeNumericItemId(item?.legacyItemId) ||
           normalizeNumericItemId(item?.itemWebUrl);
-
-        if (!itemId) {
-          if (!cancelled && key) {
-            setSellerSoldLoadingByItemId((prev) => ({ ...prev, [key]: false }));
-          }
+  
+        if (!resolvedId) {
+          if (key) setSellerSoldLoadingByItemId((prev) => ({ ...prev, [key]: false }));
           continue;
         }
-
+  
         try {
-          const rows = await fetchPurchaseHistoryRows(itemId);
+          const rows = await fetchPurchaseHistoryRows(resolvedId);
           const soldCount = calculateLast7DaysSoldCount(rows);
           if (!cancelled && key) {
             setSellerListings((prev) =>
               prev.map((row) =>
-                String(row?.id || '') === key
-                  ? {
-                      ...row,
-                      soldQuantity: soldCount,
-                    }
-                  : row
+                String(row?.id || '') === key ? { ...row, soldQuantity: soldCount } : row
               )
             );
           }
@@ -447,12 +450,7 @@ export default function MarketListingDetailPage() {
           if (!cancelled && key) {
             setSellerListings((prev) =>
               prev.map((row) =>
-                String(row?.id || '') === key
-                  ? {
-                      ...row,
-                      soldQuantity: 0,
-                    }
-                  : row
+                String(row?.id || '') === key ? { ...row, soldQuantity: 0 } : row
               )
             );
           }
@@ -462,21 +460,21 @@ export default function MarketListingDetailPage() {
           }
         }
       }
-
+  
       if (!cancelled) {
         setSellerPendingSoldItems([]);
         setSellerSoldQuantityDeferred(false);
       }
-
       sellerPurchaseHistoryQueueRef.current = false;
-    };
-
-    hydrateDeferredSold();
-
+    })().catch(() => {
+      sellerPurchaseHistoryQueueRef.current = false;
+    });
+  
     return () => {
       cancelled = true;
       sellerPurchaseHistoryQueueRef.current = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sellerPendingSoldItems]);
 
   const renderSellerSoldValue = (item) => {
@@ -604,15 +602,34 @@ export default function MarketListingDetailPage() {
                 </div>
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 md:col-span-2">
                   <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketListingDetailPage.sellingHistory')}</p>
-                  <a
-                    href={`https://www.ebay.com/bin/purchasehistory?item=${encodeURIComponent(purchaseHistoryItemId)}`}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    type="button"
                     className="btn-secondary inline-flex items-center gap-2 mt-2"
+                    disabled={!purchaseHistoryItemId}
+                    onClick={async () => {
+                      if (!purchaseHistoryItemId) return;
+                      setHistoryModal({ loading: true, jobId: null, data: null, error: null });
+                      try {
+                        const rows = await fetchPurchaseHistoryRows(purchaseHistoryItemId);
+                        setHistoryModal({
+                          loading: false,
+                          jobId: purchaseHistoryItemId,
+                          data: Array.isArray(rows) ? rows : [],
+                          error: null,
+                        });
+                      } catch (err) {
+                        setHistoryModal({
+                          loading: false,
+                          jobId: null,
+                          data: null,
+                          error: err?.response?.data?.error || err?.message || 'Request failed',
+                        });
+                      }
+                    }}
                   >
+                    <History size={14} />
                     {t('marketListingDetailPage.seeSellingHistory')}
-                    <ExternalLink size={14} />
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
@@ -875,6 +892,13 @@ export default function MarketListingDetailPage() {
           item={ebayListModal}
           isDark={isDark}
           onClose={() => setEbayListModal(null)}
+        />
+      )}
+
+      {historyModal && (
+        <PurchaseHistoryModal
+          state={historyModal}
+          onClose={() => setHistoryModal(null)}
         />
       )}
 

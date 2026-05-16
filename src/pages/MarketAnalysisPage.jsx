@@ -743,7 +743,7 @@ export default function MarketAnalysisPage() {
                         <th className="text-left p-3">F/Score</th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('soldQuantity')} className="hover:underline">
-                            {renderSortLabel('Last 7d Sold', 'soldQuantity')}
+                            {renderSortLabel('Last 7d', 'soldQuantity')}
                           </button>
                         </th>
                         <th className="text-left p-3">{t('marketAnalysisPage.historyHeader')}</th>
