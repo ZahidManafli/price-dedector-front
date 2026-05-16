@@ -387,6 +387,70 @@ export default function MarketAnalysisPage() {
     return `title:${title}:${Number(item?.priceValue || 0).toFixed(2)}`;
   }, []);
 
+  useEffect(() => {
+    if (!Array.isArray(results) || !results.length) return;
+    if (purchaseHistoryQueueRef.current) return; // already running, don't restart
+  
+    const pending = [];
+    for (const item of results) {
+      const key = getResultKey(item);
+      if (!key) continue;
+      // Skip items already fetched OR currently loading
+      if (
+        Object.prototype.hasOwnProperty.call(soldQuantityByKey, key) ||
+        soldLoadingByKey[key]
+      ) continue;
+  
+      const itemId = resolvePurchaseHistoryItemId(item);
+      if (!itemId) continue;
+  
+      pending.push({ key, itemId });
+    }
+  
+    if (!pending.length) return;
+  
+    let cancelled = false;
+    purchaseHistoryQueueRef.current = true;
+  
+    // Mark all pending as loading immediately
+    setSoldLoadingByKey((prev) => {
+      const next = { ...prev };
+      for (const entry of pending) next[entry.key] = true;
+      return next;
+    });
+  
+    (async () => {
+      for (const task of pending) {
+        if (cancelled) break;
+        try {
+          const rows = await fetchPurchaseHistoryRows(task.itemId);
+          const soldCount = calculateLast7DaysSoldCount(rows);
+          if (!cancelled) {
+            setSoldQuantityByKey((prev) => ({ ...prev, [task.key]: soldCount }));
+          }
+        } catch {
+          if (!cancelled) {
+            setSoldQuantityByKey((prev) => ({ ...prev, [task.key]: 0 }));
+          }
+        } finally {
+          if (!cancelled) {
+            setSoldLoadingByKey((prev) => ({ ...prev, [task.key]: false }));
+          }
+        }
+      }
+      purchaseHistoryQueueRef.current = false;
+    })().catch(() => {
+      purchaseHistoryQueueRef.current = false;
+    });
+  
+    return () => {
+      cancelled = true;
+      purchaseHistoryQueueRef.current = false;
+    };
+    // ✅ Remove soldQuantityByKey from deps — it was causing infinite re-trigger
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [results, getResultKey, resolvePurchaseHistoryItemId]);
+
   const hydratedResults = useMemo(() => {
     return (Array.isArray(results) ? results : []).map((item) => ({
       ...item,
