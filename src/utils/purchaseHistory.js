@@ -99,6 +99,31 @@ function parseSoldCountCandidate(value) {
   return 1;
 }
 
+function getPurchaseHistoryCacheKey(itemId) {
+  const normalizedItemId = normalizeNumericItemId(itemId) || String(itemId || '').trim();
+  return normalizedItemId ? `ebayPurchaseHistoryCache:${normalizedItemId}` : '';
+}
+
+function persistPurchaseHistoryCache(itemId, rows, meta = {}) {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+
+  const cacheKey = getPurchaseHistoryCacheKey(itemId);
+  if (!cacheKey) return;
+
+  const payload = {
+    itemId: normalizeNumericItemId(itemId) || String(itemId || '').trim(),
+    rows: Array.isArray(rows) ? rows : [],
+    soldQuantity7d: Number.isFinite(meta.soldQuantity7d)
+      ? Number(meta.soldQuantity7d)
+      : calculateLast7DaysSoldCount(rows),
+    scrapedAt: meta.scrapedAt || new Date().toISOString(),
+    expiresAt: meta.expiresAt || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    source: meta.source || 'extension-scrape',
+  };
+
+  window.localStorage.setItem(cacheKey, JSON.stringify(payload));
+}
+
 export function normalizeNumericItemId(value) {
   const raw = String(value || '').trim();
   if (!raw) return '';
@@ -111,9 +136,9 @@ export function normalizeNumericItemId(value) {
 
 export function normalizePurchaseHistoryRow(row) {
   const buyer    = normalizeText(row?.buyer);
-  const quantity = parseQuantityCandidate(row?.price);    // ✅ Quantity from price field (e.g., "1")
+  const quantity = parseQuantityCandidate(row?.quantity, row?.price);    // ✅ Quantity from quantity or price field
   const soldAt   = parseHistoryDate(row?.date) || parseDateCandidate(row?.date); // ✅ Timestamp from date field
-  const price    = normalizeText(row?.quantity);         // ✅ Price text from quantity field (e.g., "US $11.81")
+  const price    = normalizeText(row?.price || row?.quantity);         // ✅ Price text from price field when available
 
   return {
     buyer,
@@ -137,7 +162,14 @@ export function calculateLast7DaysSoldCount(rows, now = Date.now()) {
 
 export async function fetchPurchaseHistoryRows(itemId, { maxAttempts = 15, pollIntervalMs = 2000 } = {}) {
   const response = await ebayAPI.post('/ebay/extension-scrape', { itemId });
-  const jobId = response?.data?.jobId;
+  const initialData = response?.data || {};
+
+  if (initialData?.status === 'done' && Array.isArray(initialData?.data)) {
+    persistPurchaseHistoryCache(itemId, initialData.data, initialData);
+    return initialData.data;
+  }
+
+  const jobId = initialData?.jobId;
   if (!jobId) {
     throw new Error('Missing jobId from backend');
   }
@@ -148,7 +180,9 @@ export async function fetchPurchaseHistoryRows(itemId, { maxAttempts = 15, pollI
     const { status, data, error } = pollRes?.data || {};
 
     if (status === 'done') {
-      return Array.isArray(data) ? data : [];
+      const rows = Array.isArray(data) ? data : [];
+      persistPurchaseHistoryCache(itemId, rows, pollRes?.data || {});
+      return rows;
     }
 
     if (status === 'error') {
