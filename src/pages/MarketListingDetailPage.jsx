@@ -29,6 +29,7 @@ function normalizeSummary(summary) {
     priceValue: Number(summary?.price?.value || 0),
     shippingValue: Number(summary?.shippingOptions?.[0]?.shippingCost?.value || 0),
     soldQuantity: normalizeSoldQuantity(summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity),
+    sold15Days: normalizeSoldQuantity(summary?.sold15Days),
     condition: summary?.condition || 'Unknown',
     itemWebUrl: summary?.itemWebUrl || summary?.itemAffiliateWebUrl || '',
   };

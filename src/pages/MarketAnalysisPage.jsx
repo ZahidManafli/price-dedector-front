@@ -8,12 +8,12 @@ import MarketSearchBar from '../components/MarketSearchBar';
 import MarketItemCard from '../components/MarketItemCard';
 import MarketComparePanel from '../components/MarketComparePanel';
 import useBrowseSearch from '../hooks/useBrowseSearch';
-import { calculateProfit, formatCurrency } from '../utils/helpers';
+import { calculateProfit, formatCurrency, normalizeNumericItemId } from '../utils/helpers';
 import { browseAPI, ebayAPI, settingsAPI } from '../services/api';
 import ListOnEbayModal from '../components/ListOnEbayModal';
 import PurchaseHistoryModal from '../components/PurchaseHistoryModal';
 import { useTheme } from '../context/ThemeContext';
-import { calculateLast7DaysSoldCount, fetchPurchaseHistoryRows, normalizeNumericItemId } from '../utils/purchaseHistory';
+import { calculateLast7DaysSoldCount, fetchPurchaseHistoryRows } from '../utils/purchaseHistory';
 // ── Bucket ────────────────────────────────────────────────────────────────────
 import { useBucket, BucketTrigger, BucketDrawer, AddToBucketButton } from '../components/EbayBucket';
 

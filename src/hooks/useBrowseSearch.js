@@ -117,6 +117,10 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false } = {}) {
   const soldRaw = summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity;
   const soldQuantity =
     soldRaw === null || soldRaw === undefined || soldRaw === '' ? null : Number(soldRaw || 0);
+  
+  const sold15DaysRaw = summary?.sold15Days;
+  const sold15Days =
+    sold15DaysRaw === null || sold15DaysRaw === undefined || sold15DaysRaw === '' ? null : Number(sold15DaysRaw || 0);
 
   return {
     id: normalizedId || rawItemId,
@@ -127,6 +131,7 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false } = {}) {
     priceCurrency: summary?.price?.currency || 'USD',
     shippingValue: Number(summary?.shippingOptions?.[0]?.shippingCost?.value || 0),
     soldQuantity: soldQuantity === null ? null : (Number.isFinite(soldQuantity) ? soldQuantity : 0),
+    sold15Days: sold15Days === null ? null : (Number.isFinite(sold15Days) ? sold15Days : 0),
     condition: summary?.condition || 'Unknown',
     sellerName: summary?.seller?.username || 'Unknown seller',
     sellerFeedback: Number(summary?.seller?.feedbackScore || 0),
