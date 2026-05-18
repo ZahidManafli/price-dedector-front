@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { calculateLast7DaysSoldCount, normalizePurchaseHistoryRow } from '../utils/purchaseHistory';
+import { calculateLast7DaysSoldCount, calculateLast15DaysSoldCount, normalizePurchaseHistoryRow } from '../utils/purchaseHistory';
 
 export default function PurchaseHistoryModal({ state, onClose }) {
   if (!state) return null;
@@ -9,6 +9,7 @@ export default function PurchaseHistoryModal({ state, onClose }) {
     [state.data]
   );
   const soldLast7Days = useMemo(() => calculateLast7DaysSoldCount(state.data || []), [state.data]);
+  const soldLast15Days = useMemo(() => calculateLast15DaysSoldCount(state.data || []), [state.data]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
@@ -37,8 +38,13 @@ export default function PurchaseHistoryModal({ state, onClose }) {
 
           {!state.loading && !state.error && (
             <>
-              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 p-3 text-sm text-slate-700 dark:text-slate-200">
-                Last 7 days sold: <span className="font-semibold">{soldLast7Days}</span>
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 p-3 space-y-2">
+                <div className="text-sm text-slate-700 dark:text-slate-200">
+                  Last 7 days sold: <span className="font-semibold">{soldLast7Days}</span>
+                </div>
+                <div className="text-sm text-slate-700 dark:text-slate-200">
+                  Last 15 days sold: <span className="font-semibold">{soldLast15Days}</span>
+                </div>
               </div>
 
               {rows.length > 0 ? (

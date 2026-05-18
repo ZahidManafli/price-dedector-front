@@ -160,6 +160,17 @@ export function calculateLast7DaysSoldCount(rows, now = Date.now()) {
   }, 0);
 }
 
+export function calculateLast15DaysSoldCount(rows, now = Date.now()) {
+  const cutoff = now - 15 * 24 * 60 * 60 * 1000;
+  return (Array.isArray(rows) ? rows : []).reduce((total, row) => {
+    const normalized = normalizePurchaseHistoryRow(row);
+    if (!normalized.soldAt || normalized.soldAt.getTime() < cutoff) {
+      return total;
+    }
+    return total + normalized.quantity;
+  }, 0);
+}
+
 export async function fetchPurchaseHistoryRows(itemId, { maxAttempts = 15, pollIntervalMs = 2000 } = {}) {
   const response = await ebayAPI.post('/ebay/extension-scrape', { itemId });
   const initialData = response?.data || {};

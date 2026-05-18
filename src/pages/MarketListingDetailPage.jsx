@@ -774,6 +774,11 @@ export default function MarketListingDetailPage() {
                           </button>
                         </th>
                         <th className="text-left p-3">
+                          <button type="button" onClick={() => toggleSellerSort('sold15Days')} className="hover:underline">
+                            {renderSellerSortLabel('Last 15d', 'sold15Days')}
+                          </button>
+                        </th>
+                        <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSellerSort('priceValue')} className="hover:underline">
                             {renderSellerSortLabel(t('marketListingDetailPage.itemPrice'), 'priceValue')}
                           </button>
@@ -804,6 +809,13 @@ export default function MarketListingDetailPage() {
                             </button>
                           </td>
                           <td className="p-3 font-medium">{renderSellerSoldValue(item)}</td>
+                          <td className="p-3 font-medium">
+                            {item?.sold15Days !== null && item?.sold15Days !== undefined && item?.sold15Days > 0 ? (
+                              Number(item.sold15Days)
+                            ) : (
+                              '-'
+                            )}
+                          </td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>
                           <td className="p-3">
                             <div className="flex gap-2 flex-wrap">
