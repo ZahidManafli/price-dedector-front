@@ -446,9 +446,6 @@ export default function MarketAnalysisPage() {
               [task.key]: soldCount15d,
             }));
           }
-          if (!cancelled) {
-            setSoldQuantityByKey((prev) => ({ ...prev, [task.key]: soldCount }));
-          }
         } catch {
           if (!cancelled) {
             setSoldQuantityByKey((prev) => ({
