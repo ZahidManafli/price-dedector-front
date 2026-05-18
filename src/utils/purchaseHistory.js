@@ -112,12 +112,23 @@ function persistPurchaseHistoryCache(itemId, rows, meta = {}) {
 
   const payload = {
     itemId: normalizeNumericItemId(itemId) || String(itemId || '').trim(),
+  
     rows: Array.isArray(rows) ? rows : [],
+  
     soldQuantity7d: Number.isFinite(meta.soldQuantity7d)
       ? Number(meta.soldQuantity7d)
       : calculateLast7DaysSoldCount(rows),
+  
+    soldQuantity15d: Number.isFinite(meta.soldQuantity15d)
+      ? Number(meta.soldQuantity15d)
+      : calculateLast15DaysSoldCount(rows),
+  
     scrapedAt: meta.scrapedAt || new Date().toISOString(),
-    expiresAt: meta.expiresAt || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+  
+    expiresAt:
+      meta.expiresAt ||
+      new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+  
     source: meta.source || 'extension-scrape',
   };
 
@@ -160,12 +171,32 @@ export function calculateLast7DaysSoldCount(rows, now = Date.now()) {
   }, 0);
 }
 
+export function calculateLast15DaysSoldCount(rows, now = Date.now()) {
+  const cutoff = now - 15 * 24 * 60 * 60 * 1000;
+
+  return (Array.isArray(rows) ? rows : []).reduce((total, row) => {
+    const normalized = normalizePurchaseHistoryRow(row);
+
+    if (!normalized.soldAt || normalized.soldAt.getTime() < cutoff) {
+      return total;
+    }
+
+    return total + normalized.quantity;
+  }, 0);
+}
+
 export async function fetchPurchaseHistoryRows(itemId, { maxAttempts = 15, pollIntervalMs = 2000 } = {}) {
   const response = await ebayAPI.post('/ebay/extension-scrape', { itemId });
   const initialData = response?.data || {};
 
   if (initialData?.status === 'done' && Array.isArray(initialData?.data)) {
-    persistPurchaseHistoryCache(itemId, initialData.data, initialData);
+    persistPurchaseHistoryCache(itemId, initialData.data, {
+      ...initialData,
+      soldQuantity15d:
+        initialData?.soldQuantity15d ??
+        calculateLast15DaysSoldCount(initialData.data),
+    });
+  
     return initialData.data;
   }
 
@@ -181,7 +212,14 @@ export async function fetchPurchaseHistoryRows(itemId, { maxAttempts = 15, pollI
 
     if (status === 'done') {
       const rows = Array.isArray(data) ? data : [];
-      persistPurchaseHistoryCache(itemId, rows, pollRes?.data || {});
+    
+      persistPurchaseHistoryCache(itemId, rows, {
+        ...(pollRes?.data || {}),
+        soldQuantity15d:
+          pollRes?.data?.soldQuantity15d ??
+          calculateLast15DaysSoldCount(rows),
+      });
+    
       return rows;
     }
 

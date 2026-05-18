@@ -10,7 +10,7 @@ import { useBucket, BucketTrigger, BucketDrawer, AddToBucketButton } from '../co
 import { useTheme } from '../context/ThemeContext';
 import { browseAPI, ebayAPI } from '../services/api';
 import PurchaseHistoryModal from '../components/PurchaseHistoryModal';
-import { calculateLast7DaysSoldCount, fetchPurchaseHistoryRows, normalizeNumericItemId } from '../utils/purchaseHistory';
+import { calculateLast7DaysSoldCount, calculateLast15DaysSoldCount, fetchPurchaseHistoryRows, normalizeNumericItemId } from '../utils/purchaseHistory';
 import { countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
 
 function normalizeSoldQuantity(value) {
@@ -62,7 +62,7 @@ export default function MarketListingDetailPage() {
   const [sellerSortConfig, setSellerSortConfig] = useState({ key: 'soldQuantity', direction: 'desc' });
   const [sellerSoldQuantityDeferred, setSellerSoldQuantityDeferred] = useState(false);
   const [sellerPendingSoldItems, setSellerPendingSoldItems] = useState([]);
-  const [sellerSoldQuantityByItemId, setSellerSoldQuantityByItemId] = useState({});
+  const [sellerSoldStatsByItemId, setSellerSoldStatsByItemId] = useState({});
   const [sellerSoldLoadingByItemId, setSellerSoldLoadingByItemId] = useState({});
   const [ebayListModal, setEbayListModal] = useState(null);
   const sellerPurchaseHistoryQueueRef = useRef(false);
@@ -277,7 +277,7 @@ export default function MarketListingDetailPage() {
       setSellerListings(normalizedRows);
       setSellerSoldQuantityDeferred(false);
       setSellerPendingSoldItems(normalizedRows);
-      setSellerSoldQuantityByItemId({});
+      setSellerSoldStatsByItemId({});
       setSellerSoldLoadingByItemId({});
       setSellerTotal(Number(payload?.total || 0));
       setSellerOffset(nextOffset);
@@ -286,7 +286,7 @@ export default function MarketListingDetailPage() {
       setSellerListings([]);
       setSellerSoldQuantityDeferred(false);
       setSellerPendingSoldItems([]);
-      setSellerSoldQuantityByItemId({});
+      setSellerSoldStatsByItemId({});
       setSellerSoldLoadingByItemId({});
       setSellerTotal(0);
       setSellerOffset(0);
@@ -346,10 +346,12 @@ export default function MarketListingDetailPage() {
   const sortedSellerListings = useMemo(() => {
     const hydratedSellerListings = sellerListings.map((item) => {
       const key = String(item?.id || '').trim();
-      const hasOverride = Object.prototype.hasOwnProperty.call(sellerSoldQuantityByItemId, key);
+      const stats = sellerSoldStatsByItemId[key];
+
       return {
         ...item,
-        soldQuantity: hasOverride ? sellerSoldQuantityByItemId[key] : item.soldQuantity,
+        sold7d: stats?.sold7d ?? 0,
+        sold15d: stats?.sold15d ?? 0,
         soldLoading: Boolean(sellerSoldLoadingByItemId[key]),
       };
     });
@@ -363,7 +365,7 @@ export default function MarketListingDetailPage() {
         case 'title':
           return String(item.title || '').toLowerCase();
         case 'soldQuantity':
-          return item.soldQuantity === null ? -1 : Number(item.soldQuantity || 0);
+          return Number(item.sold7d || 0);
         case 'priceValue':
           return Number(item.priceValue || 0);
         default:
@@ -451,13 +453,27 @@ export default function MarketListingDetailPage() {
   
         try {
           const rows = await fetchPurchaseHistoryRows(resolvedId);
-          const soldCount = calculateLast7DaysSoldCount(rows);
+          const sold7d = calculateLast7DaysSoldCount(rows);
+          const sold15d = calculateLast15DaysSoldCount(rows);
+          
           if (!cancelled && key) {
-            setSellerSoldQuantityByItemId((prev) => ({ ...prev, [key]: soldCount }));
+            setSellerSoldStatsByItemId((prev) => ({
+              ...prev,
+              [key]: {
+                sold7d,
+                sold15d,
+              },
+            }));
           }
         } catch {
           if (!cancelled && key) {
-            setSellerSoldQuantityByItemId((prev) => ({ ...prev, [key]: 0 }));
+            setSellerSoldStatsByItemId((prev) => ({
+              ...prev,
+              [key]: {
+                sold7d: 0,
+                sold15d: 0,
+              },
+            }));
           }
         } finally {
           if (!cancelled && key) {
@@ -482,24 +498,23 @@ export default function MarketListingDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sellerPendingSoldItems]);
 
-  const renderSellerSoldValue = (item) => {
+  const renderSellerSoldValue = (item, type = '7d') => {
     const key = String(item?.id || '').trim();
     const isLoading = !!sellerSoldLoadingByItemId[key];
-    const soldQuantity = item?.soldQuantity;
-
+  
     if (isLoading || sellerSoldQuantityDeferred) {
       return (
-        <span className="inline-flex items-center justify-center w-4 h-4" aria-label="Loading sold quantity">
+        <span className="inline-flex items-center justify-center w-4 h-4">
           <span className="w-3 h-3 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin" />
         </span>
       );
     }
-
-    if (soldQuantity !== null && soldQuantity !== undefined) {
-      return String(Number(soldQuantity));
+  
+    if (type === '15d') {
+      return String(Number(item?.sold15d || 0));
     }
-
-    return '0';
+  
+    return String(Number(item?.sold7d || 0));
   };
 
   if (loading) {
@@ -723,6 +738,9 @@ export default function MarketListingDetailPage() {
                       <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
                         {t('marketListingDetailPage.soldQty')}: <span className="font-semibold">{renderSellerSoldValue(item)}</span>
                       </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
+                        15D Sold: <span className="font-semibold">{renderSellerSoldValue(item, '15d')}</span>
+                      </p>
                       <div className="mt-2 flex items-center gap-2">
                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                           {formatCurrency(item.priceValue)}
@@ -768,9 +786,17 @@ export default function MarketListingDetailPage() {
                           </button>
                         </th>
                         <th className="text-left p-3">
-                          <button type="button" onClick={() => toggleSellerSort('soldQuantity')} className="hover:underline">
-                            {renderSellerSortLabel(t('marketListingDetailPage.soldQty'), 'soldQuantity')}
+                          <button
+                            type="button"
+                            onClick={() => toggleSellerSort('soldQuantity')}
+                            className="hover:underline"
+                          >
+                            7D Sold
                           </button>
+                        </th>
+                        
+                        <th className="text-left p-3">
+                          15D Sold
                         </th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSellerSort('priceValue')} className="hover:underline">
@@ -802,7 +828,13 @@ export default function MarketListingDetailPage() {
                               {item.title}
                             </button>
                           </td>
-                          <td className="p-3 font-medium">{renderSellerSoldValue(item)}</td>
+                          <td className="p-3 font-medium">
+                            {renderSellerSoldValue(item, '7d')}
+                          </td>
+                          
+                          <td className="p-3 font-medium">
+                            {renderSellerSoldValue(item, '15d')}
+                          </td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>
                           <td className="p-3">
                             <div className="flex gap-2 flex-wrap">

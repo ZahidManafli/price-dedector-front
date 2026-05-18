@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { calculateLast7DaysSoldCount, normalizePurchaseHistoryRow } from '../utils/purchaseHistory';
+import { calculateLast7DaysSoldCount, calculateLast15DaysSoldCount, normalizePurchaseHistoryRow } from '../utils/purchaseHistory';
 
 export default function PurchaseHistoryModal({ state, onClose }) {
   if (!state) return null;
@@ -8,7 +8,21 @@ export default function PurchaseHistoryModal({ state, onClose }) {
     () => (Array.isArray(state.data) ? state.data.map((row) => normalizePurchaseHistoryRow(row)) : []),
     [state.data]
   );
-  const soldLast7Days = useMemo(() => calculateLast7DaysSoldCount(state.data || []), [state.data]);
+  const soldLast7Days = useMemo(
+    () =>
+      Number.isFinite(state?.soldQuantity7d)
+        ? Number(state.soldQuantity7d)
+        : calculateLast7DaysSoldCount(state.data || []),
+    [state.data, state?.soldQuantity7d]
+  );
+  
+  const soldLast15Days = useMemo(
+    () =>
+      Number.isFinite(state?.soldQuantity15d)
+        ? Number(state.soldQuantity15d)
+        : calculateLast15DaysSoldCount(state.data || []),
+    [state.data, state?.soldQuantity15d]
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
@@ -37,8 +51,26 @@ export default function PurchaseHistoryModal({ state, onClose }) {
 
           {!state.loading && !state.error && (
             <>
-              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 p-3 text-sm text-slate-700 dark:text-slate-200">
-                Last 7 days sold: <span className="font-semibold">{soldLast7Days}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 p-3 text-sm text-slate-700 dark:text-slate-200">
+                  <div className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">
+                    Last 7 Days Sold
+                  </div>
+              
+                  <div className="mt-1 text-xl font-semibold">
+                    {soldLast7Days}
+                  </div>
+                </div>
+              
+                <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 p-3 text-sm text-slate-700 dark:text-slate-200">
+                  <div className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">
+                    Last 15 Days Sold
+                  </div>
+              
+                  <div className="mt-1 text-xl font-semibold">
+                    {soldLast15Days}
+                  </div>
+                </div>
               </div>
 
               {rows.length > 0 ? (

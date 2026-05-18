@@ -13,7 +13,7 @@ import { browseAPI, ebayAPI, settingsAPI } from '../services/api';
 import ListOnEbayModal from '../components/ListOnEbayModal';
 import PurchaseHistoryModal from '../components/PurchaseHistoryModal';
 import { useTheme } from '../context/ThemeContext';
-import { calculateLast7DaysSoldCount, fetchPurchaseHistoryRows, normalizeNumericItemId } from '../utils/purchaseHistory';
+import { calculateLast7DaysSoldCount, calculateLast15DaysSoldCount, fetchPurchaseHistoryRows, normalizeNumericItemId } from '../utils/purchaseHistory';
 // ── Bucket ────────────────────────────────────────────────────────────────────
 import { useBucket, BucketTrigger, BucketDrawer, AddToBucketButton } from '../components/EbayBucket';
 
@@ -81,6 +81,7 @@ export default function MarketAnalysisPage() {
   const [calcEbayPrice, setCalcEbayPrice] = useState('');
   const [calcAdRate, setCalcAdRate] = useState('0');
   const [soldQuantityByKey, setSoldQuantityByKey] = useState({});
+  const [soldQuantity15dByKey, setSoldQuantity15dByKey] = useState({});
   const [soldLoadingByKey, setSoldLoadingByKey] = useState({});
   const [ebayListModal, setEbayListModal] = useState(null);
   const [historyModal, setHistoryModal] = useState(null);
@@ -260,7 +261,14 @@ export default function MarketAnalysisPage() {
 
     try {
       const data = await fetchPurchaseHistoryRows(itemId);
-      setHistoryModal({ loading: false, jobId: itemId, data: Array.isArray(data) ? data : [], error: null });
+      setHistoryModal({
+        loading: false,
+        jobId: itemId,
+        data: Array.isArray(data) ? data : [],
+        soldQuantity7d: calculateLast7DaysSoldCount(data || []),
+        soldQuantity15d: calculateLast15DaysSoldCount(data || []),
+        error: null,
+      });
     } catch (error) {
       setHistoryModal({
         loading: false,
@@ -362,7 +370,7 @@ export default function MarketAnalysisPage() {
       buyingOptions: isSellerOnlyHandoff ? '' : buyingOptionsFromQuery,
       sellerUsername: sellerFromQuery,
       freeShipping: isSellerOnlyHandoff ? false : freeShippingFromQuery,
-      limit: Math.max(1, Number(query.get('limit') || params.limit || 24)),
+      limit: Math.max(1, Number(query.get('limit') || params.limit || 12)),
       offset: Math.max(0, Number(query.get('offset') || 0)),
     };
 
@@ -424,13 +432,34 @@ export default function MarketAnalysisPage() {
         if (cancelled) break;
         try {
           const rows = await fetchPurchaseHistoryRows(task.itemId);
-          const soldCount = calculateLast7DaysSoldCount(rows);
+          const soldCount7d = calculateLast7DaysSoldCount(rows);
+          const soldCount15d = calculateLast15DaysSoldCount(rows);
+          
+          if (!cancelled) {
+            setSoldQuantityByKey((prev) => ({
+              ...prev,
+              [task.key]: soldCount7d,
+            }));
+          
+            setSoldQuantity15dByKey((prev) => ({
+              ...prev,
+              [task.key]: soldCount15d,
+            }));
+          }
           if (!cancelled) {
             setSoldQuantityByKey((prev) => ({ ...prev, [task.key]: soldCount }));
           }
         } catch {
           if (!cancelled) {
-            setSoldQuantityByKey((prev) => ({ ...prev, [task.key]: 0 }));
+            setSoldQuantityByKey((prev) => ({
+              ...prev,
+              [task.key]: 0,
+            }));
+            
+            setSoldQuantity15dByKey((prev) => ({
+              ...prev,
+              [task.key]: 0,
+            }));
           }
         } finally {
           if (!cancelled) {
@@ -458,8 +487,17 @@ export default function MarketAnalysisPage() {
       const hasOverride = Object.prototype.hasOwnProperty.call(soldQuantityByKey, key);
       return {
         ...item,
-        soldQuantity: hasOverride ? soldQuantityByKey[key] : item.soldQuantity,
-        soldLoading: Boolean(soldLoadingByKey[key]),  // ← must be here
+      
+        soldQuantity: hasOverride
+          ? soldQuantityByKey[key]
+          : item.soldQuantity,
+      
+        soldQuantity15d:
+          soldQuantity15dByKey[key] ??
+          item.soldQuantity15d ??
+          0,
+      
+        soldLoading: Boolean(soldLoadingByKey[key]),
       };
     });
   }, [results, soldQuantityByKey, soldLoadingByKey, getResultKey]);
@@ -576,7 +614,7 @@ export default function MarketAnalysisPage() {
   const onNextPage = () => {
     const nextParams = {
       ...params,
-      offset: Number(params.offset || 0) + Number(params.limit || 24),
+      offset: Number(params.offset || 0) + Number(params.limit || 12),
     };
     setParams(nextParams);
     runSearch(nextParams);
@@ -585,7 +623,7 @@ export default function MarketAnalysisPage() {
   const onPrevPage = () => {
     const nextParams = {
       ...params,
-      offset: Math.max(0, Number(params.offset || 0) - Number(params.limit || 24)),
+      offset: Math.max(0, Number(params.offset || 0) - Number(params.limit || 12)),
     };
     setParams(nextParams);
     runSearch(nextParams);
@@ -746,6 +784,9 @@ export default function MarketAnalysisPage() {
                             {renderSortLabel('Last 7d', 'soldQuantity')}
                           </button>
                         </th>
+                        <th className="text-left p-3">
+                          Last 15d
+                        </th>
                         <th className="text-left p-3">{t('marketAnalysisPage.historyHeader')}</th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('priceValue')} className="hover:underline">
@@ -797,6 +838,16 @@ export default function MarketAnalysisPage() {
                               />
                             ) : (
                               Number(item.soldQuantity || 0)
+                            )}
+                          </td>
+                          
+                          <td className="p-3 font-medium">
+                            {item?.soldLoading ? (
+                              <span
+                                className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent align-middle"
+                              />
+                            ) : (
+                              Number(item.soldQuantity15d || 0)
                             )}
                           </td>
                           <td className="p-3">
