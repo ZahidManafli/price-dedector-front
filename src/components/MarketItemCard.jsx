@@ -71,27 +71,18 @@ export default function MarketItemCard({ item, onSelect, onInspect, onSellerClic
       </div>
 
       <div className="rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/60 dark:bg-emerald-950/30 px-2 py-1 text-xs">
-        <div className="flex justify-between items-center gap-2">
-          <div>
-            {t('marketItemCard.soldQuantity')}:{' '}
-            <span className="font-semibold">
-              {item?.soldLoading ? (
-                <span
-                  className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent align-middle"
-                  aria-label={t('marketItemCard.loadingSoldQuantity')}
-                  title={t('marketItemCard.loadingSoldQuantity')}
-                />
-              ) : (
-                Number(item?.soldQuantity || 0)
-              )}
-            </span>
-          </div>
-          {item?.sold15Days !== null && item?.sold15Days !== undefined && item?.sold15Days > 0 && (
-            <div className="text-xs text-slate-600 dark:text-slate-400" title="Last 15 days sold">
-              <span className="text-slate-500 dark:text-slate-400">15d:</span> <span className="font-semibold">{Number(item?.sold15Days)}</span>
-            </div>
+        {t('marketItemCard.soldQuantity')}:{' '}
+        <span className="font-semibold">
+          {item?.soldLoading ? (
+            <span
+              className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent align-middle"
+              aria-label={t('marketItemCard.loadingSoldQuantity')}
+              title={t('marketItemCard.loadingSoldQuantity')}
+            />
+          ) : (
+            Number(item?.soldQuantity || 0)
           )}
-        </div>
+        </span>
       </div>
 
       <div className="flex gap-2 mt-auto">

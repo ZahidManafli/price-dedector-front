@@ -746,11 +746,6 @@ export default function MarketAnalysisPage() {
                             {renderSortLabel('Last 7d', 'soldQuantity')}
                           </button>
                         </th>
-                        <th className="text-left p-3">
-                          <button type="button" onClick={() => toggleSort('sold15Days')} className="hover:underline">
-                            {renderSortLabel('Last 15d', 'sold15Days')}
-                          </button>
-                        </th>
                         <th className="text-left p-3">{t('marketAnalysisPage.historyHeader')}</th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('priceValue')} className="hover:underline">
@@ -802,13 +797,6 @@ export default function MarketAnalysisPage() {
                               />
                             ) : (
                               Number(item.soldQuantity || 0)
-                            )}
-                          </td>
-                          <td className="p-3 font-medium">
-                            {item?.sold15Days !== null && item?.sold15Days !== undefined ? (
-                              Number(item.sold15Days)
-                            ) : (
-                              '-'
                             )}
                           </td>
                           <td className="p-3">
