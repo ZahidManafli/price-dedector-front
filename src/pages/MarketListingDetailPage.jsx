@@ -386,7 +386,7 @@ export default function MarketListingDetailPage() {
     });
 
     return data;
-  }, [sellerListings, sellerSortConfig, sellerSoldQuantityByItemId, sellerSoldLoadingByItemId]);
+  }, [sellerListings, sellerSortConfig, sellerSoldStatsByItemId, sellerSoldLoadingByItemId]);
 
   const toggleSellerSort = (key) => {
     setSellerSortConfig((prev) => {
