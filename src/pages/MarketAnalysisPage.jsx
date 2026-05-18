@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import { History, LayoutGrid, List, RefreshCw, Search, SearchCheck } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import MarketSearchBar from '../components/MarketSearchBar';
@@ -50,6 +51,28 @@ function buildAmazonSearchUrlFromTitle(title) {
   const query = String(title || '').trim();
   if (!query) return '';
   return `https://www.amazon.com/s?k=${encodeURIComponent(query)}`;
+}
+
+function resolveLegacyListingId(source) {
+  const candidates = [
+    source?.legacyId,
+    source?.legacyItemId,
+    source?.raw?.legacyItemId,
+    source?.itemId,
+    source?.raw?.itemId,
+    source?.id,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = String(candidate || '')
+      .trim()
+      .replace(/^v1\|/, '')
+      .replace(/\|0$/, '');
+    if (/^\d{9,15}$/.test(normalized)) {
+      return normalized;
+    }
+  }
+  return null;
 }
 
 export default function MarketAnalysisPage() {
@@ -608,6 +631,30 @@ export default function MarketAnalysisPage() {
     openSearchInNewTab(nextParams);
   };
 
+  const handleSellSimilar = async (source) => {
+    const listingId = resolveLegacyListingId(source);
+    if (!listingId) {
+      setError('Sell Similar requires a live numeric eBay listing ID (Item ID).');
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: t('marketListingDetailPage.openEbaySellSimilarTitle'),
+      text: t('marketListingDetailPage.openEbaySellSimilarText'),
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: t('marketListingDetailPage.proceedToEbay'),
+      cancelButtonText: t('marketListingDetailPage.cancel'),
+      reverseButtons: true,
+      focusCancel: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    const url = `https://www.ebay.com/lstng?mode=SellLikeItem&itemId=${encodeURIComponent(listingId)}&sr=wn`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const onNextPage = () => {
     const nextParams = {
       ...params,
@@ -756,6 +803,7 @@ export default function MarketAnalysisPage() {
                       onInspect={handleInspect}
                       onSellerClick={handleSellerClick}
                       onSearchTitle={handleTitleSearch}
+                      onSellSimilar={handleSellSimilar}
                     />
                   ))}
                 </div>
@@ -892,6 +940,13 @@ export default function MarketAnalysisPage() {
                                     title={t('marketAnalysisPage.searchTitleNewTab')}
                                   >
                                     <Search size={14} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn-secondary"
+                                    onClick={() => handleSellSimilar(item)}
+                                  >
+                                    {t('marketListingDetailPage.sellSimilar')}
                                   </button>
                                   <button type="button" className="btn-primary" onClick={() => handleInspect(item)}>
                                     {t('marketAnalysisPage.details')}

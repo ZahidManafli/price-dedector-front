@@ -17,7 +17,7 @@ function buildAmazonSearchUrlFromTitle(title) {
   return `https://www.amazon.com/s?k=${encodeURIComponent(query)}`;
 }
 
-export default function MarketItemCard({ item, onSelect, onInspect, onSellerClick, onSearchTitle, isSelected }) {
+export default function MarketItemCard({ item, onSelect, onInspect, onSellerClick, onSearchTitle, onSellSimilar, isSelected }) {
   const { t } = useTranslation();
   const sellerFlag = countryCodeToFlagEmoji(item?.sellerCountryCode);
   const amazonSearchUrl = buildAmazonSearchUrlFromTitle(item?.title);
@@ -95,6 +95,13 @@ export default function MarketItemCard({ item, onSelect, onInspect, onSellerClic
         </button>
         <button type="button" onClick={() => onInspect(item)} className="btn-primary flex-1 text-xs">
           {t('marketItemCard.details')}
+        </button>
+        <button
+          type="button"
+          onClick={() => onSellSimilar?.(item)}
+          className="btn-secondary text-xs px-3"
+        >
+          {t('marketListingDetailPage.sellSimilar')}
         </button>
         {amazonSearchUrl && (
           <a
