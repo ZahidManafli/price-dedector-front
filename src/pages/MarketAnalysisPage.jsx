@@ -805,7 +805,7 @@ export default function MarketAnalysisPage() {
                             )}
                           </td>
                           <td className="p-3 font-medium">
-                            {item?.sold15Days !== null && item?.sold15Days !== undefined && item?.sold15Days > 0 ? (
+                            {item?.sold15Days !== null && item?.sold15Days !== undefined ? (
                               Number(item.sold15Days)
                             ) : (
                               '-'
