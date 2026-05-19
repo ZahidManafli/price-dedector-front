@@ -333,6 +333,487 @@ const CHECKILA_TEMPLATES = [
 ];
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   TWO-IMAGE TEMPLATES  — psychologically engineered, 2 product images
+   Psychology notes:
+   • Deep navy + warm amber = trust (blue) + desire (warm gold) — premium conversion combo
+   • Crimson urgency band triggers scarcity reflex; dual-image proof reduces buyer hesitation
+   • Forest green + cream = safety, organic trust; side-by-side images signal transparency
+───────────────────────────────────────────────────────────────────────────── */
+const TWO_IMAGE_TEMPLATES = [
+  {
+    id: 'luxe-2img',
+    name: 'Luxe Pro — 2 Images',
+    navBg: '#0a0a0a',
+    navText: '#c9a84c',
+    contentBg: '#fafaf8',
+    contentText: '#1a1a1a',
+    body: `
+<div id="title-part" class="py-0">
+  <div style="background:linear-gradient(135deg,#0a0a0a 60%,#1c1408 100%);padding:36px 0 28px;">
+    <div class="container">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <span style="background:#c9a84c;color:#0a0a0a;font-size:11px;font-weight:700;letter-spacing:2px;padding:4px 12px;border-radius:2px;text-transform:uppercase;">✦ Premium Quality</span>
+        <span style="background:transparent;color:#c9a84c;font-size:11px;font-weight:600;letter-spacing:1px;border:1px solid #c9a84c44;padding:4px 12px;border-radius:2px;">Free Shipping</span>
+      </div>
+      <h1 style="color:#c9a84c;font-family:Georgia,serif;font-size:2.4rem;font-weight:700;margin:0 0 10px;line-height:1.2;letter-spacing:-0.5px;">Your Premium Product Title Here</h1>
+      <p style="color:#e8e0cc;font-size:1.05rem;margin:0;opacity:0.85;">Crafted for those who expect nothing but the best.</p>
+      <div style="display:flex;gap:24px;margin-top:18px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:6px;color:#c9a84c;font-size:13px;">⭐⭐⭐⭐⭐ <span style="color:#e8e0cc;opacity:0.7;font-size:12px;">4.9 (2,847 reviews)</span></div>
+        <div style="color:#6adf82;font-size:13px;font-weight:600;">✓ In Stock — Ships Today</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="description-container" class="secondary-color-bg pb-3 pt-0">
+  <div class="container">
+    <div style="background:#fff;border:1px solid #e8e0cc;border-radius:4px;padding:28px;margin:24px 0 20px;box-shadow:0 2px 20px rgba(0,0,0,0.06);">
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+        <span style="background:#fff8e7;color:#8b6914;border:1px solid #c9a84c55;font-size:12px;font-weight:600;padding:5px 14px;border-radius:3px;">🏆 Best Seller</span>
+        <span style="background:#f0fff4;color:#166534;border:1px solid #86efac;font-size:12px;font-weight:600;padding:5px 14px;border-radius:3px;">✓ Authenticity Guaranteed</span>
+        <span style="background:#fef2f2;color:#991b1b;border:1px solid #fca5a5;font-size:12px;font-weight:700;padding:5px 14px;border-radius:3px;">⏰ Only 7 Left!</span>
+      </div>
+      <!-- TWO IMAGES side by side -->
+      <div id="image-gallery" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+        <div style="position:relative;">
+          <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image 1" style="border-radius:4px;border:1px solid #e8e0cc;width:100%;display:block;" />
+          <div style="position:absolute;bottom:8px;left:8px;background:rgba(10,10,10,0.75);color:#c9a84c;font-size:10px;font-weight:700;padding:3px 8px;border-radius:2px;letter-spacing:1px;">FRONT VIEW</div>
+        </div>
+        <div style="position:relative;">
+          <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image 2" style="border-radius:4px;border:1px solid #e8e0cc;width:100%;display:block;" />
+          <div style="position:absolute;bottom:8px;left:8px;background:rgba(10,10,10,0.75);color:#c9a84c;font-size:10px;font-weight:700;padding:3px 8px;border-radius:2px;letter-spacing:1px;">DETAIL VIEW</div>
+        </div>
+      </div>
+      <div id="description-part" style="color:#1a1a1a;">
+        <h2 style="font-family:Georgia,serif;font-size:1.3rem;color:#0a0a0a;margin-bottom:12px;">Why Buyers Love This</h2>
+        <p style="font-size:0.95rem;line-height:1.7;color:#444;margin-bottom:16px;">Every detail has been perfected over years of refinement. This isn't just a product — it's an investment in quality that pays dividends every single day you own it.</p>
+        <div style="border-left:3px solid #c9a84c;padding-left:16px;margin:16px 0;font-style:italic;color:#666;font-size:0.9rem;">"Exceeded every expectation. The quality is immediately obvious. Worth every penny." — Verified Buyer</div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:0.9rem;display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <li style="padding:7px 0;border-bottom:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>Superior Materials</strong></span></li>
+          <li style="padding:7px 0;border-bottom:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>Expert Craftsmanship</strong></span></li>
+          <li style="padding:7px 0;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>100% Satisfaction</strong></span></li>
+          <li style="padding:7px 0;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>Fast, Secure Shipping</strong></span></li>
+        </ul>
+        <div style="background:linear-gradient(135deg,#0a0a0a,#2a1f05);color:#c9a84c;border-radius:4px;padding:16px;margin-top:20px;text-align:center;">
+          <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;opacity:0.7;margin-bottom:4px;">Limited Time Offer</div>
+          <div style="font-size:1.6rem;font-weight:700;font-family:Georgia,serif;">Save 30% Today</div>
+          <div style="font-size:0.8rem;opacity:0.7;margin-top:4px;">Offer expires when stock runs out</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;">
+      <div style="background:#fff;border:1px solid #e8e0cc;border-radius:4px;padding:18px;text-align:center;"><div style="font-size:1.8rem;margin-bottom:6px;">🚚</div><div style="font-weight:700;font-size:0.85rem;color:#0a0a0a;">Free Shipping</div></div>
+      <div style="background:#fff;border:1px solid #e8e0cc;border-radius:4px;padding:18px;text-align:center;"><div style="font-size:1.8rem;margin-bottom:6px;">🔒</div><div style="font-weight:700;font-size:0.85rem;color:#0a0a0a;">Secure Payment</div></div>
+      <div style="background:#fff;border:1px solid #e8e0cc;border-radius:4px;padding:18px;text-align:center;"><div style="font-size:1.8rem;margin-bottom:6px;">↩️</div><div style="font-weight:700;font-size:0.85rem;color:#0a0a0a;">Easy Returns</div></div>
+    </div>
+  </div>
+</div>
+<div id="copyright-part" class="py-3">
+  <div class="container primary-text-color" style="font-size:90%;text-align:center;">
+    <div>Free ebay template editor by <b>checkila.com</b></div>
+  </div>
+</div>`,
+  },
+  {
+    id: 'bold-2img',
+    name: 'Bold Seller — 2 Images',
+    navBg: '#0f3460',
+    navText: '#ffffff',
+    contentBg: '#f0f4ff',
+    contentText: '#0d1b2a',
+    body: `
+<div id="title-part" class="py-0">
+  <div style="background:linear-gradient(120deg,#0f3460 0%,#16213e 50%,#1a1a2e 100%);padding:32px 0 24px;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,#e94560 0%,transparent 70%);opacity:0.3;pointer-events:none;"></div>
+    <div class="container" style="position:relative;">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:#e94560;color:#fff;font-size:11px;font-weight:800;letter-spacing:2px;padding:5px 14px;border-radius:30px;text-transform:uppercase;margin-bottom:14px;">🔥 HOT DEAL — Ends Soon</div>
+      <h1 style="color:#ffffff;font-family:'Trebuchet MS',sans-serif;font-size:2.3rem;font-weight:800;margin:0 0 10px;line-height:1.15;text-shadow:0 2px 20px rgba(0,0,0,0.3);">Your Product Title — Make It Count</h1>
+      <p style="color:#b8c8e8;font-size:1rem;margin:0 0 16px;max-width:560px;">Join <strong style="color:#fff;">47,000+ happy customers</strong> who made the smart choice.</p>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;">
+        <div style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:10px 18px;">
+          <div style="color:#ffd700;font-size:18px;letter-spacing:2px;">★★★★★</div>
+          <div style="color:#b8c8e8;font-size:11px;margin-top:2px;">4.8 · 3,291 ratings</div>
+        </div>
+        <div style="color:#4ade80;font-weight:700;font-size:14px;">✓ Ships within 24 hours</div>
+        <div style="color:#fbbf24;font-weight:700;font-size:14px;">⚡ 23 sold in last hour</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="description-container" class="secondary-color-bg pb-3 pt-0">
+  <div class="container">
+    <div style="background:#e94560;color:#fff;padding:10px 20px;text-align:center;font-weight:700;font-size:0.88rem;letter-spacing:0.5px;border-radius:0 0 8px 8px;margin-bottom:20px;">
+      ⏰ Special price valid for <strong>today only</strong> — Don't miss out!
+    </div>
+    <!-- TWO IMAGES side by side -->
+    <div id="image-gallery" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+      <div style="border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(15,52,96,0.15);">
+        <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image 1" style="width:100%;display:block;object-fit:cover;min-height:200px;" />
+        <div style="background:#0f3460;color:#fff;text-align:center;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;">MAIN VIEW</div>
+      </div>
+      <div style="border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(15,52,96,0.15);">
+        <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image 2" style="width:100%;display:block;object-fit:cover;min-height:200px;" />
+        <div style="background:#e94560;color:#fff;text-align:center;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;">CLOSE-UP</div>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 30px rgba(15,52,96,0.12);margin-bottom:20px;">
+      <div id="description-part" style="padding:28px;color:#0d1b2a;">
+        <div style="background:linear-gradient(135deg,#fff8e1,#fffde7);border:1px solid #fbbf24;border-radius:8px;padding:14px 18px;margin-bottom:20px;display:inline-block;width:100%;">
+          <div style="font-size:0.78rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🏷️ Limited Time Price</div>
+          <div style="font-size:1.8rem;font-weight:800;color:#0f3460;">Great Value Today</div>
+          <div style="font-size:0.8rem;color:#666;margin-top:2px;">Regular buyers pay 40% more</div>
+        </div>
+        <p style="font-size:0.93rem;line-height:1.75;color:#334155;margin-bottom:16px;">This is exactly what you've been searching for. Don't settle for less when the best is right here — at a price that makes saying yes easy.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;">
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#0f3460;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">1</span><span><strong>Premium Quality</strong></span></div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#0f3460;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">2</span><span><strong>Fast Tracked Delivery</strong></span></div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#0f3460;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">3</span><span><strong>Risk-Free Purchase</strong></span></div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#e94560;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">4</span><span><strong>Buyer Protection</strong></span></div>
+        </div>
+        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 16px;font-size:0.82rem;color:#0c4a6e;line-height:1.5;">
+          💬 <em>"I was skeptical at first but this completely blew me away. Faster than expected, better than described!"</em><br/><strong>— Sarah M., Verified Buyer ⭐⭐⭐⭐⭐</strong>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
+      <div style="background:#fff;border-radius:10px;padding:16px;text-align:center;border:1px solid #dbeafe;"><div style="font-size:1.6rem;">📦</div><div style="font-weight:700;font-size:0.83rem;color:#0f3460;margin-top:5px;">Fast Dispatch</div></div>
+      <div style="background:#fff;border-radius:10px;padding:16px;text-align:center;border:1px solid #dbeafe;"><div style="font-size:1.6rem;">🛡️</div><div style="font-weight:700;font-size:0.83rem;color:#0f3460;margin-top:5px;">Buyer Protection</div></div>
+      <div style="background:#fff;border-radius:10px;padding:16px;text-align:center;border:1px solid #dbeafe;"><div style="font-size:1.6rem;">💯</div><div style="font-weight:700;font-size:0.83rem;color:#0f3460;margin-top:5px;">Positive Feedback</div></div>
+      <div style="background:#fff;border-radius:10px;padding:16px;text-align:center;border:1px solid #dbeafe;"><div style="font-size:1.6rem;">🎁</div><div style="font-weight:700;font-size:0.83rem;color:#0f3460;margin-top:5px;">Gift Ready</div></div>
+    </div>
+  </div>
+</div>
+<div id="copyright-part" class="py-3">
+  <div class="container primary-text-color" style="font-size:90%;text-align:center;">
+    <div>Free ebay template editor by <b>checkila.com</b></div>
+  </div>
+</div>`,
+  },
+  {
+    id: 'fresh-2img',
+    name: 'Fresh & Clean — 2 Images',
+    navBg: '#065f46',
+    navText: '#ecfdf5',
+    contentBg: '#f8fafc',
+    contentText: '#0f172a',
+    body: `
+<div id="title-part" class="py-0">
+  <div style="background:linear-gradient(135deg,#065f46 0%,#047857 50%,#059669 100%);padding:30px 0 24px;">
+    <div class="container">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <span style="background:#ecfdf5;color:#065f46;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;">🌿 Eco-Friendly</span>
+        <span style="background:rgba(255,255,255,0.15);color:#ecfdf5;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.25);">✓ Top Rated Seller</span>
+        <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;">⚡ Fast Dispatch</span>
+      </div>
+      <h1 style="color:#ffffff;font-family:'Trebuchet MS',sans-serif;font-size:2.2rem;font-weight:700;margin:0 0 10px;line-height:1.2;">Your Product Name — Clean &amp; Clear</h1>
+      <p style="color:#a7f3d0;font-size:0.98rem;margin:0 0 14px;">Straightforward quality, honest value. Exactly what you need.</p>
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+        <span style="color:#fde68a;font-size:16px;letter-spacing:1px;">★★★★★</span>
+        <span style="color:#d1fae5;font-size:12px;">4.9 stars · 1,840 reviews</span>
+        <span style="color:#6ee7b7;font-weight:700;font-size:13px;">📦 Free P&amp;P Included</span>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="description-container" class="secondary-color-bg pb-3 pt-0">
+  <div class="container">
+    <div style="background:linear-gradient(90deg,#065f46,#059669);color:#fff;padding:10px 20px;text-align:center;font-size:0.85rem;font-weight:600;margin-bottom:20px;border-radius:0 0 10px 10px;">
+      🏷️ Best price on eBay — plus free postage!
+    </div>
+    <!-- TWO IMAGES side by side -->
+    <div id="image-gallery" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+      <div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 16px rgba(6,95,70,0.1);">
+        <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image 1" style="width:100%;display:block;" />
+        <div style="padding:8px 12px;background:#f0fdf4;display:flex;gap:6px;justify-content:center;">
+          <span style="background:#f0fdf4;color:#065f46;border:1px solid #bbf7d0;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;">✓ 100% Authentic</span>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 16px rgba(6,95,70,0.1);">
+        <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image 2" style="width:100%;display:block;" />
+        <div style="padding:8px 12px;background:#f0fdf4;display:flex;gap:6px;justify-content:center;">
+          <span style="background:#f0fdf4;color:#065f46;border:1px solid #bbf7d0;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;">✓ Brand New</span>
+        </div>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:14px;box-shadow:0 2px 24px rgba(6,95,70,0.1);margin-bottom:20px;padding:28px 24px;">
+      <div id="description-part" style="color:#0f172a;">
+        <h2 style="font-size:1.2rem;font-weight:700;color:#065f46;margin-bottom:12px;font-family:'Trebuchet MS',sans-serif;">What Makes This Special</h2>
+        <p style="font-size:0.92rem;line-height:1.75;color:#475569;margin-bottom:16px;">No fluff, no gimmicks. Just a product that does what it promises and arrives exactly as described. We believe in straightforward quality and honest dealings with every customer.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Premium Quality</strong></div></div>
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Quick Delivery</strong></div></div>
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Hassle-Free Returns</strong></div></div>
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Trusted Seller</strong></div></div>
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #059669;border-radius:8px;padding:14px 16px;font-size:0.82rem;color:#064e3b;line-height:1.6;">
+          💬 <em>"Arrived quickly, well packaged and exactly as described. Already recommended to friends!"</em><br/><strong style="color:#065f46;">— James T. ⭐⭐⭐⭐⭐ Verified Purchase</strong>
+        </div>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px;margin-bottom:20px;">
+      <h3 style="font-size:0.95rem;font-weight:700;color:#065f46;margin:0 0 14px;text-align:center;">Why Shop With Us?</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;">
+        <div style="text-align:center;padding:12px 8px;"><div style="font-size:1.5rem;">🌱</div><div style="font-weight:700;font-size:0.82rem;color:#0f172a;margin-top:6px;">Ethically Sourced</div></div>
+        <div style="text-align:center;padding:12px 8px;"><div style="font-size:1.5rem;">📬</div><div style="font-weight:700;font-size:0.82rem;color:#0f172a;margin-top:6px;">Free Postage</div></div>
+        <div style="text-align:center;padding:12px 8px;"><div style="font-size:1.5rem;">💬</div><div style="font-weight:700;font-size:0.82rem;color:#0f172a;margin-top:6px;">Fast Responses</div></div>
+        <div style="text-align:center;padding:12px 8px;"><div style="font-size:1.5rem;">🔁</div><div style="font-weight:700;font-size:0.82rem;color:#0f172a;margin-top:6px;">Easy Returns</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="copyright-part" class="py-3">
+  <div class="container primary-text-color" style="font-size:90%;text-align:center;">
+    <div>Free ebay template editor by <b>checkila.com</b></div>
+  </div>
+</div>`,
+  },
+];
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   THREE-IMAGE TEMPLATES  — psychologically engineered, 3 product images
+   Psychology notes:
+   • 3 images = "rule of three" — the brain finds trios easiest to process & remember
+   • Black/gold: authority + aspiration triggers aspirational buying ("I deserve the best")
+   • Deep blue/crimson: combines safety (blue) with urgency (red) — maximum conversion combo
+   • Teal/cream: wellness palette — calming yet aspirational; ideal for lifestyle & health items
+───────────────────────────────────────────────────────────────────────────── */
+const THREE_IMAGE_TEMPLATES = [
+  {
+    id: 'luxe-3img',
+    name: 'Luxe Pro — 3 Images',
+    navBg: '#0a0a0a',
+    navText: '#c9a84c',
+    contentBg: '#fafaf8',
+    contentText: '#1a1a1a',
+    body: `
+<div id="title-part" class="py-0">
+  <div style="background:linear-gradient(135deg,#0a0a0a 60%,#1c1408 100%);padding:36px 0 28px;">
+    <div class="container">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <span style="background:#c9a84c;color:#0a0a0a;font-size:11px;font-weight:700;letter-spacing:2px;padding:4px 12px;border-radius:2px;text-transform:uppercase;">✦ Premium Quality</span>
+        <span style="background:transparent;color:#c9a84c;font-size:11px;font-weight:600;letter-spacing:1px;border:1px solid #c9a84c44;padding:4px 12px;border-radius:2px;">Free Shipping</span>
+        <span style="background:#c9a84c22;color:#c9a84c;font-size:11px;font-weight:600;padding:4px 12px;border-radius:2px;border:1px solid #c9a84c33;">⏰ Only 7 Left</span>
+      </div>
+      <h1 style="color:#c9a84c;font-family:Georgia,serif;font-size:2.4rem;font-weight:700;margin:0 0 10px;line-height:1.2;letter-spacing:-0.5px;">Your Premium Product Title Here</h1>
+      <p style="color:#e8e0cc;font-size:1.05rem;margin:0;opacity:0.85;">Crafted for those who expect nothing but the best.</p>
+      <div style="display:flex;gap:24px;margin-top:18px;flex-wrap:wrap;">
+        <div style="color:#c9a84c;font-size:13px;">⭐⭐⭐⭐⭐ <span style="color:#e8e0cc;opacity:0.7;font-size:12px;">4.9 (2,847 reviews)</span></div>
+        <div style="color:#6adf82;font-size:13px;font-weight:600;">✓ In Stock — Ships Today</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="description-container" class="secondary-color-bg pb-3 pt-0">
+  <div class="container">
+    <div style="background:#fff;border:1px solid #e8e0cc;border-radius:4px;padding:28px;margin:24px 0 20px;box-shadow:0 2px 20px rgba(0,0,0,0.06);">
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+        <span style="background:#fff8e7;color:#8b6914;border:1px solid #c9a84c55;font-size:12px;font-weight:600;padding:5px 14px;border-radius:3px;">🏆 Best Seller</span>
+        <span style="background:#f0fff4;color:#166534;border:1px solid #86efac;font-size:12px;font-weight:600;padding:5px 14px;border-radius:3px;">✓ Authenticity Guaranteed</span>
+        <span style="background:#fef2f2;color:#991b1b;border:1px solid #fca5a5;font-size:12px;font-weight:700;padding:5px 14px;border-radius:3px;">🔥 Limited Stock</span>
+      </div>
+      <!-- THREE IMAGES: 1 large + 2 smaller -->
+      <div id="image-gallery" style="margin-bottom:24px;">
+        <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image 1" style="border-radius:4px;border:1px solid #e8e0cc;width:100%;display:block;margin-bottom:12px;" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="position:relative;">
+            <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image 2" style="border-radius:4px;border:1px solid #e8e0cc;width:100%;display:block;" />
+            <div style="position:absolute;bottom:6px;left:6px;background:rgba(10,10,10,0.8);color:#c9a84c;font-size:9px;font-weight:700;padding:2px 7px;border-radius:2px;letter-spacing:1px;">SIDE VIEW</div>
+          </div>
+          <div style="position:relative;">
+            <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image 3" style="border-radius:4px;border:1px solid #e8e0cc;width:100%;display:block;" />
+            <div style="position:absolute;bottom:6px;left:6px;background:rgba(10,10,10,0.8);color:#c9a84c;font-size:9px;font-weight:700;padding:2px 7px;border-radius:2px;letter-spacing:1px;">DETAIL</div>
+          </div>
+        </div>
+      </div>
+      <div id="description-part" style="color:#1a1a1a;">
+        <h2 style="font-family:Georgia,serif;font-size:1.3rem;color:#0a0a0a;margin-bottom:12px;">Why Buyers Love This</h2>
+        <p style="font-size:0.95rem;line-height:1.7;color:#444;margin-bottom:16px;">Every detail has been perfected over years of refinement. This isn't just a product — it's an investment in quality that pays dividends every single day you own it.</p>
+        <div style="border-left:3px solid #c9a84c;padding-left:16px;margin:16px 0;font-style:italic;color:#666;font-size:0.9rem;">"Exceeded every expectation. The quality is immediately obvious. Worth every penny." — Verified Buyer</div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:0.9rem;">
+          <li style="padding:7px 0;border-bottom:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>Superior Materials:</strong> Only the finest, most durable materials used.</span></li>
+          <li style="padding:7px 0;border-bottom:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>Expert Craftsmanship:</strong> Hand-inspected before every shipment.</span></li>
+          <li style="padding:7px 0;border-bottom:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>100% Satisfaction Guarantee:</strong> Love it or we make it right.</span></li>
+          <li style="padding:7px 0;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>Fast, Secure Shipping:</strong> Tracked delivery straight to your door.</span></li>
+        </ul>
+        <div style="background:linear-gradient(135deg,#0a0a0a,#2a1f05);color:#c9a84c;border-radius:4px;padding:16px;margin-top:20px;text-align:center;">
+          <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;opacity:0.7;margin-bottom:4px;">Limited Time Offer</div>
+          <div style="font-size:1.6rem;font-weight:700;font-family:Georgia,serif;">Save 30% Today</div>
+          <div style="font-size:0.8rem;opacity:0.7;margin-top:4px;">Offer expires when stock runs out</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;">
+      <div style="background:#fff;border:1px solid #e8e0cc;border-radius:4px;padding:18px;text-align:center;"><div style="font-size:1.8rem;margin-bottom:6px;">🚚</div><div style="font-weight:700;font-size:0.85rem;color:#0a0a0a;">Free Shipping</div></div>
+      <div style="background:#fff;border:1px solid #e8e0cc;border-radius:4px;padding:18px;text-align:center;"><div style="font-size:1.8rem;margin-bottom:6px;">🔒</div><div style="font-weight:700;font-size:0.85rem;color:#0a0a0a;">Secure Payment</div></div>
+      <div style="background:#fff;border:1px solid #e8e0cc;border-radius:4px;padding:18px;text-align:center;"><div style="font-size:1.8rem;margin-bottom:6px;">↩️</div><div style="font-weight:700;font-size:0.85rem;color:#0a0a0a;">Easy Returns</div></div>
+    </div>
+  </div>
+</div>
+<div id="copyright-part" class="py-3">
+  <div class="container primary-text-color" style="font-size:90%;text-align:center;">
+    <div>Free ebay template editor by <b>checkila.com</b></div>
+  </div>
+</div>`,
+  },
+  {
+    id: 'bold-3img',
+    name: 'Bold Seller — 3 Images',
+    navBg: '#0f3460',
+    navText: '#ffffff',
+    contentBg: '#f0f4ff',
+    contentText: '#0d1b2a',
+    body: `
+<div id="title-part" class="py-0">
+  <div style="background:linear-gradient(120deg,#0f3460 0%,#16213e 50%,#1a1a2e 100%);padding:32px 0 24px;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,#e94560 0%,transparent 70%);opacity:0.3;pointer-events:none;"></div>
+    <div class="container" style="position:relative;">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:#e94560;color:#fff;font-size:11px;font-weight:800;letter-spacing:2px;padding:5px 14px;border-radius:30px;text-transform:uppercase;margin-bottom:14px;">🔥 HOT DEAL — Ends Soon</div>
+      <h1 style="color:#ffffff;font-family:'Trebuchet MS',sans-serif;font-size:2.3rem;font-weight:800;margin:0 0 10px;line-height:1.15;text-shadow:0 2px 20px rgba(0,0,0,0.3);">Your Product Title — Make It Count</h1>
+      <p style="color:#b8c8e8;font-size:1rem;margin:0 0 16px;max-width:560px;">Join <strong style="color:#fff;">47,000+ happy customers</strong> who made the smart choice.</p>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;">
+        <div style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:10px 18px;">
+          <div style="color:#ffd700;font-size:18px;letter-spacing:2px;">★★★★★</div>
+          <div style="color:#b8c8e8;font-size:11px;margin-top:2px;">4.8 · 3,291 ratings</div>
+        </div>
+        <div style="color:#4ade80;font-weight:700;font-size:14px;">✓ Ships within 24 hours</div>
+        <div style="color:#fbbf24;font-weight:700;font-size:14px;">⚡ 23 sold in last hour</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="description-container" class="secondary-color-bg pb-3 pt-0">
+  <div class="container">
+    <div style="background:#e94560;color:#fff;padding:10px 20px;text-align:center;font-weight:700;font-size:0.88rem;letter-spacing:0.5px;border-radius:0 0 8px 8px;margin-bottom:20px;">
+      ⏰ Special price valid for <strong>today only</strong> — Don't miss out!
+    </div>
+    <!-- THREE IMAGES: row of 3 equal columns -->
+    <div id="image-gallery" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+      <div style="border-radius:10px;overflow:hidden;box-shadow:0 4px 16px rgba(15,52,96,0.15);">
+        <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image 1" style="width:100%;display:block;object-fit:cover;min-height:160px;" />
+        <div style="background:#0f3460;color:#fff;text-align:center;font-size:10px;font-weight:700;padding:5px;letter-spacing:1px;">FRONT</div>
+      </div>
+      <div style="border-radius:10px;overflow:hidden;box-shadow:0 4px 16px rgba(233,69,96,0.2);">
+        <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image 2" style="width:100%;display:block;object-fit:cover;min-height:160px;" />
+        <div style="background:#e94560;color:#fff;text-align:center;font-size:10px;font-weight:700;padding:5px;letter-spacing:1px;">IN USE</div>
+      </div>
+      <div style="border-radius:10px;overflow:hidden;box-shadow:0 4px 16px rgba(15,52,96,0.15);">
+        <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image 3" style="width:100%;display:block;object-fit:cover;min-height:160px;" />
+        <div style="background:#0f3460;color:#fff;text-align:center;font-size:10px;font-weight:700;padding:5px;letter-spacing:1px;">DETAIL</div>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 30px rgba(15,52,96,0.12);margin-bottom:20px;padding:28px;">
+      <div id="description-part" style="color:#0d1b2a;">
+        <div style="background:linear-gradient(135deg,#fff8e1,#fffde7);border:1px solid #fbbf24;border-radius:8px;padding:14px 18px;margin-bottom:20px;">
+          <div style="font-size:0.78rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🏷️ Limited Time Price</div>
+          <div style="font-size:1.8rem;font-weight:800;color:#0f3460;">Great Value Today</div>
+          <div style="font-size:0.8rem;color:#666;margin-top:2px;">Regular buyers pay 40% more</div>
+        </div>
+        <p style="font-size:0.93rem;line-height:1.75;color:#334155;margin-bottom:16px;">This is exactly what you've been searching for. Don't settle for less when the best is right here — at a price that makes saying yes easy.</p>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#0f3460;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">1</span><span><strong>Premium Quality Guaranteed</strong> — you'll feel the difference immediately.</span></div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#0f3460;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">2</span><span><strong>Fast Tracked Delivery</strong> — know exactly where your order is.</span></div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#0f3460;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">3</span><span><strong>Risk-Free Purchase</strong> — not satisfied? We fix it, no questions.</span></div>
+        </div>
+        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 16px;font-size:0.82rem;color:#0c4a6e;line-height:1.5;">
+          💬 <em>"I was skeptical at first but this completely blew me away. Faster than expected, better than described!"</em><br/><strong>— Sarah M., Verified Buyer ⭐⭐⭐⭐⭐</strong>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
+      <div style="background:#fff;border-radius:10px;padding:16px;text-align:center;border:1px solid #dbeafe;"><div style="font-size:1.6rem;">📦</div><div style="font-weight:700;font-size:0.83rem;color:#0f3460;margin-top:5px;">Fast Dispatch</div></div>
+      <div style="background:#fff;border-radius:10px;padding:16px;text-align:center;border:1px solid #dbeafe;"><div style="font-size:1.6rem;">🛡️</div><div style="font-weight:700;font-size:0.83rem;color:#0f3460;margin-top:5px;">Buyer Protection</div></div>
+      <div style="background:#fff;border-radius:10px;padding:16px;text-align:center;border:1px solid #dbeafe;"><div style="font-size:1.6rem;">💯</div><div style="font-weight:700;font-size:0.83rem;color:#0f3460;margin-top:5px;">Positive Feedback</div></div>
+      <div style="background:#fff;border-radius:10px;padding:16px;text-align:center;border:1px solid #dbeafe;"><div style="font-size:1.6rem;">🎁</div><div style="font-weight:700;font-size:0.83rem;color:#0f3460;margin-top:5px;">Gift Ready</div></div>
+    </div>
+  </div>
+</div>
+<div id="copyright-part" class="py-3">
+  <div class="container primary-text-color" style="font-size:90%;text-align:center;">
+    <div>Free ebay template editor by <b>checkila.com</b></div>
+  </div>
+</div>`,
+  },
+  {
+    id: 'fresh-3img',
+    name: 'Fresh & Clean — 3 Images',
+    navBg: '#065f46',
+    navText: '#ecfdf5',
+    contentBg: '#f8fafc',
+    contentText: '#0f172a',
+    body: `
+<div id="title-part" class="py-0">
+  <div style="background:linear-gradient(135deg,#065f46 0%,#047857 50%,#059669 100%);padding:30px 0 24px;">
+    <div class="container">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <span style="background:#ecfdf5;color:#065f46;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;">🌿 Eco-Friendly</span>
+        <span style="background:rgba(255,255,255,0.15);color:#ecfdf5;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.25);">✓ Top Rated Seller</span>
+        <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;">⚡ Fast Dispatch</span>
+      </div>
+      <h1 style="color:#ffffff;font-family:'Trebuchet MS',sans-serif;font-size:2.2rem;font-weight:700;margin:0 0 10px;line-height:1.2;">Your Product Name — Clean &amp; Clear</h1>
+      <p style="color:#a7f3d0;font-size:0.98rem;margin:0 0 14px;">Straightforward quality, honest value. Exactly what you need.</p>
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+        <span style="color:#fde68a;font-size:16px;letter-spacing:1px;">★★★★★</span>
+        <span style="color:#d1fae5;font-size:12px;">4.9 stars · 1,840 reviews</span>
+        <span style="color:#6ee7b7;font-weight:700;font-size:13px;">📦 Free P&amp;P Included</span>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="description-container" class="secondary-color-bg pb-3 pt-0">
+  <div class="container">
+    <div style="background:linear-gradient(90deg,#065f46,#059669);color:#fff;padding:10px 20px;text-align:center;font-size:0.85rem;font-weight:600;margin-bottom:20px;border-radius:0 0 10px 10px;">
+      🏷️ Best price on eBay — plus free postage!
+    </div>
+    <!-- THREE IMAGES: 1 wide hero + 2 thumbnails below -->
+    <div id="image-gallery" style="margin-bottom:20px;">
+      <div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 20px rgba(6,95,70,0.12);margin-bottom:12px;">
+        <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image 1" style="width:100%;display:block;" />
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(6,95,70,0.1);">
+          <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image 2" style="width:100%;display:block;" />
+          <div style="padding:6px 10px;background:#f0fdf4;font-size:10px;font-weight:700;color:#065f46;text-align:center;letter-spacing:0.5px;">SIDE ANGLE</div>
+        </div>
+        <div style="background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(6,95,70,0.1);">
+          <img class="img-fluid" src="https://i.postimg.cc/7Z6XLxbS/default-image-1.png" alt="Product Image 3" style="width:100%;display:block;" />
+          <div style="padding:6px 10px;background:#f0fdf4;font-size:10px;font-weight:700;color:#065f46;text-align:center;letter-spacing:0.5px;">CLOSE-UP</div>
+        </div>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:14px;box-shadow:0 2px 24px rgba(6,95,70,0.1);margin-bottom:20px;padding:28px 24px;">
+      <div id="description-part" style="color:#0f172a;">
+        <h2 style="font-size:1.2rem;font-weight:700;color:#065f46;margin-bottom:12px;font-family:'Trebuchet MS',sans-serif;">What Makes This Special</h2>
+        <p style="font-size:0.92rem;line-height:1.75;color:#475569;margin-bottom:16px;">No fluff, no gimmicks. Just a product that does what it promises and arrives exactly as described. We believe in straightforward quality and honest dealings with every customer.</p>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Premium Quality</strong> — carefully inspected and packed to perfection.</div></div>
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Quick Delivery</strong> — dispatched promptly with full tracking.</div></div>
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Hassle-Free Returns</strong> — we stand behind everything we sell.</div></div>
+          <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Trusted Seller</strong> — thousands of 5-star transactions.</div></div>
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #059669;border-radius:8px;padding:14px 16px;font-size:0.82rem;color:#064e3b;line-height:1.6;">
+          💬 <em>"Arrived quickly, well packaged and exactly as described. Already recommended to friends!"</em><br/><strong style="color:#065f46;">— James T. ⭐⭐⭐⭐⭐ Verified Purchase</strong>
+        </div>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px;margin-bottom:20px;">
+      <h3 style="font-size:0.95rem;font-weight:700;color:#065f46;margin:0 0 14px;text-align:center;">Why Shop With Us?</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;">
+        <div style="text-align:center;padding:12px 8px;"><div style="font-size:1.5rem;">🌱</div><div style="font-weight:700;font-size:0.82rem;color:#0f172a;margin-top:6px;">Ethically Sourced</div></div>
+        <div style="text-align:center;padding:12px 8px;"><div style="font-size:1.5rem;">📬</div><div style="font-weight:700;font-size:0.82rem;color:#0f172a;margin-top:6px;">Free Postage</div></div>
+        <div style="text-align:center;padding:12px 8px;"><div style="font-size:1.5rem;">💬</div><div style="font-weight:700;font-size:0.82rem;color:#0f172a;margin-top:6px;">Fast Responses</div></div>
+        <div style="text-align:center;padding:12px 8px;"><div style="font-size:1.5rem;">🔁</div><div style="font-weight:700;font-size:0.82rem;color:#0f172a;margin-top:6px;">Easy Returns</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="copyright-part" class="py-3">
+  <div class="container primary-text-color" style="font-size:90%;text-align:center;">
+    <div>Free ebay template editor by <b>checkila.com</b></div>
+  </div>
+</div>`,
+  },
+];
+
+/* ─────────────────────────────────────────────────────────────────────────────
    FLOATING TOOLBAR COMPONENT
    This is the key fix — toolbar stays above the preview iframe/div and uses
    document.execCommand on the iframe's document so focus never leaves.
@@ -697,6 +1178,9 @@ export default function DewisoPage() {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Template gallery tab: '1img' | '2img' | '3img'
+  const [templateTab, setTemplateTab] = useState('1img');
+
   // Images
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadedImages, setUploadedImages] = useState([]);
@@ -951,11 +1435,34 @@ export default function DewisoPage() {
 
           {/* ── Checkila Templates ── */}
           <div>
-            <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
+            <p className={`text-xs font-bold uppercase tracking-widest mb-2 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
               ✦ Checkila Templates
             </p>
+            {/* Tab switcher: 1 / 2 / 3 images */}
+            <div className={`flex rounded-lg overflow-hidden border mb-3 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+              {[
+                { key: '1img', label: '1 Image' },
+                { key: '2img', label: '2 Images' },
+                { key: '3img', label: '3 Images' },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setTemplateTab(key)}
+                  className="flex-1 text-xs font-semibold py-1.5 transition-all"
+                  style={{
+                    background: templateTab === key
+                      ? (isDark ? '#10b981' : '#065f46')
+                      : (isDark ? '#1e293b' : '#f8fafc'),
+                    color: templateTab === key ? '#fff' : (isDark ? '#94a3b8' : '#64748b'),
+                    borderRight: key !== '3img' ? `1px solid ${isDark ? '#334155' : '#e2e8f0'}` : 'none',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="space-y-2">
-              {CHECKILA_TEMPLATES.map((tpl) => (
+              {(templateTab === '1img' ? CHECKILA_TEMPLATES : templateTab === '2img' ? TWO_IMAGE_TEMPLATES : THREE_IMAGE_TEMPLATES).map((tpl) => (
                 <button
                   key={tpl.id}
                   onClick={() => loadCheckilaTemplate(tpl)}
@@ -970,7 +1477,9 @@ export default function DewisoPage() {
                     {[tpl.navBg, tpl.navText, tpl.contentBg, tpl.contentText].map((c, i) => (
                       <span key={i} style={{ width: 14, height: 14, background: c, borderRadius: '50%', border: '1px solid #0002', display: 'inline-block' }} />
                     ))}
-                    <span style={{ fontSize: 10, color: tpl.contentText + 'aa', marginLeft: 4, alignSelf: 'center' }}>Psychologically optimized</span>
+                    <span style={{ fontSize: 10, color: tpl.contentText + 'aa', marginLeft: 4, alignSelf: 'center' }}>
+                      {templateTab === '1img' ? '1 image · optimized' : templateTab === '2img' ? '2 images · dual proof' : '3 images · full showcase'}
+                    </span>
                   </div>
                 </button>
               ))}
