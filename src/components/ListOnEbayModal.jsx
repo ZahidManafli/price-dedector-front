@@ -73,7 +73,7 @@ function ImageEditModal({ isDark, currentUrl, imageIndex, onConfirm, onClose }) 
     if (tab === 'url') {
       const trimmed = urlInput.trim();
       if (!trimmed) return setError('Please enter an image URL');
-      onConfirm({ displayUrl: trimmed, ebayUrlmaxDimensionImageUrl: trimmed });
+      onConfirm({ displayUrl: trimmed, maxDimensionImageUrl: trimmed });
       return;
     }
     if (!file) return setError('Please select an image file');
@@ -87,10 +87,10 @@ function ImageEditModal({ isDark, currentUrl, imageIndex, onConfirm, onClose }) 
       const first = items[0];
       if (!first) throw new Error('Upload returned no items');
       if (first.status === 'failed') throw new Error(first.error || 'Image upload failed');
-      const ebayUrlmaxDimensionImageUrl = first.ebayUrlmaxDimensionImageUrl || first.localUrl;
-      const displayUrl = first.localUrl || first.ebayUrlmaxDimensionImageUrl;
-      if (!ebayUrlmaxDimensionImageUrl) throw new Error('No eBay image URL returned — reconnect your eBay account');
-      onConfirm({ displayUrl, ebayUrlmaxDimensionImageUrl });
+      const maxDimensionImageUrl = first.maxDimensionImageUrl || first.localUrl;
+      const displayUrl = first.localUrl || first.maxDimensionImageUrl;
+      if (!maxDimensionImageUrl) throw new Error('No eBay image URL returned — reconnect your eBay account');
+      onConfirm({ displayUrl, maxDimensionImageUrl });
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Upload failed');
     } finally {
@@ -246,7 +246,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
   const [loadingPolicies, setLoadingPolicies] = useState(false);
   const [itemSpecifics, setItemSpecifics] = useState([]);
   const [displayUrls, setDisplayUrls] = useState([]);
-  const [ebayUrlmaxDimensionImageUrls, setebayUrlmaxDimensionImageUrls] = useState([]);
+  const [maxDimensionImageUrls, setmaxDimensionImageUrls] = useState([]);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [loadingSpecifics, setLoadingSpecifics] = useState(false);
   const [editingImageIdx, setEditingImageIdx] = useState(null);
@@ -309,7 +309,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
       }));
       setItemSpecifics(scrapedOverride.itemSpecifics || []);
       setDisplayUrls(overridePics);
-      setebayUrlmaxDimensionImageUrls(overridePics);
+      setmaxDimensionImageUrls(overridePics);
       return; // Skip the normal scrape path
     }
 
@@ -327,7 +327,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
     }
 
     const itemUrl =
-      item.itemUrl || item.ebayUrlmaxDimensionImageUrl || item.url || item.raw?.itemWebUrl || item.raw?.itemUrl ||
+      item.itemUrl || item.maxDimensionImageUrl || item.url || item.raw?.itemWebUrl || item.raw?.itemUrl ||
       (item.legacyItemId ? `https://www.ebay.com/itm/${item.legacyItemId}` : null) ||
       (item.itemId ? `https://www.ebay.com/itm/${item.itemId}` : null);
 
@@ -339,7 +339,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
     }
     if (initialUrls.length > 0) {
       setDisplayUrls(initialUrls);
-      setebayUrlmaxDimensionImageUrls(initialUrls);
+      setmaxDimensionImageUrls(initialUrls);
     }
 
     if (!itemUrl) return;
@@ -356,7 +356,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
         if (Array.isArray(data.itemSpecifics) && data.itemSpecifics.length > 0) setItemSpecifics(data.itemSpecifics);
         if (Array.isArray(data.pictureUrls) && data.pictureUrls.length > 0) {
           setDisplayUrls(data.pictureUrls);
-          setebayUrlmaxDimensionImageUrls(data.pictureUrls);
+          setmaxDimensionImageUrls(data.pictureUrls);
           setSelectedImageIdx(0);
         }
       })
@@ -413,7 +413,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
     return (form.description || '').trim();
   };
 
-  const handleImageEdited = ({ displayUrl, ebayUrlmaxDimensionImageUrl }) => {
+  const handleImageEdited = ({ displayUrl, maxDimensionImageUrl }) => {
     const idx = editingImageIdx;
     setDisplayUrls((prev) => {
       const next = [...prev];
@@ -429,9 +429,9 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
       }
       return next;
     });
-    setebayUrlmaxDimensionImageUrls((prev) => {
+    setmaxDimensionImageUrls((prev) => {
       const next = [...prev];
-      next[idx] = ebayUrlmaxDimensionImageUrl;
+      next[idx] = maxDimensionImageUrl;
       // Propagate to bucket if possible
       if (typeof onUpdateItem === 'function') {
         onUpdateItem({
@@ -465,7 +465,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
       // Save changes to bucket item only
       setSubmitting(true);
       try {
-        const pictureUrlsHiRes = [...new Set(ebayUrlmaxDimensionImageUrls.filter(Boolean))];
+        const pictureUrlsHiRes = [...new Set(maxDimensionImageUrls.filter(Boolean))];
         // Always build a new scrapedData object, never mutate or spread scrapedOverride
         const newScrapedData = {
           title: form.title.trim(),
@@ -497,7 +497,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
     // Normal listing flow
     try {
       setSubmitting(true);
-      const pictureUrlsHiRes = [...new Set(ebayUrlmaxDimensionImageUrls.filter(Boolean))];
+      const pictureUrlsHiRes = [...new Set(maxDimensionImageUrls.filter(Boolean))];
       const EXCLUDED_SPECIFICS = new Set(['condition', 'item condition']);
       const itemSpecificsMap = {};
       itemSpecifics.forEach(({ name, label, value }) => {
