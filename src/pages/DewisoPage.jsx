@@ -1600,7 +1600,7 @@ export default function DewisoPage() {
               <div className="space-y-2 max-h-48 overflow-auto">
                 {uploadedImages.map((img, idx) => (
                   <div key={idx} className={`rounded-lg border p-2 flex gap-2 items-start ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
-                    <img src={img?.localUrl || ''} alt="" className="h-10 w-10 rounded object-cover border border-slate-200" />
+                    <img src={img?.ebayUrl || ''} alt="" className="h-10 w-10 rounded object-cover border border-slate-200" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold truncate">{img?.fileName || t('dewisoPage.imageLabel', { index: idx + 1 })}</p>
                       {img?.ebayUrl && (
