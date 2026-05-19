@@ -1603,8 +1603,8 @@ export default function DewisoPage() {
                     <img src={img?.ebayUrl || ''} alt="" className="h-10 w-10 rounded object-cover border border-slate-200" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold truncate">{img?.fileName || t('dewisoPage.imageLabel', { index: idx + 1 })}</p>
-                      {img?.ebayUrl && (
-                        <button className="text-[11px] text-indigo-500 hover:underline" onClick={() => copyText(img.ebayUrl)}>
+                      {img?.maxDimensionImageUrl && (
+                        <button className="text-[11px] text-indigo-500 hover:underline" onClick={() => copyText(img.maxDimensionImageUrl)}>
                           {t('dewisoPage.copyEbayLink')}
                         </button>
                       )}
