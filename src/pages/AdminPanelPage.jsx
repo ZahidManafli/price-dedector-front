@@ -638,6 +638,18 @@ export default function AdminPanelPage() {
     }
   };
 
+  const formatMaintenanceTime = (value) => {
+    if (!value) return 'n/a';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'n/a';
+    const plusFour = new Date(date.getTime() + 4 * 60 * 60 * 1000);
+    return new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: 'UTC',
+    }).format(plusFour);
+  };
+
   return (
     <div className="page-shell">
       <div className="max-w-6xl mx-auto">
@@ -1382,8 +1394,8 @@ export default function AdminPanelPage() {
                           </span>
                         </div>
                         <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
-                          <span><Clock3 size={12} className="mr-1 inline-block" />{window.startAt ? new Date(window.startAt).toLocaleString() : 'n/a'}</span>
-                          <span>Ends: {window.endAt ? new Date(window.endAt).toLocaleString() : 'n/a'}</span>
+                          <span><Clock3 size={12} className="mr-1 inline-block" />{formatMaintenanceTime(window.startAt)} (UTC+4)</span>
+                          <span>Ends: {formatMaintenanceTime(window.endAt)} (UTC+4)</span>
                         </div>
                         <div className="mt-2 text-xs text-slate-500">
                           Sent to {window.successCount || 0}/{window.recipientCount || 0} users, {window.errorCount || 0} failed.

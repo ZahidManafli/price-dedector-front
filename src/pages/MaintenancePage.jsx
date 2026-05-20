@@ -7,11 +7,12 @@ function formatUtc(value) {
   if (!value) return 'Unavailable';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Unavailable';
+  const plusFour = new Date(date.getTime() + 4 * 60 * 60 * 1000);
   return new Intl.DateTimeFormat('en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',
     timeZone: 'UTC',
-  }).format(date);
+  }).format(plusFour);
 }
 
 export default function MaintenancePage() {
@@ -86,7 +87,7 @@ export default function MaintenancePage() {
                     {windowLabel || 'Awaiting schedule details'}
                   </p>
                   <p className="mt-1 text-sm text-slate-300">
-                    Times are displayed in UTC for consistency.
+                    Times are displayed in UTC+4 for consistency.
                   </p>
                 </div>
               </div>
@@ -135,8 +136,8 @@ export default function MaintenancePage() {
                 Maintenance window
               </div>
               <div className="mt-4 space-y-2 text-sm text-slate-600">
-                <p><span className="font-medium text-slate-900">Starts:</span> {formatUtc(status.maintenance?.startAt)}</p>
-                <p><span className="font-medium text-slate-900">Ends:</span> {formatUtc(status.maintenance?.endAt)}</p>
+                <p><span className="font-medium text-slate-900">Starts:</span> {formatUtc(status.maintenance?.startAt)} (UTC+4)</p>
+                <p><span className="font-medium text-slate-900">Ends:</span> {formatUtc(status.maintenance?.endAt)} (UTC+4)</p>
                 <p><span className="font-medium text-slate-900">Message:</span> {status.maintenance?.message || 'The system is temporarily unavailable.'}</p>
               </div>
             </div>
