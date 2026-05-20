@@ -12,7 +12,7 @@ function formatUtc(value) {
     dateStyle: 'medium',
     timeStyle: 'short',
     timeZone: 'UTC',
-  }).format(plusFour);
+  });
 }
 
 export default function MaintenancePage() {
@@ -43,7 +43,7 @@ export default function MaintenancePage() {
 
   const windowLabel = useMemo(() => {
     if (!status.maintenance) return null;
-    return `${status.maintenance.startAt} - ${status.maintenance.endAt}`;
+    return `${formatUtc(status.maintenance.startAt)} - ${formatUtc(status.maintenance.endAt)}`;
   }, [status.maintenance]);
 
   return (
@@ -136,8 +136,8 @@ export default function MaintenancePage() {
                 Maintenance window
               </div>
               <div className="mt-4 space-y-2 text-sm text-slate-600">
-                <p><span className="font-medium text-slate-900">Starts:</span> {status.maintenance?.startAt} (UTC+4)</p>
-                <p><span className="font-medium text-slate-900">Ends:</span> {status.maintenance?.endAt} (UTC+4)</p>
+                <p><span className="font-medium text-slate-900">Starts:</span> {formatUtc(status.maintenance?.startAt)} (UTC+4)</p>
+                <p><span className="font-medium text-slate-900">Ends:</span> {formatUtc(status.maintenance?.endAt)} (UTC+4)</p>
                 <p><span className="font-medium text-slate-900">Message:</span> {status.maintenance?.message || 'The system is temporarily unavailable.'}</p>
               </div>
             </div>
