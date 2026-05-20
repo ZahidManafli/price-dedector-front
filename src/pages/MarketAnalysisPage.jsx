@@ -84,6 +84,7 @@ export default function MarketAnalysisPage() {
     setParams,
     results,
     total,
+    nextOffset,
     refinement,
     loading,
     error,
@@ -243,6 +244,11 @@ export default function MarketAnalysisPage() {
       adRate: Number.isFinite(adRate) ? adRate / 100 : 0,
     });
   }, [calcAmazonPrice, calcEbayPrice, calcAdRate]);
+
+  const currentPageSize = Array.isArray(results) ? results.length : 0;
+  const canNextPage =
+    !loading &&
+    (Number.isFinite(Number(nextOffset)) || currentPageSize >= Number(params.limit || 12) || params.offset + params.limit < (total || 0));
 
   const runSearch = async (nextParams, { force = false } = {}) => {
     rememberSearch(nextParams);
@@ -656,9 +662,12 @@ export default function MarketAnalysisPage() {
   };
 
   const onNextPage = () => {
+    const nextPageOffset = Number.isFinite(Number(nextOffset))
+      ? Number(nextOffset)
+      : Number(params.offset || 0) + Number(params.limit || 12);
     const nextParams = {
       ...params,
-      offset: Number(params.offset || 0) + Number(params.limit || 12),
+      offset: nextPageOffset,
     };
     setParams(nextParams);
     runSearch(nextParams);
@@ -985,7 +994,7 @@ export default function MarketAnalysisPage() {
                     type="button"
                     className="btn-secondary"
                     onClick={onNextPage}
-                    disabled={params.offset + params.limit >= (total || 0)}
+                    disabled={!canNextPage}
                   >
                     {t('marketAnalysisPage.next')}
                   </button>

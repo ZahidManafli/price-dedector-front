@@ -48,6 +48,24 @@ function buildCacheKey(rawParams = {}) {
   });
 }
 
+function parseNextOffset(nextValue) {
+  if (!nextValue) return null;
+
+  const text = String(nextValue).trim();
+  if (!text) return null;
+
+  try {
+    const parsed = new URL(text, 'https://www.ebay.com');
+    const offset = Number(parsed.searchParams.get('offset'));
+    return Number.isFinite(offset) && offset >= 0 ? offset : null;
+  } catch {
+    const match = text.match(/[?&]offset=(\d+)/) || text.match(/offset=(\d+)/);
+    if (!match?.[1]) return null;
+    const offset = Number(match[1]);
+    return Number.isFinite(offset) && offset >= 0 ? offset : null;
+  }
+}
+
 function loadPersistedState(initialParams = {}) {
   const defaults = getDefaultParams(initialParams);
   if (typeof window === 'undefined') {
@@ -182,6 +200,9 @@ export default function useBrowseSearch(initialParams = {}) {
   const [cache, setCache] = useState(persisted.cache || {});
   const [results, setResults] = useState(Array.isArray(persisted.restored?.results) ? persisted.restored.results : []);
   const [total, setTotal] = useState(Number(persisted.restored?.total || 0));
+  const [nextOffset, setNextOffset] = useState(
+    Number.isFinite(Number(persisted.restored?.nextOffset)) ? Number(persisted.restored.nextOffset) : null
+  );
   const [refinement, setRefinement] = useState(persisted.restored?.refinement || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -212,6 +233,7 @@ export default function useBrowseSearch(initialParams = {}) {
     ) {
       setResults([]);
       setTotal(0);
+      setNextOffset(null);
       setRefinement(null);
       setError(null);
       persistState(nextParams, cache);
@@ -239,6 +261,7 @@ export default function useBrowseSearch(initialParams = {}) {
 
         setResults(shouldForceDeferredSold ? forceDeferredSellerSold(cachedResults) : cachedResults);
         setTotal(Number(cached.total || 0));
+        setNextOffset(Number.isFinite(Number(cached.nextOffset)) ? Number(cached.nextOffset) : null);
         setRefinement(cached.refinement || null);
         setCredits(cached.credits || null);
         setSoldQuantityDeferred(nextSoldQuantityDeferred);
@@ -267,6 +290,9 @@ export default function useBrowseSearch(initialParams = {}) {
       const nextCredits = response?.data?.credits || null;
       const itemSummaries = Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : [];
       const nextDataSource = String(payload?.dataSource || 'external').trim() || 'external';
+      const nextNextOffset = Number.isFinite(Number(payload?.nextOffset))
+        ? Number(payload.nextOffset)
+        : parseNextOffset(payload?.next);
       const sellerOnly = isPureSellerOnlySearch(nextParams);
       const titleOnly = isPureTitleOnlySearch(nextParams);
       const shouldForceDeferredSold = sellerOnly && nextDataSource !== 'sql';
@@ -288,6 +314,7 @@ export default function useBrowseSearch(initialParams = {}) {
 
       setResults(hydratedItems);
       setTotal(nextTotal);
+      setNextOffset(nextNextOffset);
       setRefinement(nextRefinement);
       setCredits(nextCredits);
       setSoldQuantityDeferred(nextSoldQuantityDeferred);
@@ -300,6 +327,7 @@ export default function useBrowseSearch(initialParams = {}) {
           [cacheKey]: {
             results: hydratedItems,
             total: nextTotal,
+            nextOffset: nextNextOffset,
             refinement: nextRefinement,
             credits: nextCredits,
             soldQuantityDeferred: nextSoldQuantityDeferred,
@@ -335,6 +363,7 @@ export default function useBrowseSearch(initialParams = {}) {
     setResults,
     results,
     total,
+    nextOffset,
     refinement,
     loading,
     error,
