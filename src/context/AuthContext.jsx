@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import { authAPI, maintenanceAPI } from '../services/api';
 import { getAllowedTabs, hasTabAccess as checkTabAccess } from '../utils/planAccess';
 
 export const AuthContext = createContext();
@@ -18,6 +18,24 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => readStoredUser());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [maintenance, setMaintenance] = useState(null);
+
+  const clearStoredSession = () => {
+    try {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('authUser');
+    } catch {}
+  };
+
+  const handleMaintenanceLockout = (maintenanceInfo = null) => {
+    clearStoredSession();
+    setUser(null);
+    setMaintenance(maintenanceInfo);
+    setError('System is temporarily under maintenance');
+    if (typeof window !== 'undefined' && window.location.pathname !== '/maintenance') {
+      window.location.href = '/maintenance';
+    }
+  };
 
   useEffect(() => {
     const verifySession = async () => {
@@ -39,16 +57,20 @@ export const AuthProvider = ({ children }) => {
         const response = await authAPI.verifyToken();
         const verifiedUser = response?.data?.user || null;
         setUser(verifiedUser);
+        setMaintenance(null);
         if (verifiedUser) {
           try {
             localStorage.setItem('authUser', JSON.stringify(verifiedUser));
           } catch {}
         }
       } catch (err) {
-        try {
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('authUser');
-        } catch {}
+        const isMaintenance = err?.response?.status === 503 && err?.response?.data?.code === 'MAINTENANCE_MODE';
+        if (isMaintenance) {
+          handleMaintenanceLockout(err?.response?.data?.maintenance || null);
+          return;
+        }
+
+        clearStoredSession();
         setUser(null);
         setError(err?.response?.data?.message || err?.response?.data?.error || err.message || 'Session expired');
       } finally {
@@ -58,6 +80,32 @@ export const AuthProvider = ({ children }) => {
 
     verifySession();
   }, []);
+
+  useEffect(() => {
+    if (!user || String(user.role || '').toLowerCase() === 'admin') {
+      return undefined;
+    }
+
+    let cancelled = false;
+    const checkMaintenance = async () => {
+      try {
+        const response = await maintenanceAPI.getStatus();
+        if (!cancelled && response?.data?.active) {
+          handleMaintenanceLockout(response?.data?.maintenance || null);
+        }
+      } catch {
+        // Ignore status polling failures; auth-protected requests still enforce maintenance.
+      }
+    };
+
+    checkMaintenance();
+    const timer = setInterval(checkMaintenance, 60000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [user]);
 
   const setSession = (nextUser, nextToken) => {
     try {
@@ -70,6 +118,7 @@ export const AuthProvider = ({ children }) => {
     } catch {}
     setUser(nextUser || null);
     setError(null);
+    setMaintenance(null);
     setLoading(false);
   };
 
@@ -80,11 +129,11 @@ export const AuthProvider = ({ children }) => {
     } catch {}
 
     try {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('authUser');
+      clearStoredSession();
     } catch {}
 
     setUser(null);
+    setMaintenance(null);
   };
 
   const value = {
@@ -93,6 +142,7 @@ export const AuthProvider = ({ children }) => {
     error,
     logout,
     setSession,
+    maintenance,
     isAuthenticated: !!user,
     allowedTabs: getAllowedTabs(user),
     hasTabAccess: (tabKey) => checkTabAccess(user, tabKey),

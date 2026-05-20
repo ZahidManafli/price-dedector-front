@@ -57,6 +57,14 @@ export default function LoginPage() {
       setAlert({ type: 'success', message: t('auth.loginSuccess') });
       navigate('/dashboard', { replace: true });
     } catch (error) {
+      if (error?.response?.status === 503 && error?.response?.data?.code === 'MAINTENANCE_MODE') {
+        navigate('/maintenance', {
+          replace: true,
+          state: { maintenance: error?.response?.data?.maintenance || null },
+        });
+        return;
+      }
+
       const errorMessage =
         error?.response?.data?.message || error?.response?.data?.error || error.message || t('auth.loginFailed');
       setAlert({ type: 'error', message: errorMessage });

@@ -43,12 +43,21 @@ api.interceptors.response.use(
   (error) => {
     const status = error?.response?.status;
     const code = error?.response?.data?.code;
+    const isMaintenance = status === 503 && code === 'MAINTENANCE_MODE';
     if (status === 401) {
       try {
         localStorage.removeItem('authToken');
         localStorage.removeItem('authUser');
       } catch {}
       if (typeof window !== 'undefined') window.location.href = '/login';
+    } else if (isMaintenance) {
+      try {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('authUser');
+      } catch {}
+      if (typeof window !== 'undefined' && window.location.pathname !== '/maintenance') {
+        window.location.href = '/maintenance';
+      }
     } else if (status === 403 && code === 'PLAN_TAB_ACCESS_DENIED') {
       if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
         window.location.href = '/dashboard';
@@ -67,6 +76,7 @@ export const authAPI = {
   updateOnboardingTourState: (state) => api.post('/auth/onboarding-tour/state', { state }),
   logout: () => api.post('/auth/logout'),
   verifyToken: () => api.get('/auth/verify'),
+  getMaintenanceStatus: () => api.get('/auth/maintenance-status'),
 };
 
 // Product APIs
@@ -224,6 +234,12 @@ export const adminAPI = {
   listNotifications: () => api.get('/admin/notifications'),
   // admin sen dnotification
   sendNotification: (data) => api.post('/admin/notifications/send', data),
+  listMaintenanceWindows: () => api.get('/admin/maintenance'),
+  createMaintenanceWindow: (data) => api.post('/admin/maintenance', data),
+};
+
+export const maintenanceAPI = {
+  getStatus: () => api.get('/auth/maintenance-status'),
 };
 
 // Partners APIs

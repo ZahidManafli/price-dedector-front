@@ -5,7 +5,7 @@ import { adminAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import PartnersManagement from '../components/PartnersManagement';
-import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle, CalendarClock, Clock3, ShieldAlert } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { TAB_KEYS, USER_DEFAULT_ALLOWED_TABS } from '../utils/planAccess';
 import * as XLSX from 'xlsx';
@@ -114,15 +114,24 @@ export default function AdminPanelPage() {
   const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [dangerWindow, setDangerWindow] = useState('3d');
   const [dangerSubmitting, setDangerSubmitting] = useState(false);
+  const [maintenanceForm, setMaintenanceForm] = useState({
+    title: 'Scheduled maintenance',
+    message: 'We are performing a planned maintenance update. Non-admin access will be paused during this window.',
+    startAt: '',
+    endAt: '',
+  });
+  const [maintenanceWindows, setMaintenanceWindows] = useState([]);
+  const [maintenanceSubmitting, setMaintenanceSubmitting] = useState(false);
 
   const adminCount = useMemo(() => users.filter((u) => u.role === 'admin').length, [users]);
 
   const refreshData = async () => {
-    const [usersRes, plansRes, requestsRes, notifRes] = await Promise.all([
-    adminAPI.listUsers(),
-    adminAPI.listPlans(),
-    adminAPI.listSubscriptionRequests(),
-    adminAPI.listNotifications(),
+    const [usersRes, plansRes, requestsRes, notifRes, maintenanceRes] = await Promise.all([
+      adminAPI.listUsers(),
+      adminAPI.listPlans(),
+      adminAPI.listSubscriptionRequests(),
+      adminAPI.listNotifications(),
+      adminAPI.listMaintenanceWindows(),
     ]);
 
     const usersList = usersRes?.data?.users || [];
@@ -134,6 +143,7 @@ export default function AdminPanelPage() {
     setPlans(plansRes?.data?.plans || []);
     setRequests(requestsRes?.data?.requests || []);
     setNotifHistory(notifRes?.data?.notifications || []);
+    setMaintenanceWindows(maintenanceRes?.data?.windows || []);
   };
 
   useEffect(() => {
@@ -585,6 +595,49 @@ export default function AdminPanelPage() {
     }
   };
 
+  const onCreateMaintenance = async (e) => {
+    e.preventDefault();
+    setAlert(null);
+
+    if (!maintenanceForm.title.trim()) {
+      setAlert({ type: 'warning', message: 'Maintenance title is required' });
+      return;
+    }
+    if (!maintenanceForm.message.trim()) {
+      setAlert({ type: 'warning', message: 'Maintenance message is required' });
+      return;
+    }
+    if (!maintenanceForm.startAt) {
+      setAlert({ type: 'warning', message: 'Maintenance start time is required' });
+      return;
+    }
+    if (!maintenanceForm.endAt) {
+      setAlert({ type: 'warning', message: 'Maintenance end time is required' });
+      return;
+    }
+
+    try {
+      setMaintenanceSubmitting(true);
+      const res = await adminAPI.createMaintenanceWindow({
+        title: maintenanceForm.title.trim(),
+        message: maintenanceForm.message.trim(),
+        startAt: maintenanceForm.startAt,
+        endAt: maintenanceForm.endAt,
+      });
+      setAlert({ type: 'success', message: res?.data?.message || 'Maintenance window created successfully' });
+      setMaintenanceForm((prev) => ({
+        ...prev,
+        startAt: '',
+        endAt: '',
+      }));
+      setTimeout(() => refreshData(), 1500);
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to create maintenance window' });
+    } finally {
+      setMaintenanceSubmitting(false);
+    }
+  };
+
   return (
     <div className="page-shell">
       <div className="max-w-6xl mx-auto">
@@ -630,6 +683,12 @@ export default function AdminPanelPage() {
             onClick={() => setActiveTab('notifications')}
           >
             {t('adminPanelPage.notificationsTab')}
+          </button>
+          <button
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'maintenance' ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900' : 'text-slate-600 dark:text-slate-300'}`}
+            onClick={() => setActiveTab('maintenance')}
+          >
+            Maintenance
           </button>
           <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'danger' ? 'bg-red-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
@@ -1224,6 +1283,118 @@ export default function AdminPanelPage() {
             onSendNotification={onSendNotification}
             notifHistory={notifHistory}
           />
+        )}
+
+        {!loading && activeTab === 'maintenance' && (
+          <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-4 lg:gap-6">
+            <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
+              <div className="flex items-center gap-2 mb-4">
+                <CalendarClock size={18} className="text-blue-600" />
+                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  Schedule maintenance
+                </h2>
+              </div>
+
+              <form onSubmit={onCreateMaintenance} className="space-y-3">
+                <input
+                  value={maintenanceForm.title}
+                  onChange={(e) => setMaintenanceForm((prev) => ({ ...prev, title: e.target.value }))}
+                  className="input-base"
+                  placeholder="Title"
+                  type="text"
+                  maxLength={200}
+                  disabled={maintenanceSubmitting}
+                />
+                <textarea
+                  value={maintenanceForm.message}
+                  onChange={(e) => setMaintenanceForm((prev) => ({ ...prev, message: e.target.value }))}
+                  className="input-base min-h-[150px]"
+                  placeholder="Message shown to users"
+                  maxLength={5000}
+                  disabled={maintenanceSubmitting}
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-500">Start time</label>
+                    <input
+                      type="datetime-local"
+                      value={maintenanceForm.startAt}
+                      onChange={(e) => setMaintenanceForm((prev) => ({ ...prev, startAt: e.target.value }))}
+                      className="input-base"
+                      disabled={maintenanceSubmitting}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-500">End time</label>
+                    <input
+                      type="datetime-local"
+                      value={maintenanceForm.endAt}
+                      onChange={(e) => setMaintenanceForm((prev) => ({ ...prev, endAt: e.target.value }))}
+                      className="input-base"
+                      disabled={maintenanceSubmitting}
+                    />
+                  </div>
+                </div>
+
+                <div className={`rounded-xl border p-3 text-xs ${isDark ? 'border-blue-900 bg-blue-950/20 text-blue-100' : 'border-blue-200 bg-blue-50 text-blue-800'}`}>
+                  Non-admin users will be blocked from login and protected requests while the window is active. An email announcement is sent automatically.
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={maintenanceSubmitting}
+                  className="btn-primary w-full py-3 flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {maintenanceSubmitting ? 'Creating...' : 'Create maintenance window'}
+                </button>
+              </form>
+            </div>
+
+            <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
+              <div className="flex items-center gap-2 mb-4">
+                <ShieldAlert size={18} className="text-blue-600" />
+                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  Maintenance history
+                </h2>
+              </div>
+
+              <div className="space-y-3">
+                {maintenanceWindows.length === 0 ? (
+                  <p className="text-sm text-slate-500">No maintenance windows created yet.</p>
+                ) : (
+                  maintenanceWindows.map((window) => {
+                    const isActive = window.isActive;
+                    const badgeClass = isActive
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-100'
+                      : new Date(window.startAt || 0).getTime() > Date.now()
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
+                        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-100';
+
+                    return (
+                      <div key={window.id} className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-white'}`}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold">{window.title}</p>
+                            <p className="mt-1 text-xs text-slate-500">{window.message}</p>
+                          </div>
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badgeClass}`}>
+                            {isActive ? 'active' : new Date(window.startAt || 0).getTime() > Date.now() ? 'scheduled' : 'finished'}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
+                          <span><Clock3 size={12} className="mr-1 inline-block" />{window.startAt ? new Date(window.startAt).toLocaleString() : 'n/a'}</span>
+                          <span>Ends: {window.endAt ? new Date(window.endAt).toLocaleString() : 'n/a'}</span>
+                        </div>
+                        <div className="mt-2 text-xs text-slate-500">
+                          Sent to {window.successCount || 0}/{window.recipientCount || 0} users, {window.errorCount || 0} failed.
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         {!loading && activeTab === 'danger' && (
