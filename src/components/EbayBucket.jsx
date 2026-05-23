@@ -11,6 +11,25 @@ function markdownToPlainText(md) {
     .replace(/\s+/g, ' ')
     .trim();
 }
+
+function htmlToPlainText(html) {
+  const raw = String(html || '').trim();
+  if (!raw) return '';
+
+  const normalized = raw
+    .replace(/<script[^>]*>.*?<\/script>/gis, ' ')
+    .replace(/<style[^>]*>.*?<\/style>/gis, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|h[1-6])>/gi, '\n')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\r\n?/g, '\n')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  return normalized;
+}
 /**
  * EbayBucket.jsx
  *
@@ -245,12 +264,15 @@ export function BucketDrawer({
           itemSpecificsObj = scraped.itemSpecifics;
         }
 
-        // Convert Markdown to plain text for safety
-        const safeDescription = markdownToPlainText(scraped.description || itm.title || '');
+        const useRawDewisoHtml = scraped.useRawDewisoHtml === true;
+        const safeDescription = useRawDewisoHtml
+          ? String(scraped.description || itm.title || '').trim()
+          : htmlToPlainText(scraped.description || itm.title || '') || markdownToPlainText(itm.title || '');
 
         const payload = {
           title: scraped.title || itm.title || '',
           description: safeDescription,
+          useRawDewisoHtml,
           price: scraped.price ?? itm.priceValue ?? 0,
           quantity: scraped.quantity ?? 1,
           categoryId: scraped.categoryId || '',

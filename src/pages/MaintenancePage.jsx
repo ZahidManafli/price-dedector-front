@@ -7,7 +7,7 @@ function formatUtc(value) {
   if (!value) return 'Unavailable';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Unavailable';
-  const plusFour = new Date(date.getTime());
+  const plusFour = new Date(date.getTime() + 4 * 60 * 60 * 1000);
   return new Intl.DateTimeFormat('en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',

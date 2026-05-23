@@ -226,6 +226,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
   const [form, setForm] = useState({
     title: '',
     description: '',
+    useRawDewisoHtml: false,
     price: '',
     quantity: '1',
     categoryId: '',
@@ -300,6 +301,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
         ...prev,
         title: String(scrapedOverride.title || item.title || '').slice(0, 80),
         description: String(scrapedOverride.description || item.title || ''),
+        useRawDewisoHtml: !!scrapedOverride.useRawDewisoHtml,
         price: scrapedOverride.price != null ? String(Number(scrapedOverride.price).toFixed(2)) : '',
         quantity: String(scrapedOverride.quantity || 1),
         categoryId: String(scrapedOverride.categoryId || item.categoryId || item.raw?.categoryId || ''),
@@ -318,6 +320,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
       ...prev,
       title: String(item.title || '').slice(0, 80),
       description: String(item.description || item.title || ''),
+      useRawDewisoHtml: false,
       price: item.priceValue ? String(Number(item.priceValue).toFixed(2)) : '',
       categoryId: String(item.categoryId || item.raw?.categoryId || ''),
     }));
@@ -413,6 +416,17 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
     return (form.description || '').trim();
   };
 
+  const getDescriptionPlainText = () => {
+    if (quillRef.current) return (quillRef.current.getText?.() || '').replace(/\u00a0/g, ' ').trim();
+    return getDescriptionHtml()
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(p|div|li|h[1-6])>/gi, '\n')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  };
+
   const handleImageEdited = ({ displayUrl, maxDimensionImageUrl }) => {
     const idx = editingImageIdx;
     setDisplayUrls((prev) => {
@@ -471,6 +485,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
           title: form.title.trim(),
           // Convert Markdown to plain text for safety
           description: getDescriptionHtml() || markdownToPlainText(form.title.trim()),
+          useRawDewisoHtml: !!form.useRawDewisoHtml,
           price: Number(form.price),
           quantity: Math.max(1, Number(form.quantity) || 1),
           categoryId: form.categoryId.trim(),
@@ -509,8 +524,10 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
 
       const res = await ebayAPI.quickList({
       title: form.title.trim(),
-      // Description (HTML from Quill) — fallback to plain text title
-      description: getDescriptionHtml() || markdownToPlainText(form.title.trim()),
+      description: form.useRawDewisoHtml
+        ? (getDescriptionHtml() || markdownToPlainText(form.title.trim()))
+        : (getDescriptionPlainText() || form.title.trim()),
+      useRawDewisoHtml: !!form.useRawDewisoHtml,
         price: Number(form.price),
         quantity: Math.max(1, Number(form.quantity) || 1),
         categoryId: form.categoryId.trim(),
@@ -673,13 +690,24 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
                   <p className={`text-xs mt-0.5 text-right ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{form.title.length}/80</p>
                 </div>
                 <div>
+                  <label className="flex items-center gap-2 mb-2 cursor-pointer">
+                    <input type="checkbox" name="useRawDewisoHtml" checked={form.useRawDewisoHtml} onChange={handleChange} disabled={submitting} />
+                    <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      {t('listingModal.sendRawDewisoHtml')}
+                    </span>
+                  </label>
+                  <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {t('listingModal.sendRawDewisoHtmlHint')}
+                  </p>
                   <label className={labelClass}>Description</label>
                   <div
                     ref={quillContainerRef}
                     className={`rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} max-h-40 overflow-y-auto`}
                     data-placeholder="Item description"
                   />
-                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>HTML description will be sent to eBay.</p>
+                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {form.useRawDewisoHtml ? t('listingModal.rawHtmlWillBeSent') : t('listingModal.textWillBeConverted')}
+                  </p>
                 </div>
               </div>
 
