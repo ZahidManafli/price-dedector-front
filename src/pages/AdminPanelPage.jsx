@@ -466,7 +466,7 @@ export default function AdminPanelPage() {
     filteredUsers.length > 0 && filteredUsers.every((u) => selectedUserIds.includes(u.id));
 
   const toggleSelectUser = (userId) => {
-                  <form onSubmit={onCreateUser} className="space-y-3">
+    setSelectedUserIds((prev) =>
       prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
     );
   };
