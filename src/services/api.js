@@ -236,6 +236,7 @@ export const adminAPI = {
   sendNotification: (data) => api.post('/admin/notifications/send', data),
   listMaintenanceWindows: () => api.get('/admin/maintenance'),
   createMaintenanceWindow: (data) => api.post('/admin/maintenance', data),
+  updateMaintenanceFlag: (data) => api.patch('/admin/maintenance/flag', data),
 };
 
 export const maintenanceAPI = {

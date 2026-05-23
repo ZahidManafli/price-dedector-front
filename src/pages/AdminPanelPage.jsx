@@ -121,6 +121,7 @@ export default function AdminPanelPage() {
     endAt: '',
   });
   const [maintenanceWindows, setMaintenanceWindows] = useState([]);
+  const [maintenanceFlag, setMaintenanceFlag] = useState({ active: false, source: null, manualActive: null });
   const [maintenanceSubmitting, setMaintenanceSubmitting] = useState(false);
 
   const adminCount = useMemo(() => users.filter((u) => u.role === 'admin').length, [users]);
@@ -144,6 +145,7 @@ export default function AdminPanelPage() {
     setRequests(requestsRes?.data?.requests || []);
     setNotifHistory(notifRes?.data?.notifications || []);
     setMaintenanceWindows(maintenanceRes?.data?.windows || []);
+    setMaintenanceFlag(maintenanceRes?.data?.flag || { active: false, source: null, manualActive: null });
   };
 
   useEffect(() => {
@@ -464,7 +466,7 @@ export default function AdminPanelPage() {
     filteredUsers.length > 0 && filteredUsers.every((u) => selectedUserIds.includes(u.id));
 
   const toggleSelectUser = (userId) => {
-    setSelectedUserIds((prev) =>
+                  <form onSubmit={onCreateUser} className="space-y-3">
       prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
     );
   };
@@ -633,6 +635,24 @@ export default function AdminPanelPage() {
       setTimeout(() => refreshData(), 1500);
     } catch (err) {
       setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to create maintenance window' });
+    } finally {
+      setMaintenanceSubmitting(false);
+    }
+  };
+
+  const onSetMaintenanceFlag = async (active) => {
+    setAlert(null);
+    try {
+      setMaintenanceSubmitting(true);
+      const res = await adminAPI.updateMaintenanceFlag({ active });
+      setMaintenanceFlag(res?.data?.flag || { active: !!active, source: 'manual', manualActive: !!active });
+      await refreshData();
+      setAlert({
+        type: 'success',
+        message: res?.data?.message || `Maintenance mode set to ${active ? 'active' : 'passive'}`,
+      });
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to update maintenance mode' });
     } finally {
       setMaintenanceSubmitting(false);
     }
@@ -1306,6 +1326,36 @@ export default function AdminPanelPage() {
                   Schedule maintenance
                 </h2>
               </div>
+
+                <div className="mb-4">
+                  <div className={`rounded-xl border p-3 mb-3 ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-white'}`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-slate-500">Manual maintenance</p>
+                        <p className="font-semibold">{maintenanceFlag.active ? 'Active' : 'Passive'} {maintenanceFlag.source ? `· ${maintenanceFlag.source}` : ''}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="btn-secondary px-3 py-1.5"
+                          onClick={() => onSetMaintenanceFlag(true)}
+                          disabled={maintenanceSubmitting}
+                        >
+                          Set Active
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-danger px-3 py-1.5"
+                          onClick={() => onSetMaintenanceFlag(false)}
+                          disabled={maintenanceSubmitting}
+                        >
+                          Set Passive
+                        </button>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">Manual passive persists until an admin changes it. Cron will not clear a manual setting.</p>
+                  </div>
+                </div>
 
               <form onSubmit={onCreateMaintenance} className="space-y-3">
                 <input
