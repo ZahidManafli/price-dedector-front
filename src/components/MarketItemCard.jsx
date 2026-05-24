@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ExternalLink, PlusCircle, Search } from 'lucide-react';
+import { ExternalLink, Heart, PlusCircle, Search } from 'lucide-react';
 import { countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
 
 const AMAZON_ICON_URL = 'https://www.amazon.com/favicon.ico';
@@ -17,10 +17,21 @@ function buildAmazonSearchUrlFromTitle(title) {
   return `https://www.amazon.com/s?k=${encodeURIComponent(query)}`;
 }
 
-export default function MarketItemCard({ item, onSelect, onInspect, onSellerClick, onSearchTitle, onSellSimilar, isSelected }) {
+export default function MarketItemCard({
+  item,
+  onSelect,
+  onInspect,
+  onSellerClick,
+  onSearchTitle,
+  onSellSimilar,
+  onToggleSeller,
+  isSelected,
+  isSellerSaved,
+}) {
   const { t } = useTranslation();
   const sellerFlag = countryCodeToFlagEmoji(item?.sellerCountryCode);
   const amazonSearchUrl = buildAmazonSearchUrlFromTitle(item?.title);
+  const sellerName = String(item?.sellerName || '').trim();
 
   return (
     <article className="glass-card p-3 flex flex-col gap-3">
@@ -43,8 +54,8 @@ export default function MarketItemCard({ item, onSelect, onInspect, onSellerClic
         >
           {item.title}
         </button>
-        <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
-          {item.condition} | {t('marketItemCard.seller')}:{' '}
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
+          <span>{item.condition} | {t('marketItemCard.seller')}:</span>
           <button
             type="button"
             onClick={() => onSellerClick?.(item.sellerName)}
@@ -52,8 +63,23 @@ export default function MarketItemCard({ item, onSelect, onInspect, onSellerClic
           >
             {item.sellerName || t('marketItemCard.unknown')}
           </button>
-          {sellerFlag ? <span className="ml-2 align-middle">{sellerFlag}</span> : null}
-        </p>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!sellerName) return;
+              onToggleSeller?.(sellerName);
+            }}
+            className={`inline-flex items-center justify-center rounded-full transition ${isSellerSaved ? 'text-rose-600 hover:text-rose-700' : 'text-slate-400 hover:text-rose-600'}`}
+            aria-label={isSellerSaved ? t('marketItemCard.unsaveSeller') : t('marketItemCard.saveSeller')}
+            title={isSellerSaved ? t('marketItemCard.unsaveSeller') : t('marketItemCard.saveSeller')}
+            disabled={!sellerName}
+          >
+            <Heart size={15} fill={isSellerSaved ? 'currentColor' : 'none'} strokeWidth={2} />
+          </button>
+          {sellerFlag ? <span className="ml-1 align-middle">{sellerFlag}</span> : null}
+        </div>
         <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
           {t('marketItemCard.feedbackScore')}: <span className="font-semibold">{Number(item.sellerFeedback || 0)}</span>
         </p>

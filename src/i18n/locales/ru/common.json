@@ -264,7 +264,9 @@
     "compare": "Сравнить",
     "searchTitle": "Искать это название",
     "details": "Подробности",
-    "searchOnAmazon": "Поиск на Amazon"
+    "searchOnAmazon": "Поиск на Amazon",
+    "saveSeller": "Сохранить продавца",
+    "unsaveSeller": "Убрать продавца из сохранённых"
   },
   "marketAnalysisPage": {
     "title": "Анализ Checkila",
@@ -307,6 +309,10 @@
     "unknownSeller": "Неизвестный",
     "loadingSoldQuantity": "Загрузка количества продаж",
     "seeHistory": "История",
+    "savedSellers": "Сохранённые продавцы",
+    "savedSellersHint": "Нажмите на имя продавца, чтобы открыть поиск в новой вкладке. Нажмите на сердечко, чтобы убрать из сохранённых.",
+    "savedSellersEmpty": "Сохранённых продавцов пока нет.",
+    "savedSellersLoading": "Загрузка сохранённых продавцов...",
     "showingResults": "Показано {{count}} результат(ов)",
     "previous": "Предыдущая",
     "next": "Следующая"

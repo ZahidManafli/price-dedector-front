@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { History, LayoutGrid, List, RefreshCw, Search, SearchCheck } from 'lucide-react';
+import { Heart, History, LayoutGrid, List, RefreshCw, Search, SearchCheck } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import Alert from '../components/Alert';
@@ -35,6 +35,10 @@ function loadRecentSearches() {
   } catch {
     return { sellers: [], titles: [] };
   }
+}
+
+function normalizeSellerName(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
 function median(values) {
@@ -101,6 +105,10 @@ export default function MarketAnalysisPage() {
   const [sortConfig, setSortConfig] = useState({ key: 'soldQuantity', direction: 'desc' });
   const [marketCreditsState, setMarketCreditsState] = useState(null);
   const [recentSearches, setRecentSearches] = useState(() => loadRecentSearches());
+  const [savedSellers, setSavedSellers] = useState([]);
+  const [savedSellersLoading, setSavedSellersLoading] = useState(false);
+  const [savedSellersOpen, setSavedSellersOpen] = useState(false);
+  const [savedSellerSaving, setSavedSellerSaving] = useState('');
   const [calcAmazonPrice, setCalcAmazonPrice] = useState('');
   const [calcEbayPrice, setCalcEbayPrice] = useState('');
   const [calcAdRate, setCalcAdRate] = useState('0');
@@ -232,6 +240,22 @@ export default function MarketAnalysisPage() {
       remaining: credits.remaining,
     });
   }, [credits]);
+
+  const loadSavedSellers = useCallback(async () => {
+    try {
+      setSavedSellersLoading(true);
+      const response = await ebayAPI.listSavedSellers();
+      setSavedSellers(Array.isArray(response?.data?.savedSellers) ? response.data.savedSellers : []);
+    } catch (loadError) {
+      console.warn('[market-analysis] failed to load saved sellers:', loadError?.message || loadError);
+    } finally {
+      setSavedSellersLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSavedSellers();
+  }, [loadSavedSellers]);
 
   const searchCost = String(params.sellerUsername || '').trim() ? 2 : 1;
 
@@ -629,6 +653,30 @@ export default function MarketAnalysisPage() {
     window.open(`/market-analysis?${query.toString()}`, '_blank', 'noopener,noreferrer');
   };
 
+  const handleToggleSavedSeller = useCallback(async (sellerName) => {
+    const seller = String(sellerName || '').replace(/\s+/g, ' ').trim();
+    if (!seller) return;
+
+    const sellerKey = normalizeSellerName(seller);
+    setSavedSellerSaving(sellerKey);
+
+    try {
+      const response = await ebayAPI.toggleSavedSeller(seller);
+      setSavedSellers(Array.isArray(response?.data?.savedSellers) ? response.data.savedSellers : []);
+      setSavedSellersOpen(true);
+    } catch (toggleError) {
+      setError(toggleError?.response?.data?.error || toggleError?.message || 'Failed to update saved sellers');
+    } finally {
+      setSavedSellerSaving('');
+    }
+  }, [setError]);
+
+  const handleOpenSavedSeller = (sellerName) => {
+    const seller = String(sellerName || '').trim();
+    if (!seller) return;
+    handleSellerClick(seller);
+  };
+
   const handleTitleSearch = (item) => {
     const titleQuery = String(item?.title || '').trim();
     if (!titleQuery) return;
@@ -684,6 +732,14 @@ export default function MarketAnalysisPage() {
 
   // ── Bucket helpers ───────────────────────────────────────────────────────────
   const bucketItemIds = useMemo(() => new Set(bucket.items.map((b) => b.id)), [bucket.items]);
+  const savedSellerKeys = useMemo(
+    () => new Set(savedSellers.map((entry) => normalizeSellerName(entry.sellerName))),
+    [savedSellers]
+  );
+  const sortedSavedSellers = useMemo(
+    () => [...savedSellers].sort((a, b) => String(a.sellerName || '').localeCompare(String(b.sellerName || ''))),
+    [savedSellers]
+  );
 
   return (
     <div className="page-shell space-y-4">
@@ -701,7 +757,68 @@ export default function MarketAnalysisPage() {
         <button type="button" onClick={clearCache} className="btn-secondary flex items-center gap-2">
           {t('marketAnalysisPage.clearCache')}
         </button>
+        <button
+          type="button"
+          onClick={() => setSavedSellersOpen((prev) => !prev)}
+          className="btn-secondary flex items-center gap-2"
+        >
+          <Heart size={14} fill="currentColor" className="text-rose-500" />
+          {t('marketAnalysisPage.savedSellers')} ({savedSellers.length})
+        </button>
       </header>
+
+      {savedSellersOpen && (
+        <div className="glass-card p-4 md:p-5 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                {t('marketAnalysisPage.savedSellers')}
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-300">
+                {t('marketAnalysisPage.savedSellersHint')}
+              </p>
+            </div>
+            <button type="button" className="btn-secondary" onClick={loadSavedSellers} disabled={savedSellersLoading}>
+              {savedSellersLoading ? t('marketAnalysisPage.savedSellersLoading') : t('marketAnalysisPage.refresh')}
+            </button>
+          </div>
+
+          {savedSellersLoading ? (
+            <p className="text-sm text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.savedSellersLoading')}</p>
+          ) : sortedSavedSellers.length === 0 ? (
+            <p className="text-sm text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.savedSellersEmpty')}</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {sortedSavedSellers.map((seller) => {
+                const sellerName = String(seller.sellerName || '').trim();
+                const sellerKey = normalizeSellerName(sellerName);
+                const isSaved = savedSellerKeys.has(sellerKey);
+                return (
+                  <div key={seller.id || sellerKey} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenSavedSeller(sellerName)}
+                      className="font-medium text-blue-700 hover:underline dark:text-blue-400"
+                    >
+                      {sellerName}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleSavedSeller(sellerName)}
+                      className={`inline-flex items-center justify-center rounded-full transition ${isSaved ? 'text-rose-600 hover:text-rose-700' : 'text-slate-400 hover:text-rose-600'}`}
+                      aria-label={t('marketItemCard.unsaveSeller')}
+                      title={t('marketItemCard.unsaveSeller')}
+                      disabled={savedSellerSaving === sellerKey}
+                    >
+                      <Heart size={14} fill={isSaved ? 'currentColor' : 'none'} strokeWidth={2} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {error && (
         <Alert
@@ -808,11 +925,13 @@ export default function MarketAnalysisPage() {
                       key={getResultKey(item, index)}
                       item={item}
                       isSelected={selectedIds.includes(item.id)}
+                      isSellerSaved={savedSellerKeys.has(normalizeSellerName(item.sellerName))}
                       onSelect={handleSelect}
                       onInspect={handleInspect}
                       onSellerClick={handleSellerClick}
                       onSearchTitle={handleTitleSearch}
                       onSellSimilar={handleSellSimilar}
+                      onToggleSeller={handleToggleSavedSeller}
                     />
                   ))}
                 </div>
@@ -873,14 +992,26 @@ export default function MarketAnalysisPage() {
                             </button>
                           </td>
                           <td className="p-3">
-                            <button
-                              type="button"
-                              onClick={() => handleSellerClick(item.sellerName)}
-                              className="text-blue-700 dark:text-blue-400 hover:underline"
-                            >
-                              {item.sellerName || t('marketAnalysisPage.unknownSeller')}
-                            </button>
-                            {renderSellerCountryFlag(item.sellerCountryCode)}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => handleSellerClick(item.sellerName)}
+                                className="text-blue-700 dark:text-blue-400 hover:underline"
+                              >
+                                {item.sellerName || t('marketAnalysisPage.unknownSeller')}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleSavedSeller(item.sellerName)}
+                                className={`inline-flex items-center justify-center rounded-full transition ${savedSellerKeys.has(normalizeSellerName(item.sellerName)) ? 'text-rose-600 hover:text-rose-700' : 'text-slate-400 hover:text-rose-600'}`}
+                                aria-label={savedSellerKeys.has(normalizeSellerName(item.sellerName)) ? t('marketItemCard.unsaveSeller') : t('marketItemCard.saveSeller')}
+                                title={savedSellerKeys.has(normalizeSellerName(item.sellerName)) ? t('marketItemCard.unsaveSeller') : t('marketItemCard.saveSeller')}
+                                disabled={savedSellerSaving === normalizeSellerName(item.sellerName)}
+                              >
+                                <Heart size={14} fill={savedSellerKeys.has(normalizeSellerName(item.sellerName)) ? 'currentColor' : 'none'} strokeWidth={2} />
+                              </button>
+                              {renderSellerCountryFlag(item.sellerCountryCode)}
+                            </div>
                           </td>
                           <td className="p-3 font-medium">{Number(item.sellerFeedback || 0)}</td>
                           <td className="p-3 font-medium">

@@ -164,6 +164,8 @@ export const ebayAPI = {
     api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/upload-ebay`, payload),
   scrapeItemDetails: (url) => api.post('/ebay/scrape-item-details', { url }),
   quickList: (payload) => api.post('/ebay/quick-list', payload),
+  listSavedSellers: () => api.get('/ebay/saved-sellers'),
+  toggleSavedSeller: (sellerName) => api.post('/ebay/saved-sellers/toggle', { sellerName }),
 };
 
 export const browseAPI = {

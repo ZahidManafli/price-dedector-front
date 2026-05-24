@@ -264,7 +264,9 @@
     "compare": "Compare",
     "searchTitle": "Search this title",
     "details": "Details",
-    "searchOnAmazon": "Search on Amazon"
+    "searchOnAmazon": "Search on Amazon",
+    "saveSeller": "Satıcını saxla",
+    "unsaveSeller": "Saxlanmış satıcını sil"
   },
   "marketAnalysisPage": {
     "title": "Checkila Analizi",
@@ -307,6 +309,10 @@
     "unknownSeller": "Naməlum",
     "loadingSoldQuantity": "Satış miqdarı yüklənir",
     "seeHistory": "Tarixçə",
+    "savedSellers": "Saxlanmış satıcılar",
+    "savedSellersHint": "Yeni analiz tabında açmaq üçün satıcı adına klikləyin. Siyahıdan çıxarmaq üçün ürək işarəsinə klikləyin.",
+    "savedSellersEmpty": "Hələ saxlanmış satıcı yoxdur.",
+    "savedSellersLoading": "Saxlanmış satıcılar yüklənir...",
     "showingResults": "{{count}} nəticə göstərilir",
     "previous": "Əvvəlki",
     "next": "Sonrakı"
