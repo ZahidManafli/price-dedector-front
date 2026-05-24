@@ -14,7 +14,7 @@ export default function OrdersPage() {
   const getBuyerDisplay = (order) => {
     const username = String(order?.buyer?.username || '').trim();
     const fullName = String(order?.buyer?.buyerRegistrationAddress?.fullName || '').trim();
-    if (username && fullName) return `${username} (${fullName})`;
+    if (username && fullName) return `${username} | ${fullName}`;
     return username || fullName || '-';
   };
 
