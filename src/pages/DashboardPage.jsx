@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { adminAPI, productAPI, settingsAPI, ebayAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
@@ -40,6 +40,7 @@ export default function DashboardPage() {
   const [hideAnalyticsAccessAlert, setHideAnalyticsAccessAlert] = useState(false);
   const [requestUpgradeOpen, setRequestUpgradeOpen] = useState(false);
   const [publicPlans, setPublicPlans] = useState([]);
+  const financeData = analytics?.finance || null;
 
   useEffect(() => {
     const load = async () => {
@@ -113,6 +114,117 @@ export default function DashboardPage() {
       conversion: Number(p.conversionRate || 0),
     }));
   }, [analytics]);
+
+  const financeCurrency =
+    financeData?.summaries?.orderEarnings?.orderEarnings?.currency ||
+    financeData?.summaries?.sellerFunds?.totalFunds?.currency ||
+    financeData?.balances?.availableFunds?.currency ||
+    'USD';
+
+  const formatFinanceAmount = (value, currency = financeCurrency) => {
+    const numericValue = Number(value || 0);
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency || 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Number.isFinite(numericValue) ? numericValue : 0);
+  };
+
+  const financeChartData = useMemo(() => {
+    const points = Array.isArray(financeData?.chart?.points) ? financeData.chart.points : [];
+    const grouped = new Map();
+
+    for (const point of points) {
+      const key = String(point?.label || 'Unknown').trim() || 'Unknown';
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          day: key,
+          orderEarnings: 0,
+          payouts: 0,
+        });
+      }
+      const row = grouped.get(key);
+      const value = Number(point?.value || 0);
+      if (point?.type === 'order_earnings') {
+        row.orderEarnings += value;
+      } else if (point?.type === 'payout') {
+        row.payouts += value;
+      }
+    }
+
+    return Array.from(grouped.values()).map((row) => ({
+      ...row,
+      net: Number((row.orderEarnings - row.payouts).toFixed(2)),
+    }));
+  }, [financeData]);
+
+  const financeSummaryCards = useMemo(() => {
+    const orderSummary = financeData?.summaries?.orderEarnings || {};
+    const payoutSummary = financeData?.summaries?.payout || {};
+    const transactionSummary = financeData?.summaries?.transaction || {};
+    const sellerFunds = financeData?.summaries?.sellerFunds || {};
+
+    return [
+      {
+        label: 'Net earnings',
+        value: orderSummary?.orderEarnings?.value ?? financeData?.details?.orderEarnings?.orderEarningsSummary?.orderEarnings?.value ?? 0,
+        currency: orderSummary?.orderEarnings?.currency || financeCurrency,
+        hint: 'Order earnings after fees and refunds',
+      },
+      {
+        label: 'Gross amount',
+        value: orderSummary?.grossAmount?.value ?? 0,
+        currency: orderSummary?.grossAmount?.currency || financeCurrency,
+        hint: 'Gross order revenue',
+      },
+      {
+        label: 'Expenses',
+        value: orderSummary?.expenses?.value ?? 0,
+        currency: orderSummary?.expenses?.currency || financeCurrency,
+        hint: 'Fees, labels, donations',
+      },
+      {
+        label: 'Refunds',
+        value: orderSummary?.refunds?.value ?? 0,
+        currency: orderSummary?.refunds?.currency || financeCurrency,
+        hint: 'Refunds and claims',
+      },
+      {
+        label: 'Available funds',
+        value: sellerFunds?.availableFunds?.value ?? 0,
+        currency: sellerFunds?.availableFunds?.currency || financeCurrency,
+        hint: 'Ready for payout processing',
+      },
+      {
+        label: 'On hold',
+        value: sellerFunds?.fundsOnHold?.value ?? 0,
+        currency: sellerFunds?.fundsOnHold?.currency || financeCurrency,
+        hint: 'Pending release',
+      },
+      {
+        label: 'Payout amount',
+        value: payoutSummary?.amount?.value ?? 0,
+        currency: payoutSummary?.amount?.currency || financeCurrency,
+        hint: `${Number(payoutSummary?.payoutCount || 0)} payouts`,
+      },
+      {
+        label: 'Transaction volume',
+        value: transactionSummary?.creditAmount?.value ?? transactionSummary?.transactionAmount?.value ?? transactionSummary?.amount?.value ?? 0,
+        currency:
+          transactionSummary?.creditAmount?.currency ||
+          transactionSummary?.transactionAmount?.currency ||
+          transactionSummary?.amount?.currency ||
+          financeCurrency,
+        hint: `${Number(transactionSummary?.creditCount || 0)} credits`,
+      },
+    ];
+  }, [financeData, financeCurrency]);
+
+  const recentOrderEarnings = financeData?.orderEarningsList || financeData?.collections?.orderEarnings || [];
+  const recentPayouts = financeData?.payoutList || financeData?.collections?.payouts || [];
+  const recentTransactions = financeData?.transactionList || financeData?.collections?.transactions || [];
+  const financeDetails = financeData?.details || {};
   const executiveStats = useMemo(() => {
     const metrics = analytics?.sellerStandards?.profile?.metrics || [];
     const find = (key) => metrics.find((m) => m.metricKey === key)?.value;
@@ -160,31 +272,6 @@ export default function DashboardPage() {
     }
   };
 
-  const chartData = useMemo(() => {
-    const byDay = {};
-    for (let i = 6; i >= 0; i -= 1) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      byDay[key] = 0;
-    }
-    for (const p of products) {
-      const d = new Date(p.createdAt || p.lastUpdated);
-      const key = d.toISOString().slice(0, 10);
-      if (byDay[key] !== undefined) {
-        byDay[key] += Math.max(0, Number(p.profit || 0));
-      }
-    }
-    return Object.entries(byDay).map(([day, sales]) => ({
-      day: new Date(day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      sales: Number(sales.toFixed(2)),
-    }));
-  }, [products]);
-
-  const totalProfit = useMemo(
-    () => products.reduce((sum, p) => sum + Number(p.profit || 0), 0),
-    [products]
-  );
   const productsLimit = limits?.products?.limit;
   const productsUsed = limits?.products?.used ?? products.length;
   const productsLeft = limits?.products?.remaining;
@@ -1039,44 +1126,241 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div
-        className={`glass-card p-5 border ${
-          isDark
-            ? 'bg-slate-950 text-white border-slate-800'
-            : 'bg-slate-100 text-slate-900 border-slate-300'
-        } relative overflow-hidden`}
-      >
-        <div className="flex items-center justify-between mb-4">
+      <div className={`glass-card p-5 border ${isDark ? 'bg-slate-950 text-white border-slate-800' : 'bg-white text-slate-900 border-slate-200'}`}>
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-black'}`}>{t('dashboard.productSales')}</p>
-            <p className="text-3xl font-bold mt-2">{formatCurrency(totalProfit)}</p>
+            <p className={`text-xs uppercase tracking-[0.22em] ${isDark ? 'text-cyan-300' : 'text-cyan-700'}`}>Finance overview</p>
+            <h2 className="mt-1 text-2xl font-semibold">How much money eBay has generated, held, and paid out</h2>
+            <p className={`mt-2 text-sm leading-6 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+              Live seller finances from order earnings, payouts, funds on hold, and transaction summaries.
+            </p>
           </div>
-          <p className="text-amber-500 text-sm font-semibold">
-            {formatCurrency(chartData.reduce((s, c) => s + c.sales, 0))} {t('dashboard.inLast7Days')}
-          </p>
-        </div>
-        <div className="h-[320px] pointer-events-none blur-[2px] opacity-70 select-none">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.5} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#cbd5e1'} />
-              <XAxis dataKey="day" stroke={isDark ? '#94a3b8' : '#64748b'} />
-              <YAxis stroke={isDark ? '#94a3b8' : '#64748b'} />
-              <Area type="monotone" dataKey="sales" stroke="#3b82f6" fill="url(#salesGradient)" strokeWidth={3} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="absolute inset-0 flex items-center justify-center backdrop-blur-[2px] bg-slate-900/10 dark:bg-slate-950/20 pointer-events-none">
-          <div className="text-center">
-            <p className={`text-2xl font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('dashboard.availableSoon')}</p>
-            <p className={`text-sm mt-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('dashboard.salesAnalyticsUnderDevelopment')}</p>
+          <div className={`rounded-2xl border px-4 py-3 ${isDark ? 'border-slate-700 bg-slate-900/60' : 'border-slate-200 bg-slate-50'}`}>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Time range</p>
+            <p className="text-sm font-semibold">Last 7 days</p>
           </div>
         </div>
+
+        {analyticsLoading ? (
+          <div className="flex items-center justify-center py-10">
+            <LoadingSpinner />
+          </div>
+        ) : financeData?.financeAccessDenied ? (
+          <div className="mt-5">
+            <Alert
+              type="error"
+              message={financeData?.financeAccessErrorMessage || 'eBay finance access denied for this account.'}
+              onClose={() => {}}
+            />
+          </div>
+        ) : (
+          <>
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+              {financeSummaryCards.map((card) => (
+                <div key={card.label} className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-slate-50'}`}>
+                  <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{card.label}</p>
+                  <p className="mt-2 text-2xl font-bold">{formatFinanceAmount(card.value, card.currency)}</p>
+                  <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{card.hint}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>Daily finance flow</p>
+                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Order earnings vs payouts</p>
+                  </div>
+                  <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {financeChartData.length} points
+                  </div>
+                </div>
+                {financeChartData.length > 0 ? (
+                  <div className="mt-4 h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={financeChartData}>
+                        <defs>
+                          <linearGradient id="earningsGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#22c55e" stopOpacity={0.45} />
+                            <stop offset="95%" stopColor="#22c55e" stopOpacity={0.05} />
+                          </linearGradient>
+                          <linearGradient id="payoutsGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f97316" stopOpacity={0.45} />
+                            <stop offset="95%" stopColor="#f97316" stopOpacity={0.05} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#cbd5e1'} />
+                        <XAxis dataKey="day" stroke={isDark ? '#94a3b8' : '#64748b'} />
+                        <YAxis stroke={isDark ? '#94a3b8' : '#64748b'} />
+                        <Tooltip
+                          contentStyle={{
+                            background: isDark ? '#020617' : '#ffffff',
+                            borderColor: isDark ? '#334155' : '#e2e8f0',
+                            color: isDark ? '#e2e8f0' : '#0f172a',
+                          }}
+                          formatter={(value) => formatFinanceAmount(value)}
+                        />
+                        <Legend />
+                        <Area type="monotone" dataKey="orderEarnings" name="Order earnings" stroke="#22c55e" fill="url(#earningsGradient)" strokeWidth={3} />
+                        <Area type="monotone" dataKey="payouts" name="Payouts" stroke="#f97316" fill="url(#payoutsGradient)" strokeWidth={3} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className={`mt-4 rounded-2xl border border-dashed p-6 text-sm ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-500'}`}>
+                    No finance timeline data was returned yet.
+                  </div>
+                )}
+              </div>
+
+              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
+                <p className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>Live eBay finance summaries</p>
+                <div className="mt-4 space-y-3 text-sm">
+                  <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span>Orders in summary</span>
+                      <strong>{financeData?.summaries?.orderEarnings?.orderCount ?? 0}</strong>
+                    </div>
+                    <div className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Order earnings summary</div>
+                  </div>
+                  <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span>Payout count</span>
+                      <strong>{financeData?.summaries?.payout?.payoutCount ?? 0}</strong>
+                    </div>
+                    <div className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Payout summary</div>
+                  </div>
+                  <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span>Transaction count</span>
+                      <strong>{financeData?.summaries?.transaction?.creditCount ?? 0}</strong>
+                    </div>
+                    <div className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Transaction summary</div>
+                  </div>
+                  <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span>Funds snapshot</span>
+                      <strong>{formatFinanceAmount(financeData?.balances?.totalFunds || 0)}</strong>
+                    </div>
+                    <div className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Available + processing + hold</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 xl:grid-cols-3">
+              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold">Recent order earnings</h3>
+                  <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{recentOrderEarnings.length}</span>
+                </div>
+                <div className="mt-3 space-y-2 max-h-[280px] overflow-auto pr-1">
+                  {recentOrderEarnings.length > 0 ? recentOrderEarnings.map((item) => (
+                    <div key={item.orderId} className={`rounded-xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-medium truncate">{item.orderId}</span>
+                        <strong>{formatFinanceAmount(item?.orderEarningsSummary?.orderEarnings?.value || 0, item?.orderEarningsSummary?.orderEarnings?.currency || financeCurrency)}</strong>
+                      </div>
+                      <div className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        Gross {formatFinanceAmount(item?.orderEarningsSummary?.grossAmount?.value || 0, item?.orderEarningsSummary?.grossAmount?.currency || financeCurrency)} • Refunds {formatFinanceAmount(item?.orderEarningsSummary?.refunds?.value || 0, item?.orderEarningsSummary?.refunds?.currency || financeCurrency)}
+                      </div>
+                    </div>
+                  )) : <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No order earnings returned yet.</p>}
+                </div>
+              </div>
+
+              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold">Recent payouts</h3>
+                  <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{recentPayouts.length}</span>
+                </div>
+                <div className="mt-3 space-y-2 max-h-[280px] overflow-auto pr-1">
+                  {recentPayouts.length > 0 ? recentPayouts.map((item) => (
+                    <div key={item.payoutId} className={`rounded-xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-medium truncate">{item.payoutId}</span>
+                        <strong>{formatFinanceAmount(item?.amount?.value || 0, item?.amount?.currency || financeCurrency)}</strong>
+                      </div>
+                      <div className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {item.payoutStatus || 'UNKNOWN'} • {item.transactionCount || 0} transactions
+                      </div>
+                    </div>
+                  )) : <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No payouts returned yet.</p>}
+                </div>
+              </div>
+
+              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold">Recent transactions</h3>
+                  <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{recentTransactions.length}</span>
+                </div>
+                <div className="mt-3 space-y-2 max-h-[280px] overflow-auto pr-1">
+                  {recentTransactions.length > 0 ? recentTransactions.map((item, index) => (
+                    <div key={item.transactionId || `${item.transactionType}-${index}`} className={`rounded-xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-medium truncate">{item.transactionType || 'TRANSACTION'}</span>
+                        <strong>{formatFinanceAmount(item.amount || 0, item.currency || financeCurrency)}</strong>
+                      </div>
+                      <div className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {item.transactionStatus || '—'} • {item.transactionDate ? new Date(item.transactionDate).toLocaleString() : 'No date'}
+                      </div>
+                    </div>
+                  )) : <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No transactions returned yet.</p>}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 xl:grid-cols-3">
+              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
+                <h3 className="text-sm font-semibold">Order earnings detail</h3>
+                {financeDetails.orderEarnings ? (
+                  <div className="mt-3 space-y-2 text-sm">
+                    <div>Order: <strong>{financeDetails.orderEarnings.orderId || '—'}</strong></div>
+                    <div>Gross: <strong>{formatFinanceAmount(financeDetails.orderEarnings.orderEarningsSummary?.grossAmount?.value || 0, financeDetails.orderEarnings.orderEarningsSummary?.grossAmount?.currency || financeCurrency)}</strong></div>
+                    <div>Expenses: <strong>{formatFinanceAmount(financeDetails.orderEarnings.orderEarningsSummary?.expenses?.value || 0, financeDetails.orderEarnings.orderEarningsSummary?.expenses?.currency || financeCurrency)}</strong></div>
+                    <div>Refunds: <strong>{formatFinanceAmount(financeDetails.orderEarnings.orderEarningsSummary?.refunds?.value || 0, financeDetails.orderEarnings.orderEarningsSummary?.refunds?.currency || financeCurrency)}</strong></div>
+                    <div>Earnings: <strong>{formatFinanceAmount(financeDetails.orderEarnings.orderEarningsSummary?.orderEarnings?.value || 0, financeDetails.orderEarnings.orderEarningsSummary?.orderEarnings?.currency || financeCurrency)}</strong></div>
+                  </div>
+                ) : (
+                  <p className={`mt-3 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No order detail available yet.</p>
+                )}
+              </div>
+
+              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
+                <h3 className="text-sm font-semibold">Payout detail</h3>
+                {financeDetails.payout ? (
+                  <div className="mt-3 space-y-2 text-sm">
+                    <div>Payout ID: <strong>{financeDetails.payout.payoutId || '—'}</strong></div>
+                    <div>Status: <strong>{financeDetails.payout.payoutStatus || '—'}</strong></div>
+                    <div>Amount: <strong>{formatFinanceAmount(financeDetails.payout.amount?.value || 0, financeDetails.payout.amount?.currency || financeCurrency)}</strong></div>
+                    <div>Payout date: <strong>{financeDetails.payout.payoutDate ? new Date(financeDetails.payout.payoutDate).toLocaleString() : '—'}</strong></div>
+                    <div>Transactions: <strong>{financeDetails.payout.transactionCount ?? 0}</strong></div>
+                  </div>
+                ) : (
+                  <p className={`mt-3 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No payout detail available yet.</p>
+                )}
+              </div>
+
+              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
+                <h3 className="text-sm font-semibold">Transfer / billing detail</h3>
+                {financeDetails.transfer || financeDetails.billingActivity ? (
+                  <div className="mt-3 space-y-2 text-sm">
+                    {financeDetails.transfer ? <div>Transfer ID: <strong>{financeDetails.transfer.transferId || '—'}</strong></div> : null}
+                    {financeDetails.transfer ? <div>Transfer amount: <strong>{formatFinanceAmount(financeDetails.transfer.transferAmount?.value || 0, financeDetails.transfer.transferAmount?.currency || financeCurrency)}</strong></div> : null}
+                    {financeDetails.transfer ? <div>Transaction date: <strong>{financeDetails.transfer.transactionDate ? new Date(financeDetails.transfer.transactionDate).toLocaleString() : '—'}</strong></div> : null}
+                    <div>
+                      Billing activity: <strong>{financeDetails.billingActivity ? 'Available' : 'Not returned'}</strong>
+                    </div>
+                    {financeDetails.billingActivity ? <pre className={`mt-2 max-h-40 overflow-auto rounded-xl p-3 text-xs ${isDark ? 'bg-slate-950 text-slate-200' : 'bg-slate-50 text-slate-800'}`}>{JSON.stringify(financeDetails.billingActivity, null, 2)}</pre> : null}
+                  </div>
+                ) : (
+                  <p className={`mt-3 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No transfer or billing activity returned yet.</p>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <SubscriptionRequestModal
