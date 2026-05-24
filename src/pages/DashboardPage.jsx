@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { Gauge, LineChart, ShieldCheck, X } from 'lucide-react';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import { useTranslation } from 'react-i18next';
+import DailyFinanceFlowChart from '../components/DailyFinanceFlowChart';
 
 export default function DashboardPage() {
   const [products, setProducts] = useState([]);
@@ -1259,51 +1260,7 @@ export default function DashboardPage() {
 
             <div className="mt-5 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
               <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>Daily finance flow</p>
-                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Order earnings vs payouts</p>
-                  </div>
-                  <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    {financeChartData.length} points
-                  </div>
-                </div>
-                {financeChartData.length > 0 ? (
-                  <div className="mt-4 h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={financeChartData}>
-                        <defs>
-                          <linearGradient id="earningsGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#22c55e" stopOpacity={0.45} />
-                            <stop offset="95%" stopColor="#22c55e" stopOpacity={0.05} />
-                          </linearGradient>
-                          <linearGradient id="payoutsGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#f97316" stopOpacity={0.45} />
-                            <stop offset="95%" stopColor="#f97316" stopOpacity={0.05} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#cbd5e1'} />
-                        <XAxis dataKey="day" stroke={isDark ? '#94a3b8' : '#64748b'} />
-                        <YAxis stroke={isDark ? '#94a3b8' : '#64748b'} />
-                        <Tooltip
-                          contentStyle={{
-                            background: isDark ? '#020617' : '#ffffff',
-                            borderColor: isDark ? '#334155' : '#e2e8f0',
-                            color: isDark ? '#e2e8f0' : '#0f172a',
-                          }}
-                          formatter={(value) => formatFinanceAmount(value)}
-                        />
-                        <Legend />
-                        <Area type="monotone" dataKey="orderEarnings" name="Order earnings" stroke="#22c55e" fill="url(#earningsGradient)" strokeWidth={3} />
-                        <Area type="monotone" dataKey="payouts" name="Payouts" stroke="#f97316" fill="url(#payoutsGradient)" strokeWidth={3} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className={`mt-4 rounded-2xl border border-dashed p-6 text-sm ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-500'}`}>
-                    No finance timeline data was returned yet.
-                  </div>
-                )}
+                <DailyFinanceFlowChart finance={dashboardData.finance} />
               </div>
 
               <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
