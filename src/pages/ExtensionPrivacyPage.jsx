@@ -1,7 +1,18 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { applySeo } from '../utils/seo';
 
 export default function ExtensionPrivacyPage() {
+  useEffect(() => {
+    applySeo({
+      title: 'Checkila Extension Privacy Policy | Buyer Sold History Extension',
+      description:
+        'Read the privacy policy for the Checkila browser extension, which helps eBay users view buyer sold history and related listing information.',
+      canonical: 'https://checkila.com/extension-privacy',
+    });
+  }, []);
+
   return (
     <div className="page-shell">
       <div className="max-w-3xl mx-auto glass-card p-6 md:p-8">

@@ -17,6 +17,7 @@ import { partnerAPI, settingsAPI } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import PartnersSection from '../components/PartnersSection';
+import { applySeo } from '../utils/seo';
 
 function SectionHeader({ eyebrow, title, description, align = 'left' }) {
   const alignClasses = align === 'center' ? 'items-center text-center' : 'items-start text-left';
@@ -214,6 +215,56 @@ export default function LandingPage() {
   const [plans, setPlans] = useState([]);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState('');
+
+  const faqItems = useMemo(
+    () => [
+      {
+        question: t('landing:faq.items.0.question'),
+        answer: t('landing:faq.items.0.answer'),
+      },
+      {
+        question: t('landing:faq.items.1.question'),
+        answer: t('landing:faq.items.1.answer'),
+      },
+      {
+        question: t('landing:faq.items.2.question'),
+        answer: t('landing:faq.items.2.answer'),
+      },
+    ],
+    [t]
+  );
+
+  useEffect(() => {
+    applySeo({
+      title: t('landing:seo.title'),
+      description: t('landing:seo.description'),
+      keywords: t('landing:seo.keywords'),
+      canonical: 'https://checkila.com/',
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'SoftwareApplication',
+          name: 'Checkila',
+          applicationCategory: 'BusinessApplication',
+          operatingSystem: 'Web',
+          url: 'https://checkila.com/',
+          description: t('landing:seo.description'),
+        },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: item.answer,
+            },
+          })),
+        },
+      ],
+    });
+  }, [faqItems, t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -463,6 +514,58 @@ export default function LandingPage() {
         </section>
 
         <PartnersSection />
+
+        <section id="dropshipping" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
+          <SectionHeader
+            eyebrow={t('landing:dropshippingSection.eyebrow')}
+            title={t('landing:dropshippingSection.title')}
+            description={t('landing:dropshippingSection.description')}
+            align="center"
+          />
+
+          <div className="mt-10 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+            <article className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-6 shadow-lg backdrop-blur">
+              <h3 className="text-xl font-semibold text-white">{t('landing:dropshippingSection.cardTitle')}</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-300">{t('landing:dropshippingSection.cardDescription')}</p>
+              <ul className="mt-5 space-y-3 text-sm text-slate-200">
+                {t('landing:dropshippingSection.bullets', { returnObjects: true }).map((bullet) => (
+                  <li key={bullet} className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+                    <span>{bullet}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+
+            <article className="rounded-[2rem] border border-cyan-300/20 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 p-6 shadow-lg backdrop-blur">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100">{t('landing:dropshippingSection.sideEyebrow')}</p>
+              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-white">{t('landing:dropshippingSection.sideTitle')}</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-300">{t('landing:dropshippingSection.sideDescription')}</p>
+              <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+                <p className="text-sm font-medium text-white">{t('landing:dropshippingSection.sideHighlightTitle')}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">{t('landing:dropshippingSection.sideHighlightDescription')}</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="faq" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
+          <SectionHeader
+            eyebrow={t('landing:faq.eyebrow')}
+            title={t('landing:faq.title')}
+            description={t('landing:faq.description')}
+            align="center"
+          />
+
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {faqItems.map((item) => (
+              <article key={item.question} className="rounded-3xl border border-white/10 bg-white/[0.05] p-5 shadow-lg backdrop-blur">
+                <h3 className="text-base font-semibold text-white">{item.question}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-300">{item.answer}</p>
+              </article>
+            ))}
+          </div>
+        </section>
 
         <section id="features" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
           <SectionHeader
@@ -720,6 +823,15 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-6 pb-10 text-sm text-slate-400">
+          <Link to="/privacy" className="transition hover:text-white">
+            Privacy Policy
+          </Link>
+          <Link to="/extension-privacy" className="transition hover:text-white">
+            Extension Privacy Policy
+          </Link>
+        </div>
       </main>
 
       <SubscriptionRequestModal

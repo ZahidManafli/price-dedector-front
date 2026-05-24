@@ -107,5 +107,47 @@
     "title": "Have questions?",
     "description": "Get in touch with our team",
     "contactUs": "Contact Us"
+  },
+  "seo": {
+    "title": "Checkila | Dropshipping Tool for eBay Sellers",
+    "description": "Checkila helps dropshippers and eBay sellers research products, track Amazon pricing, compare opportunities, and make faster listing decisions.",
+    "keywords": "dropshipping tool, eBay dropshipping, product research, seller intelligence, Amazon price tracking"
+  },
+  "dropshippingSection": {
+    "eyebrow": "Dropshipping research",
+    "title": "A practical dropshipping tool for eBay sellers",
+    "description": "Checkila brings product research, seller intelligence, and pricing checks into one workflow so you can move faster with less guesswork.",
+    "bullets": [
+      "Research products with live Amazon price and listing signals.",
+      "Compare opportunities before you spend credits or list inventory.",
+      "Keep seller intelligence visible while you browse eBay.",
+      "Use a clean workflow that supports dropshipping decisions."
+    ],
+    "cardTitle": "Built for faster product evaluation",
+    "cardDescription": "If you are looking for a dropshipping tool or an eBay dropshipping workflow, Checkila helps you evaluate products and sellers in one place.",
+    "sideEyebrow": "Search intent",
+    "sideTitle": "Designed for product research and seller intelligence",
+    "sideDescription": "The page content is written to match the way sellers actually search for dropshipping tools, eBay research help, and pricing analysis.",
+    "sideHighlightTitle": "What matters most",
+    "sideHighlightDescription": "Fast comparison, clear seller signals, and a workflow that supports better listing decisions."
+  },
+  "faq": {
+    "eyebrow": "SEO questions",
+    "title": "Common questions about Checkila",
+    "description": "Clear answers for sellers looking for a dropshipping tool, product research workflow, or eBay seller intelligence.",
+    "items": [
+      {
+        "question": "Is Checkila useful for dropshipping research?",
+        "answer": "Yes. It helps you review pricing, opportunities, and seller signals before you make a listing decision."
+      },
+      {
+        "question": "Can Checkila help with eBay seller intelligence?",
+        "answer": "Yes. It gives you a clearer view of buyer and listing information while you browse eBay."
+      },
+      {
+        "question": "Does Checkila help with product research?",
+        "answer": "Yes. You can compare products faster and focus on the listings that look worth selling."
+      }
+    ]
   }
 }

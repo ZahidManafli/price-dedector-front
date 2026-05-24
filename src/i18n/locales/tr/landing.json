@@ -107,5 +107,47 @@
     "title": "Sorularınız mı var?",
     "description": "Ekibimizle iletişime geçin",
     "contactUs": "Bize ulaşın"
+  },
+  "seo": {
+    "title": "Checkila | eBay satıcıları için dropshipping aracı",
+    "description": "Checkila, dropshipper ve eBay satıcılarının ürün araştırması yapmasına, Amazon fiyatlarını izlemesine, fırsatları karşılaştırmasına ve daha hızlı ilan kararları vermesine yardımcı olur.",
+    "keywords": "dropshipping aracı, eBay dropshipping, ürün araştırması, satıcı analitiği, Amazon fiyat takibi"
+  },
+  "dropshippingSection": {
+    "eyebrow": "Dropshipping araştırması",
+    "title": "eBay satıcıları için pratik bir dropshipping aracı",
+    "description": "Checkila, ürün araştırmasını, satıcı analitiğini ve fiyat kontrollerini tek bir iş akışında birleştirir; böylece daha az tahminle daha hızlı hareket edebilirsiniz.",
+    "bullets": [
+      "Canlı Amazon fiyatı ve ilan sinyalleriyle ürünleri araştırın.",
+      "Kredi harcamadan veya ürün listelemeden önce fırsatları karşılaştırın.",
+      "eBay'de gezerken satıcı bilgilerini görünür tutun.",
+      "Dropshipping kararlarını destekleyen temiz bir iş akışı kullanın."
+    ],
+    "cardTitle": "Daha hızlı ürün değerlendirmesi için tasarlandı",
+    "cardDescription": "Dropshipping aracı veya eBay dropshipping iş akışı arıyorsanız, Checkila ürünleri ve satıcıları tek yerde değerlendirmenize yardımcı olur.",
+    "sideEyebrow": "Arama niyeti",
+    "sideTitle": "Ürün araştırması ve satıcı analitiği için hazırlandı",
+    "sideDescription": "Sayfa metni, satıcıların dropshipping araçları, eBay araştırma desteği ve fiyat analitiği için aradığı ifadelerle uyumlu olacak şekilde yazıldı.",
+    "sideHighlightTitle": "En önemli nokta",
+    "sideHighlightDescription": "Hızlı karşılaştırma, net satıcı sinyalleri ve daha iyi ilan kararlarını destekleyen bir iş akışı."
+  },
+  "faq": {
+    "eyebrow": "SEO soruları",
+    "title": "Checkila hakkında sık sorulan sorular",
+    "description": "Dropshipping aracı, ürün araştırma iş akışı veya eBay satıcı analitiği arayanlar için net yanıtlar.",
+    "items": [
+      {
+        "question": "Checkila dropshipping araştırması için faydalı mı?",
+        "answer": "Evet. İlan kararı vermeden önce fiyatları, fırsatları ve satıcı sinyallerini incelemenize yardımcı olur."
+      },
+      {
+        "question": "Checkila eBay satıcı analitiğine yardımcı olur mu?",
+        "answer": "Evet. eBay'de gezerken alıcı ve ilan bilgilerini daha net görmenizi sağlar."
+      },
+      {
+        "question": "Checkila ürün araştırmasına yardımcı olur mu?",
+        "answer": "Evet. Ürünleri daha hızlı karşılaştırabilir ve satmaya değer görünen ilanlara odaklanabilirsiniz."
+      }
+    ]
   }
 }

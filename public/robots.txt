@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+Disallow: /login
+Disallow: /dashboard
+Disallow: /products
+Disallow: /listings
+Disallow: /orders
+Disallow: /settings
+Disallow: /admin
+Disallow: /market-analysis
+Disallow: /amazon-lookup
+Disallow: /dewiso
+
+Sitemap: https://checkila.com/sitemap.xml
