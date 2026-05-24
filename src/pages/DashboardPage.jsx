@@ -225,6 +225,31 @@ export default function DashboardPage() {
   const recentPayouts = financeData?.payoutList || financeData?.collections?.payouts || [];
   const recentTransactions = financeData?.transactionList || financeData?.collections?.transactions || [];
   const financeDetails = financeData?.details || {};
+
+  // Upcoming payouts: payouts whose payoutDate falls within the next 7 days from now.
+  // eBay schedules payouts in advance so the payoutDate can be a future date.
+  const upcomingPayouts = useMemo(() => {
+    const now = Date.now();
+    const in7Days = now + 7 * 24 * 60 * 60 * 1000;
+    // All payouts from both list and collections, deduped by payoutId
+    const all = [...recentPayouts];
+    const seen = new Set();
+    return all.filter((p) => {
+      if (!p?.payoutDate) return false;
+      const ts = new Date(p.payoutDate).getTime();
+      if (Number.isNaN(ts)) return false;
+      if (ts < now || ts > in7Days) return false;
+      if (seen.has(p.payoutId)) return false;
+      seen.add(p.payoutId);
+      return true;
+    }).sort((a, b) => new Date(a.payoutDate) - new Date(b.payoutDate));
+  }, [recentPayouts]);
+
+  const upcomingPayoutTotal = useMemo(() => {
+    return upcomingPayouts.reduce((sum, p) => sum + Number(p?.amount?.value || 0), 0);
+  }, [upcomingPayouts]);
+
+  const upcomingPayoutCurrency = upcomingPayouts[0]?.amount?.currency || financeCurrency;
   const executiveStats = useMemo(() => {
     const metrics = analytics?.sellerStandards?.profile?.metrics || [];
     const find = (key) => metrics.find((m) => m.metricKey === key)?.value;
@@ -1137,7 +1162,7 @@ export default function DashboardPage() {
           </div>
           <div className={`rounded-2xl border px-4 py-3 ${isDark ? 'border-slate-700 bg-slate-900/60' : 'border-slate-200 bg-slate-50'}`}>
             <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Time range</p>
-            <p className="text-sm font-semibold">Last 7 days</p>
+            <p className="text-sm font-semibold">{financeData?.timeframe?.label || 'Last 12 months'}</p>
           </div>
         </div>
 
@@ -1163,6 +1188,73 @@ export default function DashboardPage() {
                   <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{card.hint}</p>
                 </div>
               ))}
+            </div>
+
+            {/* ── Upcoming payouts next 7 days ── */}
+            <div className="mt-5">
+              <div className={`rounded-2xl border p-5 ${
+                isDark
+                  ? 'border-emerald-800/60 bg-emerald-950/30'
+                  : 'border-emerald-200 bg-emerald-50'
+              }`}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <p className={`text-xs uppercase tracking-widest font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                      Upcoming payouts
+                    </p>
+                    <p className={`mt-1 text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      {formatFinanceAmount(upcomingPayoutTotal, upcomingPayoutCurrency)}
+                    </p>
+                    <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {upcomingPayouts.length === 0
+                        ? 'No scheduled payouts in the next 7 days'
+                        : `${upcomingPayouts.length} payout${upcomingPayouts.length > 1 ? 's' : ''} scheduled in the next 7 days`}
+                    </p>
+                  </div>
+                  <div className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold ${
+                    isDark ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-800/60' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                  }`}>
+                    <span>Next 7 days</span>
+                  </div>
+                </div>
+
+                {upcomingPayouts.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    {upcomingPayouts.map((p) => {
+                      const daysUntil = Math.ceil((new Date(p.payoutDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                      return (
+                        <div
+                          key={p.payoutId}
+                          className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 ${
+                            isDark ? 'border-emerald-800/40 bg-emerald-950/40' : 'border-emerald-200 bg-white'
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <p className={`text-xs font-medium truncate ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                              {p.payoutId || '—'}
+                            </p>
+                            <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                              {new Date(p.payoutDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                              {' · '}
+                              {p.payoutStatus || 'SCHEDULED'}
+                              {' · '}
+                              {p.transactionCount ?? 0} txns
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end shrink-0">
+                            <strong className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
+                              {formatFinanceAmount(p?.amount?.value || 0, p?.amount?.currency || financeCurrency)}
+                            </strong>
+                            <span className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                              in {daysUntil} day{daysUntil !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="mt-5 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
