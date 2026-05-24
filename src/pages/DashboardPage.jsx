@@ -1260,7 +1260,7 @@ export default function DashboardPage() {
 
             <div className="mt-5 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
               <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
-                <DailyFinanceFlowChart finance={dashboardData.finance} />
+                <DailyFinanceFlowChart finance={financeData} />
               </div>
 
               <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
