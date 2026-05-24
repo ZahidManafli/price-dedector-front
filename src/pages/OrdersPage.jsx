@@ -11,6 +11,13 @@ export default function OrdersPage() {
   const { isDark } = useTheme();
   const { t } = useTranslation();
 
+  const getBuyerDisplay = (order) => {
+    const username = String(order?.buyer?.username || '').trim();
+    const fullName = String(order?.buyer?.buyerRegistrationAddress?.fullName || '').trim();
+    if (username && fullName) return `${username} (${fullName})`;
+    return username || fullName || '-';
+  };
+
   const isOrderCancelled = (order) => {
     const cancellation = order?.cancelStatus || order?.orderCancelStatus || order?.cancellation || {};
     const cancelState = String(cancellation?.cancelState || '').toUpperCase();
@@ -49,6 +56,7 @@ export default function OrdersPage() {
         !q ||
         String(order?.orderId || '').toLowerCase().includes(q) ||
         String(order?.buyer?.username || '').toLowerCase().includes(q) ||
+        String(order?.buyer?.buyerRegistrationAddress?.fullName || '').toLowerCase().includes(q) ||
         String(order?.lineItems?.[0]?.title || '').toLowerCase().includes(q);
       const matchFulfillment =
         fulfillmentFilter === 'ALL' || getDerivedShipmentStatus(order) === String(fulfillmentFilter || '').toUpperCase();
@@ -389,7 +397,7 @@ export default function OrdersPage() {
                   const shipmentStatus = getDerivedShipmentStatus(order);
                   const totalValue = order?.pricingSummary?.total?.value;
                   const totalCurrency = order?.pricingSummary?.total?.currency;
-                  const buyer = order?.buyer?.username || '-';
+                  const buyer = getBuyerDisplay(order);
                   const createdAt = order?.creationDate ? new Date(order.creationDate).toLocaleString() : '-';
 
                   return (
