@@ -368,6 +368,9 @@ export default function OrdersPage() {
                     {sortLabel('orderId', t('ordersPage.table.orderId'))}
                   </th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+                    {t('ordersPage.table.buyer')}
+                  </th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                     {sortLabel('payment', t('ordersPage.table.payment'))}
                   </th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
@@ -393,6 +396,7 @@ export default function OrdersPage() {
                     <React.Fragment key={id}>
                       <tr className={isDark ? 'bg-slate-900' : 'bg-white'}>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{id}</td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{buyer}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                           <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${getPill(payment, 'payment')}`}>
                             {payment}
@@ -426,7 +430,7 @@ export default function OrdersPage() {
 
                 {filteredOrders.length === 0 && (
                   <tr>
-                      <td colSpan={5} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <td colSpan={6} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       {t('ordersPage.empty')}
                     </td>
                   </tr>

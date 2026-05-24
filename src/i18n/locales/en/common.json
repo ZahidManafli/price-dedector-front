@@ -784,6 +784,7 @@
     },
     "table": {
       "orderId": "Order ID",
+      "buyer": "Buyer",
       "payment": "Payment",
       "shipment": "Shipment",
       "total": "Total",

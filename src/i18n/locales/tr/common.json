@@ -589,6 +589,7 @@
     },
     "table": {
       "orderId": "Sipariş ID",
+      "buyer": "Alıcı",
       "payment": "Ödeme",
       "shipment": "Gönderi",
       "total": "Toplam",

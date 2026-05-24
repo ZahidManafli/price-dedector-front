@@ -589,6 +589,7 @@
     },
     "table": {
       "orderId": "ID заказа",
+      "buyer": "Покупатель",
       "payment": "Платеж",
       "shipment": "Отправка",
       "total": "Итого",
