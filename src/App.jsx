@@ -21,6 +21,7 @@ import AmazonCallbackPage from './pages/AmazonCallbackPage';
 import AmazonLookupPage from './pages/AmazonLookupPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 import PrivacyPage from './pages/PrivacyPage';
+import ExtensionPrivacyPage from './pages/ExtensionPrivacyPage';
 import AboutPage from './pages/AboutPage';
 import MaintenancePage from './pages/MaintenancePage';
 import ListingsPage from './pages/ListingsPage';
@@ -109,6 +110,7 @@ function AppContent() {
               element={isAuthenticated && hasToken ? <Navigate to="/dashboard" replace /> : <LoginPage />}
             />
             <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/extension-privacy" element={<ExtensionPrivacyPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/maintenance" element={<MaintenancePage />} />
 
