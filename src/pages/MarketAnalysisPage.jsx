@@ -108,6 +108,8 @@ export default function MarketAnalysisPage() {
   const [savedSellers, setSavedSellers] = useState([]);
   const [savedSellersLoading, setSavedSellersLoading] = useState(false);
   const [savedSellersOpen, setSavedSellersOpen] = useState(false);
+  const [savedSellersMounted, setSavedSellersMounted] = useState(false);
+  const [savedSellersVisible, setSavedSellersVisible] = useState(false);
   const [savedSellerSaving, setSavedSellerSaving] = useState('');
   const [calcAmazonPrice, setCalcAmazonPrice] = useState('');
   const [calcEbayPrice, setCalcEbayPrice] = useState('');
@@ -256,6 +258,32 @@ export default function MarketAnalysisPage() {
   useEffect(() => {
     loadSavedSellers();
   }, [loadSavedSellers]);
+
+  useEffect(() => {
+    let closeTimer = null;
+
+    if (savedSellersOpen) {
+      setSavedSellersMounted(true);
+      const animationFrame = window.requestAnimationFrame(() => {
+        setSavedSellersVisible(true);
+      });
+
+      return () => {
+        window.cancelAnimationFrame(animationFrame);
+      };
+    }
+
+    if (savedSellersMounted) {
+      setSavedSellersVisible(false);
+      closeTimer = window.setTimeout(() => {
+        setSavedSellersMounted(false);
+      }, 260);
+    }
+
+    return () => {
+      if (closeTimer) window.clearTimeout(closeTimer);
+    };
+  }, [savedSellersMounted, savedSellersOpen]);
 
   useEffect(() => {
     if (!savedSellersOpen) return undefined;
@@ -776,16 +804,16 @@ export default function MarketAnalysisPage() {
         </button>
       </header>
 
-      {savedSellersOpen && (
+      {savedSellersMounted && (
         <div className="fixed inset-0 z-50">
           <button
             type="button"
-            className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]"
+            className={`absolute inset-0 bg-slate-950/45 backdrop-blur-[2px] transition-opacity duration-300 ease-out ${savedSellersVisible ? 'opacity-100' : 'opacity-0'}`}
             onClick={() => setSavedSellersOpen(false)}
             aria-label={t('marketAnalysisPage.closeSavedSellers')}
           />
 
-          <aside className="absolute right-0 top-0 h-full w-full max-w-[420px] border-l border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.28)] dark:border-slate-800 dark:bg-slate-950">
+          <aside className={`absolute right-0 top-0 h-full w-full max-w-[420px] border-l border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.28)] transition-transform duration-300 ease-out will-change-transform dark:border-slate-800 dark:bg-slate-950 ${savedSellersVisible ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="flex h-full flex-col">
               <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
                 <div>
