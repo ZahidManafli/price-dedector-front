@@ -313,6 +313,8 @@
     "savedSellersHint": "Yeni analiz sekmesinde açmak için satıcı adına tıklayın. Listeden çıkarmak için kalbe tıklayın.",
     "savedSellersEmpty": "Henüz kaydedilen satıcı yok.",
     "savedSellersLoading": "Kaydedilen satıcılar yükleniyor...",
+    "openSavedSeller": "Bu satıcıyı yeni sekmede aç",
+    "closeSavedSellers": "Kaydedilen satıcıları kapat",
     "showingResults": "{{count}} sonuç gösteriliyor",
     "previous": "Önceki",
     "next": "Sonraki"

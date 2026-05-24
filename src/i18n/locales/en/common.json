@@ -220,6 +220,8 @@
     "savedSellersHint": "Click a seller name to open a new analysis tab. Click the heart to remove it from your saved list.",
     "savedSellersEmpty": "No saved sellers yet.",
     "savedSellersLoading": "Loading saved sellers...",
+    "openSavedSeller": "Open this seller in a new tab",
+    "closeSavedSellers": "Close saved sellers",
     "showingResults": "Showing {{count}} result(s)",
     "previous": "Previous",
     "next": "Next"

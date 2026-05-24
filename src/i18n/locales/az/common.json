@@ -313,6 +313,8 @@
     "savedSellersHint": "Yeni analiz tabında açmaq üçün satıcı adına klikləyin. Siyahıdan çıxarmaq üçün ürək işarəsinə klikləyin.",
     "savedSellersEmpty": "Hələ saxlanmış satıcı yoxdur.",
     "savedSellersLoading": "Saxlanmış satıcılar yüklənir...",
+    "openSavedSeller": "Bu satıcını yeni tabda aç",
+    "closeSavedSellers": "Saxlanmış satıcıları bağla",
     "showingResults": "{{count}} nəticə göstərilir",
     "previous": "Əvvəlki",
     "next": "Sonrakı"
