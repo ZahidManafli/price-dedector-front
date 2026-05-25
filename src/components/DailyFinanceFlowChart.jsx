@@ -49,6 +49,27 @@ function fmtLabel(date) {
 /** Today label used as the "available now" anchor point */
 const TODAY_LABEL = fmtLabel(new Date());
 
+function resolveFutureReleaseLabel(memo, now = new Date()) {
+  const releaseRe = /estimated release on\s+([A-Za-z]+ \d+)/i;
+  const match = String(memo || '').match(releaseRe);
+  if (!match) return null;
+
+  const currentYear = now.getFullYear();
+  const parsed = new Date(`${match[1]} ${currentYear}`);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  if (parsed.getTime() < now.getTime()) {
+    if (now.getMonth() >= 10 && parsed.getMonth() <= 2) {
+      const rolled = new Date(parsed);
+      rolled.setFullYear(rolled.getFullYear() + 1);
+      if (rolled.getTime() >= now.getTime()) return fmtLabel(rolled);
+    }
+    return null;
+  }
+
+  return fmtLabel(parsed);
+}
+
 // ─── custom tooltip ──────────────────────────────────────────────────────────
 
 const TYPE_META = {
@@ -118,8 +139,8 @@ export default function DailyFinanceFlowChart({ finance }) {
     ];
     const seen = new Set();
     const map = {};
-    const releaseRe = /estimated release on\s+([A-Za-z]+ \d+)/i;
     const year = new Date().getFullYear();
+    const now = new Date();
 
     for (const tx of txList) {
       const id = tx?.transactionId ?? tx?.raw?.transactionId;
@@ -135,12 +156,7 @@ export default function DailyFinanceFlowChart({ finance }) {
       if (!Number.isFinite(amount) || amount <= 0) continue;
 
       const memo  = String(tx?.raw?.transactionMemo ?? tx?.transactionMemo ?? '');
-      const match = memo.match(releaseRe);
-      let lbl = null;
-      if (match) {
-        const parsed = new Date(`${match[1]} ${year}`);
-        lbl = !isNaN(parsed.getTime()) ? fmtLabel(parsed) : match[1];
-      }
+      const lbl = resolveFutureReleaseLabel(memo, now);
       if (!lbl) continue;
       map[lbl] = (map[lbl] ?? 0) + amount;
     }
