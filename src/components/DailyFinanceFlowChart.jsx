@@ -90,10 +90,16 @@ function CustomTooltip({ active, payload, label }) {
 
 export default function DailyFinanceFlowChart({ finance }) {
 
-  // ── 1. AVAILABLE NOW — money ready today ─────────────────────────────────
+  // ── 1. AVAILABLE NOW + PROCESSING ─────────────────────────────────────────
   const availableNow = Number(
     finance?.balances?.availableFunds ??
     finance?.summaries?.sellerFunds?.availableFunds?.value ??
+    0
+  );
+  // processingFunds = money eBay has already initiated payout for (arriving today/tomorrow)
+  const processingNow = Number(
+    finance?.balances?.processingFunds ??
+    finance?.summaries?.sellerFunds?.processingFunds?.value ??
     0
   );
 
@@ -204,7 +210,8 @@ export default function DailyFinanceFlowChart({ finance }) {
 
       {/* ── Summary pills ── */}
       <div style={{ display: 'flex', gap: 10, margin: '14px 0 18px', flexWrap: 'wrap' }}>
-        <Pill label="Available now"   value={USD(availableNow)}  color="#3b82f6" sublabel="Ready to withdraw" />
+        <Pill label="Processing now"  value={USD(processingNow)} color="#a78bfa" sublabel="Arriving today/tomorrow" />
+        <Pill label="Available now"   value={USD(availableNow)}  color="#3b82f6" sublabel="Next payout cycle" />
         <Pill label="Releasing soon"  value={USD(totalUpcoming)} color="#22c55e" sublabel={`across ${upcomingPoints.length} date${upcomingPoints.length !== 1 ? 's' : ''}`} />
         <Pill label="On hold total"   value={USD(totalOnHold)}   color="#f59e0b" sublabel="Pending release" />
       </div>
