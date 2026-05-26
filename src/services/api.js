@@ -105,11 +105,6 @@ export const settingsAPI = {
   submitSubscriptionRequest: (data) => api.post('/settings/subscription-requests', data),
   submitUpdateCreditRequest: (data) => api.post('/settings/subscription-requests/update-credits', data),
   submitResetCreditsRequest: (data) => api.post('/settings/subscription-requests/reset-credits', data),
-  createStripeSubscriptionCheckout: (data) => api.post('/settings/stripe/checkout/subscription', data),
-  createStripeUpdateCreditsCheckout: (data) => api.post('/settings/stripe/checkout/update-credits', data),
-  createStripeResetCreditsCheckout: (data) => api.post('/settings/stripe/checkout/reset-credits', data),
-  createStripeBillingPortal: () => api.post('/settings/stripe/billing-portal'),
-  getStripeCheckoutSession: (sessionId) => api.get(`/settings/stripe/checkout/session/${encodeURIComponent(sessionId)}`),
 };
 
 export const ebayAPI = {
@@ -232,7 +227,6 @@ export const adminAPI = {
   listPlans: () => api.get('/admin/plans'),
   createPlan: (data) => api.post('/admin/plans', data),
   updatePlan: (id, data) => api.put(`/admin/plans/${id}`, data),
-  syncPlanToStripe: (id, data = {}) => api.post(`/admin/plans/${id}/sync-to-stripe`, data),
   listSubscriptionRequests: (status) =>
     api.get('/admin/subscription-requests', { params: status ? { status } : undefined }),
   approveSubscriptionRequest: (id, data) => api.post(`/admin/subscription-requests/${id}/approve`, data),
@@ -245,9 +239,6 @@ export const adminAPI = {
   listMaintenanceWindows: () => api.get('/admin/maintenance'),
   createMaintenanceWindow: (data) => api.post('/admin/maintenance', data),
   updateMaintenanceFlag: (data) => api.patch('/admin/maintenance/flag', data),
-  listStripeWebhooks: (params) => api.get('/admin/stripe-webhooks', { params }),
-  getStripeWebhookById: (id) => api.get(`/admin/stripe-webhooks/${encodeURIComponent(id)}`),
-  reprocessStripeWebhook: (id) => api.post(`/admin/stripe-webhooks/${encodeURIComponent(id)}/reprocess`),
 };
 
 export const maintenanceAPI = {

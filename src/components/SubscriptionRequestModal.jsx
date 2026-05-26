@@ -63,7 +63,6 @@ export default function SubscriptionRequestModal({
   title,
   description,
   submitLabel,
-  useStripeCheckout = false,
 }) {
   const { t } = useTranslation();
   const [form, setForm] = useState(initialForm(selectedPlanId, requestType, defaultValues));
@@ -149,19 +148,6 @@ export default function SubscriptionRequestModal({
 
       try {
         setLoading(true);
-        if (useStripeCheckout && !isCustomPlan) {
-          const checkoutRes = await settingsAPI.createStripeSubscriptionCheckout({
-            planId: form.planId,
-          });
-          const checkoutUrl = checkoutRes?.data?.checkoutUrl;
-          if (!checkoutUrl) {
-            throw new Error('Failed to initialize checkout session');
-          }
-
-          window.location.href = checkoutUrl;
-          return;
-        }
-
         const payload = {
           name: form.name,
           surname: form.surname,
@@ -200,19 +186,6 @@ export default function SubscriptionRequestModal({
 
       try {
         setLoading(true);
-        if (useStripeCheckout) {
-          const checkoutRes = await settingsAPI.createStripeUpdateCreditsCheckout({
-            requestedCredits: nextCredits,
-          });
-          const checkoutUrl = checkoutRes?.data?.checkoutUrl;
-          if (!checkoutUrl) {
-            throw new Error('Failed to initialize checkout session');
-          }
-
-          window.location.href = checkoutUrl;
-          return;
-        }
-
         await settingsAPI.submitUpdateCreditRequest({
           requestedCredits: nextCredits,
           customNote: form.customNote?.trim() || '',
@@ -229,19 +202,6 @@ export default function SubscriptionRequestModal({
 
     try {
       setLoading(true);
-      if (useStripeCheckout) {
-        const checkoutRes = await settingsAPI.createStripeResetCreditsCheckout({
-          customNote: form.customNote?.trim() || '',
-        });
-        const checkoutUrl = checkoutRes?.data?.checkoutUrl;
-        if (!checkoutUrl) {
-          throw new Error('Failed to initialize checkout session');
-        }
-
-        window.location.href = checkoutUrl;
-        return;
-      }
-
       await settingsAPI.submitResetCreditsRequest({
         customNote: form.customNote?.trim() || '',
       });

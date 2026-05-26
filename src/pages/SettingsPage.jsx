@@ -45,7 +45,6 @@ export default function SettingsPage() {
   const [requestModal, setRequestModal] = useState(null);
   const [ebayTab, setEbayTab] = useState('overview');
   const [settingsTab, setSettingsTab] = useState('security');
-  const [billingPortalLoading, setBillingPortalLoading] = useState(false);
 
   const activeEbayAccount = Array.isArray(ebayStatus.ebayAccounts)
     ? ebayStatus.ebayAccounts.find((acc) => acc.id && ebayStatus.activeEbayAccountId === acc.id) || ebayStatus.ebayAccounts[0] || null
@@ -321,25 +320,6 @@ export default function SettingsPage() {
     e.preventDefault();
   };
 
-  const handleOpenBillingPortal = async () => {
-    try {
-      setBillingPortalLoading(true);
-      const response = await settingsAPI.createStripeBillingPortal();
-      const portalUrl = response?.data?.url;
-      if (!portalUrl) {
-        throw new Error('Billing portal URL not returned');
-      }
-      window.location.href = portalUrl;
-    } catch (error) {
-      setAlert({
-        type: 'error',
-        message: error?.response?.data?.error || error?.message || 'Failed to open billing portal',
-      });
-    } finally {
-      setBillingPortalLoading(false);
-    }
-  };
-
   return (
     <div className="page-shell">
       <div className="max-w-2xl mx-auto">
@@ -454,14 +434,6 @@ export default function SettingsPage() {
                 className="rounded-xl bg-slate-800 text-white px-4 py-2.5 hover:bg-slate-700 transition"
               >
                 {t('settingsPage.requestSubscriptionReset')}
-              </button>
-              <button
-                type="button"
-                onClick={handleOpenBillingPortal}
-                disabled={billingPortalLoading}
-                className="rounded-xl bg-indigo-600 text-white px-4 py-2.5 hover:bg-indigo-700 transition disabled:opacity-60"
-              >
-                {billingPortalLoading ? 'Opening billing...' : 'Manage billing'}
               </button>
             </div>
           </div>
@@ -1019,7 +991,6 @@ export default function SettingsPage() {
           }}
           submitLabel={requestModal?.requestType === 'update_credits' ? t('settingsPage.sendCreditRequest') : t('settingsPage.sendResetRequest')}
           onSuccess={() => setAlert({ type: 'success', message: t('settingsPage.requestSentToAdmin') })}
-          useStripeCheckout
         />
       </div>
     </div>
