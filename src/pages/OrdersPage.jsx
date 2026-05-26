@@ -6,6 +6,31 @@ import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
 import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal } from 'lucide-react';
 
+const ORDERS_FILTER_STORAGE_KEY = 'checkila.ordersPage.filters.v1';
+
+function readStoredOrdersFilters() {
+  if (typeof window === 'undefined') return {};
+
+  try {
+    const raw = window.localStorage.getItem(ORDERS_FILTER_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeStoredOrdersFilters(filters) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.localStorage.setItem(ORDERS_FILTER_STORAGE_KEY, JSON.stringify(filters));
+  } catch {
+    // Ignore storage quota and privacy mode failures.
+  }
+}
+
 export default function OrdersPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
@@ -41,11 +66,12 @@ export default function OrdersPage() {
   const [pageCursors, setPageCursors] = useState([null]);
   const [fetchingPage, setFetchingPage] = useState(false);
   const [total, setTotal] = useState(null);
-  const [query, setQuery] = useState('');
-  const [fulfillmentFilter, setFulfillmentFilter] = useState('ALL');
-  const [paymentFilter, setPaymentFilter] = useState('ALL');
-  const [sortKey, setSortKey] = useState('orderId');
-  const [sortDir, setSortDir] = useState('asc');
+  const storedFilters = useMemo(() => readStoredOrdersFilters(), []);
+  const [query, setQuery] = useState(() => String(storedFilters.query || ''));
+  const [fulfillmentFilter, setFulfillmentFilter] = useState(() => String(storedFilters.fulfillmentFilter || 'ALL'));
+  const [paymentFilter, setPaymentFilter] = useState(() => String(storedFilters.paymentFilter || 'ALL'));
+  const [sortKey, setSortKey] = useState(() => String(storedFilters.sortKey || 'orderId'));
+  const [sortDir, setSortDir] = useState(() => String(storedFilters.sortDir || 'asc'));
   const ordersRequestRef = useRef(0);
 
   const canNext = pageCursors[page + 1] != null;
@@ -112,6 +138,16 @@ export default function OrdersPage() {
     if (v === 'NOT_STARTED') return isDark ? 'bg-amber-900/30 text-amber-300 border-amber-800' : 'bg-amber-50 text-amber-700 border-amber-200';
     return isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-100 text-slate-700 border-slate-200';
   };
+
+  useEffect(() => {
+    writeStoredOrdersFilters({
+      query,
+      fulfillmentFilter,
+      paymentFilter,
+      sortKey,
+      sortDir,
+    });
+  }, [query, fulfillmentFilter, paymentFilter, sortKey, sortDir]);
 
   useEffect(() => {
     const init = async () => {
