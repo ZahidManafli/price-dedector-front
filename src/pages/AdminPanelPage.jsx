@@ -123,6 +123,16 @@ export default function AdminPanelPage() {
   const [maintenanceWindows, setMaintenanceWindows] = useState([]);
   const [maintenanceFlag, setMaintenanceFlag] = useState({ active: false, source: null, manualActive: null });
   const [maintenanceSubmitting, setMaintenanceSubmitting] = useState(false);
+  const [stripeWebhookEvents, setStripeWebhookEvents] = useState([]);
+  const [stripeWebhookLoading, setStripeWebhookLoading] = useState(false);
+  const [stripeWebhookDetailLoading, setStripeWebhookDetailLoading] = useState(false);
+  const [stripeWebhookSelected, setStripeWebhookSelected] = useState(null);
+  const [stripeWebhookReprocessingId, setStripeWebhookReprocessingId] = useState('');
+  const [stripeWebhookFilters, setStripeWebhookFilters] = useState({
+    eventType: '',
+    processed: 'all',
+    limit: 50,
+  });
 
   const adminCount = useMemo(() => users.filter((u) => u.role === 'admin').length, [users]);
 
@@ -330,6 +340,20 @@ export default function AdminPanelPage() {
       featured: !!plan.featured,
       isActive: plan.isActive !== false,
     });
+  };
+
+  const onSyncPlanToStripe = async (planId) => {
+    setAlert(null);
+    try {
+      setLoading(true);
+      await adminAPI.syncPlanToStripe(planId);
+      await refreshData();
+      setAlert({ type: 'success', message: 'Plan synced to Stripe successfully.' });
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to sync plan to Stripe.' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const onApproveRequest = async (requestId) => {
@@ -670,6 +694,68 @@ export default function AdminPanelPage() {
     }).format(plusFour);
   };
 
+  const loadStripeWebhooks = async (nextFilters = stripeWebhookFilters) => {
+    try {
+      setStripeWebhookLoading(true);
+      const processed = nextFilters.processed === 'all' ? undefined : nextFilters.processed;
+      const response = await adminAPI.listStripeWebhooks({
+        eventType: nextFilters.eventType || undefined,
+        processed,
+        limit: nextFilters.limit,
+      });
+      setStripeWebhookEvents(response?.data?.events || []);
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to load Stripe webhook events' });
+    } finally {
+      setStripeWebhookLoading(false);
+    }
+  };
+
+  const loadStripeWebhookDetail = async (id) => {
+    if (!id) return;
+    try {
+      setStripeWebhookDetailLoading(true);
+      const response = await adminAPI.getStripeWebhookById(id);
+      setStripeWebhookSelected(response?.data?.event || null);
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to load webhook details' });
+    } finally {
+      setStripeWebhookDetailLoading(false);
+    }
+  };
+
+  const onReprocessStripeWebhook = async (id) => {
+    const confirmed = await Swal.fire({
+      title: 'Reprocess webhook event?',
+      text: 'This will re-run event handling logic for the selected Stripe event.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Reprocess',
+      cancelButtonText: 'Cancel',
+    });
+
+    if (!confirmed.isConfirmed) return;
+
+    try {
+      setStripeWebhookReprocessingId(id);
+      const response = await adminAPI.reprocessStripeWebhook(id);
+      setAlert({ type: 'success', message: response?.data?.message || 'Webhook reprocessed successfully' });
+      await loadStripeWebhooks();
+      if (stripeWebhookSelected?.id === id) {
+        await loadStripeWebhookDetail(id);
+      }
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to reprocess webhook event' });
+    } finally {
+      setStripeWebhookReprocessingId('');
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'stripe-webhooks') return;
+    loadStripeWebhooks();
+  }, [activeTab]);
+
   return (
     <div className="page-shell">
       <div className="max-w-6xl mx-auto">
@@ -721,6 +807,12 @@ export default function AdminPanelPage() {
             onClick={() => setActiveTab('maintenance')}
           >
             Maintenance
+          </button>
+          <button
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'stripe-webhooks' ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
+            onClick={() => setActiveTab('stripe-webhooks')}
+          >
+            Stripe Webhooks
           </button>
           <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'danger' ? 'bg-red-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
@@ -1286,12 +1378,19 @@ export default function AdminPanelPage() {
                         <p className="text-sm font-semibold">{plan.name}</p>
                         <p className="text-xs text-slate-500">{plan.category} • {plan.price || t('adminPanelPage.noPrice')} • {plan.duration || t('adminPanelPage.noDuration')}</p>
                         <p className="text-xs text-slate-500">{t('adminPanelPage.pricing')}: {plan.actualPrice ?? '-'} → {plan.discountedPrice ?? '-'} {plan.currency || 'AZN'}</p>
+                        <p className="text-xs text-slate-500">Stripe Product: {plan.stripeProductId || '-'}</p>
+                        <p className="text-xs text-slate-500">Stripe Monthly Price: {plan.stripePriceIdMonthly || '-'}</p>
                         <p className="mt-1 text-xs text-slate-500">{t('adminPanelPage.amazonPerWeek')}: {plan.amazonLookupLimitPerWeek ?? t('adminPanelPage.unlimited')} | {t('adminPanelPage.products')}: {plan.productsLimit ?? t('adminPanelPage.unlimited')} | {t('adminPanelPage.checkilaAnalysisCredits')}: {plan.marketAnalysisCreditsLimit ?? t('adminPanelPage.unlimited')} | {t('adminPanelPage.ebayAccounts')}: {plan.ebayAccountsLimit ?? t('adminPanelPage.unlimited')}</p>
                         <p className="mt-1 text-xs text-slate-500">{t('adminPanelPage.visibleTabs')}: {Array.isArray(plan.allowedTabs) ? plan.allowedTabs.map((key) => t(`adminPanelPage.planTabs.${key}`)).join(', ') : t('adminPanelPage.allDefaultTabs')}</p>
                       </div>
-                      <button type="button" className="btn-secondary px-3 py-1.5" onClick={() => startEditPlan(plan)}>
-                        {t('adminPanelPage.edit')}
-                      </button>
+                      <div className="flex flex-col gap-2">
+                        <button type="button" className="btn-secondary px-3 py-1.5" onClick={() => onSyncPlanToStripe(plan.id)}>
+                          Sync Stripe
+                        </button>
+                        <button type="button" className="btn-secondary px-3 py-1.5" onClick={() => startEditPlan(plan)}>
+                          {t('adminPanelPage.edit')}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1455,6 +1554,120 @@ export default function AdminPanelPage() {
                   })
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {!loading && activeTab === 'stripe-webhooks' && (
+          <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 lg:gap-6">
+            <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
+              <h2 className={`text-lg font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                Webhook Events
+              </h2>
+
+              <div className="space-y-2 mb-3">
+                <input
+                  value={stripeWebhookFilters.eventType}
+                  onChange={(e) => setStripeWebhookFilters((prev) => ({ ...prev, eventType: e.target.value }))}
+                  className="input-base"
+                  placeholder="Event type (optional)"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    value={stripeWebhookFilters.processed}
+                    onChange={(e) => setStripeWebhookFilters((prev) => ({ ...prev, processed: e.target.value }))}
+                    className="input-base"
+                  >
+                    <option value="all">All</option>
+                    <option value="true">Processed</option>
+                    <option value="false">Unprocessed</option>
+                  </select>
+                  <select
+                    value={stripeWebhookFilters.limit}
+                    onChange={(e) => setStripeWebhookFilters((prev) => ({ ...prev, limit: Number(e.target.value) || 50 }))}
+                    className="input-base"
+                  >
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value={200}>200</option>
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  className="btn-primary w-full py-2 inline-flex items-center justify-center gap-2"
+                  onClick={() => loadStripeWebhooks(stripeWebhookFilters)}
+                  disabled={stripeWebhookLoading}
+                >
+                  <RefreshCw size={14} /> {stripeWebhookLoading ? 'Loading...' : 'Refresh'}
+                </button>
+              </div>
+
+              <div className="space-y-2 max-h-[520px] overflow-auto pr-1">
+                {stripeWebhookEvents.length === 0 ? (
+                  <p className="text-sm text-slate-500">No Stripe webhook events found.</p>
+                ) : (
+                  stripeWebhookEvents.map((event) => (
+                    <button
+                      key={event.id}
+                      type="button"
+                      onClick={() => loadStripeWebhookDetail(event.id)}
+                      className={`w-full rounded-xl border p-3 text-left ${
+                        stripeWebhookSelected?.id === event.id
+                          ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                          : isDark
+                            ? 'border-slate-700 bg-slate-950'
+                            : 'border-slate-200 bg-white'
+                      }`}
+                    >
+                      <p className="text-xs font-semibold break-all">{event.eventType}</p>
+                      <p className="text-xs text-slate-500 break-all mt-1">{event.eventId}</p>
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-[11px] text-slate-500">
+                          {event.createdAt ? new Date(event.createdAt).toLocaleString() : 'n/a'}
+                        </span>
+                        <span className={`text-[11px] font-semibold ${event.processedAt ? 'text-emerald-600' : 'text-amber-600'}`}>
+                          {event.processedAt ? 'processed' : 'pending'}
+                        </span>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
+              <h2 className={`text-lg font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                Event Details
+              </h2>
+
+              {stripeWebhookDetailLoading ? (
+                <p className="text-sm text-slate-500">Loading event details...</p>
+              ) : !stripeWebhookSelected ? (
+                <p className="text-sm text-slate-500">Select an event to inspect payload.</p>
+              ) : (
+                <>
+                  <div className="mb-3 space-y-1 text-sm">
+                    <p><span className="font-semibold">Type:</span> {stripeWebhookSelected.eventType}</p>
+                    <p className="break-all"><span className="font-semibold">Event ID:</span> {stripeWebhookSelected.eventId}</p>
+                    <p><span className="font-semibold">Created:</span> {stripeWebhookSelected.createdAt ? new Date(stripeWebhookSelected.createdAt).toLocaleString() : 'n/a'}</p>
+                    <p><span className="font-semibold">Processed:</span> {stripeWebhookSelected.processedAt ? new Date(stripeWebhookSelected.processedAt).toLocaleString() : 'not processed'}</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn-secondary mb-3 px-3 py-2"
+                    disabled={stripeWebhookReprocessingId === stripeWebhookSelected.id}
+                    onClick={() => onReprocessStripeWebhook(stripeWebhookSelected.id)}
+                  >
+                    {stripeWebhookReprocessingId === stripeWebhookSelected.id ? 'Reprocessing...' : 'Reprocess event'}
+                  </button>
+
+                  <pre className={`max-h-[460px] overflow-auto rounded-xl border p-3 text-xs ${isDark ? 'border-slate-700 bg-slate-950 text-slate-100' : 'border-slate-200 bg-slate-50 text-slate-800'}`}>
+{JSON.stringify(stripeWebhookSelected.payload || {}, null, 2)}
+                  </pre>
+                </>
+              )}
             </div>
           </div>
         )}

@@ -33,6 +33,8 @@ import DewisoPage from './pages/DewisoPage';
 import MarketAnalysisPage from './pages/MarketAnalysisPage';
 import MarketListingDetailPage from './pages/MarketListingDetailPage';
 import LandingPage from './pages/LandingPage';
+import StripeCheckoutSuccessPage from './pages/StripeCheckoutSuccessPage';
+import StripeCheckoutCancelPage from './pages/StripeCheckoutCancelPage';
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
 
@@ -160,6 +162,22 @@ function AppContent() {
               element={
                 <ProtectedRoute requiredTab={TAB_KEYS.SETTINGS}>
                   <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/billing/success"
+              element={
+                <ProtectedRoute>
+                  <StripeCheckoutSuccessPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/billing/cancel"
+              element={
+                <ProtectedRoute>
+                  <StripeCheckoutCancelPage />
                 </ProtectedRoute>
               }
             />

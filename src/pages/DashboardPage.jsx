@@ -1417,6 +1417,7 @@ export default function DashboardPage() {
         onClose={() => setRequestUpgradeOpen(false)}
         plans={publicPlans}
         lockPlan={false}
+        useStripeCheckout
         defaultValues={{
           name: user?.name || '',
           surname: user?.surname || user?.lastName || '',
