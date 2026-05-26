@@ -7,6 +7,7 @@ import Alert from '../components/Alert';
 import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal } from 'lucide-react';
 
 const ORDERS_FILTER_STORAGE_KEY = 'checkila.ordersPage.filters.v1';
+const ORDERS_LISTINGS_STORAGE_KEY = 'checkila.ordersPage.listings.v1';
 
 function readStoredOrdersFilters() {
   if (typeof window === 'undefined') return {};
@@ -29,6 +30,66 @@ function writeStoredOrdersFilters(filters) {
   } catch {
     // Ignore storage quota and privacy mode failures.
   }
+}
+
+function readStoredOrdersListings() {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const raw = window.localStorage.getItem(ORDERS_LISTINGS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    const items = Array.isArray(parsed) ? parsed : parsed?.items;
+    return Array.isArray(items) ? items : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredOrdersListings(items) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.localStorage.setItem(
+      ORDERS_LISTINGS_STORAGE_KEY,
+      JSON.stringify({
+        refreshedAt: new Date().toISOString(),
+        items,
+      })
+    );
+  } catch {
+    // Ignore storage quota and privacy mode failures.
+  }
+}
+
+function resolveListingId(listing) {
+  return String(listing?.listingId || listing?.listing?.listingId || listing?.offerId || listing?.sku || '').trim();
+}
+
+function resolveListingImageUrl(listing) {
+  const directImage =
+    listing?.listing?.image?.imageUrl ||
+    listing?.listing?.thumbnailImages?.[0]?.imageUrl ||
+    listing?.imageUrl ||
+    listing?.thumbnailUrl ||
+    listing?.listing?.imageUrl ||
+    '';
+  if (directImage) return directImage;
+
+  const pictureUrls = Array.isArray(listing?.pictureUrls) ? listing.pictureUrls : [];
+  if (pictureUrls.length > 0 && pictureUrls[0]) return pictureUrls[0];
+
+  if (listing?.rawXml && typeof DOMParser !== 'undefined') {
+    try {
+      const doc = new DOMParser().parseFromString(listing.rawXml, 'text/xml');
+      const firstPicture = doc.querySelector('PictureDetails > PictureURL')?.textContent?.trim();
+      if (firstPicture) return firstPicture;
+    } catch {
+      return '';
+    }
+  }
+
+  return '';
 }
 
 export default function OrdersPage() {
@@ -66,6 +127,7 @@ export default function OrdersPage() {
   const [pageCursors, setPageCursors] = useState([null]);
   const [fetchingPage, setFetchingPage] = useState(false);
   const [total, setTotal] = useState(null);
+  const [listingCache, setListingCache] = useState(() => readStoredOrdersListings());
   const storedFilters = useMemo(() => readStoredOrdersFilters(), []);
   const [query, setQuery] = useState(() => String(storedFilters.query || ''));
   const [fulfillmentFilter, setFulfillmentFilter] = useState(() => String(storedFilters.fulfillmentFilter || 'ALL'));
@@ -73,6 +135,17 @@ export default function OrdersPage() {
   const [sortKey, setSortKey] = useState(() => String(storedFilters.sortKey || 'orderId'));
   const [sortDir, setSortDir] = useState(() => String(storedFilters.sortDir || 'asc'));
   const ordersRequestRef = useRef(0);
+
+  const listingImageById = useMemo(() => {
+    const map = new Map();
+    (listingCache || []).forEach((listing) => {
+      const listingId = resolveListingId(listing);
+      if (!listingId || map.has(listingId)) return;
+      const imageUrl = resolveListingImageUrl(listing);
+      if (imageUrl) map.set(listingId, imageUrl);
+    });
+    return map;
+  }, [listingCache]);
 
   const canNext = pageCursors[page + 1] != null;
   const filteredOrders = useMemo(() => {
@@ -161,6 +234,34 @@ export default function OrdersPage() {
           setShowConnectModal(true);
           return;
         }
+
+        ebayAPI
+          .getListings(0, 200)
+          .then((res) => {
+            const data = res?.data || {};
+            const items = Array.isArray(data.items) ? data.items : [];
+            setListingCache(items);
+            writeStoredOrdersListings(items);
+
+            if (data?.from_cache) {
+              ebayAPI
+                .getListings(0, 200, { refresh: true })
+                .then((refreshRes) => {
+                  const refreshData = refreshRes?.data || {};
+                  const refreshItems = Array.isArray(refreshData.items) ? refreshData.items : [];
+                  setListingCache(refreshItems);
+                  writeStoredOrdersListings(refreshItems);
+                })
+                .catch((refreshErr) => {
+                  const msg = refreshErr?.response?.data?.error || '';
+                  if (msg) console.warn('Silent listings refresh failed:', msg);
+                });
+            }
+          })
+          .catch((listingsErr) => {
+            const msg = listingsErr?.response?.data?.error || '';
+            if (msg) console.warn('Orders page listings preload failed:', msg);
+          });
 
         await loadPage(0);
       } catch (err) {
@@ -429,6 +530,8 @@ export default function OrdersPage() {
               <tbody className={isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}>
                 {filteredOrders.map((order) => {
                   const id = order.orderId;
+                  const listingId = String(order?.lineItems?.[0]?.legacyItemId || '').trim();
+                  const listingImageUrl = listingId ? listingImageById.get(listingId) || '' : '';
                   const payment = order.orderPaymentStatus || '-';
                   const shipmentStatus = getDerivedShipmentStatus(order);
                   const totalValue = order?.pricingSummary?.total?.value;
@@ -439,7 +542,29 @@ export default function OrdersPage() {
                   return (
                     <React.Fragment key={id}>
                       <tr className={isDark ? 'bg-slate-900' : 'bg-white'}>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{id}</td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border ${
+                                isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'
+                              }`}
+                            >
+                              {listingImageUrl ? (
+                                <img src={listingImageUrl} alt={order?.lineItems?.[0]?.title || id} className="h-full w-full object-cover" />
+                              ) : (
+                                <div className={`flex h-full w-full items-center justify-center text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                  No image
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-medium truncate">{id}</div>
+                              <div className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                {order?.lineItems?.[0]?.title || t('ordersPage.table.orderId')}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{buyer}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                           <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${getPill(payment, 'payment')}`}>
