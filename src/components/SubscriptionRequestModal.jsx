@@ -68,6 +68,11 @@ export default function SubscriptionRequestModal({
   const [form, setForm] = useState(initialForm(selectedPlanId, requestType, defaultValues));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [infoMessage, setInfoMessage] = useState('');
+  const [verificationStep, setVerificationStep] = useState(false);
+  const [verificationRequestId, setVerificationRequestId] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationExpiresAt, setVerificationExpiresAt] = useState('');
 
   const defaultValuesSignature = useMemo(
     () =>
@@ -117,6 +122,11 @@ export default function SubscriptionRequestModal({
   React.useEffect(() => {
     setForm(initialForm(selectedPlanId, requestType, defaultValues));
     setError('');
+    setInfoMessage('');
+    setVerificationStep(false);
+    setVerificationRequestId('');
+    setVerificationCode('');
+    setVerificationExpiresAt('');
   }, [selectedPlanId, open, requestType, defaultValuesSignature]);
 
   if (!open) return null;
@@ -124,6 +134,36 @@ export default function SubscriptionRequestModal({
   const submit = async (e) => {
     e.preventDefault();
     setError('');
+    setInfoMessage('');
+
+    if (isSubscriptionRequest && verificationStep) {
+      if (!verificationRequestId) {
+        setError('Please submit the request again to receive a new verification code.');
+        return;
+      }
+
+      const code = String(verificationCode || '').trim();
+      if (!/^[0-9]{6}$/.test(code)) {
+        setError('Enter the 6-digit verification code sent to your email.');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        await settingsAPI.verifySubscriptionRequest({
+          requestId: verificationRequestId,
+          email: form.email,
+          code,
+        });
+        onSuccess?.();
+        onClose?.();
+      } catch (err) {
+        setError(err?.response?.data?.error || err?.message || 'Failed to verify the code');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
     if (isSubscriptionRequest) {
       if (!form.name || !form.surname || !form.email || !form.phoneNumber || !form.planId) {
@@ -166,7 +206,18 @@ export default function SubscriptionRequestModal({
           payload.customNote = form.customNote?.trim() || '';
         }
 
-        await settingsAPI.submitSubscriptionRequest(payload);
+        const response = await settingsAPI.submitSubscriptionRequest(payload);
+        const request = response?.data?.request || {};
+
+        if (request.verificationRequired) {
+          setVerificationStep(true);
+          setVerificationRequestId(String(request.id || '').trim());
+          setVerificationExpiresAt(String(request.verificationExpiresAt || '').trim());
+          setVerificationCode('');
+          setInfoMessage(response?.data?.message || 'A verification code has been sent to your email.');
+          return;
+        }
+
         onSuccess?.();
         onClose?.();
       } catch (err) {
@@ -242,6 +293,18 @@ export default function SubscriptionRequestModal({
         <form onSubmit={submit} className="space-y-3">
           {isSubscriptionRequest ? (
             <>
+              {verificationStep ? (
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+                  <p className="font-semibold">Verification code sent</p>
+                  <p className="mt-1 text-emerald-50/90">
+                    Enter the 6-digit code sent to <span className="font-semibold">{form.email || 'your email'}</span> to send your subscription request to the admin team.
+                  </p>
+                  {verificationExpiresAt ? (
+                    <p className="mt-1 text-xs text-emerald-100/75">Code expires at {verificationExpiresAt}.</p>
+                  ) : null}
+                </div>
+              ) : null}
+
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {!hasPrefilledName ? (
                   <input
@@ -250,6 +313,7 @@ export default function SubscriptionRequestModal({
                     onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                     placeholder={t('subscriptionRequestModal.name')}
                     className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+                    disabled={verificationStep}
                   />
                 ) : null}
                 {!hasPrefilledSurname ? (
@@ -259,6 +323,7 @@ export default function SubscriptionRequestModal({
                     onChange={(e) => setForm((p) => ({ ...p, surname: e.target.value }))}
                     placeholder={t('subscriptionRequestModal.surname')}
                     className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+                    disabled={verificationStep}
                   />
                 ) : null}
               </div>
@@ -270,6 +335,7 @@ export default function SubscriptionRequestModal({
                   onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                   placeholder={t('subscriptionRequestModal.email')}
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+                  disabled={verificationStep}
                 />
               ) : null}
 
@@ -280,6 +346,7 @@ export default function SubscriptionRequestModal({
                   onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))}
                   placeholder={t('subscriptionRequestModal.phoneNumber')}
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+                  disabled={verificationStep}
                 />
               ) : null}
 
@@ -287,7 +354,7 @@ export default function SubscriptionRequestModal({
                 value={form.planId}
                 onChange={(e) => setForm((p) => ({ ...p, planId: e.target.value }))}
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-                disabled={lockPlan}
+                disabled={lockPlan || verificationStep}
               >
                 <option value="">{t('subscriptionRequestModal.selectPlan')}</option>
                 {availablePlans.map((plan) => (
@@ -346,8 +413,21 @@ export default function SubscriptionRequestModal({
                     onChange={(e) => setForm((p) => ({ ...p, customNote: e.target.value }))}
                     placeholder={t('subscriptionRequestModal.optionalNoteDetailed')}
                     className="min-h-[84px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+                    disabled={verificationStep}
                   />
                 </div>
+              ) : null}
+
+              {verificationStep ? (
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="Enter verification code"
+                  className="w-full rounded-lg border border-emerald-500/30 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-emerald-400"
+                />
               ) : null}
             </>
           ) : isCreditTopUpRequest ? (
@@ -376,6 +456,7 @@ export default function SubscriptionRequestModal({
             />
           )}
 
+          {infoMessage ? <p className="text-sm text-emerald-300">{infoMessage}</p> : null}
           {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
           <button
@@ -383,7 +464,11 @@ export default function SubscriptionRequestModal({
             disabled={loading}
             className="w-full rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
           >
-            {loading ? t('subscriptionRequestModal.submitting') : submitLabel || (isCreditTopUpRequest ? t('subscriptionRequestModal.sendCreditRequest') : isResetRequest ? t('subscriptionRequestModal.sendResetRequest') : t('subscriptionRequestModal.sendRequest'))}
+            {loading
+              ? t('subscriptionRequestModal.submitting')
+              : verificationStep
+                ? 'Verify code'
+                : submitLabel || (isCreditTopUpRequest ? t('subscriptionRequestModal.sendCreditRequest') : isResetRequest ? t('subscriptionRequestModal.sendResetRequest') : t('subscriptionRequestModal.sendRequest'))}
           </button>
         </form>
       </div>

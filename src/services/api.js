@@ -19,6 +19,7 @@ api.interceptors.request.use((config) => {
     url.startsWith('/settings/plans/public') ||
     url.startsWith('/settings/currency-rates') ||
     url === '/settings/subscription-requests' ||
+    url === '/settings/subscription-requests/verify' ||
     url.startsWith('/settings/subscription-requests/update-credits') ||
     url.startsWith('/settings/subscription-requests/reset-credits') ||
     url.startsWith('/api/partners/public') ||
@@ -103,6 +104,7 @@ export const settingsAPI = {
   getPublicData: () => api.get('/settings/public-data'),
   getCurrencyRates: () => api.get('/settings/currency-rates'),
   submitSubscriptionRequest: (data) => api.post('/settings/subscription-requests', data),
+  verifySubscriptionRequest: (data) => api.post('/settings/subscription-requests/verify', data),
   submitUpdateCreditRequest: (data) => api.post('/settings/subscription-requests/update-credits', data),
   submitResetCreditsRequest: (data) => api.post('/settings/subscription-requests/reset-credits', data),
 };
