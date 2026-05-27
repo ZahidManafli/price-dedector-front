@@ -66,6 +66,48 @@ function parseNextOffset(nextValue) {
   }
 }
 
+const SELLER_PAGE_SIZE = 20;
+
+function normalizeSellerKey(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function getSellerWindowMatch(cacheEntry, nextParams) {
+  if (!cacheEntry || !isPureSellerOnlySearch(nextParams)) return false;
+
+  const cachedSeller = normalizeSellerKey(cacheEntry?.sellerUsername || cacheEntry?.params?.sellerUsername || cacheEntry?.searchPayload?.sellerUsername);
+  const requestedSeller = normalizeSellerKey(nextParams?.sellerUsername);
+  if (!cachedSeller || cachedSeller !== requestedSeller) return false;
+
+  const windowStart = Number(cacheEntry?.sellerWindowStartOffset ?? 0);
+  const windowSizeRaw = cacheEntry?.sellerWindowSize ?? (Array.isArray(cacheEntry?.results) ? cacheEntry.results.length : 0);
+  const windowSize = Number(windowSizeRaw);
+  const requestedOffset = Number(nextParams?.offset || 0);
+  if (!Number.isFinite(windowStart) || !Number.isFinite(windowSize) || windowSize <= 0) return false;
+  return requestedOffset >= windowStart && requestedOffset < windowStart + windowSize;
+}
+
+function sliceSellerWindow(cacheEntry, nextParams) {
+  const fullResults = Array.isArray(cacheEntry?.results) ? cacheEntry.results : [];
+  const windowStart = Number(cacheEntry?.sellerWindowStartOffset ?? 0);
+  const requestedOffset = Math.max(0, Number(nextParams?.offset || 0));
+  const sliceStart = Math.max(0, requestedOffset - windowStart);
+  const pageResults = fullResults.slice(sliceStart, sliceStart + SELLER_PAGE_SIZE);
+  const nextOffset = pageResults.length === SELLER_PAGE_SIZE ? requestedOffset + SELLER_PAGE_SIZE : null;
+
+  return {
+    pageResults,
+    nextOffset,
+    windowStart,
+    windowSize: Number(cacheEntry?.sellerWindowSize || fullResults.length || 0),
+  };
+}
+
+function findSellerWindowCacheEntry(cache, nextParams) {
+  const entries = Object.values(cache || {});
+  return entries.find((entry) => getSellerWindowMatch(entry, nextParams)) || null;
+}
+
 function loadPersistedState(initialParams = {}) {
   const defaults = getDefaultParams(initialParams);
   if (typeof window === 'undefined') {
@@ -99,7 +141,20 @@ function loadPersistedState(initialParams = {}) {
     ...(parsed.params || {}),
   };
   const cache = parsed.cache && typeof parsed.cache === 'object' ? parsed.cache : {};
-  const restored = cache[buildCacheKey(persistedParams)] || null;
+  let restored = cache[buildCacheKey(persistedParams)] || null;
+  if (!restored && isPureSellerOnlySearch(persistedParams)) {
+    const sellerWindowEntry = findSellerWindowCacheEntry(cache, persistedParams);
+    if (sellerWindowEntry) {
+      const sellerSlice = sliceSellerWindow(sellerWindowEntry, persistedParams);
+      restored = {
+        ...sellerWindowEntry,
+        results: sellerSlice.pageResults,
+        nextOffset: sellerSlice.nextOffset,
+        sellerWindowStartOffset: sellerSlice.windowStart,
+        sellerWindowSize: sellerSlice.windowSize,
+      };
+    }
+  }
 
   return {
     params: persistedParams,
@@ -226,24 +281,33 @@ export default function useBrowseSearch(initialParams = {}) {
   }, [params]);
 
   const searchNow = useCallback(async (nextParams = params, { force = false } = {}) => {
+    const sellerOnlySearch = isPureSellerOnlySearch(nextParams);
+    const effectiveParams = sellerOnlySearch
+      ? {
+          ...nextParams,
+          limit: SELLER_PAGE_SIZE,
+        }
+      : nextParams;
+
     if (
-      !String(nextParams.q || '').trim() &&
-      !String(nextParams.categoryId || '').trim() &&
-      !String(nextParams.sellerUsername || '').trim()
+      !String(effectiveParams.q || '').trim() &&
+      !String(effectiveParams.categoryId || '').trim() &&
+      !String(effectiveParams.sellerUsername || '').trim()
     ) {
       setResults([]);
       setTotal(0);
       setNextOffset(null);
       setRefinement(null);
       setError(null);
-      persistState(nextParams, cache);
+      persistState(effectiveParams, cache);
       return;
     }
 
-    const cacheKey = buildCacheKey(nextParams);
-    if (!force && cache[cacheKey]) {
-      const cached = cache[cacheKey];
-      const sellerOnlySearch = isPureSellerOnlySearch(nextParams);
+    const cacheKey = buildCacheKey(effectiveParams);
+    const sellerWindowCache = sellerOnlySearch ? findSellerWindowCacheEntry(cache, effectiveParams) : null;
+
+    if (!force && (cache[cacheKey] || sellerWindowCache)) {
+      const cached = cache[cacheKey] || sellerWindowCache;
       const cachedQueryKind = String(cached?.queryKind || '').trim().toLowerCase();
 
       // Seller-click handoff may use cache only when the cached query is also pure seller-only.
@@ -258,16 +322,23 @@ export default function useBrowseSearch(initialParams = {}) {
         const nextSoldQuantityDeferred = shouldForceDeferredSold
           ? true
           : (Boolean(cached.soldQuantityDeferred) || shouldRefetchZeroSold);
+        const sellerSlice = sellerOnly
+          ? sliceSellerWindow(cached, effectiveParams)
+          : null;
+        const displayedResults = sellerOnly ? (sellerSlice?.pageResults || []) : cachedResults;
+        const nextPageOffset = sellerOnly
+          ? sellerSlice?.nextOffset ?? null
+          : (Number.isFinite(Number(cached.nextOffset)) ? Number(cached.nextOffset) : null);
 
-        setResults(shouldForceDeferredSold ? forceDeferredSellerSold(cachedResults) : cachedResults);
-        setTotal(Number(cached.total || 0));
-        setNextOffset(Number.isFinite(Number(cached.nextOffset)) ? Number(cached.nextOffset) : null);
+        setResults(shouldForceDeferredSold ? forceDeferredSellerSold(displayedResults) : displayedResults);
+        setTotal(Number(cached.total || displayedResults.length || 0));
+        setNextOffset(nextPageOffset);
         setRefinement(cached.refinement || null);
         setCredits(cached.credits || null);
         setSoldQuantityDeferred(nextSoldQuantityDeferred);
         setError(null);
-        setParamsState(nextParams);
-        persistState(nextParams, cache);
+        setParamsState(effectiveParams);
+        persistState(effectiveParams, cache);
         return;
       }
     }
@@ -276,7 +347,7 @@ export default function useBrowseSearch(initialParams = {}) {
     setError(null);
     try {
       const requestParams = Object.fromEntries(
-        Object.entries(nextParams).filter(([key, value]) => {
+        Object.entries(effectiveParams).filter(([key, value]) => {
           if (value === undefined || value === null) return false;
           if (typeof value === 'string' && value.trim() === '') return false;
           if (typeof value === 'boolean') return value;
@@ -293,8 +364,8 @@ export default function useBrowseSearch(initialParams = {}) {
       const nextNextOffset = Number.isFinite(Number(payload?.nextOffset))
         ? Number(payload.nextOffset)
         : parseNextOffset(payload?.next);
-      const sellerOnly = isPureSellerOnlySearch(nextParams);
-      const titleOnly = isPureTitleOnlySearch(nextParams);
+      const sellerOnly = sellerOnlySearch;
+      const titleOnly = isPureTitleOnlySearch(effectiveParams);
       const shouldForceDeferredSold = sellerOnly && nextDataSource !== 'sql';
       const normalized = itemSummaries.map((summary) => {
         const baseItem = normalizeItem(summary);
@@ -305,38 +376,45 @@ export default function useBrowseSearch(initialParams = {}) {
         };
       });
       const hydratedItems = shouldForceDeferredSold ? forceDeferredSellerSold(normalized) : normalized;
-      const nextTotal = Number(payload?.total || 0);
+      const nextTotal = Number(payload?.total || hydratedItems.length || 0);
       const nextRefinement = payload?.refinement || null;
       const hasZeroSoldRefetch = normalized.some((item) => item?.shouldRefetchSoldOnZero === true);
       const nextSoldQuantityDeferred = shouldForceDeferredSold
         ? true
         : (Boolean(payload?.soldQuantityDeferred) || hasZeroSoldRefetch);
+      const sellerWindowStartOffset = sellerOnly ? Number(effectiveParams.offset || 0) : null;
+      const sellerWindowSize = sellerOnly ? hydratedItems.length : null;
 
-      setResults(hydratedItems);
+      const displayedResults = sellerOnly ? hydratedItems.slice(0, SELLER_PAGE_SIZE) : hydratedItems;
+      setResults(displayedResults);
       setTotal(nextTotal);
-      setNextOffset(nextNextOffset);
+      setNextOffset(sellerOnly ? (displayedResults.length === SELLER_PAGE_SIZE ? Number(effectiveParams.offset || 0) + SELLER_PAGE_SIZE : null) : nextNextOffset);
       setRefinement(nextRefinement);
       setCredits(nextCredits);
       setSoldQuantityDeferred(nextSoldQuantityDeferred);
-      setParamsState(nextParams);
+      setParamsState(effectiveParams);
 
       setCache((prev) => {
-        const sellerOnly = isPureSellerOnlySearch(nextParams);
         const nextCache = trimCache({
           ...prev,
           [cacheKey]: {
-            results: hydratedItems,
+            results: sellerOnly ? hydratedItems : displayedResults,
             total: nextTotal,
-            nextOffset: nextNextOffset,
+            nextOffset: sellerOnly
+              ? (displayedResults.length === SELLER_PAGE_SIZE ? Number(effectiveParams.offset || 0) + SELLER_PAGE_SIZE : null)
+              : nextNextOffset,
             refinement: nextRefinement,
             credits: nextCredits,
             soldQuantityDeferred: nextSoldQuantityDeferred,
             dataSource: nextDataSource,
             queryKind: sellerOnly ? 'seller_only' : 'general',
+            sellerUsername: String(effectiveParams.sellerUsername || '').trim(),
+            sellerWindowStartOffset,
+            sellerWindowSize,
             savedAtMs: Date.now(),
           },
         });
-        persistState(nextParams, nextCache);
+        persistState(effectiveParams, nextCache);
         return nextCache;
       });
     } catch (err) {
