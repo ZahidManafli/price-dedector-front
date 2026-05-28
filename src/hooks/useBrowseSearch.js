@@ -149,6 +149,9 @@ function loadPersistedState(initialParams = {}) {
       restored = {
         ...sellerWindowEntry,
         results: sellerSlice.pageResults,
+        sellerWindowItemSummaries: Array.isArray(sellerWindowEntry?.sellerWindowItemSummaries)
+          ? sellerWindowEntry.sellerWindowItemSummaries
+          : sellerWindowEntry?.results || [],
         nextOffset: sellerSlice.nextOffset,
         sellerWindowStartOffset: sellerSlice.windowStart,
         sellerWindowSize: sellerSlice.windowSize,
@@ -317,7 +320,9 @@ export default function useBrowseSearch(initialParams = {}) {
         const sellerOnly = sellerOnlySearch;
         const cachedDataSource = String(cached.dataSource || '').trim().toLowerCase();
         const shouldForceDeferredSold = sellerOnly && cachedDataSource !== 'sql';
-        const cachedResults = Array.isArray(cached.results) ? cached.results : [];
+        const cachedResults = sellerOnly && Array.isArray(cached.sellerWindowItemSummaries)
+          ? cached.sellerWindowItemSummaries
+          : (Array.isArray(cached.results) ? cached.results : []);
         const shouldRefetchZeroSold = cachedResults.some((item) => item?.shouldRefetchSoldOnZero === true);
         const nextSoldQuantityDeferred = shouldForceDeferredSold
           ? true
@@ -359,6 +364,9 @@ export default function useBrowseSearch(initialParams = {}) {
       const response = await browseAPI.search(requestParams);
       const payload = response?.data?.data || {};
       const nextCredits = response?.data?.credits || null;
+      const sellerWindowItemSummaries = Array.isArray(payload?.sellerWindowItemSummaries)
+        ? payload.sellerWindowItemSummaries
+        : null;
       const itemSummaries = Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : [];
       const nextDataSource = String(payload?.dataSource || 'external').trim() || 'external';
       const nextNextOffset = Number.isFinite(Number(payload?.nextOffset))
@@ -367,7 +375,8 @@ export default function useBrowseSearch(initialParams = {}) {
       const sellerOnly = sellerOnlySearch;
       const titleOnly = isPureTitleOnlySearch(effectiveParams);
       const shouldForceDeferredSold = sellerOnly && nextDataSource !== 'sql';
-      const normalized = itemSummaries.map((summary) => {
+      const sellerSourceItems = sellerOnly && sellerWindowItemSummaries ? sellerWindowItemSummaries : itemSummaries;
+      const normalized = sellerSourceItems.map((summary) => {
         const baseItem = normalizeItem(summary);
         const shouldRefetchSoldOnZero = titleOnly && Number(baseItem?.soldQuantity || 0) === 0;
         return {
@@ -382,7 +391,7 @@ export default function useBrowseSearch(initialParams = {}) {
       const nextSoldQuantityDeferred = shouldForceDeferredSold
         ? true
         : (Boolean(payload?.soldQuantityDeferred) || hasZeroSoldRefetch);
-      const sellerWindowStartOffset = sellerOnly ? Number(effectiveParams.offset || 0) : null;
+      const sellerWindowStartOffset = sellerOnly ? Number(payload?.sellerWindowStartOffset ?? effectiveParams.offset ?? 0) : null;
       const sellerWindowSize = sellerOnly ? hydratedItems.length : null;
 
       const displayedResults = sellerOnly ? hydratedItems.slice(0, SELLER_PAGE_SIZE) : hydratedItems;
@@ -398,7 +407,8 @@ export default function useBrowseSearch(initialParams = {}) {
         const nextCache = trimCache({
           ...prev,
           [cacheKey]: {
-            results: sellerOnly ? hydratedItems : displayedResults,
+            results: displayedResults,
+            sellerWindowItemSummaries: sellerOnly ? hydratedItems : undefined,
             total: nextTotal,
             nextOffset: sellerOnly
               ? (displayedResults.length === SELLER_PAGE_SIZE ? Number(effectiveParams.offset || 0) + SELLER_PAGE_SIZE : null)
