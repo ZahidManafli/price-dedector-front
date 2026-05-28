@@ -88,7 +88,9 @@ function getSellerWindowMatch(cacheEntry, nextParams) {
 }
 
 function sliceSellerWindow(cacheEntry, nextParams) {
-  const fullResults = Array.isArray(cacheEntry?.results) ? cacheEntry.results : [];
+  const fullResults = Array.isArray(cacheEntry?.sellerWindowItemSummaries)
+    ? cacheEntry.sellerWindowItemSummaries
+    : (Array.isArray(cacheEntry?.results) ? cacheEntry.results : []);
   const windowStart = Number(cacheEntry?.sellerWindowStartOffset ?? 0);
   const requestedOffset = Math.max(0, Number(nextParams?.offset || 0));
   const sliceStart = Math.max(0, requestedOffset - windowStart);
