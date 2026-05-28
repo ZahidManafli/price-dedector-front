@@ -88,9 +88,7 @@ function getSellerWindowMatch(cacheEntry, nextParams) {
 }
 
 function sliceSellerWindow(cacheEntry, nextParams) {
-  const fullResults = Array.isArray(cacheEntry?.sellerWindowItemSummaries)
-    ? cacheEntry.sellerWindowItemSummaries
-    : (Array.isArray(cacheEntry?.results) ? cacheEntry.results : []);
+  const fullResults = Array.isArray(cacheEntry?.results) ? cacheEntry.results : [];
   const windowStart = Number(cacheEntry?.sellerWindowStartOffset ?? 0);
   const requestedOffset = Math.max(0, Number(nextParams?.offset || 0));
   const sliceStart = Math.max(0, requestedOffset - windowStart);
@@ -151,9 +149,6 @@ function loadPersistedState(initialParams = {}) {
       restored = {
         ...sellerWindowEntry,
         results: sellerSlice.pageResults,
-        sellerWindowItemSummaries: Array.isArray(sellerWindowEntry?.sellerWindowItemSummaries)
-          ? sellerWindowEntry.sellerWindowItemSummaries
-          : sellerWindowEntry?.results || [],
         nextOffset: sellerSlice.nextOffset,
         sellerWindowStartOffset: sellerSlice.windowStart,
         sellerWindowSize: sellerSlice.windowSize,
@@ -170,38 +165,12 @@ function loadPersistedState(initialParams = {}) {
 
 function persistState(params, cache) {
   if (typeof window === 'undefined') return;
-  // Avoid persisting potentially large `sellerWindowItemSummaries` payloads.
-  // Keep them in-memory (cache) only to prevent localStorage quota exhaustion.
-  const safeCache = Object.fromEntries(
-    Object.entries(cache || {}).map(([k, v]) => {
-      if (!v || typeof v !== 'object') return [k, v];
-      const copy = { ...v };
-      if (Array.isArray(copy.sellerWindowItemSummaries)) {
-        delete copy.sellerWindowItemSummaries;
-      }
-      return [k, copy];
-    })
-  );
-
   const payload = {
     params,
-    cache: safeCache,
+    cache,
     savedAt: new Date().toISOString(),
   };
-
-  try {
-    window.localStorage.setItem(MARKET_ANALYSIS_STORAGE_KEY, JSON.stringify(payload));
-  } catch (err) {
-    // Best-effort: if persisting still fails, remove cache and persist only params.
-    try {
-      window.localStorage.setItem(
-        MARKET_ANALYSIS_STORAGE_KEY,
-        JSON.stringify({ params, savedAt: new Date().toISOString() })
-      );
-    } catch (e) {
-      // give up silently to avoid crashing the app
-    }
-  }
+  window.localStorage.setItem(MARKET_ANALYSIS_STORAGE_KEY, JSON.stringify(payload));
 }
 
 function trimCache(cache, maxEntries = 30) {
@@ -335,18 +304,20 @@ export default function useBrowseSearch(initialParams = {}) {
     }
 
     const cacheKey = buildCacheKey(effectiveParams);
+    const sellerWindowCache = sellerOnlySearch ? findSellerWindowCacheEntry(cache, effectiveParams) : null;
 
-    if (!force && cache[cacheKey]) {
-      const cached = cache[cacheKey];
+    if (!force && (cache[cacheKey] || sellerWindowCache)) {
+      const cached = cache[cacheKey] || sellerWindowCache;
       const cachedQueryKind = String(cached?.queryKind || '').trim().toLowerCase();
 
-      if (!sellerOnlySearch || cachedQueryKind === 'seller_only') {
+      // Seller-click handoff may use cache only when the cached query is also pure seller-only.
+      if (sellerOnlySearch && cachedQueryKind !== 'seller_only') {
+        // Fall through to backend fetch.
+      } else {
         const sellerOnly = sellerOnlySearch;
         const cachedDataSource = String(cached.dataSource || '').trim().toLowerCase();
         const shouldForceDeferredSold = sellerOnly && cachedDataSource !== 'sql';
-        const cachedResults = sellerOnly && Array.isArray(cached.sellerWindowItemSummaries)
-          ? cached.sellerWindowItemSummaries
-          : (Array.isArray(cached.results) ? cached.results : []);
+        const cachedResults = Array.isArray(cached.results) ? cached.results : [];
         const shouldRefetchZeroSold = cachedResults.some((item) => item?.shouldRefetchSoldOnZero === true);
         const nextSoldQuantityDeferred = shouldForceDeferredSold
           ? true
@@ -388,9 +359,6 @@ export default function useBrowseSearch(initialParams = {}) {
       const response = await browseAPI.search(requestParams);
       const payload = response?.data?.data || {};
       const nextCredits = response?.data?.credits || null;
-      const sellerWindowItemSummaries = Array.isArray(payload?.sellerWindowItemSummaries)
-        ? payload.sellerWindowItemSummaries
-        : null;
       const itemSummaries = Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : [];
       const nextDataSource = String(payload?.dataSource || 'external').trim() || 'external';
       const nextNextOffset = Number.isFinite(Number(payload?.nextOffset))
@@ -399,8 +367,7 @@ export default function useBrowseSearch(initialParams = {}) {
       const sellerOnly = sellerOnlySearch;
       const titleOnly = isPureTitleOnlySearch(effectiveParams);
       const shouldForceDeferredSold = sellerOnly && nextDataSource !== 'sql';
-      const sellerSourceItems = sellerOnly && sellerWindowItemSummaries ? sellerWindowItemSummaries : itemSummaries;
-      const normalized = sellerSourceItems.map((summary) => {
+      const normalized = itemSummaries.map((summary) => {
         const baseItem = normalizeItem(summary);
         const shouldRefetchSoldOnZero = titleOnly && Number(baseItem?.soldQuantity || 0) === 0;
         return {
@@ -415,10 +382,8 @@ export default function useBrowseSearch(initialParams = {}) {
       const nextSoldQuantityDeferred = shouldForceDeferredSold
         ? true
         : (Boolean(payload?.soldQuantityDeferred) || hasZeroSoldRefetch);
-      const sellerWindowStartOffset = sellerOnly ? Number(payload?.sellerWindowStartOffset ?? effectiveParams.offset ?? 0) : null;
-      const sellerWindowSize = sellerOnly
-        ? Number(payload?.sellerWindowSize || sellerWindowItemSummaries?.length || hydratedItems.length || 0)
-        : null;
+      const sellerWindowStartOffset = sellerOnly ? Number(effectiveParams.offset || 0) : null;
+      const sellerWindowSize = sellerOnly ? hydratedItems.length : null;
 
       const displayedResults = sellerOnly ? hydratedItems.slice(0, SELLER_PAGE_SIZE) : hydratedItems;
       setResults(displayedResults);
@@ -433,8 +398,7 @@ export default function useBrowseSearch(initialParams = {}) {
         const nextCache = trimCache({
           ...prev,
           [cacheKey]: {
-            results: displayedResults,
-            sellerWindowItemSummaries: sellerOnly ? hydratedItems : undefined,
+            results: sellerOnly ? hydratedItems : displayedResults,
             total: nextTotal,
             nextOffset: sellerOnly
               ? (displayedResults.length === SELLER_PAGE_SIZE ? Number(effectiveParams.offset || 0) + SELLER_PAGE_SIZE : null)
