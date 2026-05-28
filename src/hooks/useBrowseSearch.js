@@ -335,16 +335,12 @@ export default function useBrowseSearch(initialParams = {}) {
     }
 
     const cacheKey = buildCacheKey(effectiveParams);
-    const sellerWindowCache = sellerOnlySearch ? findSellerWindowCacheEntry(cache, effectiveParams) : null;
 
-    if (!force && (cache[cacheKey] || sellerWindowCache)) {
-      const cached = cache[cacheKey] || sellerWindowCache;
+    if (!force && cache[cacheKey]) {
+      const cached = cache[cacheKey];
       const cachedQueryKind = String(cached?.queryKind || '').trim().toLowerCase();
 
-      // Seller-click handoff may use cache only when the cached query is also pure seller-only.
-      if (sellerOnlySearch && cachedQueryKind !== 'seller_only') {
-        // Fall through to backend fetch.
-      } else {
+      if (!sellerOnlySearch || cachedQueryKind === 'seller_only') {
         const sellerOnly = sellerOnlySearch;
         const cachedDataSource = String(cached.dataSource || '').trim().toLowerCase();
         const shouldForceDeferredSold = sellerOnly && cachedDataSource !== 'sql';
