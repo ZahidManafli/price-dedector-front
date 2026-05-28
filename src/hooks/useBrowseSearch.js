@@ -168,12 +168,38 @@ function loadPersistedState(initialParams = {}) {
 
 function persistState(params, cache) {
   if (typeof window === 'undefined') return;
+  // Avoid persisting potentially large `sellerWindowItemSummaries` payloads.
+  // Keep them in-memory (cache) only to prevent localStorage quota exhaustion.
+  const safeCache = Object.fromEntries(
+    Object.entries(cache || {}).map(([k, v]) => {
+      if (!v || typeof v !== 'object') return [k, v];
+      const copy = { ...v };
+      if (Array.isArray(copy.sellerWindowItemSummaries)) {
+        delete copy.sellerWindowItemSummaries;
+      }
+      return [k, copy];
+    })
+  );
+
   const payload = {
     params,
-    cache,
+    cache: safeCache,
     savedAt: new Date().toISOString(),
   };
-  window.localStorage.setItem(MARKET_ANALYSIS_STORAGE_KEY, JSON.stringify(payload));
+
+  try {
+    window.localStorage.setItem(MARKET_ANALYSIS_STORAGE_KEY, JSON.stringify(payload));
+  } catch (err) {
+    // Best-effort: if persisting still fails, remove cache and persist only params.
+    try {
+      window.localStorage.setItem(
+        MARKET_ANALYSIS_STORAGE_KEY,
+        JSON.stringify({ params, savedAt: new Date().toISOString() })
+      );
+    } catch (e) {
+      // give up silently to avoid crashing the app
+    }
+  }
 }
 
 function trimCache(cache, maxEntries = 30) {
