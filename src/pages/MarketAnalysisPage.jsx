@@ -41,6 +41,19 @@ function normalizeSellerName(value) {
   return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
+function isPureSellerOnlySearch(params = {}) {
+  return (
+    String(params?.sellerUsername || '').trim() !== '' &&
+    String(params?.q || '').trim() === '' &&
+    String(params?.categoryId || '').trim() === '' &&
+    String(params?.condition || 'ALL').trim().toUpperCase() === 'ALL' &&
+    String(params?.minPrice || '').trim() === '' &&
+    String(params?.maxPrice || '').trim() === '' &&
+    String(params?.buyingOptions || '').trim() === '' &&
+    params?.freeShipping !== true
+  );
+}
+
 function median(values) {
   if (!values.length) return 0;
   const sorted = [...values].sort((a, b) => a - b);
@@ -755,7 +768,7 @@ export default function MarketAnalysisPage() {
       offset: nextPageOffset,
     };
     setParams(nextParams);
-    runSearch(nextParams);
+    runSearch(nextParams, { force: isPureSellerOnlySearch(nextParams) });
   };
 
   const onPrevPage = () => {
@@ -764,7 +777,7 @@ export default function MarketAnalysisPage() {
       offset: Math.max(0, Number(params.offset || 0) - Number(params.limit || 12)),
     };
     setParams(nextParams);
-    runSearch(nextParams);
+    runSearch(nextParams, { force: isPureSellerOnlySearch(nextParams) });
   };
 
   // ── Bucket helpers ───────────────────────────────────────────────────────────
