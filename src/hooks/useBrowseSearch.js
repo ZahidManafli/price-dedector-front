@@ -420,7 +420,9 @@ export default function useBrowseSearch(initialParams = {}) {
         ? true
         : (Boolean(payload?.soldQuantityDeferred) || hasZeroSoldRefetch);
       const sellerWindowStartOffset = sellerOnly ? Number(payload?.sellerWindowStartOffset ?? effectiveParams.offset ?? 0) : null;
-      const sellerWindowSize = sellerOnly ? hydratedItems.length : null;
+      const sellerWindowSize = sellerOnly
+        ? Number(payload?.sellerWindowSize || sellerWindowItemSummaries?.length || hydratedItems.length || 0)
+        : null;
 
       const displayedResults = sellerOnly ? hydratedItems.slice(0, SELLER_PAGE_SIZE) : hydratedItems;
       setResults(displayedResults);
