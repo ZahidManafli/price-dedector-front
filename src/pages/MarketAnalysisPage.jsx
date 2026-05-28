@@ -768,7 +768,7 @@ export default function MarketAnalysisPage() {
       offset: nextPageOffset,
     };
     setParams(nextParams);
-    runSearch(nextParams, { force: isPureSellerOnlySearch(nextParams) });
+    runSearch(nextParams);
   };
 
   const onPrevPage = () => {
@@ -777,7 +777,7 @@ export default function MarketAnalysisPage() {
       offset: Math.max(0, Number(params.offset || 0) - Number(params.limit || 12)),
     };
     setParams(nextParams);
-    runSearch(nextParams, { force: isPureSellerOnlySearch(nextParams) });
+    runSearch(nextParams);
   };
 
   // ── Bucket helpers ───────────────────────────────────────────────────────────
