@@ -163,11 +163,6 @@ export default function OrdersPage() {
       return matchQuery && matchFulfillment && matchPayment;
     });
     const compare = (a, b) => {
-      if (sortKey === 'creationDate') {
-        const dateA = new Date(a?.creationDate || 0).getTime();
-        const dateB = new Date(b?.creationDate || 0).getTime();
-        return dateB - dateA; // New orders first (descending)
-      }
       if (sortKey === 'orderId') return String(a?.orderId || '').localeCompare(String(b?.orderId || ''));
       if (sortKey === 'payment') {
         return String(a?.orderPaymentStatus || '').localeCompare(String(b?.orderPaymentStatus || ''));
@@ -177,6 +172,11 @@ export default function OrdersPage() {
       }
       if (sortKey === 'total') {
         return Number(a?.pricingSummary?.total?.value ?? -1) - Number(b?.pricingSummary?.total?.value ?? -1);
+      }
+      if (sortKey === 'creationDate') {
+        const dateA = new Date(a?.creationDate || 0).getTime();
+        const dateB = new Date(b?.creationDate || 0).getTime();
+        return dateA - dateB;
       }
       return 0;
     };
@@ -510,10 +510,7 @@ export default function OrdersPage() {
                 isDark ? 'bg-slate-900/30 border-slate-800' : 'bg-white border-slate-200'
               }`}
             >
-          <div className="overflcreationDate', 'Date')}
-                  </th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    {sortLabel('ow-x-auto">
+          <div className="overflow-x-auto">
             <table className={`min-w-full ${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
               <thead className={isDark ? 'bg-slate-800/70' : 'bg-slate-50'}>
                 <tr>
@@ -550,9 +547,6 @@ export default function OrdersPage() {
                   return (
                     <React.Fragment key={id}>
                       <tr className={isDark ? 'bg-slate-900' : 'bg-white'}>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                          {createdAt}
-                        </td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                           <div className="flex items-center gap-3">
                             <div
