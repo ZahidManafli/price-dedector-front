@@ -548,11 +548,11 @@ export default function OrdersPage() {
                   const createdAt = order?.creationDate ? new Date(order.creationDate).toLocaleString() : '-';
 
                   return (
-                          {createdAt}
-                        </td>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                     <React.Fragment key={id}>
                       <tr className={isDark ? 'bg-slate-900' : 'bg-white'}>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                          {createdAt}
+                        </td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                           <div className="flex items-center gap-3">
                             <div
@@ -604,7 +604,7 @@ export default function OrdersPage() {
                           </button>
                         </td>
                       </tr>
-                    </React.Fragmen7>
+                    </React.Fragment>
                   );
                 })}
 
