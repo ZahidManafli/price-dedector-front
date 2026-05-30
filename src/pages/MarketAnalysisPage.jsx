@@ -808,6 +808,11 @@ export default function MarketAnalysisPage() {
   const typeButtonBase = 'rounded-lg px-4 py-2 text-sm font-semibold transition border border-slate-200 dark:border-slate-700';
   const typeButtonActive = 'bg-blue-600 text-white border-blue-600 shadow-sm';
   const typeButtonInactive = 'bg-white text-slate-700 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800';
+  const isFastProductNameSearch = (
+    String(searchType || '').trim().toLowerCase() === 'fast' &&
+    Boolean(String(params?.q || '').trim()) &&
+    !Boolean(String(params?.sellerUsername || '').trim())
+  );
 
   return (
     <div className="page-shell space-y-4">
@@ -1103,8 +1108,14 @@ export default function MarketAnalysisPage() {
                         </th>
                         {searchType === 'fast' ? (
                           <>
-                            <th className="text-left p-3">Last 14d</th>
-                            <th className="text-left p-3">Last 30d</th>
+                            {isFastProductNameSearch ? (
+                              <th className="text-left p-3">Total Sold</th>
+                            ) : (
+                              <>
+                                <th className="text-left p-3">Last 14d</th>
+                                <th className="text-left p-3">Last 30d</th>
+                              </>
+                            )}
                           </>
                         ) : (
                           <th className="text-left p-3">
@@ -1179,20 +1190,32 @@ export default function MarketAnalysisPage() {
                           
                           {searchType === 'fast' ? (
                             <>
-                              <td className="p-3 font-medium">
-                                {item?.soldLoading ? (
-                                  <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent align-middle" />
-                                ) : (
-                                  Number(item.soldQuantity14d || 0)
-                                )}
-                              </td>
-                              <td className="p-3 font-medium">
-                                {item?.soldLoading ? (
-                                  <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent align-middle" />
-                                ) : (
-                                  Number(item.soldQuantity30d || 0)
-                                )}
-                              </td>
+                              {isFastProductNameSearch ? (
+                                <td className="p-3 font-medium">
+                                  {item?.soldLoading ? (
+                                    <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-violet-500 border-t-transparent align-middle" />
+                                  ) : (
+                                    Number(item.totalSoldQuantity || 0)
+                                  )}
+                                </td>
+                              ) : (
+                                <>
+                                  <td className="p-3 font-medium">
+                                    {item?.soldLoading ? (
+                                      <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent align-middle" />
+                                    ) : (
+                                      Number(item.soldQuantity14d || 0)
+                                    )}
+                                  </td>
+                                  <td className="p-3 font-medium">
+                                    {item?.soldLoading ? (
+                                      <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent align-middle" />
+                                    ) : (
+                                      Number(item.soldQuantity30d || 0)
+                                    )}
+                                  </td>
+                                </>
+                              )}
                             </>
                           ) : (
                             <td className="p-3 font-medium">

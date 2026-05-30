@@ -215,7 +215,13 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSelle
   const fastSold30d = toMetricNumber(
     sales?.thirtyDaysSales ?? sales?.thirtyDays ?? sales?.days30 ?? sales?.month ?? sales?.monthly ?? summary?.thirtyDaysSales
   );
-  const fastTotalSold = Number(summary?.quantitySold);
+  const fastTotalSold = toMetricNumber(
+    summary?.totalQuantitySold ??
+    summary?.totalSoldQuantity ??
+    sales?.totalQuantitySold ??
+    sales?.totalSoldQuantity ??
+    summary?.quantitySold
+  );
   const fastPrice = Number(summary?.currentPrice);
   const soldQuantity = soldRaw;
   const soldQuantity7d = Number.isFinite(fastSold7d) ? Math.max(0, fastSold7d) : (soldQuantity === null ? null : (Number.isFinite(soldQuantity) ? soldQuantity : 0));
@@ -233,7 +239,7 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSelle
     ? Math.max(0, fastTotalSold)
     : (summary?.totalSoldQuantity != null && summary.totalSoldQuantity !== ''
       ? Number(summary.totalSoldQuantity)
-      : (soldQuantity === null ? null : (Number.isFinite(soldQuantity) ? soldQuantity : 0)));
+      : (soldQuantity30d ?? soldQuantity14d ?? soldQuantity7d ?? (soldQuantity === null ? null : (Number.isFinite(soldQuantity) ? soldQuantity : 0))));
 
   return {
     id: normalizedId || rawItemId,
