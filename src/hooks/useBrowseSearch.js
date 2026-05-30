@@ -224,7 +224,14 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSelle
     sales?.totalSoldQuantity ??
     summary?.quantitySold
   );
-  const fastPrice = Number(summary?.currentPrice);
+  const fastPrice = Number(
+    summary?.currentPrice ??
+    summary?.price?.value ??
+    summary?.price ??
+    summary?.raw?.currentPrice ??
+    summary?.raw?.price?.value ??
+    summary?.raw?.price
+  );
   const soldQuantity = soldRaw;
   const soldQuantity7d = Number.isFinite(fastSold7d) ? Math.max(0, fastSold7d) : (soldQuantity === null ? null : (Number.isFinite(soldQuantity) ? soldQuantity : 0));
   const soldQuantity14d = Number.isFinite(fastSold14d)
@@ -248,7 +255,7 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSelle
     legacyId: summary?.legacyItemId || '',
     title: summary?.title || 'Untitled listing',
     imageUrl: summary?.image?.imageUrl || summary?.imageUrl || summary?.images || summary?.thumbnailImages?.[0]?.imageUrl || summary?.ebayImage || '',
-    priceValue: Number.isFinite(fastPrice) ? fastPrice : Number(summary?.price?.value || 0),
+    priceValue: Number.isFinite(fastPrice) ? fastPrice : Number(summary?.price?.value ?? summary?.price ?? 0),
     priceCurrency: summary?.price?.currency || summary?.currency || 'USD',
     shippingValue: Number(summary?.shippingOptions?.[0]?.shippingCost?.value || 0),
     soldQuantity: soldQuantity7d === null ? null : (Number.isFinite(soldQuantity7d) ? soldQuantity7d : 0),
