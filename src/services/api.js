@@ -241,6 +241,12 @@ export const adminAPI = {
   listMaintenanceWindows: () => api.get('/admin/maintenance'),
   createMaintenanceWindow: (data) => api.post('/admin/maintenance', data),
   updateMaintenanceFlag: (data) => api.patch('/admin/maintenance/flag', data),
+  // Zik accounts management
+  listZikAccounts: () => api.get('/admin/zik-accounts'),
+  createZikAccount: (data) => api.post('/admin/zik-accounts', data),
+  updateZikAccount: (id, data) => api.put(`/admin/zik-accounts/${encodeURIComponent(id)}`, data),
+  deleteZikAccount: (id) => api.delete(`/admin/zik-accounts/${encodeURIComponent(id)}`),
+  setActiveZikAccount: (id) => api.post(`/admin/zik-accounts/${encodeURIComponent(id)}/set-active`),
 };
 
 export const maintenanceAPI = {

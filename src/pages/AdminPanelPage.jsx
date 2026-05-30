@@ -5,6 +5,7 @@ import { adminAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import PartnersManagement from '../components/PartnersManagement';
+import ZikAccounts from '../components/ZikAccounts';
 import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle, CalendarClock, Clock3, ShieldAlert } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { TAB_KEYS, USER_DEFAULT_ALLOWED_TABS } from '../utils/planAccess';
@@ -784,6 +785,12 @@ export default function AdminPanelPage() {
           >
             {t('adminPanelPage.requestsTab')}
           </button>
+            <button
+              className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'zik-accounts' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
+              onClick={() => setActiveTab('zik-accounts')}
+            >
+              Zik Accounts
+            </button>
           <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'plans' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
             onClick={() => setActiveTab('plans')}
@@ -1402,6 +1409,12 @@ export default function AdminPanelPage() {
         {!loading && activeTab === 'partners' && (
           <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
             <PartnersManagement />
+          </div>
+        )}
+
+        {!loading && activeTab === 'zik-accounts' && (
+          <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
+            <ZikAccounts />
           </div>
         )}
 
