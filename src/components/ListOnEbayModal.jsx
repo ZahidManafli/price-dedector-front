@@ -11,6 +11,13 @@ function markdownToPlainText(md) {
     .replace(/\s+/g, ' ')
     .trim();
 }
+
+function normalizeEbayListingUrl(url) {
+  const value = String(url || '').trim();
+  if (!value) return '';
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  return `https://${value.replace(/^\/+/, '')}`;
+}
 /**
  * ListOnEbayModal.jsx  (updated)
  *
@@ -333,6 +340,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
       item.itemUrl || item.itemWebUrl || item.maxDimensionImageUrl || item.url || item.raw?.itemWebUrl || item.raw?.itemUrl || item.raw?.productUrl ||
       (item.legacyItemId ? `https://www.ebay.com/itm/${item.legacyItemId}` : null) ||
       (item.itemId ? `https://www.ebay.com/itm/${item.itemId}` : null);
+    const normalizedItemUrl = normalizeEbayListingUrl(itemUrl);
 
     const upscale = (url) => String(url || '').replace(/\/s-l\d+(\.\w+)(\?.*)?$/, '/s-l1600$1$2');
     const initialUrls = [];
@@ -345,13 +353,13 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
       setmaxDimensionImageUrls(initialUrls);
     }
 
-    if (!itemUrl) return;
+    if (!normalizedItemUrl) return;
 
     let cancelled = false;
     setLoadingSpecifics(true);
 
     ebayAPI
-      .scrapeItemDetails(itemUrl)
+      .scrapeItemDetails(normalizedItemUrl)
       .then((res) => {
         if (cancelled) return;
         const data = res?.data || {};
