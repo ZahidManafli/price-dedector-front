@@ -1095,11 +1095,12 @@ export default function MarketAnalysisPage() {
                         <th className="text-left p-3">F/Score</th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('soldQuantity')} className="hover:underline">
-                            {renderSortLabel(searchType === 'fast' ? 'Last 14d' : 'Last 7d', 'soldQuantity')}
+                            {renderSortLabel('Last 7d', 'soldQuantity')}
                           </button>
                         </th>
                         {searchType === 'fast' ? (
                           <>
+                            <th className="text-left p-3">Last 14d</th>
                             <th className="text-left p-3">Last 30d</th>
                             <th className="text-left p-3">Total Sold</th>
                           </>
@@ -1170,12 +1171,19 @@ export default function MarketAnalysisPage() {
                                 title={t('marketAnalysisPage.loadingSoldQuantity')}
                               />
                             ) : (
-                              Number(searchType === 'fast' ? (item.soldQuantity14d || 0) : (item.soldQuantity || 0))
+                              Number(item.soldQuantity || 0)
                             )}
                           </td>
                           
                           {searchType === 'fast' ? (
                             <>
+                              <td className="p-3 font-medium">
+                                {item?.soldLoading ? (
+                                  <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent align-middle" />
+                                ) : (
+                                  Number(item.soldQuantity14d || 0)
+                                )}
+                              </td>
                               <td className="p-3 font-medium">
                                 {item?.soldLoading ? (
                                   <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent align-middle" />

@@ -32,6 +32,7 @@ function getDefaultParams(initialParams = {}) {
 function buildCacheKey(rawParams = {}) {
   const p = rawParams || {};
   return JSON.stringify({
+    type: String(p.type || '').trim().toLowerCase(),
     q: String(p.q || '').trim(),
     categoryId: String(p.categoryId || '').trim(),
     condition: String(p.condition || 'ALL').toUpperCase(),
@@ -353,8 +354,10 @@ export default function useBrowseSearch(initialParams = {}) {
   }, [params]);
 
   const searchNow = useCallback(async (nextParams = params, { force = false } = {}) => {
+    const searchType = String(nextParams?.type || '').trim().toLowerCase();
+    const isFastMode = searchType === 'fast';
     const sellerOnlySearch = isPureSellerOnlySearch(nextParams);
-    const effectiveParams = sellerOnlySearch
+    const effectiveParams = sellerOnlySearch && !isFastMode
       ? {
           ...nextParams,
           limit: SELLER_PAGE_SIZE,
@@ -381,8 +384,6 @@ export default function useBrowseSearch(initialParams = {}) {
     if (!force && (cache[cacheKey] || sellerWindowCache)) {
       const cached = cache[cacheKey] || sellerWindowCache;
       const cachedQueryKind = String(cached?.queryKind || '').trim().toLowerCase();
-      const searchType = String(effectiveParams?.type || '').trim().toLowerCase();
-      const isFastMode = searchType === 'fast';
 
       // Seller-click handoff may use cache only when the cached query is also pure seller-only.
       if (sellerOnlySearch && cachedQueryKind !== 'seller_only') {
@@ -396,12 +397,14 @@ export default function useBrowseSearch(initialParams = {}) {
         const nextSoldQuantityDeferred = shouldForceDeferredSold
           ? true
           : (isFastMode ? false : (Boolean(cached.soldQuantityDeferred) || shouldRefetchZeroSold));
-        const sellerSlice = sellerOnly
+        const sellerSlice = sellerOnly && !isFastMode
           ? sliceSellerWindow(cached, effectiveParams)
           : null;
-        const displayedResults = sellerOnly ? (sellerSlice?.pageResults || []) : cachedResults;
+        const displayedResults = sellerOnly
+          ? (isFastMode ? cachedResults : (sellerSlice?.pageResults || []))
+          : cachedResults;
         const nextPageOffset = sellerOnly
-          ? sellerSlice?.nextOffset ?? null
+          ? (isFastMode ? Number(cached.nextOffset || null) : (sellerSlice?.nextOffset ?? null))
           : (Number.isFinite(Number(cached.nextOffset)) ? Number(cached.nextOffset) : null);
 
         setResults(shouldForceDeferredSold ? forceDeferredSellerSold(displayedResults) : displayedResults);
@@ -466,16 +469,16 @@ export default function useBrowseSearch(initialParams = {}) {
         payload = response?.data?.data || {};
         nextCredits = response?.data?.credits || null;
       }
-      const itemSummaries = getSearchResultItems(payload);
       const rawPayload = payload?.raw?.result || payload?.result || null;
+      const itemSummaries = isFastMode && Array.isArray(rawPayload?.data) && rawPayload.data.length > 0
+        ? rawPayload.data
+        : getSearchResultItems(payload);
       const nextDataSource = String(payload?.dataSource || 'external').trim() || 'external';
       const nextNextOffset = Number.isFinite(Number(payload?.nextOffset))
         ? Number(payload.nextOffset)
         : parseNextOffset(payload?.next);
       const sellerOnly = sellerOnlySearch;
       const titleOnly = isPureTitleOnlySearch(effectiveParams);
-      const searchType = String(effectiveParams?.type || '').trim().toLowerCase();
-      const isFastMode = searchType === 'fast';
       const shouldForceDeferredSold = sellerOnly && !isFastMode && nextDataSource !== 'sql';
       const sellerFallbackName = sellerOnly ? String(effectiveParams.sellerUsername || '').trim() : '';
       const sellerFallbackFeedback = Number(rawPayload?.feedback || payload?.feedback || 0);
@@ -498,13 +501,15 @@ export default function useBrowseSearch(initialParams = {}) {
       const nextSoldQuantityDeferred = shouldForceDeferredSold
         ? true
         : (isFastMode ? false : (Boolean(payload?.soldQuantityDeferred) || hasZeroSoldRefetch));
-      const sellerWindowStartOffset = sellerOnly ? Number(effectiveParams.offset || 0) : null;
-      const sellerWindowSize = sellerOnly ? hydratedItems.length : null;
+      const sellerWindowStartOffset = sellerOnly && !isFastMode ? Number(effectiveParams.offset || 0) : null;
+      const sellerWindowSize = sellerOnly && !isFastMode ? hydratedItems.length : null;
 
-      const displayedResults = sellerOnly ? hydratedItems.slice(0, SELLER_PAGE_SIZE) : hydratedItems;
+      const displayedResults = sellerOnly && !isFastMode ? hydratedItems.slice(0, SELLER_PAGE_SIZE) : hydratedItems;
       setResults(displayedResults);
       setTotal(nextTotal);
-      setNextOffset(sellerOnly ? (displayedResults.length === SELLER_PAGE_SIZE ? Number(effectiveParams.offset || 0) + SELLER_PAGE_SIZE : null) : nextNextOffset);
+      setNextOffset(sellerOnly && !isFastMode
+        ? (displayedResults.length === SELLER_PAGE_SIZE ? Number(effectiveParams.offset || 0) + SELLER_PAGE_SIZE : null)
+        : nextNextOffset);
       setRefinement(nextRefinement);
       setCredits(nextCredits);
       setSoldQuantityDeferred(nextSoldQuantityDeferred);
@@ -514,9 +519,9 @@ export default function useBrowseSearch(initialParams = {}) {
         const nextCache = trimCache({
           ...prev,
           [cacheKey]: {
-            results: sellerOnly ? hydratedItems : displayedResults,
+            results: sellerOnly && !isFastMode ? hydratedItems : displayedResults,
             total: nextTotal,
-            nextOffset: sellerOnly
+            nextOffset: sellerOnly && !isFastMode
               ? (displayedResults.length === SELLER_PAGE_SIZE ? Number(effectiveParams.offset || 0) + SELLER_PAGE_SIZE : null)
               : nextNextOffset,
             refinement: nextRefinement,
