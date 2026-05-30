@@ -188,8 +188,16 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false } = {}) {
   const rawItemId = String(summary?.itemId || '').trim();
   const normalizedId = rawItemId.replace(/^v1\|/, '').replace(/\|0$/, '');
   const soldRaw = summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity;
+  const fastSold7d = Number(summary?.sevenDaysSales);
+  const fastSold14d = Number(summary?.fourteenDaysSales);
   const soldQuantity =
     soldRaw === null || soldRaw === undefined || soldRaw === '' ? null : Number(soldRaw || 0);
+  const soldQuantity7d = Number.isFinite(fastSold7d) ? Math.max(0, fastSold7d) : (soldQuantity === null ? null : (Number.isFinite(soldQuantity) ? soldQuantity : 0));
+  const soldQuantity15d = Number.isFinite(fastSold14d)
+    ? Math.max(0, fastSold14d)
+    : (summary?.soldQuantity15d != null && summary.soldQuantity15d !== ''
+      ? Number(summary.soldQuantity15d)
+      : (soldQuantity === null ? null : (Number.isFinite(soldQuantity) ? soldQuantity : 0)));
 
   return {
     id: normalizedId || rawItemId,
@@ -199,7 +207,8 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false } = {}) {
     priceValue: Number(summary?.price?.value || 0),
     priceCurrency: summary?.price?.currency || 'USD',
     shippingValue: Number(summary?.shippingOptions?.[0]?.shippingCost?.value || 0),
-    soldQuantity: soldQuantity === null ? null : (Number.isFinite(soldQuantity) ? soldQuantity : 0),
+    soldQuantity: soldQuantity7d === null ? null : (Number.isFinite(soldQuantity7d) ? soldQuantity7d : 0),
+    soldQuantity15d: soldQuantity15d === null ? null : (Number.isFinite(soldQuantity15d) ? soldQuantity15d : 0),
     condition: summary?.condition || 'Unknown',
     sellerName: summary?.seller?.username || 'Unknown seller',
     sellerFeedback: Number(summary?.seller?.feedbackScore || 0),
@@ -227,7 +236,28 @@ function getSearchResultItems(payload) {
   if (Array.isArray(payload?.rows)) return payload.rows;
   if (Array.isArray(payload?.result?.data)) return payload.result.data;
   if (Array.isArray(payload?.result?.sellers)) return payload.result.sellers;
+  if (Array.isArray(payload?.raw?.result?.data)) return payload.raw.result.data;
+  if (Array.isArray(payload?.raw?.result?.sellers)) return payload.raw.result.sellers;
   return [];
+}
+
+function getSearchResultTotal(payload, fallbackCount = 0) {
+  const candidates = [
+    payload?.total,
+    payload?.recordsFiltered,
+    payload?.recordsTotal,
+    payload?.result?.recordsFiltered,
+    payload?.result?.recordsTotal,
+    payload?.raw?.result?.recordsFiltered,
+    payload?.raw?.result?.recordsTotal,
+  ];
+
+  for (const candidate of candidates) {
+    const value = Number(candidate);
+    if (Number.isFinite(value)) return value;
+  }
+
+  return fallbackCount;
 }
 
 function isPureSellerOnlySearch(params = {}) {
@@ -403,6 +433,7 @@ export default function useBrowseSearch(initialParams = {}) {
         nextCredits = response?.data?.credits || null;
       }
       const itemSummaries = getSearchResultItems(payload);
+      const rawPayload = payload?.raw?.result || payload?.result || null;
       const nextDataSource = String(payload?.dataSource || 'external').trim() || 'external';
       const nextNextOffset = Number.isFinite(Number(payload?.nextOffset))
         ? Number(payload.nextOffset)
@@ -421,7 +452,7 @@ export default function useBrowseSearch(initialParams = {}) {
         };
       });
       const hydratedItems = shouldForceDeferredSold ? forceDeferredSellerSold(normalized) : normalized;
-      const nextTotal = Number(payload?.total || hydratedItems.length || 0);
+      const nextTotal = getSearchResultTotal(payload, hydratedItems.length || 0);
       const nextRefinement = payload?.refinement || null;
       const hasZeroSoldRefetch = normalized.some((item) => item?.shouldRefetchSoldOnZero === true);
       const nextSoldQuantityDeferred = shouldForceDeferredSold
@@ -456,6 +487,7 @@ export default function useBrowseSearch(initialParams = {}) {
             sellerUsername: String(effectiveParams.sellerUsername || '').trim(),
             sellerWindowStartOffset,
             sellerWindowSize,
+            raw: rawPayload,
             savedAtMs: Date.now(),
           },
         });
