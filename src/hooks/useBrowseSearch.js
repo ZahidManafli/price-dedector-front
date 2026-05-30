@@ -184,7 +184,7 @@ function trimCache(cache, maxEntries = 30) {
   return Object.fromEntries(sorted.slice(0, maxEntries));
 }
 
-function normalizeItem(summary, { shouldRefetchSoldOnZero = false } = {}) {
+function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSellerName = '', forceSellerName = false } = {}) {
   const rawItemId = String(summary?.itemId || '').trim();
   const normalizedId = rawItemId.replace(/^v1\|/, '').replace(/\|0$/, '');
   const soldRaw = summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity;
@@ -210,7 +210,18 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false } = {}) {
     soldQuantity: soldQuantity7d === null ? null : (Number.isFinite(soldQuantity7d) ? soldQuantity7d : 0),
     soldQuantity15d: soldQuantity15d === null ? null : (Number.isFinite(soldQuantity15d) ? soldQuantity15d : 0),
     condition: summary?.condition || 'Unknown',
-    sellerName: summary?.seller?.username || 'Unknown seller',
+    sellerName: (
+      forceSellerName
+        ? String(fallbackSellerName || '').trim()
+        : (
+          summary?.seller?.username ||
+          summary?.sellerName ||
+          summary?.sellerUsername ||
+          summary?.raw?.sellerName ||
+          summary?.raw?.sellerUsername ||
+          String(fallbackSellerName || '').trim()
+        )
+    ) || 'Unknown seller',
     sellerFeedback: Number(summary?.seller?.feedbackScore || 0),
     sellerCountryCode:
       summary?.itemLocation?.country ||
@@ -443,8 +454,12 @@ export default function useBrowseSearch(initialParams = {}) {
       const searchType = String(effectiveParams?.type || '').trim().toLowerCase();
       const isFastMode = searchType === 'fast';
       const shouldForceDeferredSold = sellerOnly && !isFastMode && nextDataSource !== 'sql';
+      const sellerFallbackName = sellerOnly ? String(effectiveParams.sellerUsername || '').trim() : '';
       const normalized = itemSummaries.map((summary) => {
-        const baseItem = normalizeItem(summary);
+        const baseItem = normalizeItem(summary, {
+          fallbackSellerName: sellerFallbackName,
+          forceSellerName: sellerOnly && isFastMode,
+        });
         const shouldRefetchSoldOnZero = titleOnly && Number(baseItem?.soldQuantity || 0) === 0;
         return {
           ...baseItem,
