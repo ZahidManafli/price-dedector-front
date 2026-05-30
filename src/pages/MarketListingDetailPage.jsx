@@ -876,7 +876,7 @@ export default function MarketListingDetailPage() {
                           <td className="p-3">
                             <div className="flex gap-2 flex-wrap">
                               <Link
-                                to={`/market-analysis/item/${encodeURIComponent(item.id)}?sellerUsername=${encodeURIComponent(detail?.seller?.username || '')}`}
+                                to={`/market-analysis/item/${encodeURIComponent(item.id)}?sellerUsername=${encodeURIComponent(selectedSellerUsername || '')}${isFastMode ? '&type=fast' : ''}`}
                                 className="btn-primary"
                               >
                                 {t('marketListingDetailPage.details')}
