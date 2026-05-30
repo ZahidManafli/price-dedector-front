@@ -361,6 +361,28 @@ export default function MarketAnalysisPage() {
     window.open(`/market-analysis?${query.toString()}`, '_blank', 'noopener,noreferrer');
   };
 
+  const resolvePurchaseHistoryItemId = useCallback((item) => {
+    const candidates = [
+      item?.legacyId,
+      item?.legacyItemId,
+      item?.raw?.legacyItemId,
+      item?.raw?.listingId,
+      item?.id,
+      item?.raw?.itemId,
+      item?.raw?.itemID,
+      item?.itemWebUrl,
+      item?.raw?.itemWebUrl,
+      item?.raw?.productUrl,
+    ];
+
+    for (const candidate of candidates) {
+      const normalized = normalizeNumericItemId(candidate);
+      if (normalized) return normalized;
+    }
+
+    return '';
+  }, []);
+
   const handleViewHistory = useCallback(async (item) => {
     const itemId = resolvePurchaseHistoryItemId(item);
     if (!itemId) return;
@@ -408,28 +430,6 @@ export default function MarketAnalysisPage() {
       />
     );
   };
-
-  const resolvePurchaseHistoryItemId = useCallback((item) => {
-    const candidates = [
-      item?.legacyId,
-      item?.legacyItemId,
-      item?.raw?.legacyItemId,
-      item?.raw?.listingId,
-      item?.id,
-      item?.raw?.itemId,
-      item?.raw?.itemID,
-      item?.itemWebUrl,
-      item?.raw?.itemWebUrl,
-      item?.raw?.productUrl,
-    ];
-
-    for (const candidate of candidates) {
-      const normalized = normalizeNumericItemId(candidate);
-      if (normalized) return normalized;
-    }
-
-    return '';
-  }, []);
 
   useEffect(() => {
     const presetSearch = location.state?.presetSearch;
