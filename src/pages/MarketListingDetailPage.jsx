@@ -25,20 +25,20 @@ function normalizeSummary(summary) {
   const sales = typeof salesRaw === 'number' ? salesRaw : Number(salesRaw);
   const totalQuantitySold = summary?.totalQuantitySold ?? summary?.totalSoldQuantity ?? summary?.quantitySold;
   return {
-    id: summary?.itemId || '',
-    legacyItemId: normalizeNumericItemId(summary?.legacyItemId || summary?.itemId),
+    id: summary?.itemId || summary?.itemID || summary?.legacyItemId || '',
+    legacyItemId: normalizeNumericItemId(summary?.legacyItemId || summary?.itemId || summary?.itemID),
     title: summary?.title || 'Untitled listing',
     imageUrl: summary?.image?.imageUrl || summary?.imageUrl || summary?.images || summary?.thumbnailImages?.[0]?.imageUrl || summary?.ebayImage || '',
     priceValue: Number(summary?.price?.value ?? summary?.currentPrice ?? summary?.price ?? 0),
     shippingValue: Number(summary?.shippingOptions?.[0]?.shippingCost?.value || 0),
-    soldQuantity: normalizeSoldQuantity(summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity ?? sales),
+    soldQuantity: normalizeSoldQuantity(summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity ?? summary?.sevenDaysSales ?? sales),
     soldQuantity14d: normalizeSoldQuantity(summary?.fourteenDaysSales),
     soldQuantity30d: normalizeSoldQuantity(summary?.thirtyDaysSales),
     totalSoldQuantity: normalizeSoldQuantity(totalQuantitySold),
     condition: summary?.condition || 'Unknown',
     sellerName: summary?.seller?.username || summary?.sellerName || summary?.sellerUsername || '',
     sellerFeedback: Number(summary?.seller?.feedbackScore || summary?.feedbackScore || summary?.feedBackScore || summary?.feedback || 0),
-    sellerCountryCode: summary?.itemLocation?.country || summary?.itemLocation?.countryCode || summary?.seller?.location?.country || summary?.seller?.countryCode || summary?.countryCode || '',
+    sellerCountryCode: summary?.itemLocation?.country || summary?.itemLocation?.countryCode || summary?.seller?.location?.country || summary?.seller?.countryCode || summary?.shippingCountry || summary?.countryCode || '',
     itemWebUrl: summary?.itemWebUrl || summary?.itemAffiliateWebUrl || summary?.productUrl || '',
   };
 }
@@ -287,7 +287,13 @@ export default function MarketListingDetailPage() {
       });
       const payload = response?.data?.data || {};
       const rows = isFastMode
-        ? (Array.isArray(payload?.rows) ? payload.rows : (Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : []))
+        ? (
+          Array.isArray(payload?.rows) ? payload.rows :
+          Array.isArray(payload?.itemSummaries) ? payload.itemSummaries :
+          Array.isArray(payload?.raw?.result?.data) ? payload.raw.result.data :
+          Array.isArray(payload?.result?.data) ? payload.result.data :
+          []
+        )
         : (Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : []);
       const normalizedRows = rows.map(normalizeSummary);
       setSellerListings(normalizedRows);
@@ -295,7 +301,12 @@ export default function MarketListingDetailPage() {
       setSellerPendingSoldItems(isFastMode ? [] : normalizedRows);
       setSellerSoldStatsByItemId({});
       setSellerSoldLoadingByItemId({});
-      setSellerTotal(Number(payload?.total || 0));
+      setSellerTotal(Number(
+        (isFastMode
+          ? (payload?.raw?.result?.recordsFiltered ?? payload?.raw?.result?.recordsTotal ?? payload?.total)
+          : payload?.total)
+        || normalizedRows.length || 0
+      ));
       setSellerOffset(nextOffset);
     } catch (err) {
       setSellerError(err?.response?.data?.error || err?.message || t('marketListingDetailPage.failedToLoadSellerListings'));
