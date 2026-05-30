@@ -706,7 +706,12 @@ export default function MarketAnalysisPage() {
     const query = new URLSearchParams();
     if (params.q) query.set('q', params.q);
     if (params.categoryId) query.set('categoryId', params.categoryId);
-    if (params.sellerUsername) query.set('sellerUsername', params.sellerUsername);
+    if (searchType === 'fast') {
+      query.set('type', 'fast');
+      query.set('sellerUsername', String(item?.sellerName || params.sellerUsername || '').trim());
+    } else if (params.sellerUsername) {
+      query.set('sellerUsername', params.sellerUsername);
+    }
     navigate(`/market-analysis/item/${encodeURIComponent(item.id)}${query.toString() ? `?${query.toString()}` : ''}`);
   };
 

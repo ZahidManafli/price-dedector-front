@@ -21,16 +21,25 @@ function normalizeSoldQuantity(value) {
 }
 
 function normalizeSummary(summary) {
+  const salesRaw = summary?.sales ?? summary?.raw?.sales;
+  const sales = typeof salesRaw === 'number' ? salesRaw : Number(salesRaw);
+  const totalQuantitySold = summary?.totalQuantitySold ?? summary?.totalSoldQuantity ?? summary?.quantitySold;
   return {
     id: summary?.itemId || '',
     legacyItemId: normalizeNumericItemId(summary?.legacyItemId || summary?.itemId),
     title: summary?.title || 'Untitled listing',
-    imageUrl: summary?.image?.imageUrl || summary?.thumbnailImages?.[0]?.imageUrl || '',
-    priceValue: Number(summary?.price?.value || 0),
+    imageUrl: summary?.image?.imageUrl || summary?.imageUrl || summary?.images || summary?.thumbnailImages?.[0]?.imageUrl || summary?.ebayImage || '',
+    priceValue: Number(summary?.price?.value ?? summary?.currentPrice ?? summary?.price ?? 0),
     shippingValue: Number(summary?.shippingOptions?.[0]?.shippingCost?.value || 0),
-    soldQuantity: normalizeSoldQuantity(summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity),
+    soldQuantity: normalizeSoldQuantity(summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity ?? sales),
+    soldQuantity14d: normalizeSoldQuantity(summary?.fourteenDaysSales),
+    soldQuantity30d: normalizeSoldQuantity(summary?.thirtyDaysSales),
+    totalSoldQuantity: normalizeSoldQuantity(totalQuantitySold),
     condition: summary?.condition || 'Unknown',
-    itemWebUrl: summary?.itemWebUrl || summary?.itemAffiliateWebUrl || '',
+    sellerName: summary?.seller?.username || summary?.sellerName || summary?.sellerUsername || '',
+    sellerFeedback: Number(summary?.seller?.feedbackScore || summary?.feedbackScore || summary?.feedBackScore || summary?.feedback || 0),
+    sellerCountryCode: summary?.itemLocation?.country || summary?.itemLocation?.countryCode || summary?.seller?.location?.country || summary?.seller?.countryCode || summary?.countryCode || '',
+    itemWebUrl: summary?.itemWebUrl || summary?.itemAffiliateWebUrl || summary?.productUrl || '',
   };
 }
 
@@ -48,6 +57,8 @@ export default function MarketListingDetailPage() {
   const { itemId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const searchType = String(searchParams.get('type') || '').trim().toLowerCase();
+  const isFastMode = searchType === 'fast';
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -76,10 +87,12 @@ export default function MarketListingDetailPage() {
     const q = searchParams.get('q') || '';
     const categoryId = searchParams.get('categoryId') || '';
     const sellerUsername = searchParams.get('sellerUsername') || '';
+    const type = searchParams.get('type') || '';
     const params = new URLSearchParams();
     if (q) params.set('q', q);
     if (categoryId) params.set('categoryId', categoryId);
     if (sellerUsername) params.set('sellerUsername', sellerUsername);
+    if (type) params.set('type', type);
     return params.toString();
   }, [searchParams]);
 
@@ -140,6 +153,7 @@ export default function MarketListingDetailPage() {
       ''
   );
   const detailAmazonSearchUrl = buildAmazonSearchUrlFromTitle(detail?.title);
+  const selectedSellerUsername = String(searchParams.get('sellerUsername') || detail?.seller?.username || '').trim();
   const sellerSortOptions = [
     { value: 'soldQuantity', label: t('marketListingDetailPage.soldQty') },
     { value: 'title', label: t('marketListingDetailPage.title') },
@@ -253,7 +267,7 @@ export default function MarketListingDetailPage() {
   };
 
   const handleLoadSellerListings = async (nextOffset = 0) => {
-    const sellerUsername = String(detail?.seller?.username || '').trim();
+    const sellerUsername = selectedSellerUsername;
     if (!sellerUsername) {
       setSellerError(t('marketListingDetailPage.sellerUsernameUnavailable'));
       return;
@@ -267,16 +281,17 @@ export default function MarketListingDetailPage() {
         sellerUsername,
         limit: sellerLimit,
         offset: nextOffset,
-        fieldgroups: 'EXTENDED',
+        fieldgroups: isFastMode ? 'MATCHING_ITEMS' : 'EXTENDED',
+        type: isFastMode ? 'fast' : 'slow',
       });
       const payload = response?.data?.data || {};
-      const rows = Array.isArray(payload?.itemSummaries)
-        ? payload.itemSummaries
-        : [];
+      const rows = isFastMode
+        ? (Array.isArray(payload?.rows) ? payload.rows : (Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : []))
+        : (Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : []);
       const normalizedRows = rows.map(normalizeSummary);
       setSellerListings(normalizedRows);
       setSellerSoldQuantityDeferred(false);
-      setSellerPendingSoldItems(normalizedRows);
+      setSellerPendingSoldItems(isFastMode ? [] : normalizedRows);
       setSellerSoldStatsByItemId({});
       setSellerSoldLoadingByItemId({});
       setSellerTotal(Number(payload?.total || 0));
@@ -347,12 +362,18 @@ export default function MarketListingDetailPage() {
     const hydratedSellerListings = sellerListings.map((item) => {
       const key = String(item?.id || '').trim();
       const stats = sellerSoldStatsByItemId[key];
+      const fastRow7d = item?.soldQuantity ?? item?.sold7d ?? 0;
+      const fastRow14d = item?.soldQuantity14d ?? item?.sold14d ?? 0;
+      const fastRow30d = item?.soldQuantity30d ?? item?.sold30d ?? 0;
+      const fastRowTotal = item?.totalSoldQuantity ?? 0;
 
       return {
         ...item,
-        sold7d: stats?.sold7d ?? 0,
-        sold15d: stats?.sold15d ?? 0,
-        soldLoading: Boolean(sellerSoldLoadingByItemId[key]),
+        sold7d: isFastMode ? fastRow7d : (stats?.sold7d ?? 0),
+        sold14d: isFastMode ? fastRow14d : (stats?.sold15d ?? 0),
+        sold30d: isFastMode ? fastRow30d : 0,
+        totalSoldQuantity: isFastMode ? fastRowTotal : 0,
+        soldLoading: isFastMode ? false : Boolean(sellerSoldLoadingByItemId[key]),
       };
     });
 
@@ -386,7 +407,7 @@ export default function MarketListingDetailPage() {
     });
 
     return data;
-  }, [sellerListings, sellerSortConfig, sellerSoldStatsByItemId, sellerSoldLoadingByItemId]);
+  }, [sellerListings, sellerSortConfig, sellerSoldStatsByItemId, sellerSoldLoadingByItemId, isFastMode]);
 
   const toggleSellerSort = (key) => {
     setSellerSortConfig((prev) => {
@@ -418,11 +439,12 @@ export default function MarketListingDetailPage() {
   };
 
   useEffect(() => {
-    if (!detail?.seller?.username) return;
+    if (!selectedSellerUsername) return;
     handleLoadSellerListings(0);
-  }, [detail?.seller?.username]);
+  }, [selectedSellerUsername, isFastMode]);
 
   useEffect(() => {
+    if (isFastMode) return undefined;
     if (!Array.isArray(sellerPendingSoldItems) || !sellerPendingSoldItems.length) return;
     if (sellerPurchaseHistoryQueueRef.current) return;
   
@@ -496,7 +518,7 @@ export default function MarketListingDetailPage() {
       sellerPurchaseHistoryQueueRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sellerPendingSoldItems]);
+  }, [sellerPendingSoldItems, isFastMode]);
 
   const renderSellerSoldValue = (item, type = '7d') => {
     const key = String(item?.id || '').trim();
@@ -510,11 +532,19 @@ export default function MarketListingDetailPage() {
       );
     }
   
-    if (type === '15d') {
-      return String(Number(item?.sold15d || 0));
+    if (type === '14d') {
+      return String(Number(item?.soldQuantity14d ?? item?.sold15d ?? 0));
+    }
+
+    if (type === '30d') {
+      return String(Number(item?.soldQuantity30d || 0));
+    }
+
+    if (type === 'total') {
+      return String(Number(item?.totalSoldQuantity || 0));
     }
   
-    return String(Number(item?.sold7d || 0));
+    return String(Number(item?.soldQuantity || item?.sold7d || 0));
   };
 
   if (loading) {
@@ -736,10 +766,13 @@ export default function MarketListingDetailPage() {
                       </button>
                           <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">{item.condition || t('marketListingDetailPage.na')}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
-                        {t('marketListingDetailPage.soldQty')}: <span className="font-semibold">{renderSellerSoldValue(item)}</span>
+                        {t('marketListingDetailPage.soldQty')}: <span className="font-semibold">{renderSellerSoldValue(item, '7d')}</span>
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
-                        15D Sold: <span className="font-semibold">{renderSellerSoldValue(item, '15d')}</span>
+                        14D Sold: <span className="font-semibold">{renderSellerSoldValue(item, '14d')}</span>
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
+                        30D Sold: <span className="font-semibold">{renderSellerSoldValue(item, '30d')}</span>
                       </p>
                       <div className="mt-2 flex items-center gap-2">
                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
@@ -794,9 +827,11 @@ export default function MarketListingDetailPage() {
                             7D Sold
                           </button>
                         </th>
-                        
                         <th className="text-left p-3">
-                          15D Sold
+                          14D Sold
+                        </th>
+                        <th className="text-left p-3">
+                          30D Sold
                         </th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSellerSort('priceValue')} className="hover:underline">
@@ -831,9 +866,11 @@ export default function MarketListingDetailPage() {
                           <td className="p-3 font-medium">
                             {renderSellerSoldValue(item, '7d')}
                           </td>
-                          
                           <td className="p-3 font-medium">
-                            {renderSellerSoldValue(item, '15d')}
+                            {renderSellerSoldValue(item, '14d')}
+                          </td>
+                          <td className="p-3 font-medium">
+                            {renderSellerSoldValue(item, '30d')}
                           </td>
                           <td className="p-3">{formatCurrency(item.priceValue)}</td>
                           <td className="p-3">
