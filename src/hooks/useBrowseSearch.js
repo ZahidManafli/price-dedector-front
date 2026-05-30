@@ -222,6 +222,14 @@ function forceDeferredSellerSold(items = []) {
   }));
 }
 
+function getSearchResultItems(payload) {
+  if (Array.isArray(payload?.itemSummaries)) return payload.itemSummaries;
+  if (Array.isArray(payload?.rows)) return payload.rows;
+  if (Array.isArray(payload?.result?.data)) return payload.result.data;
+  if (Array.isArray(payload?.result?.sellers)) return payload.result.sellers;
+  return [];
+}
+
 function isPureSellerOnlySearch(params = {}) {
   return (
     String(params?.sellerUsername || '').trim() !== '' &&
@@ -309,6 +317,8 @@ export default function useBrowseSearch(initialParams = {}) {
     if (!force && (cache[cacheKey] || sellerWindowCache)) {
       const cached = cache[cacheKey] || sellerWindowCache;
       const cachedQueryKind = String(cached?.queryKind || '').trim().toLowerCase();
+      const searchType = String(effectiveParams?.type || '').trim().toLowerCase();
+      const isFastMode = searchType === 'fast';
 
       // Seller-click handoff may use cache only when the cached query is also pure seller-only.
       if (sellerOnlySearch && cachedQueryKind !== 'seller_only') {
@@ -316,12 +326,12 @@ export default function useBrowseSearch(initialParams = {}) {
       } else {
         const sellerOnly = sellerOnlySearch;
         const cachedDataSource = String(cached.dataSource || '').trim().toLowerCase();
-        const shouldForceDeferredSold = sellerOnly && cachedDataSource !== 'sql';
+        const shouldForceDeferredSold = sellerOnly && !isFastMode && cachedDataSource !== 'sql';
         const cachedResults = Array.isArray(cached.results) ? cached.results : [];
         const shouldRefetchZeroSold = cachedResults.some((item) => item?.shouldRefetchSoldOnZero === true);
         const nextSoldQuantityDeferred = shouldForceDeferredSold
           ? true
-          : (Boolean(cached.soldQuantityDeferred) || shouldRefetchZeroSold);
+          : (isFastMode ? false : (Boolean(cached.soldQuantityDeferred) || shouldRefetchZeroSold));
         const sellerSlice = sellerOnly
           ? sliceSellerWindow(cached, effectiveParams)
           : null;
@@ -392,14 +402,16 @@ export default function useBrowseSearch(initialParams = {}) {
         payload = response?.data?.data || {};
         nextCredits = response?.data?.credits || null;
       }
-      const itemSummaries = Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : [];
+      const itemSummaries = getSearchResultItems(payload);
       const nextDataSource = String(payload?.dataSource || 'external').trim() || 'external';
       const nextNextOffset = Number.isFinite(Number(payload?.nextOffset))
         ? Number(payload.nextOffset)
         : parseNextOffset(payload?.next);
       const sellerOnly = sellerOnlySearch;
       const titleOnly = isPureTitleOnlySearch(effectiveParams);
-      const shouldForceDeferredSold = sellerOnly && nextDataSource !== 'sql';
+      const searchType = String(effectiveParams?.type || '').trim().toLowerCase();
+      const isFastMode = searchType === 'fast';
+      const shouldForceDeferredSold = sellerOnly && !isFastMode && nextDataSource !== 'sql';
       const normalized = itemSummaries.map((summary) => {
         const baseItem = normalizeItem(summary);
         const shouldRefetchSoldOnZero = titleOnly && Number(baseItem?.soldQuantity || 0) === 0;
@@ -414,7 +426,7 @@ export default function useBrowseSearch(initialParams = {}) {
       const hasZeroSoldRefetch = normalized.some((item) => item?.shouldRefetchSoldOnZero === true);
       const nextSoldQuantityDeferred = shouldForceDeferredSold
         ? true
-        : (Boolean(payload?.soldQuantityDeferred) || hasZeroSoldRefetch);
+        : (isFastMode ? false : (Boolean(payload?.soldQuantityDeferred) || hasZeroSoldRefetch));
       const sellerWindowStartOffset = sellerOnly ? Number(effectiveParams.offset || 0) : null;
       const sellerWindowSize = sellerOnly ? hydratedItems.length : null;
 
