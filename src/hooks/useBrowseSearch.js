@@ -205,7 +205,13 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSelle
     (typeof salesRaw === 'number' || typeof salesRaw === 'string') ? salesRaw : null
   );
 
-  const rawItemId = String(summary?.itemId || summary?.itemID || summary?.legacyItemId || '').trim();
+  const rawItemId = String(
+    summary?.itemId ||
+    summary?.itemID ||
+    summary?.listingId ||
+    summary?.legacyItemId ||
+    ''
+  ).trim();
   const normalizedId = rawItemId.replace(/^v1\|/, '').replace(/\|0$/, '');
   const soldRaw = toMetricNumber(summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity);
   const fastSold7d = toMetricNumber(
@@ -252,6 +258,7 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSelle
 
   return {
     id: normalizedId || rawItemId,
+    listingId: String(summary?.listingId || summary?.raw?.listingId || '').trim(),
     legacyId: summary?.legacyItemId || '',
     title: summary?.title || 'Untitled listing',
     imageUrl: summary?.image?.imageUrl || summary?.imageUrl || summary?.images || summary?.thumbnailImages?.[0]?.imageUrl || summary?.ebayImage || '',

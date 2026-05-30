@@ -363,6 +363,7 @@ export default function MarketAnalysisPage() {
 
   const resolvePurchaseHistoryItemId = useCallback((item) => {
     const candidates = [
+      item?.listingId,
       item?.legacyId,
       item?.legacyItemId,
       item?.raw?.legacyItemId,
