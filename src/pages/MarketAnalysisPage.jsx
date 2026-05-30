@@ -127,6 +127,8 @@ export default function MarketAnalysisPage() {
   const [calcAmazonPrice, setCalcAmazonPrice] = useState('');
   const [calcEbayPrice, setCalcEbayPrice] = useState('');
   const [calcAdRate, setCalcAdRate] = useState('0');
+  // Search type: 'slow' uses extension scraping / existing flows, 'fast' uses ZIK via extension
+  const [searchType, setSearchType] = useState(params.type || 'slow');
   const [soldQuantityByKey, setSoldQuantityByKey] = useState({});
   const [soldQuantity15dByKey, setSoldQuantity15dByKey] = useState({});
   const [soldLoadingByKey, setSoldLoadingByKey] = useState({});
@@ -325,8 +327,9 @@ export default function MarketAnalysisPage() {
     (Number.isFinite(Number(nextOffset)) || currentPageSize >= Number(params.limit || 12) || params.offset + params.limit < (total || 0));
 
   const runSearch = async (nextParams, { force = false } = {}) => {
-    rememberSearch(nextParams);
-    await searchNow(nextParams, { force });
+    const nextWithType = { ...nextParams, type: nextParams.type ?? searchType };
+    rememberSearch(nextWithType);
+    await searchNow(nextWithType, { force });
   };
 
   const serializeSearchParams = (nextParams = {}) => {
@@ -347,6 +350,8 @@ export default function MarketAnalysisPage() {
     assign('sellerUsername', nextParams.sellerUsername);
     assign('limit', nextParams.limit);
     assign('offset', nextParams.offset);
+    // include slow/fast type in serialized queries
+    if (nextParams.type) query.set('type', String(nextParams.type));
     if (nextParams.freeShipping === true) query.set('freeShipping', 'true');
     return query;
   };
@@ -472,10 +477,14 @@ export default function MarketAnalysisPage() {
       sort: isSellerOnlyHandoff ? '' : sortFromQuery,
       buyingOptions: isSellerOnlyHandoff ? '' : buyingOptionsFromQuery,
       sellerUsername: sellerFromQuery,
+      // propagate slow/fast type from query or keep existing
+      type: String(query.get('type') || params.type || searchType).trim() || undefined,
       freeShipping: isSellerOnlyHandoff ? false : freeShippingFromQuery,
       limit: Math.max(1, Number(query.get('limit') || params.limit || 12)),
       offset: Math.max(0, Number(query.get('offset') || 0)),
     };
+    // ensure UI reflects type
+    if (nextParams.type) setSearchType(nextParams.type);
 
     setParams(nextParams);
     runSearch(nextParams, { force: true });
@@ -926,10 +935,39 @@ export default function MarketAnalysisPage() {
       )}
 
       <div data-tour="market-analysis-search">
+        <div className="mb-3 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (searchType === 'slow') return;
+              setSearchType('slow');
+              const next = { ...params, type: 'slow', offset: 0 };
+              setParams(next);
+              runSearch(next, { force: true });
+            }}
+            className={`btn-secondary ${searchType === 'slow' ? 'ring-2 ring-blue-300' : ''}`}
+          >
+            Slow but new datas
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (searchType === 'fast') return;
+              setSearchType('fast');
+              const next = { ...params, type: 'fast', offset: 0 };
+              setParams(next);
+              runSearch(next, { force: true });
+            }}
+            className={`btn-primary ${searchType === 'fast' ? 'ring-2 ring-blue-300' : ''}`}
+          >
+            Fast but last 3 day datas
+          </button>
+        </div>
+
         <MarketSearchBar
           params={params}
-          onChange={setParams}
-          onSubmit={() => runSearch(params, { force: true })}
+          onChange={(next) => setParams({ ...(next || {}), type: searchType })}
+          onSubmit={() => runSearch({ ...params, type: searchType }, { force: true })}
           disabled={loading}
           marketCreditsRemaining={marketCreditsState?.remaining ?? null}
           searchCost={searchCost}
@@ -1051,9 +1089,11 @@ export default function MarketAnalysisPage() {
                             {renderSortLabel('Last 7d', 'soldQuantity')}
                           </button>
                         </th>
-                        <th className="text-left p-3">
-                          Last 15d
-                        </th>
+                        {searchType !== 'fast' && (
+                          <th className="text-left p-3">
+                            Last 15d
+                          </th>
+                        )}
                         <th className="text-left p-3">{t('marketAnalysisPage.historyHeader')}</th>
                         <th className="text-left p-3">
                           <button type="button" onClick={() => toggleSort('priceValue')} className="hover:underline">
@@ -1120,15 +1160,17 @@ export default function MarketAnalysisPage() {
                             )}
                           </td>
                           
-                          <td className="p-3 font-medium">
-                            {item?.soldLoading ? (
-                              <span
-                                className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent align-middle"
-                              />
-                            ) : (
-                              Number(item.soldQuantity15d || 0)
-                            )}
-                          </td>
+                          {searchType !== 'fast' && (
+                            <td className="p-3 font-medium">
+                              {item?.soldLoading ? (
+                                <span
+                                  className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent align-middle"
+                                />
+                              ) : (
+                                Number(item.soldQuantity15d || 0)
+                              )}
+                            </td>
+                          )}
                           <td className="p-3">
                             <button
                               type="button"

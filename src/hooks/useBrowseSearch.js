@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { browseAPI } from '../services/api';
+import api, { browseAPI } from '../services/api';
 
 const MARKET_ANALYSIS_STORAGE_KEY = 'marketAnalysisState:v1';
 
@@ -357,8 +357,41 @@ export default function useBrowseSearch(initialParams = {}) {
       );
 
       const response = await browseAPI.search(requestParams);
-      const payload = response?.data?.data || {};
-      const nextCredits = response?.data?.credits || null;
+
+      // If backend accepted an async fast job, it returns 202 with jobId + pollUrl
+      let payload = null;
+      let nextCredits = null;
+      if (response?.status === 202) {
+        const jobId = response?.data?.jobId;
+        const pollUrl = response?.data?.pollUrl || `/ebay/extension-scrape/${jobId}`;
+        nextCredits = response?.data?.credits || null;
+
+        // Poll for result (timeout after 20s)
+        const start = Date.now();
+        const TIMEOUT_MS = 20_000;
+        const INTERVAL_MS = 1000;
+        let polled = null;
+        while (Date.now() - start < TIMEOUT_MS) {
+          try {
+            const pollResp = await api.get(pollUrl);
+            if (pollResp?.data?.status === 'done') {
+              polled = pollResp?.data?.data || {};
+              break;
+            }
+            if (pollResp?.data?.status === 'error') {
+              throw new Error(String(pollResp?.data?.error || 'Extension job failed'));
+            }
+          } catch (pollErr) {
+            // ignore and retry until timeout
+          }
+          await new Promise((r) => setTimeout(r, INTERVAL_MS));
+        }
+        if (!polled) throw new Error('Timed out waiting for extension fast result');
+        payload = polled || {};
+      } else {
+        payload = response?.data?.data || {};
+        nextCredits = response?.data?.credits || null;
+      }
       const itemSummaries = Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : [];
       const nextDataSource = String(payload?.dataSource || 'external').trim() || 'external';
       const nextNextOffset = Number.isFinite(Number(payload?.nextOffset))
