@@ -412,11 +412,15 @@ export default function MarketAnalysisPage() {
   const resolvePurchaseHistoryItemId = useCallback((item) => {
     const candidates = [
       item?.legacyId,
+      item?.legacyItemId,
       item?.raw?.legacyItemId,
+      item?.raw?.listingId,
       item?.id,
       item?.raw?.itemId,
+      item?.raw?.itemID,
       item?.itemWebUrl,
       item?.raw?.itemWebUrl,
+      item?.raw?.productUrl,
     ];
 
     for (const candidate of candidates) {
