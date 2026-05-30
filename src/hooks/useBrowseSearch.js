@@ -467,7 +467,7 @@ export default function useBrowseSearch(initialParams = {}) {
       const normalized = itemSummaries.map((summary) => {
         const baseItem = normalizeItem(summary, {
           fallbackSellerName: sellerFallbackName,
-          fallbackSellerFeedback,
+          fallbackSellerFeedback: sellerFallbackFeedback,
           forceSellerName: sellerOnly && isFastMode,
         });
         const shouldRefetchSoldOnZero = titleOnly && Number(baseItem?.soldQuantity || 0) === 0;
