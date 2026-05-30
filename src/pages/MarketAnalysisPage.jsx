@@ -935,7 +935,7 @@ export default function MarketAnalysisPage() {
       )}
 
       <div data-tour="market-analysis-search">
-        {/* <div className="mb-3 flex items-center gap-2">
+        <div className="mb-3 flex items-center gap-2">
           <button
             type="button"
             onClick={() => {
@@ -962,7 +962,7 @@ export default function MarketAnalysisPage() {
           >
             Fast but last 3 day datas
           </button>
-        </div> */}
+        </div>
 
         <MarketSearchBar
           params={params}
