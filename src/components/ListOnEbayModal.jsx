@@ -330,7 +330,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
     }
 
     const itemUrl =
-      item.itemUrl || item.maxDimensionImageUrl || item.url || item.raw?.itemWebUrl || item.raw?.itemUrl ||
+      item.itemUrl || item.itemWebUrl || item.maxDimensionImageUrl || item.url || item.raw?.itemWebUrl || item.raw?.itemUrl || item.raw?.productUrl ||
       (item.legacyItemId ? `https://www.ebay.com/itm/${item.legacyItemId}` : null) ||
       (item.itemId ? `https://www.ebay.com/itm/${item.itemId}` : null);
 
