@@ -199,15 +199,17 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSelle
     return Number.isFinite(parsed) ? parsed : null;
   };
 
-  const sales = (summary?.sales && typeof summary.sales === 'object')
-    ? summary.sales
-    : ((summary?.raw?.sales && typeof summary.raw.sales === 'object') ? summary.raw.sales : null);
+  const salesRaw = summary?.sales ?? summary?.raw?.sales;
+  const sales = (salesRaw && typeof salesRaw === 'object') ? salesRaw : null;
+  const numericSales7d = toMetricNumber(
+    (typeof salesRaw === 'number' || typeof salesRaw === 'string') ? salesRaw : null
+  );
 
   const rawItemId = String(summary?.itemId || summary?.itemID || summary?.legacyItemId || '').trim();
   const normalizedId = rawItemId.replace(/^v1\|/, '').replace(/\|0$/, '');
   const soldRaw = toMetricNumber(summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity);
   const fastSold7d = toMetricNumber(
-    sales?.sevenDaysSales ?? sales?.sevenDays ?? sales?.days7 ?? sales?.week ?? sales?.weekly ?? summary?.sevenDaysSales
+    numericSales7d ?? sales?.sevenDaysSales ?? sales?.sevenDays ?? sales?.days7 ?? sales?.week ?? sales?.weekly ?? summary?.sevenDaysSales
   );
   const fastSold14d = toMetricNumber(
     sales?.fourteenDaysSales ?? sales?.fourteenDays ?? sales?.days14 ?? sales?.twoWeeks ?? summary?.fourteenDaysSales
@@ -245,7 +247,7 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSelle
     id: normalizedId || rawItemId,
     legacyId: summary?.legacyItemId || '',
     title: summary?.title || 'Untitled listing',
-    imageUrl: summary?.image?.imageUrl || summary?.thumbnailImages?.[0]?.imageUrl || summary?.ebayImage || '',
+    imageUrl: summary?.image?.imageUrl || summary?.imageUrl || summary?.images || summary?.thumbnailImages?.[0]?.imageUrl || summary?.ebayImage || '',
     priceValue: Number.isFinite(fastPrice) ? fastPrice : Number(summary?.price?.value || 0),
     priceCurrency: summary?.price?.currency || summary?.currency || 'USD',
     shippingValue: Number(summary?.shippingOptions?.[0]?.shippingCost?.value || 0),
@@ -267,12 +269,13 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSelle
           String(fallbackSellerName || '').trim()
         )
     ) || 'Unknown seller',
-    sellerFeedback: Number(summary?.seller?.feedbackScore || summary?.feedback || fallbackSellerFeedback || 0),
+    sellerFeedback: Number(summary?.seller?.feedbackScore || summary?.feedbackScore || summary?.feedBackScore || summary?.feedback || fallbackSellerFeedback || 0),
     sellerCountryCode:
       summary?.itemLocation?.country ||
       summary?.itemLocation?.countryCode ||
       summary?.seller?.location?.country ||
       summary?.seller?.countryCode ||
+      summary?.shippingCountry ||
       summary?.countryCode ||
       '',
     itemWebUrl: summary?.itemWebUrl || summary?.itemAffiliateWebUrl || summary?.productUrl || '',
@@ -502,15 +505,20 @@ export default function useBrowseSearch(initialParams = {}) {
         nextCredits = response?.data?.credits || null;
       }
       const rawPayload = payload?.raw?.result || payload?.result || null;
-      const itemSummaries = isFastMode && Array.isArray(rawPayload?.data) && rawPayload.data.length > 0
-        ? rawPayload.data
-        : getSearchResultItems(payload);
+      const titleOnly = isPureTitleOnlySearch(effectiveParams);
+      const fastTitleRows = isFastMode && titleOnly && Array.isArray(payload?.rows) && payload.rows.length > 0
+        ? payload.rows
+        : null;
+      const itemSummaries = fastTitleRows || (
+        isFastMode && Array.isArray(rawPayload?.data) && rawPayload.data.length > 0
+          ? rawPayload.data
+          : getSearchResultItems(payload)
+      );
       const nextDataSource = String(payload?.dataSource || 'external').trim() || 'external';
       const nextNextOffset = Number.isFinite(Number(payload?.nextOffset))
         ? Number(payload.nextOffset)
         : parseNextOffset(payload?.next);
       const sellerOnly = sellerOnlySearch;
-      const titleOnly = isPureTitleOnlySearch(effectiveParams);
       const shouldForceDeferredSold = sellerOnly && !isFastMode && nextDataSource !== 'sql';
       const sellerFallbackName = sellerOnly ? String(effectiveParams.sellerUsername || '').trim() : '';
       const sellerFallbackFeedback = Number(rawPayload?.feedback || payload?.feedback || 0);
