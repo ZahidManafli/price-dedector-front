@@ -184,7 +184,7 @@ function trimCache(cache, maxEntries = 30) {
   return Object.fromEntries(sorted.slice(0, maxEntries));
 }
 
-function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSellerName = '', forceSellerName = false } = {}) {
+function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSellerName = '', fallbackSellerFeedback = null, forceSellerName = false } = {}) {
   const rawItemId = String(summary?.itemId || summary?.itemID || summary?.legacyItemId || '').trim();
   const normalizedId = rawItemId.replace(/^v1\|/, '').replace(/\|0$/, '');
   const soldRaw = summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity;
@@ -223,7 +223,7 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSelle
           String(fallbackSellerName || '').trim()
         )
     ) || 'Unknown seller',
-    sellerFeedback: Number(summary?.seller?.feedbackScore || summary?.feedback || 0),
+    sellerFeedback: Number(summary?.seller?.feedbackScore || summary?.feedback || fallbackSellerFeedback || 0),
     sellerCountryCode:
       summary?.itemLocation?.country ||
       summary?.itemLocation?.countryCode ||
@@ -463,9 +463,11 @@ export default function useBrowseSearch(initialParams = {}) {
       const isFastMode = searchType === 'fast';
       const shouldForceDeferredSold = sellerOnly && !isFastMode && nextDataSource !== 'sql';
       const sellerFallbackName = sellerOnly ? String(effectiveParams.sellerUsername || '').trim() : '';
+      const sellerFallbackFeedback = Number(rawPayload?.feedback || payload?.feedback || 0);
       const normalized = itemSummaries.map((summary) => {
         const baseItem = normalizeItem(summary, {
           fallbackSellerName: sellerFallbackName,
+          fallbackSellerFeedback,
           forceSellerName: sellerOnly && isFastMode,
         });
         const shouldRefetchSoldOnZero = titleOnly && Number(baseItem?.soldQuantity || 0) === 0;

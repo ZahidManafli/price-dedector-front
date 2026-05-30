@@ -508,6 +508,7 @@ export default function MarketAnalysisPage() {
   }, []);
 
   useEffect(() => {
+    if (searchType === 'fast') return;
     if (!Array.isArray(results) || !results.length) return;
     if (purchaseHistoryQueueRef.current) return; // already running, don't restart
   
@@ -587,13 +588,14 @@ export default function MarketAnalysisPage() {
     };
     // ✅ Remove soldQuantityByKey from deps — it was causing infinite re-trigger
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [results, getResultKey, resolvePurchaseHistoryItemId]);
+  }, [results, getResultKey, resolvePurchaseHistoryItemId, searchType]);
 
   // Confirm this is still in your hydratedResults (should be — don't change it):
   const hydratedResults = useMemo(() => {
     return (Array.isArray(results) ? results : []).map((item) => {
       const key = getResultKey(item);
-      const hasOverride = Object.prototype.hasOwnProperty.call(soldQuantityByKey, key);
+      const isFastMode = String(searchType || '').trim().toLowerCase() === 'fast';
+      const hasOverride = !isFastMode && Object.prototype.hasOwnProperty.call(soldQuantityByKey, key);
       return {
         ...item,
       
@@ -602,14 +604,14 @@ export default function MarketAnalysisPage() {
           : item.soldQuantity,
       
         soldQuantity15d:
-          soldQuantity15dByKey[key] ??
+          (!isFastMode && soldQuantity15dByKey[key] != null ? soldQuantity15dByKey[key] : undefined) ??
           item.soldQuantity15d ??
           0,
       
-        soldLoading: Boolean(soldLoadingByKey[key]),
+        soldLoading: !isFastMode && Boolean(soldLoadingByKey[key]),
       };
     });
-  }, [results, soldQuantityByKey, soldLoadingByKey, getResultKey]);
+  }, [results, soldQuantityByKey, soldLoadingByKey, getResultKey, searchType]);
 
   const filteredResults = useMemo(() => {
     const seller = String(params.sellerUsername || '').trim().toLowerCase();
