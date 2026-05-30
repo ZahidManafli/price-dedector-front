@@ -6,12 +6,18 @@ export default function MarketSearchBar({
   onChange,
   onSubmit,
   disabled,
+  searchType,
   marketCreditsRemaining,
   searchCost,
   recentSellers = [],
   recentTitles = [],
 }) {
   const { t } = useTranslation();
+  const isFastMode = String(searchType || '').trim().toLowerCase() === 'fast';
+  const hasProductName = String(params?.q || '').trim() !== '';
+  const hasSellerName = String(params?.sellerUsername || '').trim() !== '';
+  const sellerInputDisabled = Boolean(disabled) || (isFastMode && hasProductName);
+  const productInputDisabled = Boolean(disabled) || (isFastMode && hasSellerName);
   const sortOptions = [
     { value: '', label: t('marketSearchBar.bestMatch') },
     { value: 'price', label: t('marketSearchBar.priceLowHigh') },
@@ -43,6 +49,7 @@ export default function MarketSearchBar({
             placeholder={t('marketSearchBar.keywordPlaceholder')}
             value={params.q}
             list="recent-checkila-titles"
+            disabled={productInputDisabled}
             onChange={(e) => setValue('q', e.target.value)}
           />
           <datalist id="recent-checkila-titles">
@@ -59,6 +66,7 @@ export default function MarketSearchBar({
             placeholder={t('marketSearchBar.sellerPlaceholder')}
             value={params.sellerUsername || ''}
             list="recent-checkila-sellers"
+            disabled={sellerInputDisabled}
             onChange={(e) => setValue('sellerUsername', e.target.value)}
           />
           <datalist id="recent-checkila-sellers">

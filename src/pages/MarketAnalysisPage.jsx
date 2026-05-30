@@ -980,6 +980,7 @@ export default function MarketAnalysisPage() {
 
         <MarketSearchBar
           params={params}
+          searchType={searchType}
           onChange={(updater) => setParams((prev) => {
             const next = typeof updater === 'function' ? updater(prev) : updater;
             return { ...(next || {}), type: searchType };
