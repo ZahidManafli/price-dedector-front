@@ -43,6 +43,56 @@ function normalizeSummary(summary) {
   };
 }
 
+function getSellerListingRows(payload, { isFastMode = false } = {}) {
+  const candidates = [
+    payload?.rows,
+    payload?.itemSummaries,
+    payload?.result?.data,
+    payload?.raw?.result?.data,
+    payload?.raw?.result?.sellers,
+    payload?.result?.sellers,
+  ];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate) && candidate.length > 0) {
+      return candidate;
+    }
+  }
+
+  if (isFastMode && Array.isArray(payload?.raw?.result?.data)) {
+    return payload.raw.result.data;
+  }
+
+  return [];
+}
+
+function getSellerListingTotal(payload, fallbackCount = 0, { isFastMode = false } = {}) {
+  const candidates = isFastMode
+    ? [
+        payload?.raw?.result?.recordsFiltered,
+        payload?.raw?.result?.recordsTotal,
+        payload?.total,
+        payload?.result?.recordsFiltered,
+        payload?.result?.recordsTotal,
+      ]
+    : [
+        payload?.total,
+        payload?.recordsFiltered,
+        payload?.recordsTotal,
+        payload?.result?.recordsFiltered,
+        payload?.result?.recordsTotal,
+        payload?.raw?.result?.recordsFiltered,
+        payload?.raw?.result?.recordsTotal,
+      ];
+
+  for (const candidate of candidates) {
+    const value = Number(candidate);
+    if (Number.isFinite(value) && value >= 0) return value;
+  }
+
+  return fallbackCount;
+}
+
 const AMAZON_ICON_URL = 'https://www.amazon.com/favicon.ico';
 
 function buildAmazonSearchUrlFromTitle(title) {
@@ -286,27 +336,14 @@ export default function MarketListingDetailPage() {
         ...(isFastMode ? {} : { type: 'slow' }),
       });
       const payload = response?.data?.data || {};
-      const rows = isFastMode
-        ? (
-          Array.isArray(payload?.rows) ? payload.rows :
-          Array.isArray(payload?.itemSummaries) ? payload.itemSummaries :
-          Array.isArray(payload?.raw?.result?.data) ? payload.raw.result.data :
-          Array.isArray(payload?.result?.data) ? payload.result.data :
-          []
-        )
-        : (Array.isArray(payload?.itemSummaries) ? payload.itemSummaries : []);
+      const rows = getSellerListingRows(payload, { isFastMode });
       const normalizedRows = rows.map(normalizeSummary);
       setSellerListings(normalizedRows);
       setSellerSoldQuantityDeferred(false);
       setSellerPendingSoldItems(isFastMode ? [] : normalizedRows);
       setSellerSoldStatsByItemId({});
       setSellerSoldLoadingByItemId({});
-      setSellerTotal(Number(
-        (isFastMode
-          ? (payload?.raw?.result?.recordsFiltered ?? payload?.raw?.result?.recordsTotal ?? payload?.total)
-          : payload?.total)
-        || normalizedRows.length || 0
-      ));
+      setSellerTotal(getSellerListingTotal(payload, normalizedRows.length, { isFastMode }));
       setSellerOffset(nextOffset);
     } catch (err) {
       setSellerError(err?.response?.data?.error || err?.message || t('marketListingDetailPage.failedToLoadSellerListings'));
