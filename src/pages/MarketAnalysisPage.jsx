@@ -644,7 +644,7 @@ export default function MarketAnalysisPage() {
       switch (key) {
         case 'title': return String(item.title || '').toLowerCase();
         case 'seller': return String(item.sellerName || '').toLowerCase();
-        case 'soldQuantity': return Number(searchType === 'fast' ? (item.soldQuantity14d || 0) : (item.soldQuantity || 0));
+        case 'soldQuantity': return Number(item.soldQuantity || 0);
         case 'priceValue': return Number(item.priceValue || 0);
         default: return '';
       }
@@ -1105,7 +1105,6 @@ export default function MarketAnalysisPage() {
                           <>
                             <th className="text-left p-3">Last 14d</th>
                             <th className="text-left p-3">Last 30d</th>
-                            <th className="text-left p-3">Total Sold</th>
                           </>
                         ) : (
                           <th className="text-left p-3">
@@ -1192,13 +1191,6 @@ export default function MarketAnalysisPage() {
                                   <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent align-middle" />
                                 ) : (
                                   Number(item.soldQuantity30d || 0)
-                                )}
-                              </td>
-                              <td className="p-3 font-medium">
-                                {item?.soldLoading ? (
-                                  <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-violet-500 border-t-transparent align-middle" />
-                                ) : (
-                                  Number(item.totalSoldQuantity || 0)
                                 )}
                               </td>
                             </>

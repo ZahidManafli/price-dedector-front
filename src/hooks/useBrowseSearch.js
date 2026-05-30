@@ -187,16 +187,37 @@ function trimCache(cache, maxEntries = 30) {
 }
 
 function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSellerName = '', fallbackSellerFeedback = null, forceSellerName = false } = {}) {
+  const toMetricNumber = (value) => {
+    if (value === null || value === undefined || value === '') return null;
+    if (typeof value === 'string') {
+      const cleaned = value.replace(/,/g, '').trim();
+      if (!cleaned) return null;
+      const parsed = Number(cleaned);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const sales = (summary?.sales && typeof summary.sales === 'object')
+    ? summary.sales
+    : ((summary?.raw?.sales && typeof summary.raw.sales === 'object') ? summary.raw.sales : null);
+
   const rawItemId = String(summary?.itemId || summary?.itemID || summary?.legacyItemId || '').trim();
   const normalizedId = rawItemId.replace(/^v1\|/, '').replace(/\|0$/, '');
-  const soldRaw = summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity;
-  const fastSold7d = Number(summary?.sevenDaysSales);
-  const fastSold14d = Number(summary?.fourteenDaysSales);
-  const fastSold30d = Number(summary?.thirtyDaysSales);
+  const soldRaw = toMetricNumber(summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity);
+  const fastSold7d = toMetricNumber(
+    sales?.sevenDaysSales ?? sales?.sevenDays ?? sales?.days7 ?? sales?.week ?? sales?.weekly ?? summary?.sevenDaysSales
+  );
+  const fastSold14d = toMetricNumber(
+    sales?.fourteenDaysSales ?? sales?.fourteenDays ?? sales?.days14 ?? sales?.twoWeeks ?? summary?.fourteenDaysSales
+  );
+  const fastSold30d = toMetricNumber(
+    sales?.thirtyDaysSales ?? sales?.thirtyDays ?? sales?.days30 ?? sales?.month ?? sales?.monthly ?? summary?.thirtyDaysSales
+  );
   const fastTotalSold = Number(summary?.quantitySold);
   const fastPrice = Number(summary?.currentPrice);
-  const soldQuantity =
-    soldRaw === null || soldRaw === undefined || soldRaw === '' ? null : Number(soldRaw || 0);
+  const soldQuantity = soldRaw;
   const soldQuantity7d = Number.isFinite(fastSold7d) ? Math.max(0, fastSold7d) : (soldQuantity === null ? null : (Number.isFinite(soldQuantity) ? soldQuantity : 0));
   const soldQuantity14d = Number.isFinite(fastSold14d)
     ? Math.max(0, fastSold14d)
