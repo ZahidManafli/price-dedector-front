@@ -966,7 +966,10 @@ export default function MarketAnalysisPage() {
 
         <MarketSearchBar
           params={params}
-          onChange={(next) => setParams({ ...(next || {}), type: searchType })}
+          onChange={(updater) => setParams((prev) => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            return { ...(next || {}), type: searchType };
+          })}
           onSubmit={() => runSearch({ ...params, type: searchType }, { force: true })}
           disabled={loading}
           marketCreditsRemaining={marketCreditsState?.remaining ?? null}
