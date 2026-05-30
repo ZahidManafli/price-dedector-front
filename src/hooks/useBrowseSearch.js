@@ -449,6 +449,7 @@ export default function useBrowseSearch(initialParams = {}) {
         const TIMEOUT_MS = 20_000;
         const INTERVAL_MS = 1000;
         let polled = null;
+        let pollFailure = null;
         while (Date.now() - start < TIMEOUT_MS) {
           try {
             const pollResp = await api.get(pollUrl);
@@ -457,13 +458,16 @@ export default function useBrowseSearch(initialParams = {}) {
               break;
             }
             if (pollResp?.data?.status === 'error') {
-              throw new Error(String(pollResp?.data?.error || 'Extension job failed'));
+              pollFailure = String(pollResp?.data?.error || 'Extension job failed');
+              break;
             }
           } catch (pollErr) {
-            // ignore and retry until timeout
+            pollFailure = pollErr?.response?.data?.error || pollErr?.message || 'Extension job poll failed';
+            break;
           }
           await new Promise((r) => setTimeout(r, INTERVAL_MS));
         }
+        if (pollFailure) throw new Error(String(pollFailure));
         if (!polled) throw new Error('Timed out waiting for extension fast result');
         payload = polled || {};
       } else {
