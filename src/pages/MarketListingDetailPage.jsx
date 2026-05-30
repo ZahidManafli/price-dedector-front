@@ -276,13 +276,14 @@ export default function MarketListingDetailPage() {
     try {
       setSellerLoading(true);
       setSellerError(null);
+      const sellerSearchLimit = isFastMode ? 20 : sellerLimit;
       const response = await browseAPI.search({
-        categoryId: '0',
         sellerUsername,
-        limit: sellerLimit,
+        ...(isFastMode ? { type: 'fast', autoCorrect: true } : { categoryId: '0' }),
+        limit: sellerSearchLimit,
         offset: nextOffset,
-        fieldgroups: isFastMode ? 'MATCHING_ITEMS' : 'EXTENDED',
-        type: isFastMode ? 'fast' : 'slow',
+        fieldgroups: isFastMode ? 'ASPECT_REFINEMENTS,MATCHING_ITEMS' : 'EXTENDED',
+        ...(isFastMode ? {} : { type: 'slow' }),
       });
       const payload = response?.data?.data || {};
       const rows = isFastMode
