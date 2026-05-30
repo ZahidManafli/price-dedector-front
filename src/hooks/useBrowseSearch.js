@@ -185,11 +185,12 @@ function trimCache(cache, maxEntries = 30) {
 }
 
 function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSellerName = '', forceSellerName = false } = {}) {
-  const rawItemId = String(summary?.itemId || '').trim();
+  const rawItemId = String(summary?.itemId || summary?.itemID || summary?.legacyItemId || '').trim();
   const normalizedId = rawItemId.replace(/^v1\|/, '').replace(/\|0$/, '');
   const soldRaw = summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity;
   const fastSold7d = Number(summary?.sevenDaysSales);
   const fastSold14d = Number(summary?.fourteenDaysSales);
+  const fastPrice = Number(summary?.currentPrice);
   const soldQuantity =
     soldRaw === null || soldRaw === undefined || soldRaw === '' ? null : Number(soldRaw || 0);
   const soldQuantity7d = Number.isFinite(fastSold7d) ? Math.max(0, fastSold7d) : (soldQuantity === null ? null : (Number.isFinite(soldQuantity) ? soldQuantity : 0));
@@ -203,9 +204,9 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSelle
     id: normalizedId || rawItemId,
     legacyId: summary?.legacyItemId || '',
     title: summary?.title || 'Untitled listing',
-    imageUrl: summary?.image?.imageUrl || summary?.thumbnailImages?.[0]?.imageUrl || '',
-    priceValue: Number(summary?.price?.value || 0),
-    priceCurrency: summary?.price?.currency || 'USD',
+    imageUrl: summary?.image?.imageUrl || summary?.thumbnailImages?.[0]?.imageUrl || summary?.ebayImage || '',
+    priceValue: Number.isFinite(fastPrice) ? fastPrice : Number(summary?.price?.value || 0),
+    priceCurrency: summary?.price?.currency || summary?.currency || 'USD',
     shippingValue: Number(summary?.shippingOptions?.[0]?.shippingCost?.value || 0),
     soldQuantity: soldQuantity7d === null ? null : (Number.isFinite(soldQuantity7d) ? soldQuantity7d : 0),
     soldQuantity15d: soldQuantity15d === null ? null : (Number.isFinite(soldQuantity15d) ? soldQuantity15d : 0),
@@ -222,14 +223,15 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSelle
           String(fallbackSellerName || '').trim()
         )
     ) || 'Unknown seller',
-    sellerFeedback: Number(summary?.seller?.feedbackScore || 0),
+    sellerFeedback: Number(summary?.seller?.feedbackScore || summary?.feedback || 0),
     sellerCountryCode:
       summary?.itemLocation?.country ||
       summary?.itemLocation?.countryCode ||
       summary?.seller?.location?.country ||
       summary?.seller?.countryCode ||
+      summary?.countryCode ||
       '',
-    itemWebUrl: summary?.itemWebUrl || summary?.itemAffiliateWebUrl || '',
+    itemWebUrl: summary?.itemWebUrl || summary?.itemAffiliateWebUrl || summary?.productUrl || '',
     shouldRefetchSoldOnZero: Boolean(shouldRefetchSoldOnZero),
     raw: summary,
   };
@@ -243,12 +245,18 @@ function forceDeferredSellerSold(items = []) {
 }
 
 function getSearchResultItems(payload) {
-  if (Array.isArray(payload?.itemSummaries)) return payload.itemSummaries;
-  if (Array.isArray(payload?.rows)) return payload.rows;
-  if (Array.isArray(payload?.result?.data)) return payload.result.data;
-  if (Array.isArray(payload?.result?.sellers)) return payload.result.sellers;
-  if (Array.isArray(payload?.raw?.result?.data)) return payload.raw.result.data;
-  if (Array.isArray(payload?.raw?.result?.sellers)) return payload.raw.result.sellers;
+  const candidates = [
+    payload?.itemSummaries,
+    payload?.rows,
+    payload?.result?.data,
+    payload?.result?.sellers,
+    payload?.raw?.result?.data,
+    payload?.raw?.result?.sellers,
+  ];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate) && candidate.length > 0) return candidate;
+  }
   return [];
 }
 
@@ -265,7 +273,7 @@ function getSearchResultTotal(payload, fallbackCount = 0) {
 
   for (const candidate of candidates) {
     const value = Number(candidate);
-    if (Number.isFinite(value)) return value;
+    if (Number.isFinite(value) && value > 0) return value;
   }
 
   return fallbackCount;
