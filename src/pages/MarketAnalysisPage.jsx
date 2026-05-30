@@ -362,7 +362,7 @@ export default function MarketAnalysisPage() {
   };
 
   const handleViewHistory = useCallback(async (item) => {
-    const itemId = String(item?.id || '').trim().replace(/^v1\|/, '').replace(/\|0$/, '');
+    const itemId = resolvePurchaseHistoryItemId(item);
     if (!itemId) return;
 
     setHistoryModal({ loading: true, jobId: null, data: null, error: null });
@@ -385,7 +385,7 @@ export default function MarketAnalysisPage() {
         error: error?.response?.data?.error || error?.message || 'Request failed',
       });
     }
-  }, []);
+  }, [resolvePurchaseHistoryItemId]);
 
   function getFlagUrl(countryCode) {
     const code = String(countryCode || '').trim().toLowerCase();
