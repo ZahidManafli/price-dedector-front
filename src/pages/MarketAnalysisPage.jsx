@@ -805,6 +805,9 @@ export default function MarketAnalysisPage() {
     () => [...savedSellers].sort((a, b) => String(a.sellerName || '').localeCompare(String(b.sellerName || ''))),
     [savedSellers]
   );
+  const typeButtonBase = 'rounded-lg px-4 py-2 text-sm font-semibold transition border border-slate-200 dark:border-slate-700';
+  const typeButtonActive = 'bg-blue-600 text-white border-blue-600 shadow-sm';
+  const typeButtonInactive = 'bg-white text-slate-700 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800';
 
   return (
     <div className="page-shell space-y-4">
@@ -951,7 +954,7 @@ export default function MarketAnalysisPage() {
               setParams(next);
               runSearch(next, { force: true });
             }}
-            className={`btn-secondary ${searchType === 'slow' ? 'ring-2 ring-blue-300 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300' : ''}`}
+            className={`${typeButtonBase} ${searchType === 'slow' ? typeButtonActive : typeButtonInactive}`}
           >
             Slow but new datas
           </button>
@@ -964,7 +967,7 @@ export default function MarketAnalysisPage() {
               setParams(next);
               runSearch(next, { force: true });
             }}
-            className={`btn-primary ${searchType === 'fast' ? 'ring-2 ring-blue-300 bg-blue-700 text-white' : ''}`}
+            className={`${typeButtonBase} ${searchType === 'fast' ? typeButtonActive : typeButtonInactive}`}
           >
             Fast but last 3 day datas
           </button>
