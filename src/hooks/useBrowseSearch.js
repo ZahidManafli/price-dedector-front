@@ -190,14 +190,26 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSelle
   const soldRaw = summary?.estimatedAvailabilities?.[0]?.estimatedSoldQuantity;
   const fastSold7d = Number(summary?.sevenDaysSales);
   const fastSold14d = Number(summary?.fourteenDaysSales);
+  const fastSold30d = Number(summary?.thirtyDaysSales);
+  const fastTotalSold = Number(summary?.quantitySold);
   const fastPrice = Number(summary?.currentPrice);
   const soldQuantity =
     soldRaw === null || soldRaw === undefined || soldRaw === '' ? null : Number(soldRaw || 0);
   const soldQuantity7d = Number.isFinite(fastSold7d) ? Math.max(0, fastSold7d) : (soldQuantity === null ? null : (Number.isFinite(soldQuantity) ? soldQuantity : 0));
-  const soldQuantity15d = Number.isFinite(fastSold14d)
+  const soldQuantity14d = Number.isFinite(fastSold14d)
     ? Math.max(0, fastSold14d)
-    : (summary?.soldQuantity15d != null && summary.soldQuantity15d !== ''
-      ? Number(summary.soldQuantity15d)
+    : (summary?.soldQuantity14d != null && summary.soldQuantity14d !== ''
+      ? Number(summary.soldQuantity14d)
+      : (soldQuantity === null ? null : (Number.isFinite(soldQuantity) ? soldQuantity : 0)));
+  const soldQuantity30d = Number.isFinite(fastSold30d)
+    ? Math.max(0, fastSold30d)
+    : (summary?.soldQuantity30d != null && summary.soldQuantity30d !== ''
+      ? Number(summary.soldQuantity30d)
+      : (soldQuantity === null ? null : (Number.isFinite(soldQuantity) ? soldQuantity : 0)));
+  const totalSoldQuantity = Number.isFinite(fastTotalSold)
+    ? Math.max(0, fastTotalSold)
+    : (summary?.totalSoldQuantity != null && summary.totalSoldQuantity !== ''
+      ? Number(summary.totalSoldQuantity)
       : (soldQuantity === null ? null : (Number.isFinite(soldQuantity) ? soldQuantity : 0)));
 
   return {
@@ -209,7 +221,10 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSelle
     priceCurrency: summary?.price?.currency || summary?.currency || 'USD',
     shippingValue: Number(summary?.shippingOptions?.[0]?.shippingCost?.value || 0),
     soldQuantity: soldQuantity7d === null ? null : (Number.isFinite(soldQuantity7d) ? soldQuantity7d : 0),
-    soldQuantity15d: soldQuantity15d === null ? null : (Number.isFinite(soldQuantity15d) ? soldQuantity15d : 0),
+    soldQuantity14d: soldQuantity14d === null ? null : (Number.isFinite(soldQuantity14d) ? soldQuantity14d : 0),
+    soldQuantity15d: soldQuantity14d === null ? null : (Number.isFinite(soldQuantity14d) ? soldQuantity14d : 0),
+    soldQuantity30d: soldQuantity30d === null ? null : (Number.isFinite(soldQuantity30d) ? soldQuantity30d : 0),
+    totalSoldQuantity: totalSoldQuantity === null ? null : (Number.isFinite(totalSoldQuantity) ? totalSoldQuantity : 0),
     condition: summary?.condition || 'Unknown',
     sellerName: (
       forceSellerName
