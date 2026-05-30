@@ -13,6 +13,7 @@ function safeJsonParse(value, fallback) {
 
 function getDefaultParams(initialParams = {}) {
   return {
+    type: initialParams.type || 'slow',
     q: initialParams.q || '',
     categoryId: initialParams.categoryId || '',
     condition: initialParams.condition || 'ALL',

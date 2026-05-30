@@ -951,7 +951,7 @@ export default function MarketAnalysisPage() {
               setParams(next);
               runSearch(next, { force: true });
             }}
-            className={`btn-secondary ${searchType === 'slow' ? 'ring-2 ring-blue-300' : ''}`}
+            className={`btn-secondary ${searchType === 'slow' ? 'ring-2 ring-blue-300 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300' : ''}`}
           >
             Slow but new datas
           </button>
@@ -964,7 +964,7 @@ export default function MarketAnalysisPage() {
               setParams(next);
               runSearch(next, { force: true });
             }}
-            className={`btn-primary ${searchType === 'fast' ? 'ring-2 ring-blue-300' : ''}`}
+            className={`btn-primary ${searchType === 'fast' ? 'ring-2 ring-blue-300 bg-blue-700 text-white' : ''}`}
           >
             Fast but last 3 day datas
           </button>
