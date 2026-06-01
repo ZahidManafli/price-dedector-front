@@ -74,6 +74,12 @@ export default function ReferralDashboardPage() {
                       <p className="text-xs text-slate-500">Paid</p>
                       <p className="text-2xl font-semibold mt-1">{referral.totalPaid} {referral.feeCurrency}</p>
                     </div>
+                    <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/50 p-4 col-span-2 bg-emerald-50/60 dark:bg-emerald-950/20">
+                      <p className="text-xs text-emerald-700 dark:text-emerald-300">Estimated monthly</p>
+                      <p className="text-2xl font-semibold mt-1 text-emerald-800 dark:text-emerald-200">
+                        {referral.estimatedMonthlyEarnings} {referral.feeCurrency}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -85,7 +91,10 @@ export default function ReferralDashboardPage() {
                         <div key={member.userId} className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
                           <p className="font-medium">{member.email}</p>
                           <p className="text-xs text-slate-500 mt-1">
-                            {member.selectedPlanName || 'No plan'} · {member.assignedAt ? new Date(member.assignedAt).toLocaleString() : ''}
+                            {member.selectedPlanName || 'No plan'}
+                            {member.selectedPlanPrice ? ` · ${member.selectedPlanPrice}` : ''}
+                            {member.selectedPlanCurrency ? ` ${member.selectedPlanCurrency}` : ''}
+                            {member.assignedAt ? ` · ${new Date(member.assignedAt).toLocaleString()}` : ''}
                           </p>
                         </div>
                       ))}
