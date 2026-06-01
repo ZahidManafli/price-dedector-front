@@ -297,6 +297,8 @@ export default function SignupPage() {
         email: formData.email.trim(),
         phoneNumber: formData.phoneNumber.trim(),
         planId: formData.planId,
+        // Send the referral slug so the backend can enroll the user on approval
+        ...(referralSlug ? { referralSlug } : {}),
       };
       if (formData.planId === 'custom') {
         payload.requestedLimits = {
