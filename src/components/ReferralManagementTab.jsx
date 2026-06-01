@@ -188,6 +188,26 @@ export default function ReferralManagementTab() {
     }
   };
 
+  const deleteReferral = async () => {
+    if (!selectedReferralId) return;
+    const confirmed = window.confirm('Delete this referral class? This will remove its members, commissions, and payouts.');
+    if (!confirmed) return;
+
+    try {
+      setSaving(true);
+      await adminAPI.deleteReferral(selectedReferralId);
+      setSelectedReferralId('');
+      setIsCreatingNew(true);
+      setDetail(null);
+      setForm(emptyForm());
+      await loadData();
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Failed to delete referral');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) return <LoadingSpinner />;
 
   return (
@@ -254,6 +274,7 @@ export default function ReferralManagementTab() {
             <div className="md:col-span-2 flex gap-2">
               <button type="submit" disabled={saving} className="btn-primary px-4 py-2">{selectedReferral ? 'Update referral' : 'Create referral'}</button>
               {selectedReferral && <button type="button" onClick={addUser} disabled={saving} className="btn-secondary px-4 py-2">Add user</button>}
+              {selectedReferral && <button type="button" onClick={deleteReferral} disabled={saving} className="btn-secondary px-4 py-2 text-red-600">Delete referral</button>}
             </div>
           </form>
 

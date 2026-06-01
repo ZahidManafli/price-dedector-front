@@ -253,6 +253,7 @@ export const adminAPI = {
   getReferral: (id) => api.get(`/admin/referrals/${encodeURIComponent(id)}`),
   createReferral: (data) => api.post('/admin/referrals', data),
   updateReferral: (id, data) => api.put(`/admin/referrals/${encodeURIComponent(id)}`, data),
+  deleteReferral: (id) => api.delete(`/admin/referrals/${encodeURIComponent(id)}`),
   addReferralUser: (id, data) => api.post(`/admin/referrals/${encodeURIComponent(id)}/users`, data),
   removeReferralUser: (id, userId) => api.delete(`/admin/referrals/${encodeURIComponent(id)}/users/${encodeURIComponent(userId)}`),
   recordReferralPayout: (id, data) => api.post(`/admin/referrals/${encodeURIComponent(id)}/payouts`, data),
