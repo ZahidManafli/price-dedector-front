@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import Alert from '../components/Alert';
 import { useTranslation } from 'react-i18next';
 
 export default function SignupPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
+  const referralSlug = new URLSearchParams(location.search).get('ref') || '';
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -44,7 +46,7 @@ export default function SignupPage() {
     try {
       setLoading(true);
 
-      await authAPI.signup(formData.email, formData.password, formData.name);
+      await authAPI.signup(formData.email, formData.password, formData.name, referralSlug);
 
       localStorage.removeItem('authToken');
       localStorage.removeItem('authUser');

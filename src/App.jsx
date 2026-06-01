@@ -33,6 +33,9 @@ import DewisoPage from './pages/DewisoPage';
 import MarketAnalysisPage from './pages/MarketAnalysisPage';
 import MarketListingDetailPage from './pages/MarketListingDetailPage';
 import LandingPage from './pages/LandingPage';
+import SignupPage from './pages/SignupPage';
+import ReferralLandingPage from './pages/ReferralLandingPage';
+import ReferralDashboardPage from './pages/ReferralDashboardPage';
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
 
@@ -113,6 +116,8 @@ function AppContent() {
             <Route path="/extension-privacy" element={<ExtensionPrivacyPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/maintenance" element={<MaintenancePage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/ref/:slug" element={<ReferralLandingPage />} />
 
             {/* Protected Routes */}
             <Route
@@ -251,6 +256,18 @@ function AppContent() {
                   <AdminPanelPage />
                 </AdminProtectedRoute>
               }
+            />
+            <Route
+              path="/referals"
+              element={
+                <ProtectedRoute requiredTab={TAB_KEYS.REFERRALS}>
+                  <ReferralDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/referrals"
+              element={<Navigate to="/referals" replace />}
             />
 
             {/* Fallback */}

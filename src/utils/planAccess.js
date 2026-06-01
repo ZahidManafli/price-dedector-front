@@ -9,6 +9,7 @@ export const TAB_KEYS = {
   DEWISO: 'dewiso',
   SETTINGS: 'settings',
   ADMIN: 'admin',
+  REFERRALS: 'referrals',
   PARTNERS: 'partners',
 };
 
@@ -41,6 +42,10 @@ const TAB_ALIASES = {
   dewiso: TAB_KEYS.DEWISO,
   settings: TAB_KEYS.SETTINGS,
   admin: TAB_KEYS.ADMIN,
+  referral: TAB_KEYS.REFERRALS,
+  referal: TAB_KEYS.REFERRALS,
+  referrals: TAB_KEYS.REFERRALS,
+  referals: TAB_KEYS.REFERRALS,
   partners: TAB_KEYS.PARTNERS,
 };
 
@@ -54,7 +59,7 @@ export function normalizeTabKey(value) {
 export function getAllowedTabs(user) {
   if (!user) return USER_DEFAULT_ALLOWED_TABS;
   if (String(user.role || '').toLowerCase() === 'admin') {
-    return [...USER_DEFAULT_ALLOWED_TABS, TAB_KEYS.ADMIN];
+    return [...USER_DEFAULT_ALLOWED_TABS, TAB_KEYS.ADMIN, TAB_KEYS.REFERRALS];
   }
 
   const fromPermissions = user?.permissions?.allowedTabs;
@@ -74,6 +79,10 @@ export function getAllowedTabs(user) {
 
   if (!normalized.includes(TAB_KEYS.DASHBOARD)) {
     normalized.unshift(TAB_KEYS.DASHBOARD);
+  }
+
+  if (user?.permissions?.referralAdmin && !normalized.includes(TAB_KEYS.REFERRALS)) {
+    normalized.push(TAB_KEYS.REFERRALS);
   }
 
   return normalized;

@@ -6,6 +6,7 @@ import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import PartnersManagement from '../components/PartnersManagement';
 import ZikAccounts from '../components/ZikAccounts';
+import ReferralManagementTab from '../components/ReferralManagementTab';
 import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle, CalendarClock, Clock3, ShieldAlert } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { TAB_KEYS, USER_DEFAULT_ALLOWED_TABS } from '../utils/planAccess';
@@ -42,6 +43,7 @@ function formatRequestTypeLabel(requestType) {
 function defaultEditForUser(u) {
   return {
     role: u.role || 'user',
+    referralAdmin: !!u?.permissions?.referralAdmin,
     amazonLookupRequestLimitPerWeek: safeToString(u.amazonLookupRequestLimitPerWeek),
     productsLimit: safeToString(u.productsLimit),
     marketAnalysisCreditsLimit: safeToString(u.marketAnalysisCreditsLimit),
@@ -101,6 +103,7 @@ export default function AdminPanelPage() {
     password: '',
     name: '',
     role: 'user',
+    referralAdmin: false,
     amazonLookupRequestLimitPerWeek: '',
     productsLimit: '',
     marketAnalysisCreditsLimit: '',
@@ -194,6 +197,7 @@ export default function AdminPanelPage() {
         password: createForm.password,
         name: createForm.name.trim(),
         role: createForm.role === 'admin' ? 'admin' : 'user',
+        referralAdmin: !!createForm.referralAdmin,
         amazonLookupRequestLimitPerWeek:
           createForm.amazonLookupRequestLimitPerWeek === ''
             ? null
@@ -212,6 +216,7 @@ export default function AdminPanelPage() {
         password: '',
         name: '',
         role: 'user',
+        referralAdmin: false,
         amazonLookupRequestLimitPerWeek: '',
         productsLimit: '',
         marketAnalysisCreditsLimit: '',
@@ -236,6 +241,7 @@ export default function AdminPanelPage() {
 
       await adminAPI.updateUserLimits(userId, {
         role: uEdits.role === 'admin' ? 'admin' : 'user',
+        referralAdmin: !!uEdits.referralAdmin,
         amazonLookupRequestLimitPerWeek:
           uEdits.amazonLookupRequestLimitPerWeek === ''
             ? null
@@ -798,6 +804,12 @@ export default function AdminPanelPage() {
             {t('adminPanelPage.plansTab')}
           </button>
           <button
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'referrals' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
+            onClick={() => setActiveTab('referrals')}
+          >
+            Referals
+          </button>
+          <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'partners' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
             onClick={() => setActiveTab('partners')}
           >
@@ -854,6 +866,15 @@ export default function AdminPanelPage() {
                   <option value="user">{t('adminPanelPage.userRole')}</option>
                   <option value="admin">{t('adminPanelPage.adminRole')}</option>
                 </select>
+
+                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={!!createForm.referralAdmin}
+                    onChange={(e) => setCreateForm((p) => ({ ...p, referralAdmin: e.target.checked }))}
+                  />
+                  Referral admin access
+                </label>
 
                 <div className="grid grid-cols-2 gap-3">
                   <input value={createForm.amazonLookupRequestLimitPerWeek} onChange={(e) => setCreateForm((p) => ({ ...p, amazonLookupRequestLimitPerWeek: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.amazonPerWeek')} type="number" min="0" />
@@ -1079,6 +1100,20 @@ export default function AdminPanelPage() {
                           <option value="user">user</option>
                           <option value="admin">admin</option>
                         </select>
+
+                        <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 sm:col-span-2">
+                          <input
+                            type="checkbox"
+                            checked={!!rowEdits.referralAdmin}
+                            onChange={(e) =>
+                              setEdits((prev) => ({
+                                ...prev,
+                                [u.id]: { ...prev[u.id], referralAdmin: e.target.checked },
+                              }))
+                            }
+                          />
+                          Referral admin access
+                        </label>
 
                         <input
                           value={rowEdits.amazonLookupRequestLimitPerWeek}
@@ -1564,6 +1599,7 @@ export default function AdminPanelPage() {
                         </div>
                       </div>
                     );
+                    {!loading && activeTab === 'referrals' && <ReferralManagementTab />}
                   })
                 )}
               </div>

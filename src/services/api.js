@@ -16,6 +16,7 @@ api.interceptors.request.use((config) => {
   const isAuthOrPublic =
     url.startsWith('/auth') ||
     url.startsWith('/health') ||
+    url.startsWith('/referrals/public') ||
     url.startsWith('/settings/plans/public') ||
     url.startsWith('/settings/currency-rates') ||
     url === '/settings/subscription-requests' ||
@@ -70,7 +71,8 @@ api.interceptors.response.use(
 
 // Auth APIs
 export const authAPI = {
-  signup: (email, password, name) => api.post('/auth/signup', { email, password, name }),
+  signup: (email, password, name, referralSlug = '') =>
+    api.post('/auth/signup', { email, password, name, referralSlug }),
   login: (email, password) => api.post('/auth/login', { email, password }),
   changePassword: (currentPassword, newPassword) =>
     api.post('/auth/change-password', { currentPassword, newPassword }),
@@ -247,6 +249,18 @@ export const adminAPI = {
   updateZikAccount: (id, data) => api.put(`/admin/zik-accounts/${encodeURIComponent(id)}`, data),
   deleteZikAccount: (id) => api.delete(`/admin/zik-accounts/${encodeURIComponent(id)}`),
   setActiveZikAccount: (id) => api.post(`/admin/zik-accounts/${encodeURIComponent(id)}/set-active`),
+  listReferrals: () => api.get('/admin/referrals'),
+  getReferral: (id) => api.get(`/admin/referrals/${encodeURIComponent(id)}`),
+  createReferral: (data) => api.post('/admin/referrals', data),
+  updateReferral: (id, data) => api.put(`/admin/referrals/${encodeURIComponent(id)}`, data),
+  addReferralUser: (id, data) => api.post(`/admin/referrals/${encodeURIComponent(id)}/users`, data),
+  removeReferralUser: (id, userId) => api.delete(`/admin/referrals/${encodeURIComponent(id)}/users/${encodeURIComponent(userId)}`),
+  recordReferralPayout: (id, data) => api.post(`/admin/referrals/${encodeURIComponent(id)}/payouts`, data),
+};
+
+export const referralAPI = {
+  getPublicBySlug: (slug) => api.get(`/referrals/public/${encodeURIComponent(slug)}`),
+  getMe: () => api.get('/referrals/me'),
 };
 
 export const maintenanceAPI = {
