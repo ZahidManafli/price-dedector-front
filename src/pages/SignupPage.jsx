@@ -23,8 +23,8 @@ function formatPlanCategory(category = '') {
     .toLowerCase()
     .replace(/\s+/g, '_');
 
-  if (normalized === 'amazon_monitoring' || normalized === 'amazonmonitoring') return 'Amazon monitoring';
-  if (normalized === 'analytics' || normalized === 'analysis' || normalized === 'data_analytics') return 'Data analytics';
+  if (normalized === 'amazon_monitoring' || normalized === 'amazonmonitoring') return 'Amazon Monitoring';
+  if (normalized === 'analytics' || normalized === 'analysis' || normalized === 'data_analytics') return 'Data Analytics';
   if (normalized === 'subscription') return 'Subscription';
   if (normalized === 'custom') return 'Custom';
   return toHumanText(normalized || 'subscription');
@@ -76,6 +76,30 @@ function stepClass(active) {
     : 'border-white/10 bg-white/5 text-slate-300';
 }
 
+// Category tab bar
+const CATEGORY_ORDER = ['subscription', 'analytics', 'amazon_monitoring'];
+
+function CategoryTabs({ categories, activeCategory, onChange }) {
+  return (
+    <div className="flex gap-2 flex-wrap mb-4">
+      {categories.map((cat) => (
+        <button
+          key={cat}
+          type="button"
+          onClick={() => onChange(cat)}
+          className={`rounded-xl px-4 py-1.5 text-sm font-semibold transition border ${
+            activeCategory === cat
+              ? 'border-cyan-300 bg-cyan-400/15 text-cyan-100 shadow-[0_0_0_1px_rgba(34,211,238,0.25)]'
+              : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:bg-white/10'
+          }`}
+        >
+          {formatPlanCategory(cat)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function PlanTile({ plan, selected, onSelect }) {
   const hasDiscount =
     Number.isFinite(Number(plan.actualPrice)) &&
@@ -83,13 +107,20 @@ function PlanTile({ plan, selected, onSelect }) {
     Number(plan.actualPrice) > Number(plan.discountedPrice);
 
   const displayPrice = hasDiscount ? Number(plan.discountedPrice) : Number(plan.actualPrice);
-  const priceLabel = Number.isFinite(displayPrice) && displayPrice > 0 ? `${displayPrice} ${plan.currency || 'AZN'}` : plan.price || 'On request';
+  const priceLabel =
+    Number.isFinite(displayPrice) && displayPrice > 0
+      ? `${displayPrice} ${plan.currency || 'AZN'}`
+      : plan.price || 'On request';
 
   return (
     <button
       type="button"
       onClick={() => onSelect(plan.id)}
-      className={`rounded-2xl border p-4 text-left transition ${selected ? 'border-cyan-300 bg-cyan-400/10 shadow-[0_0_0_1px_rgba(34,211,238,0.35)]' : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'}`}
+      className={`rounded-2xl border p-4 text-left transition ${
+        selected
+          ? 'border-cyan-300 bg-cyan-400/10 shadow-[0_0_0_1px_rgba(34,211,238,0.35)]'
+          : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+      }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -97,16 +128,33 @@ function PlanTile({ plan, selected, onSelect }) {
           <h3 className="mt-1 text-lg font-semibold text-white">{formatPlanName(plan.name)}</h3>
         </div>
         {plan.featured ? (
-          <span className="rounded-full border border-cyan-300/20 bg-cyan-400/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
+          <span className="rounded-full border border-cyan-300/20 bg-cyan-400/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100 whitespace-nowrap">
             Featured
           </span>
         ) : null}
       </div>
+
       <div className="mt-3 flex items-end gap-2">
+        {hasDiscount && (
+          <span className="text-sm line-through text-slate-500">
+            {Number(plan.actualPrice)} {plan.currency || 'AZN'}
+          </span>
+        )}
         <span className="text-2xl font-semibold tracking-tight text-white">{priceLabel}</span>
       </div>
       {plan.duration ? <p className="mt-1 text-xs text-slate-400">{plan.duration}</p> : null}
       {plan.description ? <p className="mt-3 text-sm leading-6 text-slate-300">{plan.description}</p> : null}
+
+      {plan.features.length > 0 && (
+        <ul className="mt-3 space-y-1">
+          {plan.features.map((f, i) => (
+            <li key={i} className="flex items-start gap-2 text-xs text-slate-300">
+              <span className="mt-0.5 text-cyan-400 flex-shrink-0">✓</span>
+              {f}
+            </li>
+          ))}
+        </ul>
+      )}
     </button>
   );
 }
@@ -120,6 +168,7 @@ export default function SignupPage() {
   const [referralLoading, setReferralLoading] = useState(Boolean(referralSlug));
   const [plans, setPlans] = useState([]);
   const [plansLoading, setPlansLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState('subscription');
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [formData, setFormData] = useState(initialForm(referralSlug));
   const [requestId, setRequestId] = useState('');
@@ -131,41 +180,24 @@ export default function SignupPage() {
 
   useEffect(() => {
     let cancelled = false;
-
     const loadReferral = async () => {
-      if (!referralSlug) {
-        setReferral(null);
-        setReferralLoading(false);
-        return;
-      }
-
+      if (!referralSlug) { setReferral(null); setReferralLoading(false); return; }
       try {
         setReferralLoading(true);
         const response = await referralAPI.getPublicBySlug(referralSlug);
-        if (!cancelled) {
-          setReferral(response?.data?.referral || null);
-        }
+        if (!cancelled) setReferral(response?.data?.referral || null);
       } catch {
-        if (!cancelled) {
-          setReferral(null);
-        }
+        if (!cancelled) setReferral(null);
       } finally {
-        if (!cancelled) {
-          setReferralLoading(false);
-        }
+        if (!cancelled) setReferralLoading(false);
       }
     };
-
     loadReferral();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [referralSlug]);
 
   useEffect(() => {
     let cancelled = false;
-
     const loadPlans = async () => {
       try {
         setPlansLoading(true);
@@ -173,11 +205,14 @@ export default function SignupPage() {
         if (cancelled) return;
         const nextPlans = (response?.data?.plans || [])
           .map(normalizePlan)
-          .filter((plan) => plan.isActive !== false && plan.category === 'subscription');
+          .filter((plan) => plan.isActive !== false);
         setPlans(nextPlans);
-        if (!selectedPlanId && nextPlans[0]?.id) {
-          setSelectedPlanId(nextPlans[0].id);
-          setFormData((prev) => ({ ...prev, planId: nextPlans[0].id }));
+        // Default to first subscription plan
+        const firstSub = nextPlans.find((p) => p.category === 'subscription') || nextPlans[0];
+        if (!selectedPlanId && firstSub?.id) {
+          setSelectedPlanId(firstSub.id);
+          setFormData((prev) => ({ ...prev, planId: firstSub.id }));
+          setActiveCategory(firstSub.category || 'subscription');
         }
       } catch (error) {
         if (!cancelled) {
@@ -187,12 +222,23 @@ export default function SignupPage() {
         if (!cancelled) setPlansLoading(false);
       }
     };
-
     loadPlans();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
+
+  // Derive ordered unique categories from loaded plans
+  const categories = useMemo(() => {
+    const inPlans = new Set(plans.map((p) => p.category));
+    const ordered = CATEGORY_ORDER.filter((c) => inPlans.has(c));
+    // Append any unknown categories not in CATEGORY_ORDER
+    plans.forEach((p) => { if (!ordered.includes(p.category)) ordered.push(p.category); });
+    return ordered;
+  }, [plans]);
+
+  const visiblePlans = useMemo(
+    () => plans.filter((p) => p.category === activeCategory),
+    [plans, activeCategory]
+  );
 
   const selectedPlan = useMemo(
     () => plans.find((plan) => plan.id === selectedPlanId) || null,
@@ -210,11 +256,22 @@ export default function SignupPage() {
     setAlert(null);
   };
 
+  const handleCategoryChange = (cat) => {
+    setActiveCategory(cat);
+    // When switching tabs, if currently selected plan isn't in this category,
+    // auto-select the featured or first plan in the new tab
+    const plansInCat = plans.filter((p) => p.category === cat);
+    const isCurrentInCat = plansInCat.some((p) => p.id === selectedPlanId);
+    if (!isCurrentInCat && plansInCat.length > 0) {
+      const next = plansInCat.find((p) => p.featured) || plansInCat[0];
+      handlePlanSelect(next.id);
+    }
+  };
+
   const validateRequest = () => {
     if (!formData.name || !formData.surname || !formData.email || !formData.phoneNumber || !formData.planId) {
       return t('subscriptionRequestModal.pleaseFillAllRequiredFields');
     }
-
     if (formData.planId === 'custom') {
       const requiredNumbers = [
         formData.amazonLookupLimitPerWeek,
@@ -223,21 +280,14 @@ export default function SignupPage() {
         formData.ebayAccountsLimit,
       ];
       const hasInvalid = requiredNumbers.some((v) => v === '' || Number(v) < 0 || !Number.isFinite(Number(v)));
-      if (hasInvalid) {
-        return t('subscriptionRequestModal.customPlanRequiresFields');
-      }
+      if (hasInvalid) return t('subscriptionRequestModal.customPlanRequiresFields');
     }
-
     return '';
   };
 
   const submitSubscriptionRequest = async () => {
     const validationError = validateRequest();
-    if (validationError) {
-      setAlert({ type: 'error', message: validationError });
-      return;
-    }
-
+    if (validationError) { setAlert({ type: 'error', message: validationError }); return; }
     try {
       setLoading(true);
       setAlert(null);
@@ -248,7 +298,6 @@ export default function SignupPage() {
         phoneNumber: formData.phoneNumber.trim(),
         planId: formData.planId,
       };
-
       if (formData.planId === 'custom') {
         payload.requestedLimits = {
           amazonLookupLimitPerWeek: Number(formData.amazonLookupLimitPerWeek),
@@ -258,22 +307,16 @@ export default function SignupPage() {
         };
         payload.customNote = formData.customNote?.trim() || '';
       }
-
       const response = await settingsAPI.submitSubscriptionRequest(payload);
       const request = response?.data?.request || {};
-
       if (request.verificationRequired) {
         setVerificationStep(true);
         setRequestId(String(request.id || '').trim());
         setVerificationExpiresAt(String(request.verificationExpiresAt || '').trim());
         setVerificationCode('');
-        setAlert({
-          type: 'success',
-          message: response?.data?.message || 'A verification code has been sent to your email address.',
-        });
+        setAlert({ type: 'success', message: response?.data?.message || 'A verification code has been sent to your email address.' });
         return;
       }
-
       await Swal.fire({
         icon: 'success',
         title: t('common:success'),
@@ -282,10 +325,7 @@ export default function SignupPage() {
       });
       navigate('/login');
     } catch (error) {
-      setAlert({
-        type: 'error',
-        message: error?.response?.data?.error || error.message || t('subscriptionRequestModal.failedToSendRequest'),
-      });
+      setAlert({ type: 'error', message: error?.response?.data?.error || error.message || t('subscriptionRequestModal.failedToSendRequest') });
     } finally {
       setLoading(false);
     }
@@ -297,15 +337,10 @@ export default function SignupPage() {
       setAlert({ type: 'error', message: 'Enter the 6-digit verification code sent to your email.' });
       return;
     }
-
     try {
       setLoading(true);
       setAlert(null);
-      await settingsAPI.verifySubscriptionRequest({
-        requestId,
-        email: formData.email.trim(),
-        code,
-      });
+      await settingsAPI.verifySubscriptionRequest({ requestId, email: formData.email.trim(), code });
       await Swal.fire({
         icon: 'success',
         title: t('common:success'),
@@ -322,16 +357,15 @@ export default function SignupPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (verificationStep) {
-      await verifyCode();
-      return;
-    }
+    if (verificationStep) { await verifyCode(); return; }
     await submitSubscriptionRequest();
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white px-4 py-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col lg:flex-row lg:items-stretch lg:gap-6">
+
+        {/* ── Left panel: steps + referral info ── */}
         <div className="mb-6 flex-1 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl shadow-2xl lg:mb-0 lg:max-w-md">
           <p className="text-xs uppercase tracking-[0.35em] text-cyan-200/80">Checkila subscription</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Request access to your plan</h1>
@@ -368,9 +402,15 @@ export default function SignupPage() {
 
           <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/40 p-4">
             <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Selected plan</p>
-            <p className="mt-1 text-xl font-semibold">{selectedPlan ? formatPlanName(selectedPlan.name) : 'No plan selected'}</p>
+            <p className="mt-1 text-xl font-semibold">
+              {selectedPlan ? formatPlanName(selectedPlan.name) : selectedPlanId === 'custom' ? 'Custom Plan' : 'No plan selected'}
+            </p>
             <p className="mt-1 text-sm text-slate-300">
-              {selectedPlan ? `${formatPlanCategory(selectedPlan.category)} · ${selectedPlan.price || selectedPlan.actualPrice || 'On request'}` : 'Pick a plan on the right to continue.'}
+              {selectedPlan
+                ? `${formatPlanCategory(selectedPlan.category)} · ${selectedPlan.price || selectedPlan.actualPrice || 'On request'}`
+                : selectedPlanId === 'custom'
+                ? 'Custom · On request'
+                : 'Pick a plan on the right to continue.'}
             </p>
           </div>
 
@@ -382,6 +422,7 @@ export default function SignupPage() {
           </p>
         </div>
 
+        {/* ── Right panel: form ── */}
         <div className="flex-1 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl shadow-2xl md:p-8">
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
@@ -412,124 +453,71 @@ export default function SignupPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <input
-                type="text"
-                name="name"
-                placeholder={t('signupPage.fullName') || 'Full name'}
-                value={formData.name}
-                onChange={handleChange}
-                className="input-base"
-                disabled={loading || verificationStep}
-              />
-              <input
-                type="text"
-                name="surname"
-                placeholder="Surname"
-                value={formData.surname}
-                onChange={handleChange}
-                className="input-base"
-                disabled={loading || verificationStep}
-              />
-              <input
-                type="email"
-                name="email"
-                placeholder={t('auth.email') || 'Email'}
-                value={formData.email}
-                onChange={handleChange}
-                className="input-base"
-                disabled={loading || verificationStep}
-              />
-              <input
-                type="tel"
-                name="phoneNumber"
-                placeholder="Phone number"
-                value={formData.phoneNumber}
-                onChange={handleChange}
-                className="input-base"
-                disabled={loading || verificationStep}
-              />
+              <input type="text" name="name" placeholder={t('signupPage.fullName') || 'Full name'} value={formData.name} onChange={handleChange} className="input-base" disabled={loading || verificationStep} />
+              <input type="text" name="surname" placeholder="Surname" value={formData.surname} onChange={handleChange} className="input-base" disabled={loading || verificationStep} />
+              <input type="email" name="email" placeholder={t('auth.email') || 'Email'} value={formData.email} onChange={handleChange} className="input-base" disabled={loading || verificationStep} />
+              <input type="tel" name="phoneNumber" placeholder="Phone number" value={formData.phoneNumber} onChange={handleChange} className="input-base" disabled={loading || verificationStep} />
             </div>
 
+            {/* ── Plan picker with category tabs ── */}
             <div>
               <p className="mb-3 text-sm font-semibold text-slate-200">Choose a plan</p>
               {plansLoading ? (
                 <LoadingSpinner />
               ) : (
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                  {plans.map((plan) => (
-                    <PlanTile key={plan.id} plan={plan} selected={selectedPlanId === plan.id} onSelect={handlePlanSelect} />
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => handlePlanSelect('custom')}
-                    className={`rounded-2xl border p-4 text-left transition ${selectedPlanId === 'custom' ? 'border-cyan-300 bg-cyan-400/10' : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'}`}
-                  >
-                    <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Custom</p>
-                    <h3 className="mt-1 text-lg font-semibold text-white">Request custom plan</h3>
-                    <p className="mt-3 text-sm leading-6 text-slate-300">Send a tailored request with your own limits.</p>
-                  </button>
-                </div>
+                <>
+                  {/* Category tabs */}
+                  <CategoryTabs
+                    categories={categories}
+                    activeCategory={activeCategory}
+                    onChange={handleCategoryChange}
+                  />
+
+                  {/* Plan grid for active category */}
+                  <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                    {visiblePlans.map((plan) => (
+                      <PlanTile key={plan.id} plan={plan} selected={selectedPlanId === plan.id} onSelect={handlePlanSelect} />
+                    ))}
+
+                    {/* Custom plan tile — only show in subscription tab */}
+                    {activeCategory === 'subscription' && (
+                      <button
+                        type="button"
+                        onClick={() => handlePlanSelect('custom')}
+                        className={`rounded-2xl border p-4 text-left transition ${
+                          selectedPlanId === 'custom'
+                            ? 'border-cyan-300 bg-cyan-400/10 shadow-[0_0_0_1px_rgba(34,211,238,0.35)]'
+                            : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                        }`}
+                      >
+                        <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Custom</p>
+                        <h3 className="mt-1 text-lg font-semibold text-white">Request custom plan</h3>
+                        <p className="mt-3 text-sm leading-6 text-slate-300">Send a tailored request with your own limits.</p>
+                      </button>
+                    )}
+                  </div>
+                </>
               )}
             </div>
 
+            {/* Custom plan fields */}
             {selectedPlanId === 'custom' ? (
               <div className="space-y-3 rounded-2xl border border-cyan-300/20 bg-cyan-400/5 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-100/80">Custom plan requirements</p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.amazonLookupLimitPerWeek}
-                    onChange={handleChange}
-                    name="amazonLookupLimitPerWeek"
-                    placeholder="Amazon lookups / week"
-                    className="input-base"
-                    disabled={loading || verificationStep}
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.productsLimit}
-                    onChange={handleChange}
-                    name="productsLimit"
-                    placeholder="Products limit"
-                    className="input-base"
-                    disabled={loading || verificationStep}
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.marketAnalysisCreditsLimit}
-                    onChange={handleChange}
-                    name="marketAnalysisCreditsLimit"
-                    placeholder="Analysis credits"
-                    className="input-base"
-                    disabled={loading || verificationStep}
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.ebayAccountsLimit}
-                    onChange={handleChange}
-                    name="ebayAccountsLimit"
-                    placeholder="eBay accounts"
-                    className="input-base"
-                    disabled={loading || verificationStep}
-                  />
+                  <input type="number" min="0" value={formData.amazonLookupLimitPerWeek} onChange={handleChange} name="amazonLookupLimitPerWeek" placeholder="Amazon lookups / week" className="input-base" disabled={loading || verificationStep} />
+                  <input type="number" min="0" value={formData.productsLimit} onChange={handleChange} name="productsLimit" placeholder="Products limit" className="input-base" disabled={loading || verificationStep} />
+                  <input type="number" min="0" value={formData.marketAnalysisCreditsLimit} onChange={handleChange} name="marketAnalysisCreditsLimit" placeholder="Analysis credits" className="input-base" disabled={loading || verificationStep} />
+                  <input type="number" min="0" value={formData.ebayAccountsLimit} onChange={handleChange} name="ebayAccountsLimit" placeholder="eBay accounts" className="input-base" disabled={loading || verificationStep} />
                 </div>
-                <textarea
-                  value={formData.customNote}
-                  onChange={handleChange}
-                  name="customNote"
-                  placeholder="Optional note for admin"
-                  className="input-base min-h-[96px]"
-                  disabled={loading || verificationStep}
-                />
+                <textarea value={formData.customNote} onChange={handleChange} name="customNote" placeholder="Optional note for admin" className="input-base min-h-[96px]" disabled={loading || verificationStep} />
               </div>
             ) : (
               <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
                 <p className="text-sm text-slate-300">
-                  {selectedPlan ? `Selected: ${formatPlanName(selectedPlan.name)} · ${selectedPlan.price || selectedPlan.actualPrice || 'On request'}` : 'Select a plan above to continue.'}
+                  {selectedPlan
+                    ? `Selected: ${formatPlanName(selectedPlan.name)} · ${selectedPlan.price || selectedPlan.actualPrice || 'On request'}`
+                    : 'Select a plan above to continue.'}
                 </p>
               </div>
             )}
@@ -553,12 +541,8 @@ export default function SignupPage() {
               className="w-full rounded-xl bg-cyan-400 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
             >
               {loading
-                ? verificationStep
-                  ? 'Verifying...'
-                  : 'Sending request...'
-                : verificationStep
-                  ? 'Verify code'
-                  : 'Send subscription request'}
+                ? verificationStep ? 'Verifying...' : 'Sending request...'
+                : verificationStep ? 'Verify code' : 'Send subscription request'}
             </button>
           </form>
         </div>

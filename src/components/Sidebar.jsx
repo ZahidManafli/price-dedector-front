@@ -52,7 +52,9 @@ export default function Sidebar() {
     { label: t('nav.ebayCalculator'), path: '/ebay-calculator', icon: Calculator, tab: TAB_KEYS.EBAY_CALCULATOR },
     { label: t('nav.marketAnalysis'), path: '/market-analysis', icon: BarChart3, tab: TAB_KEYS.MARKET_ANALYSIS, tour: 'sidebar-market-analysis' },
     { label: t('nav.dewiso'), path: '/dewiso', icon: Code2, tab: TAB_KEYS.DEWISO },
-    { label: 'Referals', path: '/referals', icon: Link2, tab: TAB_KEYS.REFERRALS },
+    ...(user?.role === 'admin' || user?.permissions?.referralAdmin
+      ? [{ label: 'Referrals', path: '/referals', icon: Link2, tab: TAB_KEYS.REFERRALS }]
+      : []),
     { label: t('nav.settings'), path: '/settings', icon: Settings, tab: TAB_KEYS.SETTINGS, tour: 'sidebar-settings' },
     ...(user?.role === 'admin' ? [{ label: t('nav.adminPanel'), path: '/admin', icon: ShieldCheck, tab: TAB_KEYS.ADMIN }] : []),
   ];
