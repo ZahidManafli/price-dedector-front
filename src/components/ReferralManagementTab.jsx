@@ -239,8 +239,8 @@ export default function ReferralManagementTab() {
             <input className="input-base" placeholder="Referral name" value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} />
             <input className="input-base" placeholder="Referral slug" value={form.slug} onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))} />
             <textarea className="input-base md:col-span-2 min-h-[100px]" placeholder="Description" value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} />
-            <input className="input-base" placeholder="Fee amount" type="number" min="0" value={form.feeAmount} onChange={(e) => setForm((prev) => ({ ...prev, feeAmount: e.target.value }))} />
-            <input className="input-base" placeholder="Currency" value={form.feeCurrency} onChange={(e) => setForm((prev) => ({ ...prev, feeCurrency: e.target.value }))} />
+            <input className="input-base" placeholder="Commission percentage" type="number" min="0" max="100" step="0.01" value={form.feeAmount} onChange={(e) => setForm((prev) => ({ ...prev, feeAmount: e.target.value }))} />
+            <input className="input-base" placeholder="Payout currency" value={form.feeCurrency} onChange={(e) => setForm((prev) => ({ ...prev, feeCurrency: e.target.value }))} />
             <select className="input-base" value={form.referralAdminUserId} onChange={(e) => setForm((prev) => ({ ...prev, referralAdminUserId: e.target.value }))}>
               <option value="">Select referral admin</option>
               {users.map((user) => (
@@ -264,8 +264,8 @@ export default function ReferralManagementTab() {
                 <p className="text-2xl font-semibold mt-1">{detail.referral.memberCount}</p>
               </div>
               <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
-                <p className="text-xs text-slate-500">Fee</p>
-                <p className="text-2xl font-semibold mt-1">{detail.referral.feeAmount} {detail.referral.feeCurrency}</p>
+                <p className="text-xs text-slate-500">Commission</p>
+                <p className="text-2xl font-semibold mt-1">{detail.referral.feeAmount}%</p>
               </div>
               <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
                 <p className="text-xs text-slate-500">Earned</p>

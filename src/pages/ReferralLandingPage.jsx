@@ -54,6 +54,10 @@ export default function ReferralLandingPage() {
               <p className="text-xl font-semibold mt-1">{referral.referralAdminName || 'N/A'}</p>
             </div>
             <div className="rounded-2xl bg-white/6 border border-white/10 p-4">
+              <p className="text-slate-400">Commission</p>
+              <p className="text-xl font-semibold mt-1">{referral.feeAmount}%</p>
+            </div>
+            <div className="rounded-2xl bg-white/6 border border-white/10 p-4">
               <p className="text-slate-400">Code</p>
               <p className="text-xl font-semibold mt-1">{referral.slug}</p>
             </div>
