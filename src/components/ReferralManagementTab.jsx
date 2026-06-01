@@ -23,6 +23,7 @@ export default function ReferralManagementTab() {
   const [referrals, setReferrals] = useState([]);
   const [users, setUsers] = useState([]);
   const [selectedReferralId, setSelectedReferralId] = useState('');
+  const [isCreatingNew, setIsCreatingNew] = useState(true);
   const [detail, setDetail] = useState(null);
   const [form, setForm] = useState(emptyForm());
   const [payoutAmount, setPayoutAmount] = useState('');
@@ -43,7 +44,7 @@ export default function ReferralManagementTab() {
       const nextReferrals = referralsRes?.data?.referrals || [];
       setReferrals(nextReferrals);
       setUsers(usersRes?.data?.users || []);
-      if (!selectedReferralId && nextReferrals[0]?.id) {
+      if (!selectedReferralId && !isCreatingNew && nextReferrals[0]?.id) {
         setSelectedReferralId(nextReferrals[0].id);
       }
     } catch (err) {
@@ -77,13 +78,17 @@ export default function ReferralManagementTab() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [isCreatingNew, selectedReferralId]);
 
   useEffect(() => {
     if (selectedReferralId) {
+      setIsCreatingNew(false);
       loadDetail(selectedReferralId);
+    } else if (isCreatingNew) {
+      setDetail(null);
+      setForm(emptyForm());
     }
-  }, [selectedReferralId]);
+  }, [selectedReferralId, isCreatingNew]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -108,6 +113,7 @@ export default function ReferralManagementTab() {
       } else {
         const response = await adminAPI.createReferral(payload);
         if (response?.data?.referral?.id) {
+          setIsCreatingNew(false);
           setSelectedReferralId(response.data.referral.id);
         }
       }
@@ -194,8 +200,17 @@ export default function ReferralManagementTab() {
         <div className="glass-card p-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-lg font-semibold">All referrals</h3>
-            <button type="button" onClick={() => { setSelectedReferralId(''); setForm(emptyForm()); setDetail(null); }} className="btn-secondary px-3 py-2 text-xs">
-              New
+            <button
+              type="button"
+              onClick={() => {
+                setIsCreatingNew(true);
+                setSelectedReferralId('');
+                setForm(emptyForm());
+                setDetail(null);
+              }}
+              className={`btn-secondary px-3 py-2 text-xs ${isCreatingNew ? 'ring-2 ring-cyan-400/40' : ''}`}
+            >
+              Create new
             </button>
           </div>
           <div className="space-y-2 max-h-[600px] overflow-auto pr-1">
@@ -203,7 +218,10 @@ export default function ReferralManagementTab() {
               <button
                 key={referral.id}
                 type="button"
-                onClick={() => setSelectedReferralId(referral.id)}
+                onClick={() => {
+                  setIsCreatingNew(false);
+                  setSelectedReferralId(referral.id);
+                }}
                 className={`w-full text-left rounded-xl border px-3 py-3 transition ${selectedReferralId === referral.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-900/40'}`}
               >
                 <div className="flex items-center justify-between gap-2">

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { authAPI } from '../services/api';
+import { authAPI, referralAPI } from '../services/api';
 import Alert from '../components/Alert';
 import { useTranslation } from 'react-i18next';
 
@@ -15,8 +15,44 @@ export default function SignupPage() {
     password: '',
     confirmPassword: '',
   });
+  const [referral, setReferral] = useState(null);
+  const [referralLoading, setReferralLoading] = useState(Boolean(referralSlug));
   const [alert, setAlert] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadReferral = async () => {
+      if (!referralSlug) {
+        setReferral(null);
+        setReferralLoading(false);
+        return;
+      }
+
+      try {
+        setReferralLoading(true);
+        const response = await referralAPI.getPublicBySlug(referralSlug);
+        if (!cancelled) {
+          setReferral(response?.data?.referral || null);
+        }
+      } catch {
+        if (!cancelled) {
+          setReferral(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setReferralLoading(false);
+        }
+      }
+    };
+
+    loadReferral();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [referralSlug]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -63,15 +99,27 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-indigo-50 flex items-center justify-center px-4 py-6">
-      <div className="glass-card p-6 w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white px-4 py-8 flex items-center justify-center">
+      <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl p-6 md:p-8">
         <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white text-3xl font-bold shadow-sm">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white text-3xl font-bold shadow-sm bg-cyan-400/20 border border-cyan-300/30">
             PC
           </div>
-          <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">{t('signupPage.title')}</h1>
-          <p className="text-slate-600 mt-2">{t('signupPage.subtitle')}</p>
+          <h1 className="text-3xl font-semibold tracking-tight">{t('signupPage.title')}</h1>
+          <p className="text-slate-300 mt-2">{t('signupPage.subtitle')}</p>
         </div>
+
+        {referralSlug ? (
+          <div className="mb-6 rounded-2xl border border-cyan-300/20 bg-cyan-400/10 p-4 text-sm text-cyan-50">
+            <p className="font-semibold uppercase tracking-[0.2em] text-cyan-100/80">Referral link</p>
+            <p className="mt-1 text-base font-semibold text-white">
+              {referralLoading ? 'Loading referral...' : referral?.name || referralSlug}
+            </p>
+            <p className="mt-1 text-cyan-50/90">
+              {referral?.description || 'This account will be attached to the referral after signup.'}
+            </p>
+          </div>
+        ) : null}
 
         {alert && (
           <div className="mb-6">
@@ -95,25 +143,27 @@ export default function SignupPage() {
             disabled={loading}
           />
 
-          <input
-            type="email"
-            name="email"
-            placeholder={t('auth.email')}
-            value={formData.email}
-            onChange={handleChange}
-            className="input-base"
-            disabled={loading}
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <input
+              type="email"
+              name="email"
+              placeholder={t('auth.email')}
+              value={formData.email}
+              onChange={handleChange}
+              className="input-base"
+              disabled={loading}
+            />
 
-          <input
-            type="password"
-            name="password"
-            placeholder={t('signupPage.passwordHint')}
-            value={formData.password}
-            onChange={handleChange}
-            className="input-base"
-            disabled={loading}
-          />
+            <input
+              type="password"
+              name="password"
+              placeholder={t('signupPage.passwordHint')}
+              value={formData.password}
+              onChange={handleChange}
+              className="input-base"
+              disabled={loading}
+            />
+          </div>
 
           <input
             type="password"
@@ -128,15 +178,15 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full btn-primary py-2.5"
+            className="w-full rounded-xl bg-cyan-400 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
           >
             {loading ? t('signupPage.creatingAccount') : t('signupPage.signUp')}
           </button>
         </form>
 
-        <p className="text-center text-slate-600 mt-6">
+        <p className="text-center text-slate-300 mt-6">
           {t('signupPage.alreadyHaveAccount')}{' '}
-          <Link to="/login" className="text-blue-600 font-semibold hover:underline">
+          <Link to="/login" className="text-cyan-300 font-semibold hover:underline">
             {t('auth.login')}
           </Link>
         </p>
