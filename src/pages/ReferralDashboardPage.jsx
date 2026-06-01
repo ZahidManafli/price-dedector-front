@@ -215,12 +215,8 @@ export default function ReferralDashboardPage() {
                       <p className="text-2xl font-semibold mt-1">{referral.feeAmount}%</p>
                     </div>
                     <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
-                      <p className="text-xs text-slate-500">Earned</p>
-                      <p className="text-2xl font-semibold mt-1">{referral.totalEarned} {referral.feeCurrency}</p>
-                    </div>
-                    <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
                       <p className="text-xs text-slate-500">Paid</p>
-                      <p className="text-2xl font-semibold mt-1">{referral.totalPaid} {referral.feeCurrency}</p>
+                      <p className="text-2xl font-semibold mt-1">{(-1)*referral.totalPaid} {referral.feeCurrency}</p>
                     </div>
                     <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/50 p-4 col-span-2 bg-emerald-50/60 dark:bg-emerald-950/20">
                       <p className="text-xs text-emerald-700 dark:text-emerald-300">Estimated monthly</p>
