@@ -1599,11 +1599,16 @@ export default function AdminPanelPage() {
                         </div>
                       </div>
                     );
-                    {!loading && activeTab === 'referrals' && <ReferralManagementTab />}
                   })
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {!loading && activeTab === 'referrals' && (
+          <div className="space-y-4">
+            <ReferralManagementTab />
           </div>
         )}
 
