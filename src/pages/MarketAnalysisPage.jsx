@@ -1153,7 +1153,16 @@ export default function MarketAnalysisPage() {
                           <td className="p-3 max-w-[220px] truncate text-xs">
                             <button
                               type="button"
-                              onClick={() => item.itemWebUrl && window.open(item.itemWebUrl, '_blank', 'noopener,noreferrer')}
+                              onClick={() => {
+                                if (!item.itemWebUrl) return;
+                                // Fast product-name search returns URLs without the protocol (e.g. "www.ebay.com/itm/...")
+                                // Normalise to a proper absolute URL before opening so the browser doesn't prepend the app origin.
+                                let url = String(item.itemWebUrl).trim();
+                                if (url && !/^https?:\/\//i.test(url)) {
+                                  url = 'https://' + url.replace(/^\/+/, '');
+                                }
+                                window.open(url, '_blank', 'noopener,noreferrer');
+                              }}
                               className="text-left hover:underline"
                               title={item.itemWebUrl ? t('marketAnalysisPage.openOnEbay') : t('marketAnalysisPage.ebayLinkUnavailable')}
                             >
