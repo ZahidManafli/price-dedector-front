@@ -5,38 +5,29 @@ import { referralAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
+// ─── Helpers (unchanged) ──────────────────────────────────────────────────────
 function toHumanText(value = '') {
   const raw = String(value || '').trim();
   if (!raw) return '';
-  return raw
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .split(' ')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(' ');
+  return raw.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').split(' ')
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
 }
-
 function formatPlanCategory(category = '') {
-  const normalized = String(category || '')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '_');
-
-  if (normalized === 'amazon_monitoring' || normalized === 'amazonmonitoring') return 'Amazon Monitoring';
-  if (normalized === 'analytics' || normalized === 'analysis' || normalized === 'data_analytics') return 'Data Analytics';
-  if (normalized === 'subscription') return 'Subscription';
-  if (normalized === 'custom') return 'Custom';
-  return toHumanText(normalized || 'subscription');
+  const n = String(category || '').trim().toLowerCase().replace(/\s+/g, '_');
+  if (n === 'amazon_monitoring' || n === 'amazonmonitoring') return 'Amazon Monitoring';
+  if (n === 'analytics' || n === 'analysis' || n === 'data_analytics') return 'Analytics';
+  if (n === 'subscription') return 'Subscription';
+  if (n === 'custom') return 'Custom';
+  return toHumanText(n || 'subscription');
 }
-
 function formatPlanName(name = '') {
   const raw = String(name || '').trim();
   if (!raw) return 'Plan';
   if (raw.includes('_') || raw.includes('-')) return toHumanText(raw);
   return raw;
 }
-
 function normalizePlan(raw = {}) {
   return {
     id: String(raw.id || '').trim(),
@@ -53,59 +44,22 @@ function normalizePlan(raw = {}) {
     featured: !!raw.featured,
   };
 }
-
-function initialForm(referralSlug = '', selectedPlanId = '') {
+function initialForm(referralSlug = '') {
   return {
-    name: '',
-    surname: '',
-    email: '',
-    phoneNumber: '',
-    planId: selectedPlanId,
-    requestedCredits: '',
-    amazonLookupLimitPerWeek: '',
-    productsLimit: '',
-    marketAnalysisCreditsLimit: '',
-    ebayAccountsLimit: '',
+    name: '', surname: '', email: '', phoneNumber: '', planId: '',
+    requestedCredits: '', amazonLookupLimitPerWeek: '', productsLimit: '',
+    marketAnalysisCreditsLimit: '', ebayAccountsLimit: '',
     customNote: referralSlug ? `Referral: ${referralSlug}` : '',
   };
 }
-
-function stepClass(active) {
-  return active
-    ? 'border-cyan-300 bg-cyan-400/15 text-cyan-50 shadow-[0_0_0_1px_rgba(34,211,238,0.25)]'
-    : 'border-white/10 bg-white/5 text-slate-300';
-}
-
-// Category tab bar
 const CATEGORY_ORDER = ['subscription', 'analytics', 'amazon_monitoring'];
 
-function CategoryTabs({ categories, activeCategory, onChange }) {
-  return (
-    <div className="flex gap-2 flex-wrap mb-4">
-      {categories.map((cat) => (
-        <button
-          key={cat}
-          type="button"
-          onClick={() => onChange(cat)}
-          className={`rounded-xl px-4 py-1.5 text-sm font-semibold transition border ${
-            activeCategory === cat
-              ? 'border-cyan-300 bg-cyan-400/15 text-cyan-100 shadow-[0_0_0_1px_rgba(34,211,238,0.25)]'
-              : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:bg-white/10'
-          }`}
-        >
-          {formatPlanCategory(cat)}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function PlanTile({ plan, selected, onSelect }) {
+// ─── Plan tile ────────────────────────────────────────────────────────────────
+function PlanTile({ plan, selected, onSelect, isDark }) {
   const hasDiscount =
     Number.isFinite(Number(plan.actualPrice)) &&
     Number.isFinite(Number(plan.discountedPrice)) &&
     Number(plan.actualPrice) > Number(plan.discountedPrice);
-
   const displayPrice = hasDiscount ? Number(plan.discountedPrice) : Number(plan.actualPrice);
   const priceLabel =
     Number.isFinite(displayPrice) && displayPrice > 0
@@ -116,54 +70,87 @@ function PlanTile({ plan, selected, onSelect }) {
     <button
       type="button"
       onClick={() => onSelect(plan.id)}
-      className={`rounded-2xl border p-4 text-left transition ${
+      className={`w-full rounded-xl border p-4 text-left transition-all duration-150 ${
         selected
-          ? 'border-cyan-300 bg-cyan-400/10 shadow-[0_0_0_1px_rgba(34,211,238,0.35)]'
-          : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+          ? isDark
+            ? 'border-blue-500 bg-blue-950/40 shadow-[0_0_0_1px_rgba(59,130,246,0.3)]'
+            : 'border-blue-500 bg-blue-50 shadow-[0_0_0_1px_rgba(59,130,246,0.2)]'
+          : isDark
+            ? 'border-slate-700 bg-slate-800/50 hover:border-slate-600 hover:bg-slate-800'
+            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-slate-400">{formatPlanCategory(plan.category)}</p>
-          <h3 className="mt-1 text-lg font-semibold text-white">{formatPlanName(plan.name)}</h3>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className={`text-[10px] uppercase tracking-widest font-medium truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            {formatPlanCategory(plan.category)}
+          </p>
+          <p className={`mt-0.5 font-semibold text-sm ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+            {formatPlanName(plan.name)}
+          </p>
         </div>
-        {plan.featured ? (
-          <span className="rounded-full border border-cyan-300/20 bg-cyan-400/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100 whitespace-nowrap">
-            Featured
-          </span>
-        ) : null}
+        <div className="flex-shrink-0 flex flex-col items-end gap-1">
+          {plan.featured && (
+            <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold text-white uppercase tracking-wide">
+              Popular
+            </span>
+          )}
+          <div className="flex items-baseline gap-1">
+            {hasDiscount && (
+              <span className={`text-xs line-through ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+                {Number(plan.actualPrice)}
+              </span>
+            )}
+            <span className={`text-base font-bold ${selected ? 'text-blue-500' : isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+              {priceLabel}
+            </span>
+          </div>
+        </div>
       </div>
-
-      <div className="mt-3 flex items-end gap-2">
-        {hasDiscount && (
-          <span className="text-sm line-through text-slate-500">
-            {Number(plan.actualPrice)} {plan.currency || 'AZN'}
-          </span>
-        )}
-        <span className="text-2xl font-semibold tracking-tight text-white">{priceLabel}</span>
-      </div>
-      {plan.duration ? <p className="mt-1 text-xs text-slate-400">{plan.duration}</p> : null}
-      {plan.description ? <p className="mt-3 text-sm leading-6 text-slate-300">{plan.description}</p> : null}
-
       {plan.features.length > 0 && (
         <ul className="mt-3 space-y-1">
-          {plan.features.map((f, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs text-slate-300">
-              <span className="mt-0.5 text-cyan-400 flex-shrink-0">✓</span>
+          {plan.features.slice(0, 3).map((f, i) => (
+            <li key={i} className={`flex items-start gap-1.5 text-xs leading-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <span className="mt-0.5 text-blue-500 flex-shrink-0">✓</span>
               {f}
             </li>
           ))}
+          {plan.features.length > 3 && (
+            <li className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              +{plan.features.length - 3} more
+            </li>
+          )}
         </ul>
       )}
     </button>
   );
 }
 
+// ─── Step indicator ───────────────────────────────────────────────────────────
+function StepDot({ n, active, done, isDark }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
+        done
+          ? 'bg-blue-600 border-blue-600 text-white'
+          : active
+            ? isDark ? 'border-blue-500 text-blue-400 bg-blue-950/40' : 'border-blue-500 text-blue-600 bg-blue-50'
+            : isDark ? 'border-slate-700 text-slate-600 bg-transparent' : 'border-slate-300 text-slate-400 bg-transparent'
+      }`}>
+        {done ? '✓' : n}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 export default function SignupPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const { isDark } = useTheme();
   const referralSlug = new URLSearchParams(location.search).get('ref') || '';
+
   const [referral, setReferral] = useState(null);
   const [referralLoading, setReferralLoading] = useState(Boolean(referralSlug));
   const [plans, setPlans] = useState([]);
@@ -178,72 +165,55 @@ export default function SignupPage() {
   const [alert, setAlert] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Referral load
   useEffect(() => {
     let cancelled = false;
-    const loadReferral = async () => {
+    const load = async () => {
       if (!referralSlug) { setReferral(null); setReferralLoading(false); return; }
       try {
         setReferralLoading(true);
-        const response = await referralAPI.getPublicBySlug(referralSlug);
-        if (!cancelled) setReferral(response?.data?.referral || null);
-      } catch {
-        if (!cancelled) setReferral(null);
-      } finally {
-        if (!cancelled) setReferralLoading(false);
-      }
+        const res = await referralAPI.getPublicBySlug(referralSlug);
+        if (!cancelled) setReferral(res?.data?.referral || null);
+      } catch { if (!cancelled) setReferral(null); }
+      finally { if (!cancelled) setReferralLoading(false); }
     };
-    loadReferral();
+    load();
     return () => { cancelled = true; };
   }, [referralSlug]);
 
+  // Plans load
   useEffect(() => {
     let cancelled = false;
-    const loadPlans = async () => {
+    const load = async () => {
       try {
         setPlansLoading(true);
-        const response = await settingsAPI.getPublicPlans();
+        const res = await settingsAPI.getPublicPlans();
         if (cancelled) return;
-        const nextPlans = (response?.data?.plans || [])
-          .map(normalizePlan)
-          .filter((plan) => plan.isActive !== false);
-        setPlans(nextPlans);
-        // Default to first subscription plan
-        const firstSub = nextPlans.find((p) => p.category === 'subscription') || nextPlans[0];
+        const next = (res?.data?.plans || []).map(normalizePlan).filter((p) => p.isActive !== false);
+        setPlans(next);
+        const firstSub = next.find((p) => p.category === 'subscription') || next[0];
         if (!selectedPlanId && firstSub?.id) {
           setSelectedPlanId(firstSub.id);
           setFormData((prev) => ({ ...prev, planId: firstSub.id }));
           setActiveCategory(firstSub.category || 'subscription');
         }
-      } catch (error) {
-        if (!cancelled) {
-          setAlert({ type: 'error', message: error?.response?.data?.error || error.message || 'Failed to load plans' });
-        }
-      } finally {
-        if (!cancelled) setPlansLoading(false);
-      }
+      } catch (err) {
+        if (!cancelled) setAlert({ type: 'error', message: err?.response?.data?.error || err.message || 'Failed to load plans' });
+      } finally { if (!cancelled) setPlansLoading(false); }
     };
-    loadPlans();
+    load();
     return () => { cancelled = true; };
   }, []);
 
-  // Derive ordered unique categories from loaded plans
   const categories = useMemo(() => {
     const inPlans = new Set(plans.map((p) => p.category));
     const ordered = CATEGORY_ORDER.filter((c) => inPlans.has(c));
-    // Append any unknown categories not in CATEGORY_ORDER
     plans.forEach((p) => { if (!ordered.includes(p.category)) ordered.push(p.category); });
     return ordered;
   }, [plans]);
 
-  const visiblePlans = useMemo(
-    () => plans.filter((p) => p.category === activeCategory),
-    [plans, activeCategory]
-  );
-
-  const selectedPlan = useMemo(
-    () => plans.find((plan) => plan.id === selectedPlanId) || null,
-    [plans, selectedPlanId]
-  );
+  const visiblePlans = useMemo(() => plans.filter((p) => p.category === activeCategory), [plans, activeCategory]);
+  const selectedPlan = useMemo(() => plans.find((p) => p.id === selectedPlanId) || null, [plans, selectedPlanId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -258,47 +228,33 @@ export default function SignupPage() {
 
   const handleCategoryChange = (cat) => {
     setActiveCategory(cat);
-    // When switching tabs, if currently selected plan isn't in this category,
-    // auto-select the featured or first plan in the new tab
     const plansInCat = plans.filter((p) => p.category === cat);
-    const isCurrentInCat = plansInCat.some((p) => p.id === selectedPlanId);
-    if (!isCurrentInCat && plansInCat.length > 0) {
+    if (!plansInCat.some((p) => p.id === selectedPlanId) && plansInCat.length > 0) {
       const next = plansInCat.find((p) => p.featured) || plansInCat[0];
       handlePlanSelect(next.id);
     }
   };
 
   const validateRequest = () => {
-    if (!formData.name || !formData.surname || !formData.email || !formData.phoneNumber || !formData.planId) {
+    if (!formData.name || !formData.surname || !formData.email || !formData.phoneNumber || !formData.planId)
       return t('subscriptionRequestModal.pleaseFillAllRequiredFields');
-    }
     if (formData.planId === 'custom') {
-      const requiredNumbers = [
-        formData.amazonLookupLimitPerWeek,
-        formData.productsLimit,
-        formData.marketAnalysisCreditsLimit,
-        formData.ebayAccountsLimit,
-      ];
-      const hasInvalid = requiredNumbers.some((v) => v === '' || Number(v) < 0 || !Number.isFinite(Number(v)));
-      if (hasInvalid) return t('subscriptionRequestModal.customPlanRequiresFields');
+      const nums = [formData.amazonLookupLimitPerWeek, formData.productsLimit, formData.marketAnalysisCreditsLimit, formData.ebayAccountsLimit];
+      if (nums.some((v) => v === '' || Number(v) < 0 || !Number.isFinite(Number(v))))
+        return t('subscriptionRequestModal.customPlanRequiresFields');
     }
     return '';
   };
 
   const submitSubscriptionRequest = async () => {
-    const validationError = validateRequest();
-    if (validationError) { setAlert({ type: 'error', message: validationError }); return; }
+    const err = validateRequest();
+    if (err) { setAlert({ type: 'error', message: err }); return; }
     try {
-      setLoading(true);
-      setAlert(null);
+      setLoading(true); setAlert(null);
       const payload = {
-        name: formData.name.trim(),
-        surname: formData.surname.trim(),
-        email: formData.email.trim(),
-        phoneNumber: formData.phoneNumber.trim(),
-        planId: formData.planId,
-        // Send the referral slug so the backend can enroll the user on approval
-        ...(referralSlug ? { referralSlug } : {}),
+        name: formData.name.trim(), surname: formData.surname.trim(),
+        email: formData.email.trim(), phoneNumber: formData.phoneNumber.trim(),
+        planId: formData.planId, ...(referralSlug ? { referralSlug } : {}),
       };
       if (formData.planId === 'custom') {
         payload.requestedLimits = {
@@ -319,42 +275,24 @@ export default function SignupPage() {
         setAlert({ type: 'success', message: response?.data?.message || 'A verification code has been sent to your email address.' });
         return;
       }
-      await Swal.fire({
-        icon: 'success',
-        title: t('common:success'),
-        text: 'Your request has been sent to the admin team. They will create your account after approval.',
-        confirmButtonColor: '#22d3ee',
-      });
+      await Swal.fire({ icon: 'success', title: t('common:success'), text: 'Your request has been sent to the admin team.', confirmButtonColor: '#2563eb' });
       navigate('/login');
     } catch (error) {
       setAlert({ type: 'error', message: error?.response?.data?.error || error.message || t('subscriptionRequestModal.failedToSendRequest') });
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const verifyCode = async () => {
     const code = String(verificationCode || '').trim();
-    if (!/^[0-9]{6}$/.test(code)) {
-      setAlert({ type: 'error', message: 'Enter the 6-digit verification code sent to your email.' });
-      return;
-    }
+    if (!/^[0-9]{6}$/.test(code)) { setAlert({ type: 'error', message: 'Enter the 6-digit verification code sent to your email.' }); return; }
     try {
-      setLoading(true);
-      setAlert(null);
+      setLoading(true); setAlert(null);
       await settingsAPI.verifySubscriptionRequest({ requestId, email: formData.email.trim(), code });
-      await Swal.fire({
-        icon: 'success',
-        title: t('common:success'),
-        text: 'Email verified. Your subscription request has been sent to admin for approval.',
-        confirmButtonColor: '#22d3ee',
-      });
+      await Swal.fire({ icon: 'success', title: t('common:success'), text: 'Email verified. Your subscription request has been sent to admin for approval.', confirmButtonColor: '#2563eb' });
       navigate('/login');
     } catch (error) {
       setAlert({ type: 'error', message: error?.response?.data?.error || error.message || 'Failed to verify the code' });
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleSubmit = async (e) => {
@@ -363,190 +301,240 @@ export default function SignupPage() {
     await submitSubscriptionRequest();
   };
 
+  // Shared input class — mirrors LoginPage exactly
+  const inputCls = `w-full rounded-lg border px-3 py-2.5 outline-none transition text-sm ${
+    isDark
+      ? 'bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-blue-500'
+      : 'bg-white border-slate-300 text-slate-800 placeholder:text-slate-400 focus:border-blue-500'
+  }`;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white px-4 py-8">
-      <div className="mx-auto flex w-full max-w-7xl flex-col lg:flex-row lg:items-stretch lg:gap-6">
+    <div className={`min-h-screen flex items-start justify-center px-4 py-10 ${
+      isDark
+        ? 'bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900'
+        : 'bg-gradient-to-b from-slate-50 to-indigo-50'
+    }`}>
+      <div className="w-full max-w-2xl">
 
-        {/* ── Left panel: steps + referral info ── */}
-        <div className="mb-6 flex-1 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl shadow-2xl lg:mb-0 lg:max-w-md">
-          <p className="text-xs uppercase tracking-[0.35em] text-cyan-200/80">Checkila subscription</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Request access to your plan</h1>
-          <p className="mt-3 text-sm leading-7 text-slate-300">
-            Choose a plan, verify your email, and send the subscription request to admin. After approval, the team will create your account.
-          </p>
-
-          <div className="mt-6 grid gap-3">
-            <div className={`rounded-2xl border p-4 ${stepClass(true)}`}>
-              <p className="text-xs uppercase tracking-[0.25em] opacity-70">Step 1</p>
-              <p className="mt-1 font-semibold">Select a plan</p>
-            </div>
-            <div className={`rounded-2xl border p-4 ${stepClass(verificationStep)}`}>
-              <p className="text-xs uppercase tracking-[0.25em] opacity-70">Step 2</p>
-              <p className="mt-1 font-semibold">Verify email</p>
-            </div>
-            <div className={`rounded-2xl border p-4 ${stepClass(verificationStep)}`}>
-              <p className="text-xs uppercase tracking-[0.25em] opacity-70">Step 3</p>
-              <p className="mt-1 font-semibold">Admin approval</p>
-            </div>
-          </div>
-
-          {referralSlug ? (
-            <div className="mt-6 rounded-2xl border border-cyan-300/20 bg-cyan-400/10 p-4 text-sm text-cyan-50">
-              <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/80">Referral link</p>
-              <p className="mt-1 text-base font-semibold text-white">
-                {referralLoading ? 'Loading referral...' : referral?.name || referralSlug}
-              </p>
-              <p className="mt-1 text-cyan-50/90">
-                {referral?.description || 'This request will be associated with the referral link.'}
-              </p>
-            </div>
-          ) : null}
-
-          <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-            <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Selected plan</p>
-            <p className="mt-1 text-xl font-semibold">
-              {selectedPlan ? formatPlanName(selectedPlan.name) : selectedPlanId === 'custom' ? 'Custom Plan' : 'No plan selected'}
-            </p>
-            <p className="mt-1 text-sm text-slate-300">
-              {selectedPlan
-                ? `${formatPlanCategory(selectedPlan.category)} · ${selectedPlan.price || selectedPlan.actualPrice || 'On request'}`
-                : selectedPlanId === 'custom'
-                ? 'Custom · On request'
-                : 'Pick a plan on the right to continue.'}
-            </p>
-          </div>
-
-          <p className="mt-6 text-sm text-slate-400">
-            Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-cyan-300 hover:underline">
-              Sign in
-            </Link>
+        {/* ── Logo + header — same structure as LoginPage ── */}
+        <div className="text-center mb-8">
+          <img
+            src="/logo-2.png"
+            alt="Checkila"
+            className="w-16 h-16 rounded-2xl object-cover mx-auto mb-4 shadow-sm border border-slate-300/40"
+          />
+          <h1 className={`text-3xl font-semibold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+            Request access
+          </h1>
+          <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            Choose a plan and submit your details. Admin will create your account.
           </p>
         </div>
 
-        {/* ── Right panel: form ── */}
-        <div className="flex-1 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl shadow-2xl md:p-8">
-          <div className="mb-6 flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-indigo-200/80">Subscription request</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">
-                {verificationStep ? 'Verify your email' : 'Fill in your details'}
-              </h2>
-              <p className="mt-2 text-sm leading-7 text-slate-300">
-                {verificationStep
-                  ? 'Enter the verification code we sent to your email. After verification, admin will review your request.'
-                  : 'Choose a subscription plan, then submit your details for admin approval.'}
-              </p>
+        {/* ── Referral banner ── */}
+        {referralSlug && (
+          <div className={`mb-5 rounded-xl border px-4 py-3 flex items-center gap-3 text-sm ${
+            isDark ? 'border-blue-800 bg-blue-950/40 text-blue-300' : 'border-blue-200 bg-blue-50 text-blue-700'
+          }`}>
+            <span className="text-base">🔗</span>
+            <div className="min-w-0">
+              <span className="font-semibold">Referral: </span>
+              {referralLoading ? 'Loading...' : referral?.name || referralSlug}
+              {referral?.description && (
+                <span className={`block text-xs mt-0.5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                  {referral.description}
+                </span>
+              )}
             </div>
-            {plansLoading ? <span className="text-xs text-slate-400">Loading plans...</span> : null}
           </div>
+        )}
 
+        {/* ── Step indicator ── */}
+        <div className="mb-6 flex items-center gap-0">
+          {[
+            { n: 1, label: 'Choose plan', active: !verificationStep, done: verificationStep },
+            { n: 2, label: 'Your details', active: !verificationStep, done: verificationStep },
+            { n: 3, label: 'Verify email', active: verificationStep, done: false },
+            { n: 4, label: 'Admin review', active: false, done: false },
+          ].map((step, i, arr) => (
+            <React.Fragment key={step.n}>
+              <div className="flex flex-col items-center gap-1">
+                <StepDot n={step.n} active={step.active} done={step.done} isDark={isDark} />
+                <span className={`text-[10px] font-medium whitespace-nowrap ${
+                  step.done ? 'text-blue-500' : step.active ? isDark ? 'text-slate-300' : 'text-slate-600' : isDark ? 'text-slate-600' : 'text-slate-400'
+                }`}>{step.label}</span>
+              </div>
+              {i < arr.length - 1 && (
+                <div className={`flex-1 h-px mx-1 mb-4 ${
+                  step.done ? 'bg-blue-600' : isDark ? 'bg-slate-700' : 'bg-slate-300'
+                }`} />
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* ── Card — same rounded-2xl border shadow-sm style as LoginPage ── */}
+        <div className={`rounded-2xl border shadow-sm ${
+          isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
+        }`}>
+
+          {/* Alert */}
           {alert && (
-            <div className="mb-5">
+            <div className="px-6 pt-6">
               <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} autoClose={false} />
             </div>
           )}
 
-          {verificationStep && verificationExpiresAt ? (
-            <div className="mb-5 rounded-2xl border border-emerald-300/20 bg-emerald-400/10 p-4 text-sm text-emerald-50">
-              Verification code sent to <span className="font-semibold">{formData.email || 'your email'}</span>. Code expires at {verificationExpiresAt}.
+          {/* Verification notice */}
+          {verificationStep && verificationExpiresAt && (
+            <div className={`mx-6 mt-6 rounded-lg border px-4 py-3 text-sm ${
+              isDark ? 'border-emerald-800 bg-emerald-950/40 text-emerald-300' : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+            }`}>
+              Code sent to <strong>{formData.email}</strong>. Expires: {verificationExpiresAt}
             </div>
-          ) : null}
+          )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <input type="text" name="name" placeholder={t('signupPage.fullName') || 'Full name'} value={formData.name} onChange={handleChange} className="input-base" disabled={loading || verificationStep} />
-              <input type="text" name="surname" placeholder="Surname" value={formData.surname} onChange={handleChange} className="input-base" disabled={loading || verificationStep} />
-              <input type="email" name="email" placeholder={t('auth.email') || 'Email'} value={formData.email} onChange={handleChange} className="input-base" disabled={loading || verificationStep} />
-              <input type="tel" name="phoneNumber" placeholder="Phone number" value={formData.phoneNumber} onChange={handleChange} className="input-base" disabled={loading || verificationStep} />
-            </div>
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
 
-            {/* ── Plan picker with category tabs ── */}
-            <div>
-              <p className="mb-3 text-sm font-semibold text-slate-200">Choose a plan</p>
-              {plansLoading ? (
-                <LoadingSpinner />
-              ) : (
-                <>
-                  {/* Category tabs */}
-                  <CategoryTabs
-                    categories={categories}
-                    activeCategory={activeCategory}
-                    onChange={handleCategoryChange}
-                  />
+            {/* ── Section: Plan picker (hidden during verify step) ── */}
+            {!verificationStep && (
+              <div>
+                <p className={`text-xs uppercase tracking-widest font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  1 · Choose your plan
+                </p>
 
-                  {/* Plan grid for active category */}
-                  <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                {/* Category tabs */}
+                <div className={`flex gap-1 p-1 rounded-lg mb-4 w-fit ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => handleCategoryChange(cat)}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                        activeCategory === cat
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      {formatPlanCategory(cat)}
+                    </button>
+                  ))}
+                </div>
+
+                {plansLoading ? (
+                  <div className="py-6"><LoadingSpinner /></div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {visiblePlans.map((plan) => (
-                      <PlanTile key={plan.id} plan={plan} selected={selectedPlanId === plan.id} onSelect={handlePlanSelect} />
+                      <PlanTile key={plan.id} plan={plan} selected={selectedPlanId === plan.id} onSelect={handlePlanSelect} isDark={isDark} />
                     ))}
-
-                    {/* Custom plan tile — only show in subscription tab */}
                     {activeCategory === 'subscription' && (
                       <button
                         type="button"
                         onClick={() => handlePlanSelect('custom')}
-                        className={`rounded-2xl border p-4 text-left transition ${
+                        className={`w-full rounded-xl border p-4 text-left transition-all ${
                           selectedPlanId === 'custom'
-                            ? 'border-cyan-300 bg-cyan-400/10 shadow-[0_0_0_1px_rgba(34,211,238,0.35)]'
-                            : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                            ? isDark ? 'border-blue-500 bg-blue-950/40' : 'border-blue-500 bg-blue-50'
+                            : isDark ? 'border-slate-700 border-dashed bg-slate-800/30 hover:border-slate-600' : 'border-slate-300 border-dashed hover:border-slate-400'
                         }`}
                       >
-                        <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Custom</p>
-                        <h3 className="mt-1 text-lg font-semibold text-white">Request custom plan</h3>
-                        <p className="mt-3 text-sm leading-6 text-slate-300">Send a tailored request with your own limits.</p>
+                        <p className={`text-[10px] uppercase tracking-widest font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Custom</p>
+                        <p className={`mt-0.5 font-semibold text-sm ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Request custom limits</p>
+                        <p className={`mt-1 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tailored plan · On request</p>
                       </button>
                     )}
                   </div>
-                </>
-              )}
-            </div>
+                )}
 
-            {/* Custom plan fields */}
-            {selectedPlanId === 'custom' ? (
-              <div className="space-y-3 rounded-2xl border border-cyan-300/20 bg-cyan-400/5 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-100/80">Custom plan requirements</p>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <input type="number" min="0" value={formData.amazonLookupLimitPerWeek} onChange={handleChange} name="amazonLookupLimitPerWeek" placeholder="Amazon lookups / week" className="input-base" disabled={loading || verificationStep} />
-                  <input type="number" min="0" value={formData.productsLimit} onChange={handleChange} name="productsLimit" placeholder="Products limit" className="input-base" disabled={loading || verificationStep} />
-                  <input type="number" min="0" value={formData.marketAnalysisCreditsLimit} onChange={handleChange} name="marketAnalysisCreditsLimit" placeholder="Analysis credits" className="input-base" disabled={loading || verificationStep} />
-                  <input type="number" min="0" value={formData.ebayAccountsLimit} onChange={handleChange} name="ebayAccountsLimit" placeholder="eBay accounts" className="input-base" disabled={loading || verificationStep} />
-                </div>
-                <textarea value={formData.customNote} onChange={handleChange} name="customNote" placeholder="Optional note for admin" className="input-base min-h-[96px]" disabled={loading || verificationStep} />
+                {/* Custom fields */}
+                {selectedPlanId === 'custom' && (
+                  <div className={`mt-4 rounded-xl border p-4 space-y-3 ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'}`}>
+                    <p className={`text-xs font-semibold uppercase tracking-widest ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Custom requirements</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input type="number" min="0" name="amazonLookupLimitPerWeek" value={formData.amazonLookupLimitPerWeek} onChange={handleChange} placeholder="Lookups / week" className={inputCls} disabled={loading} />
+                      <input type="number" min="0" name="productsLimit" value={formData.productsLimit} onChange={handleChange} placeholder="Products limit" className={inputCls} disabled={loading} />
+                      <input type="number" min="0" name="marketAnalysisCreditsLimit" value={formData.marketAnalysisCreditsLimit} onChange={handleChange} placeholder="Analysis credits" className={inputCls} disabled={loading} />
+                      <input type="number" min="0" name="ebayAccountsLimit" value={formData.ebayAccountsLimit} onChange={handleChange} placeholder="eBay accounts" className={inputCls} disabled={loading} />
+                    </div>
+                    <textarea name="customNote" value={formData.customNote} onChange={handleChange} placeholder="Optional note for admin" rows={3} className={inputCls} disabled={loading} style={{ resize: 'vertical' }} />
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                <p className="text-sm text-slate-300">
-                  {selectedPlan
-                    ? `Selected: ${formatPlanName(selectedPlan.name)} · ${selectedPlan.price || selectedPlan.actualPrice || 'On request'}`
-                    : 'Select a plan above to continue.'}
+            )}
+
+            {/* ── Section: Personal details (hidden during verify step) ── */}
+            {!verificationStep && (
+              <div>
+                <p className={`text-xs uppercase tracking-widest font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  2 · Your details
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input type="text" name="name" placeholder="First name" value={formData.name} onChange={handleChange} className={inputCls} disabled={loading} />
+                  <input type="text" name="surname" placeholder="Last name" value={formData.surname} onChange={handleChange} className={inputCls} disabled={loading} />
+                  <input type="email" name="email" placeholder="Email address" value={formData.email} onChange={handleChange} className={inputCls} disabled={loading} />
+                  <input type="tel" name="phoneNumber" placeholder="Phone number" value={formData.phoneNumber} onChange={handleChange} className={inputCls} disabled={loading} />
+                </div>
+              </div>
+            )}
+
+            {/* ── Section: Verify code ── */}
+            {verificationStep && (
+              <div>
+                <p className={`text-xs uppercase tracking-widest font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  3 · Verify your email
+                </p>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="6-digit verification code"
+                  className={`${inputCls} text-center text-lg tracking-[0.5em] font-mono`}
+                  disabled={loading}
+                />
+              </div>
+            )}
+
+            {/* ── Selected plan summary (when not custom, not loading) ── */}
+            {!verificationStep && !plansLoading && selectedPlanId && selectedPlanId !== 'custom' && selectedPlan && (
+              <div className={`rounded-lg border px-4 py-3 flex items-center justify-between gap-4 ${
+                isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'
+              }`}>
+                <div>
+                  <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Selected</p>
+                  <p className={`font-semibold text-sm ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                    {formatPlanName(selectedPlan.name)}
+                    <span className={`ml-2 font-normal text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {formatPlanCategory(selectedPlan.category)}
+                    </span>
+                  </p>
+                </div>
+                <p className="font-bold text-blue-500 text-sm whitespace-nowrap">
+                  {selectedPlan.price || selectedPlan.discountedPrice || selectedPlan.actualPrice || 'On request'}
                 </p>
               </div>
             )}
 
-            {verificationStep ? (
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="Enter verification code"
-                className="input-base"
-                disabled={loading}
-              />
-            ) : null}
-
+            {/* ── Submit button — same class pattern as LoginPage btn-primary ── */}
             <button
               type="submit"
               disabled={loading || plansLoading || (!verificationStep && !selectedPlanId)}
-              className="w-full rounded-xl bg-cyan-400 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
+              className="w-full btn-primary py-2.5"
             >
               {loading
-                ? verificationStep ? 'Verifying...' : 'Sending request...'
-                : verificationStep ? 'Verify code' : 'Send subscription request'}
+                ? (verificationStep ? 'Verifying...' : 'Sending request...')
+                : (verificationStep ? 'Verify & submit' : 'Send subscription request')}
             </button>
           </form>
+        </div>
+
+        {/* ── Footer link — same as LoginPage ── */}
+        <div className={`mt-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          Already have an account?{' '}
+          <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-700">
+            Sign in
+          </Link>
         </div>
       </div>
     </div>
