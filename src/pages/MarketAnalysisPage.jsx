@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Heart, History, LayoutGrid, List, RefreshCw, Search, SearchCheck, X } from 'lucide-react';
+import { DollarSign, Gavel, Heart, History, Info, LayoutGrid, List, RefreshCw, Search, SearchCheck, Tag, TrendingUp, Upload, X } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Swal from 'sweetalert2';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -92,6 +93,140 @@ function resolveLegacyListingId(source) {
   return null;
 }
 
+function toNumber(value, fallback = 0) {
+  if (value === null || value === undefined || value === '') return fallback;
+  const parsed = Number(String(value).replace(/[$,%\s,]/g, ''));
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function formatStatNumber(value) {
+  return Math.round(toNumber(value)).toLocaleString();
+}
+
+function formatStatPercent(value) {
+  return `${Math.round(toNumber(value))}%`;
+}
+
+function getSearchSiteLabel(rawStats) {
+  const site = String(rawStats?.site || '.com').trim();
+  return `ebay${site.startsWith('.') ? site : `.${site}`}`;
+}
+
+function buildMarketShareGradient(items) {
+  const colors = ['#7c3aed', '#27e0cf', '#a78bfa', '#22d3ee', '#c4b5fd', '#06b6d4', '#8b5cf6', '#67e8f9'];
+  const positiveItems = items.filter((item) => toNumber(item.value) > 0).slice(-8);
+  const totalValue = positiveItems.reduce((sum, item) => sum + toNumber(item.value), 0);
+  if (!positiveItems.length || totalValue <= 0) {
+    return 'conic-gradient(#27e0cf 0deg 360deg)';
+  }
+
+  let cursor = 0;
+  return `conic-gradient(${positiveItems.map((item, index) => {
+    const next = cursor + (toNumber(item.value) / totalValue) * 360;
+    const segment = `${colors[index % colors.length]} ${cursor}deg ${next}deg`;
+    cursor = next;
+    return segment;
+  }).join(', ')})`;
+}
+
+function FastStatCard({ icon: Icon, label, value }) {
+  return (
+    <div className="rounded-lg border border-slate-700/80 bg-[#242424] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+      <div className="flex items-start justify-between gap-3">
+        <Icon size={17} className="shrink-0 text-slate-200" />
+        <Info size={12} className="shrink-0 text-slate-400" />
+      </div>
+      <p className="mt-1 text-center text-[11px] font-bold text-slate-100">{label}</p>
+      <p className="mt-3 text-center text-2xl font-extrabold text-[#27e0cf]">{value}</p>
+    </div>
+  );
+}
+
+function FastSearchInfoCard({ label, query }) {
+  return (
+    <div className="rounded-lg border border-slate-700/80 bg-[#242424] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+      <div className="flex items-start justify-between gap-3">
+        <Search size={18} className="shrink-0 text-slate-200" />
+        <Info size={12} className="shrink-0 text-slate-400" />
+      </div>
+      <p className="mt-1 text-center text-[11px] font-bold text-slate-100">
+        Searched on: <span className="text-[#27e0cf]">{label}</span>
+      </p>
+      <p className="mx-auto mt-2 line-clamp-2 max-w-[220px] text-center text-[12px] font-semibold leading-4 text-slate-100" title={query}>
+        {query || 'Fast search'}
+      </p>
+    </div>
+  );
+}
+
+function FastActionPanel() {
+  return (
+    <div className="grid h-full grid-rows-2 gap-2">
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-600/70 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-500">
+          Share <Upload size={13} />
+        </button>
+        <button type="button" className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-600/70 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-500">
+          Scan <TrendingUp size={13} />
+        </button>
+      </div>
+      <button type="button" className="inline-flex items-center justify-center gap-2 rounded-full border border-[#27e0cf] px-3 py-2 text-xs font-bold text-[#bfb7ff] transition hover:bg-[#27e0cf]/10">
+        Save to Watchlist <Upload size={13} />
+      </button>
+    </div>
+  );
+}
+
+function FastMarketShareChart({ data }) {
+  const visible = data.filter((item) => toNumber(item.value) > 0).slice(-8);
+  const featured = visible[visible.length - 1] || data[data.length - 1] || null;
+  return (
+    <div className="rounded-lg border border-slate-700/80 bg-[#242424] p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-bold text-slate-100">Market Share</p>
+        <Info size={12} className="text-slate-400" />
+      </div>
+      <div className="mx-auto mt-3 flex h-40 w-40 items-center justify-center rounded-full" style={{ background: buildMarketShareGradient(data) }}>
+        <div className="flex h-20 w-20 flex-col items-center justify-center rounded-full bg-[#242424] text-center">
+          <span className="max-w-[70px] truncate text-[11px] font-extrabold text-slate-100">{featured?.label || 'seller'}</span>
+          <span className="text-[10px] font-bold text-[#bfb7ff]">{toNumber(featured?.value).toFixed(1)}%</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FastSalesTrendChart({ data }) {
+  return (
+    <div className="rounded-lg border border-slate-700/80 bg-[#242424] p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-xs font-bold text-slate-100">Sales Trend</p>
+        <Info size={12} className="text-slate-400" />
+      </div>
+      <div className="h-40">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 6, right: 12, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="fastSalesTrend" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#8dd7cf" stopOpacity={0.9} />
+                <stop offset="95%" stopColor="#27e0cf" stopOpacity={0.45} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke="#151515" vertical={false} />
+            <XAxis dataKey="date" tick={{ fill: '#cbd5e1', fontSize: 10 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: '#cbd5e1', fontSize: 10 }} axisLine={false} tickLine={false} />
+            <Tooltip
+              contentStyle={{ background: '#191919', border: '1px solid #3f3f46', borderRadius: 8, color: '#f8fafc' }}
+              labelStyle={{ color: '#f8fafc' }}
+            />
+            <Area type="monotone" dataKey="sales" stroke="#8dd7cf" strokeWidth={2} fill="url(#fastSalesTrend)" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
 export default function MarketAnalysisPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -110,6 +245,7 @@ export default function MarketAnalysisPage() {
     searchNow,
     clearCache,
     credits,
+    searchRaw,
   } = useBrowseSearch({
     fieldgroups: 'ASPECT_REFINEMENTS,MATCHING_ITEMS',
   });
@@ -819,6 +955,59 @@ export default function MarketAnalysisPage() {
     Boolean(String(params?.q || '').trim()) &&
     !Boolean(String(params?.sellerUsername || '').trim())
   );
+  const isFastSellerSearch = (
+    String(searchType || '').trim().toLowerCase() === 'fast' &&
+    Boolean(String(params?.sellerUsername || '').trim()) &&
+    !Boolean(String(params?.q || '').trim())
+  );
+  const fastStatistics = useMemo(() => {
+    if (String(searchType || '').trim().toLowerCase() !== 'fast' || !searchRaw) return null;
+    const isProduct = Boolean(String(params?.q || '').trim()) && !Boolean(String(params?.sellerUsername || '').trim());
+    const listings = isProduct ? searchRaw?.totalListings : searchRaw?.activeListings;
+    const soldItems = isProduct ? searchRaw?.totalSales : searchRaw?.quantitySold;
+    const averagePrice = isProduct ? searchRaw?.averageProductPrice : searchRaw?.averagePrice;
+    const successfulListings = searchRaw?.succcessfulListingsPercentage ?? searchRaw?.successfulListingsPercentage;
+    const fallbackSuccessfulListings = listings
+      ? (toNumber(searchRaw?.recordsFiltered || searchRaw?.recordsTotal) / Math.max(1, toNumber(listings))) * 100
+      : 0;
+    const searchLabel = getSearchSiteLabel(searchRaw);
+    const searchQuery = isProduct
+      ? String(params?.q || '').trim()
+      : String(searchRaw?.sellerName || params?.sellerUsername || '').trim();
+
+    const cards = isProduct
+      ? [
+          { label: 'Sell through', value: formatStatPercent(searchRaw?.sellThrough), icon: Tag },
+          { label: 'Listings', value: formatStatNumber(listings), icon: List },
+          { label: 'Sold Items', value: formatStatNumber(soldItems), icon: Gavel },
+          { label: 'Sale Earnings', value: formatCurrency(toNumber(searchRaw?.totalEarnings)), icon: DollarSign },
+          { label: 'Successful Listings', value: formatStatPercent(successfulListings ?? fallbackSuccessfulListings), icon: Tag },
+          { label: 'Average Price', value: formatCurrency(toNumber(averagePrice)), icon: TrendingUp },
+        ]
+      : [
+          { label: 'Sell through', value: formatStatPercent(searchRaw?.sellThrough), icon: Tag },
+          { label: 'Active Listings', value: formatStatNumber(listings), icon: List },
+          { label: 'Sold Items', value: formatStatNumber(soldItems), icon: Gavel },
+          { label: 'Revenue', value: formatCurrency(toNumber(searchRaw?.totalEarnings)), icon: DollarSign },
+          { label: 'Successful Listings', value: formatStatPercent(successfulListings ?? fallbackSuccessfulListings), icon: Tag },
+          { label: 'Feedback score', value: formatStatNumber(searchRaw?.feedback), icon: Tag },
+          { label: 'Average Price', value: formatCurrency(toNumber(averagePrice)), icon: TrendingUp },
+        ];
+
+    return {
+      isProduct,
+      searchLabel,
+      searchQuery,
+      cards,
+      marketShare: Array.isArray(searchRaw?.pieData) ? searchRaw.pieData : [],
+      salesTrend: Array.isArray(searchRaw?.lineGraph)
+        ? searchRaw.lineGraph.map((point) => ({
+            date: String(point?.date || point?.transactionDate || '').slice(0, 10),
+            sales: toNumber(point?.quantityPurchased),
+          })).filter((point) => point.date)
+        : [],
+    };
+  }, [params?.q, params?.sellerUsername, searchRaw, searchType]);
 
   return (
     <div className="page-shell space-y-4">
@@ -1000,28 +1189,60 @@ export default function MarketAnalysisPage() {
         />
       </div>
 
-      <section className="grid grid-cols-2 md:grid-cols-5 gap-2">
-        <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.results')}</p>
-          <p className="text-lg font-semibold">{filteredResults.length || 0}</p>
-        </div>
-        <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.averageItem')}</p>
-          <p className="text-lg font-semibold">{formatCurrency(metrics.averagePrice)}</p>
-        </div>
-        <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.median')}</p>
-          <p className="text-lg font-semibold">{formatCurrency(metrics.medianPrice)}</p>
-        </div>
-        <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.range')}</p>
-          <p className="text-lg font-semibold">{formatCurrency(metrics.minPrice)} - {formatCurrency(metrics.maxPrice)}</p>
-        </div>
-        <div className="glass-card p-3">
-          <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.freeShipping')}</p>
-          <p className="text-lg font-semibold">{metrics.withFreeShipping}%</p>
-        </div>
-      </section>
+      {fastStatistics && (isFastSellerSearch || isFastProductNameSearch) ? (
+        <section className="rounded-xl border border-slate-800 bg-[#151515] p-2 shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+            {fastStatistics.cards.slice(0, 4).map((card) => (
+              <FastStatCard key={card.label} icon={card.icon} label={card.label} value={card.value} />
+            ))}
+            {fastStatistics.cards.slice(4).map((card) => (
+              <FastStatCard key={card.label} icon={card.icon} label={card.label} value={card.value} />
+            ))}
+            {fastStatistics.isProduct && (
+              <FastSearchInfoCard label={fastStatistics.searchLabel} query={fastStatistics.searchQuery} />
+            )}
+            <FastActionPanel />
+          </div>
+
+          {fastStatistics.isProduct && (fastStatistics.marketShare.length > 0 || fastStatistics.salesTrend.length > 0) && (
+            <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-12">
+              {fastStatistics.marketShare.length > 0 && (
+                <div className="lg:col-span-4 xl:col-span-3">
+                  <FastMarketShareChart data={fastStatistics.marketShare} />
+                </div>
+              )}
+              {fastStatistics.salesTrend.length > 0 && (
+                <div className={fastStatistics.marketShare.length > 0 ? 'lg:col-span-8 xl:col-span-9' : 'lg:col-span-12'}>
+                  <FastSalesTrendChart data={fastStatistics.salesTrend} />
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      ) : (
+        <section className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          <div className="glass-card p-3">
+            <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.results')}</p>
+            <p className="text-lg font-semibold">{filteredResults.length || 0}</p>
+          </div>
+          <div className="glass-card p-3">
+            <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.averageItem')}</p>
+            <p className="text-lg font-semibold">{formatCurrency(metrics.averagePrice)}</p>
+          </div>
+          <div className="glass-card p-3">
+            <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.median')}</p>
+            <p className="text-lg font-semibold">{formatCurrency(metrics.medianPrice)}</p>
+          </div>
+          <div className="glass-card p-3">
+            <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.range')}</p>
+            <p className="text-lg font-semibold">{formatCurrency(metrics.minPrice)} - {formatCurrency(metrics.maxPrice)}</p>
+          </div>
+          <div className="glass-card p-3">
+            <p className="text-xs text-slate-500 dark:text-slate-300">{t('marketAnalysisPage.freeShipping')}</p>
+            <p className="text-lg font-semibold">{metrics.withFreeShipping}%</p>
+          </div>
+        </section>
+      )}
 
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-12 space-y-4">

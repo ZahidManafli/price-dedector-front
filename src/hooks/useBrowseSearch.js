@@ -381,6 +381,7 @@ export default function useBrowseSearch(initialParams = {}) {
   const [error, setError] = useState(null);
   const [credits, setCredits] = useState(persisted.restored?.credits || null);
   const [soldQuantityDeferred, setSoldQuantityDeferred] = useState(Boolean(persisted.restored?.soldQuantityDeferred));
+  const [searchRaw, setSearchRaw] = useState(persisted.restored?.raw || null);
 
   const setParams = useCallback((updater) => {
     setParamsState((prev) => {
@@ -418,6 +419,7 @@ export default function useBrowseSearch(initialParams = {}) {
       setTotal(0);
       setNextOffset(null);
       setRefinement(null);
+      setSearchRaw(null);
       setError(null);
       persistState(effectiveParams, cache);
       return;
@@ -456,6 +458,7 @@ export default function useBrowseSearch(initialParams = {}) {
         setTotal(Number(cached.total || displayedResults.length || 0));
         setNextOffset(nextPageOffset);
         setRefinement(cached.refinement || null);
+        setSearchRaw(cached.raw || null);
         setCredits(cached.credits || null);
         setSoldQuantityDeferred(nextSoldQuantityDeferred);
         setError(null);
@@ -565,6 +568,7 @@ export default function useBrowseSearch(initialParams = {}) {
         ? (displayedResults.length === SELLER_PAGE_SIZE ? Number(effectiveParams.offset || 0) + SELLER_PAGE_SIZE : null)
         : nextNextOffset);
       setRefinement(nextRefinement);
+      setSearchRaw(rawPayload);
       setCredits(nextCredits);
       setSoldQuantityDeferred(nextSoldQuantityDeferred);
       setParamsState(effectiveParams);
@@ -627,6 +631,7 @@ export default function useBrowseSearch(initialParams = {}) {
     clearCache,
     refreshFromEbay,
     credits,
+    searchRaw,
     soldQuantityDeferred,
   };
 }
