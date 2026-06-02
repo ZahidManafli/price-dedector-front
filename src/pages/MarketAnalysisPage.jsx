@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DollarSign, Gavel, Heart, History, Info, LayoutGrid, List, RefreshCw, Search, SearchCheck, Tag, TrendingUp, Upload, X } from 'lucide-react';
+import { DollarSign, Gavel, Heart, History, Info, LayoutGrid, List, RefreshCw, Search, SearchCheck, Tag, TrendingUp, X } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Swal from 'sweetalert2';
@@ -131,48 +131,78 @@ function buildMarketShareGradient(items) {
 
 function FastStatCard({ icon: Icon, label, value }) {
   return (
-    <div className="rounded-lg border border-slate-700/80 bg-[#242424] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+    <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/80 dark:bg-[#242424] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
       <div className="flex items-start justify-between gap-3">
-        <Icon size={17} className="shrink-0 text-slate-200" />
-        <Info size={12} className="shrink-0 text-slate-400" />
+        <Icon size={17} className="shrink-0 text-slate-700 dark:text-slate-200" />
+        <Info size={12} className="shrink-0 text-slate-400 dark:text-slate-400" />
       </div>
-      <p className="mt-1 text-center text-[11px] font-bold text-slate-100">{label}</p>
-      <p className="mt-3 text-center text-2xl font-extrabold text-[#27e0cf]">{value}</p>
+      <p className="mt-1 text-center text-[11px] font-bold text-slate-700 dark:text-slate-100">{label}</p>
+      <p className="mt-3 text-center text-2xl font-extrabold text-teal-600 dark:text-[#27e0cf]">{value}</p>
     </div>
   );
 }
 
 function FastSearchInfoCard({ label, query }) {
   return (
-    <div className="rounded-lg border border-slate-700/80 bg-[#242424] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+    <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/80 dark:bg-[#242424] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
       <div className="flex items-start justify-between gap-3">
-        <Search size={18} className="shrink-0 text-slate-200" />
-        <Info size={12} className="shrink-0 text-slate-400" />
+        <Search size={18} className="shrink-0 text-slate-700 dark:text-slate-200" />
+        <Info size={12} className="shrink-0 text-slate-400 dark:text-slate-400" />
       </div>
-      <p className="mt-1 text-center text-[11px] font-bold text-slate-100">
-        Searched on: <span className="text-[#27e0cf]">{label}</span>
+      <p className="mt-1 text-center text-[11px] font-bold text-slate-700 dark:text-slate-100">
+        Searched on: <span className="text-teal-600 dark:text-[#27e0cf]">{label}</span>
       </p>
-      <p className="mx-auto mt-2 line-clamp-2 max-w-[220px] text-center text-[12px] font-semibold leading-4 text-slate-100" title={query}>
+      <p className="mx-auto mt-2 line-clamp-2 max-w-[220px] text-center text-[12px] font-semibold leading-4 text-slate-800 dark:text-slate-100" title={query}>
         {query || 'Fast search'}
       </p>
     </div>
   );
 }
 
-function FastActionPanel() {
+function ProfitCalculatorPanel({
+  amazonPrice,
+  ebayPrice,
+  adRate,
+  profit,
+  onAmazonPriceChange,
+  onEbayPriceChange,
+  onAdRateChange,
+  t,
+  compact = false,
+}) {
   return (
-    <div className="grid h-full grid-rows-2 gap-2">
-      <div className="grid grid-cols-2 gap-2">
-        <button type="button" className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-600/70 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-500">
-          Share <Upload size={13} />
-        </button>
-        <button type="button" className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-600/70 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-500">
-          Scan <TrendingUp size={13} />
-        </button>
+    <div className={`flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/80 dark:bg-[#242424] ${compact ? 'h-full' : ''}`}>
+      <span className="whitespace-nowrap text-xs font-bold text-slate-700 dark:text-slate-100">{t('marketAnalysisPage.profitCalc')}</span>
+      <input
+        type="number"
+        min="0"
+        step="0.01"
+        value={amazonPrice}
+        onChange={(e) => onAmazonPriceChange(e.target.value)}
+        placeholder={t('marketAnalysisPage.profitAmazon')}
+        className="input-base h-9 w-[110px] text-xs dark:bg-slate-950/70"
+      />
+      <input
+        type="number"
+        min="0"
+        step="0.01"
+        value={ebayPrice}
+        onChange={(e) => onEbayPriceChange(e.target.value)}
+        placeholder={t('marketAnalysisPage.profitEbay')}
+        className="input-base h-9 w-[110px] text-xs dark:bg-slate-950/70"
+      />
+      <input
+        type="number"
+        min="0"
+        step="0.01"
+        value={adRate}
+        onChange={(e) => onAdRateChange(e.target.value)}
+        placeholder={t('marketAnalysisPage.profitRate')}
+        className="input-base h-9 w-[88px] text-xs dark:bg-slate-950/70"
+      />
+      <div className="min-w-[88px] text-xs font-bold text-slate-900 dark:text-slate-100">
+        {profit === null ? t('marketAnalysisPage.profitNone') : `${t('marketAnalysisPage.profitLabel')} ${formatCurrency(profit)}`}
       </div>
-      <button type="button" className="inline-flex items-center justify-center gap-2 rounded-full border border-[#27e0cf] px-3 py-2 text-xs font-bold text-[#bfb7ff] transition hover:bg-[#27e0cf]/10">
-        Save to Watchlist <Upload size={13} />
-      </button>
     </div>
   );
 }
@@ -181,27 +211,27 @@ function FastMarketShareChart({ data }) {
   const visible = data.filter((item) => toNumber(item.value) > 0).slice(-8);
   const featured = visible[visible.length - 1] || data[data.length - 1] || null;
   return (
-    <div className="rounded-lg border border-slate-700/80 bg-[#242424] p-4">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700/80 dark:bg-[#242424]">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-bold text-slate-100">Market Share</p>
-        <Info size={12} className="text-slate-400" />
+        <p className="text-xs font-bold text-slate-700 dark:text-slate-100">Market Share</p>
+        <Info size={12} className="text-slate-400 dark:text-slate-400" />
       </div>
       <div className="mx-auto mt-3 flex h-40 w-40 items-center justify-center rounded-full" style={{ background: buildMarketShareGradient(data) }}>
-        <div className="flex h-20 w-20 flex-col items-center justify-center rounded-full bg-[#242424] text-center">
-          <span className="max-w-[70px] truncate text-[11px] font-extrabold text-slate-100">{featured?.label || 'seller'}</span>
-          <span className="text-[10px] font-bold text-[#bfb7ff]">{toNumber(featured?.value).toFixed(1)}%</span>
+        <div className="flex h-20 w-20 flex-col items-center justify-center rounded-full bg-white text-center dark:bg-[#242424]">
+          <span className="max-w-[70px] truncate text-[11px] font-extrabold text-slate-800 dark:text-slate-100">{featured?.label || 'seller'}</span>
+          <span className="text-[10px] font-bold text-violet-600 dark:text-[#bfb7ff]">{toNumber(featured?.value).toFixed(1)}%</span>
         </div>
       </div>
     </div>
   );
 }
 
-function FastSalesTrendChart({ data }) {
+function FastSalesTrendChart({ data, isDark }) {
   return (
-    <div className="rounded-lg border border-slate-700/80 bg-[#242424] p-4">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700/80 dark:bg-[#242424]">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-bold text-slate-100">Sales Trend</p>
-        <Info size={12} className="text-slate-400" />
+        <p className="text-xs font-bold text-slate-700 dark:text-slate-100">Sales Trend</p>
+        <Info size={12} className="text-slate-400 dark:text-slate-400" />
       </div>
       <div className="h-40">
         <ResponsiveContainer width="100%" height="100%">
@@ -212,12 +242,17 @@ function FastSalesTrendChart({ data }) {
                 <stop offset="95%" stopColor="#27e0cf" stopOpacity={0.45} />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="#151515" vertical={false} />
-            <XAxis dataKey="date" tick={{ fill: '#cbd5e1', fontSize: 10 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: '#cbd5e1', fontSize: 10 }} axisLine={false} tickLine={false} />
+            <CartesianGrid stroke={isDark ? '#151515' : '#e2e8f0'} vertical={false} />
+            <XAxis dataKey="date" tick={{ fill: isDark ? '#cbd5e1' : '#475569', fontSize: 10 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: isDark ? '#cbd5e1' : '#475569', fontSize: 10 }} axisLine={false} tickLine={false} />
             <Tooltip
-              contentStyle={{ background: '#191919', border: '1px solid #3f3f46', borderRadius: 8, color: '#f8fafc' }}
-              labelStyle={{ color: '#f8fafc' }}
+              contentStyle={{
+                background: isDark ? '#191919' : '#ffffff',
+                border: `1px solid ${isDark ? '#3f3f46' : '#cbd5e1'}`,
+                borderRadius: 8,
+                color: isDark ? '#f8fafc' : '#0f172a',
+              }}
+              labelStyle={{ color: isDark ? '#f8fafc' : '#0f172a' }}
             />
             <Area type="monotone" dataKey="sales" stroke="#8dd7cf" strokeWidth={2} fill="url(#fastSalesTrend)" />
           </AreaChart>
@@ -960,6 +995,7 @@ export default function MarketAnalysisPage() {
     Boolean(String(params?.sellerUsername || '').trim()) &&
     !Boolean(String(params?.q || '').trim())
   );
+  const showFastStatisticsPanel = isFastSellerSearch || isFastProductNameSearch;
   const fastStatistics = useMemo(() => {
     if (String(searchType || '').trim().toLowerCase() !== 'fast' || !searchRaw) return null;
     const isProduct = Boolean(String(params?.q || '').trim()) && !Boolean(String(params?.sellerUsername || '').trim());
@@ -1189,8 +1225,15 @@ export default function MarketAnalysisPage() {
         />
       </div>
 
-      {fastStatistics && (isFastSellerSearch || isFastProductNameSearch) ? (
-        <section className="rounded-xl border border-slate-800 bg-[#151515] p-2 shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
+      {showFastStatisticsPanel && loading ? (
+        <section className="flex min-h-[148px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm dark:border-slate-800 dark:bg-[#151515] dark:shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
+          <div className="flex items-center gap-3 text-sm font-semibold text-slate-600 dark:text-slate-200">
+            <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-teal-500 border-t-transparent" />
+            {t('marketAnalysisPage.loading')}
+          </div>
+        </section>
+      ) : fastStatistics && showFastStatisticsPanel ? (
+        <section className="rounded-xl border border-slate-200 bg-slate-50 p-2 shadow-sm dark:border-slate-800 dark:bg-[#151515] dark:shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
             {fastStatistics.cards.slice(0, 4).map((card) => (
               <FastStatCard key={card.label} icon={card.icon} label={card.label} value={card.value} />
@@ -1201,7 +1244,19 @@ export default function MarketAnalysisPage() {
             {fastStatistics.isProduct && (
               <FastSearchInfoCard label={fastStatistics.searchLabel} query={fastStatistics.searchQuery} />
             )}
-            <FastActionPanel />
+            <div className={fastStatistics.isProduct ? '' : 'xl:col-span-1'}>
+              <ProfitCalculatorPanel
+                amazonPrice={calcAmazonPrice}
+                ebayPrice={calcEbayPrice}
+                adRate={calcAdRate}
+                profit={inlineProfit}
+                onAmazonPriceChange={setCalcAmazonPrice}
+                onEbayPriceChange={setCalcEbayPrice}
+                onAdRateChange={setCalcAdRate}
+                t={t}
+                compact
+              />
+            </div>
           </div>
 
           {fastStatistics.isProduct && (fastStatistics.marketShare.length > 0 || fastStatistics.salesTrend.length > 0) && (
@@ -1213,7 +1268,7 @@ export default function MarketAnalysisPage() {
               )}
               {fastStatistics.salesTrend.length > 0 && (
                 <div className={fastStatistics.marketShare.length > 0 ? 'lg:col-span-8 xl:col-span-9' : 'lg:col-span-12'}>
-                  <FastSalesTrendChart data={fastStatistics.salesTrend} />
+                  <FastSalesTrendChart data={fastStatistics.salesTrend} isDark={isDark} />
                 </div>
               )}
             </div>
@@ -1247,27 +1302,18 @@ export default function MarketAnalysisPage() {
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-12 space-y-4">
           <div className="flex justify-end gap-2">
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-950/70 px-3 py-2">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-300 whitespace-nowrap">{t('marketAnalysisPage.profitCalc')}</span>
-              <input
-                type="number" min="0" step="0.01"
-                value={calcAmazonPrice} onChange={(e) => setCalcAmazonPrice(e.target.value)}
-                placeholder={t('marketAnalysisPage.profitAmazon')} className="input-base w-[96px] h-9 text-xs"
+            {!showFastStatisticsPanel && (
+              <ProfitCalculatorPanel
+                amazonPrice={calcAmazonPrice}
+                ebayPrice={calcEbayPrice}
+                adRate={calcAdRate}
+                profit={inlineProfit}
+                onAmazonPriceChange={setCalcAmazonPrice}
+                onEbayPriceChange={setCalcEbayPrice}
+                onAdRateChange={setCalcAdRate}
+                t={t}
               />
-              <input
-                type="number" min="0" step="0.01"
-                value={calcEbayPrice} onChange={(e) => setCalcEbayPrice(e.target.value)}
-                placeholder={t('marketAnalysisPage.profitEbay')} className="input-base w-[96px] h-9 text-xs"
-              />
-              <input
-                type="number" min="0" step="0.01"
-                value={calcAdRate} onChange={(e) => setCalcAdRate(e.target.value)}
-                placeholder={t('marketAnalysisPage.profitRate')} className="input-base w-[88px] h-9 text-xs"
-              />
-              <div className="min-w-[88px] text-xs font-semibold text-slate-900 dark:text-slate-100">
-                {inlineProfit === null ? t('marketAnalysisPage.profitNone') : `${t('marketAnalysisPage.profitLabel')} ${formatCurrency(inlineProfit)}`}
-              </div>
-            </div>
+            )}
             <button
               type="button"
               onClick={() => setViewMode('card')}

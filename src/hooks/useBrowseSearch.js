@@ -468,6 +468,7 @@ export default function useBrowseSearch(initialParams = {}) {
       }
     }
 
+    setSearchRaw(null);
     setLoading(true);
     setError(null);
     try {
