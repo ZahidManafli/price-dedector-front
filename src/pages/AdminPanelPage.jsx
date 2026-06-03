@@ -48,6 +48,7 @@ function defaultEditForUser(u) {
     productsLimit: safeToString(u.productsLimit),
     marketAnalysisCreditsLimit: safeToString(u.marketAnalysisCreditsLimit),
     ebayAccountsLimit: safeToString(u.ebayAccountsLimit),
+    isIt6HourChecker: !!u.isIt6HourChecker,
     isUntouched: !!u.isUntouched,   // ✅ add this
   };
 }
@@ -79,6 +80,7 @@ function defaultPlanForm() {
     productsLimit: '',
     marketAnalysisCreditsLimit: '',
     ebayAccountsLimit: '',
+    isIt6HourChecker: false,
     featured: false,
     isActive: true,
     allowedTabs: [...USER_DEFAULT_ALLOWED_TABS.filter((key) => key !== TAB_KEYS.DASHBOARD)],
