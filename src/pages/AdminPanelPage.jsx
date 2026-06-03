@@ -255,7 +255,8 @@ export default function AdminPanelPage() {
           uEdits.ebayAccountsLimit === '' ? null : Number(uEdits.ebayAccountsLimit),
         resetAmazonUsage: !!resetUsage[userId],
         resetMarketAnalysisUsage: !!resetUsage[`${userId}__marketAnalysis`],
-        isUntouched: !!uEdits.isUntouched,   // ✅ add this
+        isUntouched: !!uEdits.isUntouched,
+        isIt6HourChecker: !!uEdits.isIt6HourChecker,
       });
 
       await refreshData();
@@ -1001,6 +1002,11 @@ export default function AdminPanelPage() {
                               {t('adminPanelPage.untouched')}
                             </span>
                           )}
+                          {u.isIt6HourChecker && (
+                            <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold inline-flex items-center gap-1">
+                              <Clock3 size={10} /> 6h checker
+                            </span>
+                          )}
                         </label>
                         <div className="flex gap-2">
                           <button
@@ -1190,6 +1196,20 @@ export default function AdminPanelPage() {
                             />
                             <span className="font-semibold text-purple-600">{t('adminPanelPage.untouched')}</span>
                             <span className="text-slate-400">({t('adminPanelPage.unlimitedIps')})</span>
+                          </label>
+                          <label className="text-xs flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={!!rowEdits.isIt6HourChecker}
+                              onChange={(e) =>
+                                setEdits((prev) => ({
+                                  ...prev,
+                                  [u.id]: { ...prev[u.id], isIt6HourChecker: e.target.checked },
+                                }))
+                              }
+                            />
+                            <Clock3 size={12} className="text-amber-500" />
+                            <span className="font-semibold text-amber-600">6-hour Amazon checker</span>
                           </label>
                         </div>
 
