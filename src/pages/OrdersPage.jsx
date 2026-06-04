@@ -164,48 +164,50 @@ function AsinCell({ order, isDark }) {
 
   // Trigger the Amazon auto-order flow via background script
   const handleOrderOnAmazon = useCallback(async () => {
-    if (!asin) return;
-    if (ordering) return;
-
+    if (!asin || ordering) return;
+  
     setOrdering(true);
     setOrderMsg(null);
-
+  
     try {
       const shipTo = buildShipTo(order);
-
-      // Check whether we're inside the Chrome extension context
-      if (typeof chrome === 'undefined' || !chrome?.runtime?.sendMessage) {
-        // Fallback: just open the Amazon product page
-        window.open(`https://www.amazon.com/dp/${asin}`, '_blank');
-        setOrderMsg({ type: 'success', text: 'Opened Amazon — please proceed manually.' });
-        return;
-      }
-
-      const response = await new Promise((resolve) => {
-        window.postMessage(
-          {
-            type: "AMAZON_AUTO_ORDER",
-            payload: {
-              asin,
-              quantity,
-              orderId,
-              shipTo
-            }
+  
+      const res = await fetch(
+        "https://back.checkila.com/amazon/auto-order",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // if you use auth:
+            // Authorization: `Bearer ${token}`,
           },
-          "*"
-        );
-      });
-
-      if (response?.success) {
-        setOrderMsg({ type: 'success', text: 'Amazon tab opened — review & confirm manually.' });
-      } else {
-        setOrderMsg({ type: 'error', text: response?.error || 'Failed to start auto-order.' });
+          body: JSON.stringify({
+            asin,
+            quantity,
+            orderId,
+            shipTo,
+          }),
+        }
+      );
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to start Amazon order");
       }
+  
+      setOrderMsg({
+        type: "success",
+        text: "Amazon order job sent to extension",
+      });
+  
     } catch (err) {
-      setOrderMsg({ type: 'error', text: err?.message || 'Unexpected error.' });
+      setOrderMsg({
+        type: "error",
+        text: err.message || "Unexpected error",
+      });
     } finally {
       setOrdering(false);
-      // Auto-hide message after 5 s
       setTimeout(() => setOrderMsg(null), 5000);
     }
   }, [asin, order, orderId, ordering, quantity]);
