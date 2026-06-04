@@ -8,6 +8,8 @@ import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal } from 
 
 const ORDERS_FILTER_STORAGE_KEY = 'checkila.ordersPage.filters.v1';
 const ORDERS_LISTINGS_STORAGE_KEY = 'checkila.ordersPage.listings.v1';
+// Persists the ASIN mappings the user has typed:  { [orderId]: asin }
+const ORDERS_ASIN_MAP_STORAGE_KEY = 'checkila.ordersPage.asinMap.v1';
 
 function readStoredOrdersFilters() {
   if (typeof window === 'undefined') return {};
@@ -62,6 +64,21 @@ function writeStoredOrdersListings(items) {
   }
 }
 
+function readStoredAsinMap() {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(ORDERS_ASIN_MAP_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch { return {}; }
+}
+
+function writeStoredAsinMap(map) {
+  if (typeof window === 'undefined') return;
+  try { window.localStorage.setItem(ORDERS_ASIN_MAP_STORAGE_KEY, JSON.stringify(map)); } catch {}
+}
+
 function resolveListingId(listing) {
   return String(listing?.listingId || listing?.listing?.listingId || listing?.offerId || listing?.sku || '').trim();
 }
@@ -90,6 +107,201 @@ function resolveListingImageUrl(listing) {
   }
 
   return '';
+}
+
+function buildShipTo(order) {
+  const step = order?.fulfillmentStartInstructions?.[0]?.shippingStep?.shipTo || {};
+  const addr = step?.contactAddress || {};
+  return {
+    fullName:        String(step?.fullName                           || '').trim(),
+    addressLine1:    String(addr?.addressLine1                       || '').trim(),
+    addressLine2:    String(addr?.addressLine2                       || '').trim(),
+    city:            String(addr?.city                               || '').trim(),
+    stateOrProvince: String(addr?.stateOrProvince                    || '').trim(),
+    postalCode:      String(addr?.postalCode                         || '').trim(),
+    phone:           String(step?.primaryPhone?.phoneNumber          || '').trim(),
+  };
+}
+
+function AsinCell({ order, isDark }) {
+  const orderId = order?.orderId;
+  const quantity = order?.lineItems?.[0]?.quantity ?? 1;
+
+  // Saved ASIN for this order (persisted in localStorage)
+  const [asin, setAsin] = useState(() => readStoredAsinMap()[orderId] || '');
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [ordering, setOrdering] = useState(false);
+  const [orderMsg, setOrderMsg] = useState(null); // { type: 'success'|'error', text }
+  const inputRef = useRef(null);
+
+  // Open the edit field
+  const startEdit = useCallback(() => {
+    setDraft(asin);
+    setEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, [asin]);
+
+  // Save
+  const saveAsin = useCallback(() => {
+    const cleaned = String(draft).trim().toUpperCase();
+    setAsin(cleaned);
+    setEditing(false);
+    const map = readStoredAsinMap();
+    if (cleaned) {
+      map[orderId] = cleaned;
+    } else {
+      delete map[orderId];
+    }
+    writeStoredAsinMap(map);
+  }, [draft, orderId]);
+
+  // Cancel edit
+  const cancelEdit = useCallback(() => {
+    setDraft('');
+    setEditing(false);
+  }, []);
+
+  // Trigger the Amazon auto-order flow via background script
+  const handleOrderOnAmazon = useCallback(async () => {
+    if (!asin) return;
+    if (ordering) return;
+
+    setOrdering(true);
+    setOrderMsg(null);
+
+    try {
+      const shipTo = buildShipTo(order);
+
+      // Check whether we're inside the Chrome extension context
+      if (typeof chrome === 'undefined' || !chrome?.runtime?.sendMessage) {
+        // Fallback: just open the Amazon product page
+        window.open(`https://www.amazon.com/dp/${asin}`, '_blank');
+        setOrderMsg({ type: 'success', text: 'Opened Amazon — please proceed manually.' });
+        return;
+      }
+
+      const response = await new Promise((resolve) => {
+        chrome.runtime.sendMessage(
+          {
+            type: 'AMAZON_AUTO_ORDER',
+            payload: { asin, quantity, orderId, shipTo },
+          },
+          (res) => resolve(res)
+        );
+      });
+
+      if (response?.success) {
+        setOrderMsg({ type: 'success', text: 'Amazon tab opened — review & confirm manually.' });
+      } else {
+        setOrderMsg({ type: 'error', text: response?.error || 'Failed to start auto-order.' });
+      }
+    } catch (err) {
+      setOrderMsg({ type: 'error', text: err?.message || 'Unexpected error.' });
+    } finally {
+      setOrdering(false);
+      // Auto-hide message after 5 s
+      setTimeout(() => setOrderMsg(null), 5000);
+    }
+  }, [asin, order, orderId, ordering, quantity]);
+
+  return (
+    <div className="flex flex-col gap-1 min-w-[180px]">
+      {/* ASIN row */}
+      {editing ? (
+        <div className="flex items-center gap-1">
+          <input
+            ref={inputRef}
+            type="text"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') saveAsin();
+              if (e.key === 'Escape') cancelEdit();
+            }}
+            placeholder="e.g. B0D14XK56X"
+            maxLength={12}
+            className={`w-32 rounded px-2 py-1 text-xs font-mono border outline-none ${
+              isDark
+                ? 'bg-slate-800 border-slate-600 text-slate-100 focus:border-indigo-400'
+                : 'bg-white border-slate-300 text-slate-900 focus:border-indigo-500'
+            }`}
+          />
+          <button
+            type="button"
+            onClick={saveAsin}
+            title="Save ASIN"
+            className="text-green-500 hover:text-green-400"
+          >
+            <Check size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={cancelEdit}
+            title="Cancel"
+            className="text-slate-400 hover:text-slate-300"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={startEdit}
+          title={asin ? `ASIN: ${asin} — click to change` : 'Assign Amazon ASIN'}
+          className={`flex items-center gap-1 text-xs rounded px-2 py-1 border w-fit transition-colors ${
+            asin
+              ? isDark
+                ? 'border-indigo-500 bg-indigo-900/30 text-indigo-300 hover:bg-indigo-900/50'
+                : 'border-indigo-400 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+              : isDark
+              ? 'border-slate-600 text-slate-400 hover:border-slate-400 hover:text-slate-200'
+              : 'border-slate-300 text-slate-500 hover:border-slate-400 hover:text-slate-700'
+          }`}
+        >
+          <Link2 size={11} />
+          <span className="font-mono">{asin || 'Add ASIN'}</span>
+        </button>
+      )}
+
+      {/* Order on Amazon button — only shown when an ASIN is assigned */}
+      {asin && !editing && (
+        <button
+          type="button"
+          onClick={handleOrderOnAmazon}
+          disabled={ordering}
+          title={`Auto-order ASIN ${asin} on Amazon`}
+          className={`flex items-center gap-1 text-xs rounded px-2 py-1 font-medium transition-colors w-fit ${
+            ordering
+              ? 'opacity-50 cursor-not-allowed'
+              : ''
+          } ${
+            isDark
+              ? 'bg-orange-600 hover:bg-orange-500 text-white'
+              : 'bg-orange-500 hover:bg-orange-600 text-white'
+          }`}
+        >
+          {ordering ? (
+            <Loader2 size={11} className="animate-spin" />
+          ) : (
+            <ShoppingCart size={11} />
+          )}
+          Order on Amazon
+        </button>
+      )}
+
+      {/* Feedback message */}
+      {orderMsg && (
+        <span
+          className={`text-[11px] leading-tight ${
+            orderMsg.type === 'success' ? 'text-green-400' : 'text-red-400'
+          }`}
+        >
+          {orderMsg.text}
+        </span>
+      )}
+    </div>
+  );
 }
 
 export default function OrdersPage() {
@@ -529,6 +741,10 @@ export default function OrdersPage() {
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                     {sortLabel('total', t('ordersPage.table.total'))}
                   </th>
+                  {/* ─── NEW: Amazon column ─── */}
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+                    Amazon
+                  </th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -583,6 +799,10 @@ export default function OrdersPage() {
                         </td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                           {totalValue != null ? `${totalValue} ${totalCurrency || ''}`.trim() : '-'}
+                        </td>
+                        {/* ─── Amazon ASIN + auto-order button ─── */}
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                          <AsinCell order={order} isDark={isDark} />
                         </td>
                         <td className="px-4 py-3 text-right">
                           <button
