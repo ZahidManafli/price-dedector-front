@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ebayAPI } from '../services/api';
+import { ebayAPI, productAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
@@ -123,17 +123,40 @@ function buildShipTo(order) {
   };
 }
 
-function AsinCell({ order, isDark }) {
+function AsinCell({ order, isDark, autoAsin, allOrders }) {
   const orderId = order?.orderId;
   const quantity = order?.lineItems?.[0]?.quantity ?? 1;
+  const orderTitle = String(order?.lineItems?.[0]?.title || '').trim();
 
-  // Saved ASIN for this order (persisted in localStorage)
-  const [asin, setAsin] = useState(() => readStoredAsinMap()[orderId] || '');
+  // Priority: stored manual value > auto-filled from product match
+  const [asin, setAsin] = useState(() => {
+    const stored = readStoredAsinMap()[orderId];
+    if (stored) return stored;
+    if (autoAsin) {
+      const map = readStoredAsinMap();
+      map[orderId] = autoAsin;
+      writeStoredAsinMap(map);
+      return autoAsin;
+    }
+    return '';
+  });
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [ordering, setOrdering] = useState(false);
   const [orderMsg, setOrderMsg] = useState(null); // { type: 'success'|'error', text }
   const inputRef = useRef(null);
+
+  // If autoAsin arrives after first render (products loaded async), sync it in
+  // only when there is no manually-stored value yet.
+  useEffect(() => {
+    if (!autoAsin) return;
+    const stored = readStoredAsinMap()[orderId];
+    if (stored) return;
+    setAsin(autoAsin);
+    const map = readStoredAsinMap();
+    map[orderId] = autoAsin;
+    writeStoredAsinMap(map);
+  }, [autoAsin, orderId]);
 
   // Open the edit field
   const startEdit = useCallback(() => {
@@ -142,7 +165,7 @@ function AsinCell({ order, isDark }) {
     setTimeout(() => inputRef.current?.focus(), 50);
   }, [asin]);
 
-  // Save
+  // Save — also propagates ASIN to all orders sharing the same line-item title
   const saveAsin = useCallback(() => {
     const cleaned = String(draft).trim().toUpperCase();
     setAsin(cleaned);
@@ -150,11 +173,21 @@ function AsinCell({ order, isDark }) {
     const map = readStoredAsinMap();
     if (cleaned) {
       map[orderId] = cleaned;
+      // Propagate to every order that shares the same item title
+      if (orderTitle && Array.isArray(allOrders)) {
+        allOrders.forEach((o) => {
+          const oId = o?.orderId;
+          const oTitle = String(o?.lineItems?.[0]?.title || '').trim();
+          if (oId && oId !== orderId && oTitle === orderTitle && !map[oId]) {
+            map[oId] = cleaned;
+          }
+        });
+      }
     } else {
       delete map[orderId];
     }
     writeStoredAsinMap(map);
-  }, [draft, orderId]);
+  }, [draft, orderId, orderTitle, allOrders]);
 
   // Cancel edit
   const cancelEdit = useCallback(() => {
@@ -344,6 +377,8 @@ export default function OrdersPage() {
   const [fetchingPage, setFetchingPage] = useState(false);
   const [total, setTotal] = useState(null);
   const [listingCache, setListingCache] = useState(() => readStoredOrdersListings());
+  // Map of ebayItemId -> amazonAsin built from the user's products
+  const [productAsinMap, setProductAsinMap] = useState(() => new Map());
   const storedFilters = useMemo(() => readStoredOrdersFilters(), []);
   const [query, setQuery] = useState(() => String(storedFilters.query || ''));
   const [fulfillmentFilter, setFulfillmentFilter] = useState(() => String(storedFilters.fulfillmentFilter || 'ALL'));
@@ -485,6 +520,18 @@ export default function OrdersPage() {
           });
 
         await loadPage(0);
+
+        // Fetch products to auto-fill ASINs from ebayItemId matches
+        productAPI.getAll().then((res) => {
+          const products = Array.isArray(res?.data) ? res.data : [];
+          const map = new Map();
+          products.forEach((p) => {
+            const itemId = String(p?.ebayItemId || '').trim();
+            const asin   = String(p?.amazonAsin  || '').trim();
+            if (itemId && asin) map.set(itemId, asin);
+          });
+          setProductAsinMap(map);
+        }).catch(() => {/* non-critical — silently ignore */});
       } catch (err) {
         setError(err?.response?.data?.error || err?.message || t('ordersPage.failedLoad'));
       } finally {
@@ -806,7 +853,12 @@ export default function OrdersPage() {
                         </td>
                         {/* ─── Amazon ASIN + auto-order button ─── */}
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                          <AsinCell order={order} isDark={isDark} />
+                          <AsinCell
+                            order={order}
+                            isDark={isDark}
+                            autoAsin={productAsinMap.get(String(order?.lineItems?.[0]?.legacyItemId || '').trim()) || ''}
+                            allOrders={orders}
+                          />
                         </td>
                         <td className="px-4 py-3 text-right">
                           <button
