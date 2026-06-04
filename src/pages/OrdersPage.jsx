@@ -413,6 +413,15 @@ export default function OrdersPage() {
       const matchPayment = paymentFilter === 'ALL' || String(order?.orderPaymentStatus || '') === paymentFilter;
       return matchQuery && matchFulfillment && matchPayment;
     });
+    // When sorted by creationDate (the default), trust the backend order (newest-first).
+    // The backend now always returns orders descending by creation date, so re-sorting
+    // client-side would only risk corrupting the correct sequence.
+    if (sortKey === 'creationDate') {
+      // desc → backend already newest-first, return as-is
+      // asc  → user wants oldest-first, reverse the backend order
+      return sortDir === 'asc' ? [...base].reverse() : base;
+    }
+
     const compare = (a, b) => {
       if (sortKey === 'orderId') return String(a?.orderId || '').localeCompare(String(b?.orderId || ''));
       if (sortKey === 'payment') {
@@ -423,11 +432,6 @@ export default function OrdersPage() {
       }
       if (sortKey === 'total') {
         return Number(a?.pricingSummary?.total?.value ?? -1) - Number(b?.pricingSummary?.total?.value ?? -1);
-      }
-      if (sortKey === 'creationDate') {
-        const dateA = new Date(a?.creationDate || 0).getTime();
-        const dateB = new Date(b?.creationDate || 0).getTime();
-        return dateA - dateB;
       }
       return 0;
     };
@@ -440,7 +444,8 @@ export default function OrdersPage() {
         setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
         return prev;
       }
-      setSortDir('asc');
+      // creationDate naturally starts descending (newest first); everything else ascending
+      setSortDir(key === 'creationDate' ? 'desc' : 'asc');
       return key;
     });
   };
