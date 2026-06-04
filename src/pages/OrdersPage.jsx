@@ -4,7 +4,7 @@ import { ebayAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
-import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal } from 'lucide-react';
+import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal , ShoppingCart, Check, X} from 'lucide-react';
 
 const ORDERS_FILTER_STORAGE_KEY = 'checkila.ordersPage.filters.v1';
 const ORDERS_LISTINGS_STORAGE_KEY = 'checkila.ordersPage.listings.v1';
