@@ -303,28 +303,39 @@ function AsinCell({ order, isDark, autoAsin, allOrders }) {
 
       {/* Order on Amazon button — only shown when an ASIN is assigned */}
       {asin && !editing && (
-        <button
-          type="button"
-          onClick={handleOrderOnAmazon}
-          disabled={ordering}
-          title={`Auto-order ASIN ${asin} on Amazon`}
-          className={`flex items-center gap-1 text-xs rounded px-2 py-1 font-medium transition-colors w-fit ${
-            ordering
-              ? 'opacity-50 cursor-not-allowed'
-              : ''
-          } ${
-            isDark
-              ? 'bg-orange-600 hover:bg-orange-500 text-white'
-              : 'bg-orange-500 hover:bg-orange-600 text-white'
-          }`}
-        >
-          {ordering ? (
-            <Loader2 size={11} className="animate-spin" />
-          ) : (
-            <ShoppingCart size={11} />
-          )}
-          Order on Amazon
-        </button>
+        String(order?.orderFulfillmentStatus || '').toUpperCase() === 'NOT_STARTED' ? (
+          <button
+            type="button"
+            onClick={handleOrderOnAmazon}
+            disabled={ordering}
+            title={`Auto-order ASIN ${asin} on Amazon`}
+            className={`flex items-center gap-1 text-xs rounded px-2 py-1 font-medium transition-colors w-fit ${
+              ordering ? 'opacity-50 cursor-not-allowed' : ''
+            } ${
+              isDark
+                ? 'bg-orange-600 hover:bg-orange-500 text-white'
+                : 'bg-orange-500 hover:bg-orange-600 text-white'
+            }`}
+          >
+            {ordering ? (
+              <Loader2 size={11} className="animate-spin" />
+            ) : (
+              <ShoppingCart size={11} />
+            )}
+            Order on Amazon
+          </button>
+        ) : (
+          <div
+            className={`flex items-center gap-1 text-xs rounded px-2 py-1 font-medium w-fit ${
+              isDark
+                ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700'
+                : 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+            }`}
+          >
+            <Check size={11} />
+            Ordered
+          </div>
+        )
       )}
 
       {/* Feedback message */}
