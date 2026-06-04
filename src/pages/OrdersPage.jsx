@@ -182,12 +182,17 @@ function AsinCell({ order, isDark }) {
       }
 
       const response = await new Promise((resolve) => {
-        chrome.runtime.sendMessage(
+        window.postMessage(
           {
-            type: 'AMAZON_AUTO_ORDER',
-            payload: { asin, quantity, orderId, shipTo },
+            type: "AMAZON_AUTO_ORDER",
+            payload: {
+              asin,
+              quantity,
+              orderId,
+              shipTo
+            }
           },
-          (res) => resolve(res)
+          "*"
         );
       });
 
