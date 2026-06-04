@@ -172,23 +172,20 @@ function AsinCell({ order, isDark }) {
     try {
       const shipTo = buildShipTo(order);
   
-      const res = await fetch(
-        "https://back.checkila.com/amazon/auto-order",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            // if you use auth:
-            // Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            asin,
-            quantity,
-            orderId,
-            shipTo,
-          }),
-        }
-      );
+      const token = localStorage.getItem('authToken'); // or wherever you store it
+
+      const res = await fetch("https://back.checkila.com/amazon/auto-order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,   // 🔥 THIS IS MISSING
+        },
+        body: JSON.stringify({
+          asin,
+          quantity,
+          shipTo,
+        }),
+      });
   
       const data = await res.json();
   
