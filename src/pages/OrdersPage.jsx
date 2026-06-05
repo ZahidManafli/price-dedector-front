@@ -843,7 +843,7 @@ export default function OrdersPage() {
                   const matchedProduct = listingId ? productByItemId.get(listingId) : null;
                   const amazonPrice = parseFloat(matchedProduct?.currentAmazonPrice ?? NaN);
                   const profit = (!isNaN(totalDueSeller) && !isNaN(amazonPrice))
-                    ? totalDueSeller - amazonPrice
+                    ? totalDueSeller - amazonPrice*order.lineItems[0]?.quantity
                     : null;
                   const profitColor = profit === null
                     ? null
