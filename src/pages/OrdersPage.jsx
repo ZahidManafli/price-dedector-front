@@ -390,6 +390,8 @@ export default function OrdersPage() {
   const [listingCache, setListingCache] = useState(() => readStoredOrdersListings());
   // Map of ebayItemId -> amazonAsin built from the user's products
   const [productAsinMap, setProductAsinMap] = useState(() => new Map());
+  // Map of ebayItemId -> full product object (for currentAmazonPrice)
+  const [productByItemId, setProductByItemId] = useState(() => new Map());
   const storedFilters = useMemo(() => readStoredOrdersFilters(), []);
   const [query, setQuery] = useState(() => String(storedFilters.query || ''));
   const [fulfillmentFilter, setFulfillmentFilter] = useState(() => String(storedFilters.fulfillmentFilter || 'ALL'));
@@ -540,13 +542,18 @@ export default function OrdersPage() {
         // Fetch products to auto-fill ASINs from ebayItemId matches
         productAPI.getAll().then((res) => {
           const products = Array.isArray(res?.data) ? res.data : [];
-          const map = new Map();
+          const asinMap = new Map();
+          const productMap = new Map();
           products.forEach((p) => {
             const itemId = String(p?.ebayItemId || '').trim();
             const asin   = String(p?.amazonAsin  || '').trim();
-            if (itemId && asin) map.set(itemId, asin);
+            if (itemId) {
+              if (asin) asinMap.set(itemId, asin);
+              productMap.set(itemId, p);
+            }
           });
-          setProductAsinMap(map);
+          setProductAsinMap(asinMap);
+          setProductByItemId(productMap);
         }).catch(() => {/* non-critical — silently ignore */});
       } catch (err) {
         setError(err?.response?.data?.error || err?.message || t('ordersPage.failedLoad'));
@@ -812,6 +819,10 @@ export default function OrdersPage() {
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                     Amazon
                   </th>
+                  {/* ─── Profit column ─── */}
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+                    Profit
+                  </th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -826,6 +837,21 @@ export default function OrdersPage() {
                   const totalCurrency = order?.pricingSummary?.total?.currency;
                   const buyer = getBuyerDisplay(order);
                   const createdAt = order?.creationDate ? new Date(order.creationDate).toLocaleString() : '-';
+
+                  // ─── Profit calculation ───
+                  const totalDueSeller = parseFloat(order?.paymentSummary?.totalDueSeller?.value ?? NaN);
+                  const matchedProduct = listingId ? productByItemId.get(listingId) : null;
+                  const amazonPrice = parseFloat(matchedProduct?.currentAmazonPrice ?? NaN);
+                  const profit = (!isNaN(totalDueSeller) && !isNaN(amazonPrice))
+                    ? totalDueSeller - amazonPrice
+                    : null;
+                  const profitColor = profit === null
+                    ? null
+                    : profit > 0
+                      ? { bg: isDark ? 'bg-emerald-900/40' : 'bg-emerald-50', text: isDark ? 'text-emerald-300' : 'text-emerald-700', border: isDark ? 'border-emerald-700' : 'border-emerald-300' }
+                      : profit < 0
+                        ? { bg: isDark ? 'bg-rose-900/40' : 'bg-rose-50', text: isDark ? 'text-rose-300' : 'text-rose-700', border: isDark ? 'border-rose-700' : 'border-rose-300' }
+                        : { bg: isDark ? 'bg-slate-700/40' : 'bg-slate-100', text: isDark ? 'text-slate-300' : 'text-slate-600', border: isDark ? 'border-slate-600' : 'border-slate-300' };
 
                   return (
                     <React.Fragment key={id}>
@@ -847,7 +873,7 @@ export default function OrdersPage() {
                             </div>
                             <div className="min-w-0">
                               <div className="font-medium truncate">{id}</div>
-                              <div className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                              <div className={`text-[10px] truncate max-w-[160px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                 {order?.lineItems?.[0]?.title || t('ordersPage.table.orderId')}
                               </div>
                             </div>
@@ -876,6 +902,16 @@ export default function OrdersPage() {
                             allOrders={orders}
                           />
                         </td>
+                        {/* ─── Profit cell ─── */}
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                          {profit !== null ? (
+                            <div className={`inline-flex items-center rounded-lg px-2 py-1 text-xs font-semibold border ${profitColor.bg} ${profitColor.text} ${profitColor.border}`}>
+                              {profit > 0 ? '+' : ''}{profit.toFixed(2)} {order?.paymentSummary?.totalDueSeller?.currency || ''}
+                            </div>
+                          ) : (
+                            <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>—</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-right">
                           <button
                             type="button"
@@ -896,7 +932,7 @@ export default function OrdersPage() {
 
                 {filteredOrders.length === 0 && (
                   <tr>
-                      <td colSpan={6} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <td colSpan={7} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       {t('ordersPage.empty')}
                     </td>
                   </tr>
