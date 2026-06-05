@@ -18,6 +18,7 @@ import { useTheme } from '../context/ThemeContext';
 import { calculateLast7DaysSoldCount, calculateLast15DaysSoldCount, fetchPurchaseHistoryRows, normalizeNumericItemId } from '../utils/purchaseHistory';
 // ── Bucket ────────────────────────────────────────────────────────────────────
 import { useBucket, BucketTrigger, BucketDrawer, AddToBucketButton } from '../components/EbayBucket';
+import TitleWarningBadges from '../components/TitleWarningBadges';
 
 const RECENT_SEARCH_STORAGE_KEY = 'checkilaRecentSearches:v1';
 const RECENT_SEARCH_LIMIT = 8;
@@ -1344,18 +1345,20 @@ export default function MarketAnalysisPage() {
               {viewMode === 'card' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                   {sortedResults.map((item, index) => (
-                    <MarketItemCard
-                      key={getResultKey(item, index)}
-                      item={item}
-                      isSelected={selectedIds.includes(item.id)}
-                      isSellerSaved={savedSellerKeys.has(normalizeSellerName(item.sellerName))}
-                      onSelect={handleSelect}
-                      onInspect={handleInspect}
-                      onSellerClick={handleSellerClick}
-                      onSearchTitle={handleTitleSearch}
-                      onSellSimilar={handleSellSimilar}
-                      onToggleSeller={handleToggleSavedSeller}
-                    />
+                    <div key={getResultKey(item, index)} className="relative">
+                      <MarketItemCard
+                        item={item}
+                        isSelected={selectedIds.includes(item.id)}
+                        isSellerSaved={savedSellerKeys.has(normalizeSellerName(item.sellerName))}
+                        onSelect={handleSelect}
+                        onInspect={handleInspect}
+                        onSellerClick={handleSellerClick}
+                        onSearchTitle={handleTitleSearch}
+                        onSellSimilar={handleSellSimilar}
+                        onToggleSeller={handleToggleSavedSeller}
+                      />
+                      <TitleWarningBadges title={item.title} className="px-3 pb-2" />
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -1435,6 +1438,7 @@ export default function MarketAnalysisPage() {
                             >
                               {item.title}
                             </button>
+                            <TitleWarningBadges title={item.title} />
                           </td>
                           <td className="p-3">
                             <div className="flex items-center gap-2 flex-wrap">

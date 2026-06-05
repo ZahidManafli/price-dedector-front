@@ -12,6 +12,7 @@ import { browseAPI, ebayAPI } from '../services/api';
 import PurchaseHistoryModal from '../components/PurchaseHistoryModal';
 import { calculateLast7DaysSoldCount, calculateLast15DaysSoldCount, fetchPurchaseHistoryRows, normalizeNumericItemId } from '../utils/purchaseHistory';
 import { countryCodeToFlagEmoji, formatCurrency } from '../utils/helpers';
+import TitleWarningBadges from '../components/TitleWarningBadges';
 
 function normalizeSoldQuantity(value) {
   if (value === null || value === undefined || value === '') return null;
@@ -657,6 +658,7 @@ export default function MarketListingDetailPage() {
               >
                 {detail.title}
               </button>
+              <TitleWarningBadges title={detail.title} className="mt-2" />
               <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{detail.shortDescription || t('marketListingDetailPage.detailSubtitle')}</p>
             </div>
 
@@ -813,6 +815,7 @@ export default function MarketListingDetailPage() {
                       >
                               {item.title}
                       </button>
+                      <TitleWarningBadges title={item.title} className="mt-1" />
                           <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">{item.condition || t('marketListingDetailPage.na')}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
                         {t('marketListingDetailPage.soldQty')}: <span className="font-semibold">{renderSellerSoldValue(item, '7d')}</span>
@@ -911,6 +914,7 @@ export default function MarketListingDetailPage() {
                             >
                               {item.title}
                             </button>
+                            <TitleWarningBadges title={item.title} />
                           </td>
                           <td className="p-3 font-medium">
                             {renderSellerSoldValue(item, '7d')}
