@@ -303,7 +303,7 @@ function AsinCell({ order, isDark, autoAsin, allOrders }) {
 
       {/* Order on Amazon button — only shown when an ASIN is assigned */}
       {asin && !editing && (
-        String(order?.orderFulfillmentStatus || '').toUpperCase() === 'NOT_STARTED' ? (
+        String(order?.orderFulfillmentStatus || '').toUpperCase() === 'NOT_STARTED' && String(order?.orderFulfillmentStatus || '').toUpperCase() !== 'ORDER_CANCELLED' ? (
           <button
             type="button"
             onClick={handleOrderOnAmazon}

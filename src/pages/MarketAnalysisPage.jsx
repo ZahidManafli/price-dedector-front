@@ -18,7 +18,7 @@ import { useTheme } from '../context/ThemeContext';
 import { calculateLast7DaysSoldCount, calculateLast15DaysSoldCount, fetchPurchaseHistoryRows, normalizeNumericItemId } from '../utils/purchaseHistory';
 // ── Bucket ────────────────────────────────────────────────────────────────────
 import { useBucket, BucketTrigger, BucketDrawer, AddToBucketButton } from '../components/EbayBucket';
-import TitleWarningBadges from '../components/TitleWarningBadges';
+import TitleWarningBadges, { HighlightedTitle } from '../components/TitleWarningBadges';
 
 const RECENT_SEARCH_STORAGE_KEY = 'checkilaRecentSearches:v1';
 const RECENT_SEARCH_LIMIT = 8;
@@ -1357,7 +1357,7 @@ export default function MarketAnalysisPage() {
                         onSellSimilar={handleSellSimilar}
                         onToggleSeller={handleToggleSavedSeller}
                       />
-                      <TitleWarningBadges title={item.title} className="px-3 pb-2" />
+                      <TitleWarningBadges title={item.title} className="px-3 pb-2 text-[11px]" />
                     </div>
                   ))}
                 </div>
@@ -1420,7 +1420,7 @@ export default function MarketAnalysisPage() {
                               )}
                             </div>
                           </td>
-                          <td className="p-3 max-w-[220px] truncate text-xs">
+                          <td className="p-3 max-w-[260px] text-xs">
                             <button
                               type="button"
                               onClick={() => {
@@ -1433,12 +1433,11 @@ export default function MarketAnalysisPage() {
                                 }
                                 window.open(url, '_blank', 'noopener,noreferrer');
                               }}
-                              className="text-left hover:underline"
+                              className="text-left hover:underline w-full"
                               title={item.itemWebUrl ? t('marketAnalysisPage.openOnEbay') : t('marketAnalysisPage.ebayLinkUnavailable')}
                             >
-                              {item.title}
+                              <HighlightedTitle title={item.title} />
                             </button>
-                            <TitleWarningBadges title={item.title} />
                           </td>
                           <td className="p-3">
                             <div className="flex items-center gap-2 flex-wrap">
