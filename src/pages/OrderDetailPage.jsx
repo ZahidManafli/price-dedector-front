@@ -364,7 +364,7 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      <div className={`rounded-2xl border p-4 mt-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+      {/* <div className={`rounded-2xl border p-4 mt-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
         <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('orderDetailPage.tracking.title')}</h2>
 
         {(trackingError || trackingMessage) && (
@@ -554,7 +554,7 @@ export default function OrderDetailPage() {
             </p>
           )}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
