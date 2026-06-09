@@ -4,12 +4,33 @@ import { ebayAPI, productAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
-import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal , ShoppingCart, Check, X} from 'lucide-react';
+import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, CreditCard, Pencil } from 'lucide-react';
 
 const ORDERS_FILTER_STORAGE_KEY = 'checkila.ordersPage.filters.v1';
 const ORDERS_LISTINGS_STORAGE_KEY = 'checkila.ordersPage.listings.v1';
 // Persists the ASIN mappings the user has typed:  { [orderId]: asin }
 const ORDERS_ASIN_MAP_STORAGE_KEY = 'checkila.ordersPage.asinMap.v1';
+// Persists the user's Amazon card last-4 digits for auto-order
+const AMAZON_CARD_LAST4_STORAGE_KEY = 'checkila.amazonCardLast4';
+
+function readStoredCardLast4() {
+  if (typeof window === 'undefined') return '';
+  try {
+    return String(window.localStorage.getItem(AMAZON_CARD_LAST4_STORAGE_KEY) || '').trim();
+  } catch { return ''; }
+}
+
+function writeStoredCardLast4(value) {
+  if (typeof window === 'undefined') return;
+  try {
+    const cleaned = String(value || '').replace(/\D/g, '').slice(0, 4);
+    if (cleaned) {
+      window.localStorage.setItem(AMAZON_CARD_LAST4_STORAGE_KEY, cleaned);
+    } else {
+      window.localStorage.removeItem(AMAZON_CARD_LAST4_STORAGE_KEY);
+    }
+  } catch {}
+}
 
 function readStoredOrdersFilters() {
   if (typeof window === 'undefined') return {};
@@ -123,6 +144,98 @@ function buildShipTo(order) {
   };
 }
 
+// ─── CARD LAST-4 BANNER ───────────────────────────────────────────────────────
+// Shown at the top of the orders table. Lets the user set/change their Amazon
+// card last-4 digits, which are saved to localStorage and sent with every auto-order.
+function CardLast4Banner({ isDark }) {
+  const [saved, setSaved] = useState(() => readStoredCardLast4());
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const inputRef = useRef(null);
+
+  const startEdit = () => {
+    setDraft(saved);
+    setEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const save = () => {
+    const cleaned = String(draft).replace(/\D/g, '').slice(0, 4);
+    writeStoredCardLast4(cleaned);
+    setSaved(cleaned);
+    setEditing(false);
+  };
+
+  const cancel = () => {
+    setDraft('');
+    setEditing(false);
+  };
+
+  const isValid = saved.length === 4;
+
+  return (
+    <div
+      className={`flex items-center gap-3 rounded-xl border px-4 py-3 mb-4 text-sm ${
+        isValid
+          ? isDark
+            ? 'bg-emerald-900/20 border-emerald-700 text-emerald-200'
+            : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+          : isDark
+          ? 'bg-amber-900/20 border-amber-700 text-amber-200'
+          : 'bg-amber-50 border-amber-300 text-amber-800'
+      }`}
+    >
+      <CreditCard size={16} className="flex-shrink-0" />
+      <span className="font-medium flex-shrink-0">Amazon card last 4:</span>
+
+      {editing ? (
+        <div className="flex items-center gap-2">
+          <input
+            ref={inputRef}
+            type="text"
+            inputMode="numeric"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') save();
+              if (e.key === 'Escape') cancel();
+            }}
+            placeholder="1234"
+            maxLength={4}
+            className={`w-16 rounded px-2 py-0.5 text-sm font-mono border outline-none ${
+              isDark
+                ? 'bg-slate-800 border-slate-600 text-slate-100 focus:border-indigo-400'
+                : 'bg-white border-slate-300 text-slate-900 focus:border-indigo-500'
+            }`}
+          />
+          <button type="button" onClick={save} title="Save" className="text-green-500 hover:text-green-400">
+            <Check size={14} />
+          </button>
+          <button type="button" onClick={cancel} title="Cancel" className="text-slate-400 hover:text-slate-300">
+            <X size={14} />
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          {isValid ? (
+            <span className="font-mono tracking-widest">••••&nbsp;{saved}</span>
+          ) : (
+            <span className="opacity-70 italic">Not set — auto-order will fill the form but stop before payment</span>
+          )}
+          <button
+            type="button"
+            onClick={startEdit}
+            title={isValid ? 'Change card last 4' : 'Set card last 4'}
+            className="opacity-60 hover:opacity-100 transition-opacity"
+          >
+            <Pencil size={13} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AsinCell({ order, isDark, autoAsin, allOrders }) {
   const orderId = order?.orderId;
   const quantity = order?.lineItems?.[0]?.quantity ?? 1;
@@ -204,6 +317,7 @@ function AsinCell({ order, isDark, autoAsin, allOrders }) {
   
     try {
       const shipTo = buildShipTo(order);
+      const cardLast4 = readStoredCardLast4();
   
       const token = localStorage.getItem('authToken'); // or wherever you store it
 
@@ -217,6 +331,7 @@ function AsinCell({ order, isDark, autoAsin, allOrders }) {
           asin,
           quantity,
           shipTo,
+          cardLast4,
         }),
       });
   
@@ -729,6 +844,7 @@ export default function OrdersPage() {
         </>
       ) : (
         <>
+        <CardLast4Banner isDark={isDark} />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
           <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
             <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('ordersPage.showing')}</p>
