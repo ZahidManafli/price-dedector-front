@@ -303,6 +303,11 @@ export const learningAPI = {
   create:        (data) => api.post('/learning-videos', data),
   update:        (id, data) => api.put(`/learning-videos/${id}`, data),
   remove:        (id) => api.delete(`/learning-videos/${id}`),
+  // ✅ must be exactly "toggleLike"
+  toggleLike:   (id)         => api.post(`/learning-videos/${id}/like`),
+
+  // ✅ must be exactly "addComment"
+  addComment:   (id, body)   => api.post(`/learning-videos/${id}/comments`, { body }),
   deleteComment: (videoId, commentId) => api.delete(`/learning-videos/${videoId}/comments/${commentId}`),
 };
 
