@@ -298,17 +298,25 @@ export const partnerAPI = {
 };
 
 export const learningAPI = {
-  list:          () => api.get('/learning-videos'),
-  get:           (id) => api.get(`/learning-videos/${id}`),
-  create:        (data) => api.post('/learning-videos', data),
-  update:        (id, data) => api.put(`/learning-videos/${id}`, data),
-  remove:        (id) => api.delete(`/learning-videos/${id}`),
-  // ✅ must be exactly "toggleLike"
-  toggleLike:   (id)         => api.post(`/learning-videos/${id}/like`),
+  list:   ()     => api.get('/api/learning-videos'),
+  get:    (id)   => api.get(`/api/learning-videos/${id}`),
 
-  // ✅ must be exactly "addComment"
-  addComment:   (id, body)   => api.post(`/learning-videos/${id}/comments`, { body }),
-  deleteComment: (videoId, commentId) => api.delete(`/learning-videos/${videoId}/comments/${commentId}`),
+  // Always send as multipart/form-data so the backend can receive
+  // either a video_url string OR a video_file upload (same for thumbnail).
+  create: (formData) =>
+    api.post('/api/learning-videos', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  update: (id, formData) =>
+    api.put(`/api/learning-videos/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
+  remove:        (id)              => api.delete(`/api/learning-videos/${id}`),
+  toggleLike:    (id)              => api.post(`/api/learning-videos/${id}/like`),
+  addComment:    (id, body)        => api.post(`/api/learning-videos/${id}/comments`, { body }),
+  deleteComment: (videoId, commentId) =>
+    api.delete(`/api/learning-videos/${videoId}/comments/${commentId}`),
 };
 
 export default api;
