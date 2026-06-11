@@ -12,6 +12,7 @@ import { useTheme } from '../context/ThemeContext';
 import { TAB_KEYS, USER_DEFAULT_ALLOWED_TABS } from '../utils/planAccess';
 import * as XLSX from 'xlsx';
 import { NotificationsTab } from '../components/NotificationsTab';
+import AdminVideosTab from '../components/AdminVideosTab';
 
 function safeToString(v) {
   if (v === null || v === undefined) return '';
@@ -830,11 +831,17 @@ export default function AdminPanelPage() {
           >
             Maintenance
           </button>
-          <button
+          {/* <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'stripe-webhooks' ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
             onClick={() => setActiveTab('stripe-webhooks')}
           >
             Stripe Webhooks
+          </button> */}
+          <button
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'videos' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
+            onClick={() => setActiveTab('videos')}
+          >
+            {t('adminPanelPage.videosTab')}
           </button>
           <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'danger' ? 'bg-red-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
@@ -1631,6 +1638,12 @@ export default function AdminPanelPage() {
         {!loading && activeTab === 'referrals' && (
           <div className="space-y-4">
             <ReferralManagementTab />
+          </div>
+        )}
+
+        {!loading && activeTab === 'videos' && (
+          <div className="space-y-4">
+            <AdminVideosTab />
           </div>
         )}
 

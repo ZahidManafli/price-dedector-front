@@ -36,6 +36,7 @@ import LandingPage from './pages/LandingPage';
 import SignupPage from './pages/SignupPage';
 import ReferralLandingPage from './pages/ReferralLandingPage';
 import ReferralDashboardPage from './pages/ReferralDashboardPage';
+import LearningVideosPage from './pages/LearningVideosPage';
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
 
@@ -249,6 +250,7 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/learning" element={<LearningVideosPage />} />
             <Route
               path="/admin"
               element={

@@ -11,6 +11,7 @@ export const TAB_KEYS = {
   ADMIN: 'admin',
   REFERRALS: 'referrals',
   PARTNERS: 'partners',
+  LEARNING: 'learning',
 };
 
 export const USER_DEFAULT_ALLOWED_TABS = [
@@ -23,6 +24,7 @@ export const USER_DEFAULT_ALLOWED_TABS = [
   TAB_KEYS.MARKET_ANALYSIS,
   TAB_KEYS.DEWISO,
   TAB_KEYS.SETTINGS,
+  TAB_KEYS.LEARNING,
 ];
 
 const TAB_ALIASES = {

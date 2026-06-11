@@ -10,7 +10,8 @@
     "marketAnalysis": "Checkila Analysis",
     "dewiso": "Dewiso",
     "settings": "Settings",
-    "adminPanel": "Admin Panel"
+    "adminPanel": "Admin Panel",
+    "learning": "Learning"
   },
   "sidebar": {
     "selectLanguage": "Select Language",
@@ -927,6 +928,7 @@
     "usersTab": "Users",
     "requestsTab": "Requests",
     "plansTab": "Plans",
+    "videosTab": "Videos",
     "partnersTab": "Partners",
     "notificationsTab": "Notifications",
     "dangerZoneTab": "Danger Zone",

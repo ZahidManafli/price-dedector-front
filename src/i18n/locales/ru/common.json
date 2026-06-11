@@ -10,7 +10,8 @@
     "marketAnalysis": "Анализ Checkila",
     "dewiso": "Dewiso",
     "settings": "Настройки",
-    "adminPanel": "Админ панель"
+    "adminPanel": "Админ панель",
+    "learning": "Обучение"
   },
   "sidebar": {
     "selectLanguage": "Выбрать язык",
@@ -869,6 +870,7 @@
     "title": "Панель администратора",
     "adminUsers": "Администраторы",
     "usersTab": "Пользователи",
+    "videosTab": "Видео",
     "requestsTab": "Заявки",
     "plansTab": "Тарифы",
     "partnersTab": "Партнеры",

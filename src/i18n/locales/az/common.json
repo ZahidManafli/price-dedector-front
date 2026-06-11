@@ -10,7 +10,8 @@
     "marketAnalysis": "Checkila Analizi",
     "dewiso": "Dewiso",
     "settings": "Ayarlar",
-    "adminPanel": "Admin Paneli"
+    "adminPanel": "Admin Paneli",
+    "learning": "Dərslik Videoları"
   },
   "sidebar": {
     "selectLanguage": "Dil seç",
@@ -870,6 +871,7 @@
     "adminUsers": "Administrator istifadəçilər",
     "usersTab": "İstifadəçilər",
     "requestsTab": "Sorğular",
+    "videosTab": "Videolar",
     "plansTab": "Planlar",
     "partnersTab": "Tərəfdaşlar",
     "notificationsTab": "Bildirişlər",

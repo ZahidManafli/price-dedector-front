@@ -297,4 +297,13 @@ export const partnerAPI = {
   toggleStatus: (id, is_active) => api.patch(`/api/partners/${id}/status`, { is_active }),
 };
 
+export const learningAPI = {
+  list:          () => api.get('/learning-videos'),
+  get:           (id) => api.get(`/learning-videos/${id}`),
+  create:        (data) => api.post('/learning-videos', data),
+  update:        (id, data) => api.put(`/learning-videos/${id}`, data),
+  remove:        (id) => api.delete(`/learning-videos/${id}`),
+  deleteComment: (videoId, commentId) => api.delete(`/learning-videos/${videoId}/comments/${commentId}`),
+};
+
 export default api;
