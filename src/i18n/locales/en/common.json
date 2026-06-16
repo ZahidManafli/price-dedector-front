@@ -310,6 +310,8 @@
     "openAnalysis": "Open Checkila Analysis",
     "addProduct": "Add Product",
     "unlimited": "Unlimited",
+    "searchPlaceholder": "Search by product name, Amazon ASIN, or eBay product ID...",
+    "searchDescription": "Search by product name, Amazon ASIN, or eBay product ID...",
     "left": "left",
     "noProductsYet": "No products yet",
     "addFirstProduct": "Add your first product",

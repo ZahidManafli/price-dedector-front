@@ -111,6 +111,8 @@
     "subtitle": "İzlenen öğelerinizi yönetin ve performansı izleyin.",
     "openAnalysis": "Checkila Analizini Aç",
     "addProduct": "Ürün Ekle",
+    "searchPlaceholder": "Ürün adı, Amazon ASIN veya eBay ürün ID'siyle ara...",
+    "searchDescription": "Ürün adı, Amazon ASIN veya eBay ürün ID'siyle ara...",
     "unlimited": "Sınırsız",
     "left": "kaldı",
     "noProductsYet": "Henüz ürün yok",

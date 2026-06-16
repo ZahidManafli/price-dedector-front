@@ -111,6 +111,8 @@
     "subtitle": "Управляйте отслеживаемыми товарами и следите за производительностью.",
     "openAnalysis": "Открыть анализ Checkila",
     "addProduct": "Добавить товар",
+    "searchPlaceholder": "Поиск по названию товара, ASIN Amazon или ID товара eBay...",
+    "searchDescription": "Поиск по названию товара, ASIN Amazon или ID товара eBay...",
     "unlimited": "Без ограничений",
     "left": "осталось",
     "noProductsYet": "Товаров еще нет",
