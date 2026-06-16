@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, Search, X } from 'lucide-react';
 import { ebayAPI, productAPI, settingsAPI } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -19,6 +19,7 @@ export default function ProductsPage() {
   const [editingProductId, setEditingProductId] = useState(null);
   const [limits, setLimits] = useState(null);
   const [ebayFilter, setEbayFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchProducts();
@@ -100,7 +101,7 @@ export default function ProductsPage() {
       return accountIds.some((accountId) => productAccountIds.includes(accountId));
     };
 
-    return products.filter((product) => {
+    const accountFiltered = products.filter((product) => {
       if (ebayFilter === 'ALL') return true;
 
       const selectedAccount = ebayAccounts.find((account) => {
@@ -114,7 +115,30 @@ export default function ProductsPage() {
 
       return matchesAccount(product, selectedAccount);
     });
-  }, [products, ebayAccounts, ebayFilter]);
+
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return accountFiltered;
+
+    const matchesSearch = (product) => {
+      const searchableValues = [
+        product?.name,
+        product?.title,
+        product?.productName,
+        product?.ebayItemId,
+        product?.ebayListingId,
+        product?.itemId,
+        product?.asin,
+        product?.amazonAsin,
+        product?.amazonASIN,
+      ]
+        .filter(Boolean)
+        .map((value) => String(value).toLowerCase());
+
+      return searchableValues.some((value) => value.includes(query));
+    };
+
+    return accountFiltered.filter(matchesSearch);
+  }, [products, ebayAccounts, ebayFilter, searchQuery]);
 
   const accountFilterOptions = useMemo(
     () =>
@@ -194,6 +218,30 @@ export default function ProductsPage() {
         </div>
       </div>
 
+      <div className="glass-card mb-5 p-4">
+        <div className="relative">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('productsPage.searchPlaceholder')}
+            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white/70 dark:bg-slate-900/70 text-sm text-slate-700 dark:text-slate-200 pl-9 pr-9 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              aria-label={t('productsPage.clearSearch')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{t('productsPage.searchDescription')}</p>
+      </div>
+
       <div className="glass-card mb-5 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t('productsPage.filterByEbayAccount')}</h2>
@@ -256,10 +304,21 @@ export default function ProductsPage() {
         </div>
       ) : filteredProducts.length === 0 ? (
         <div className="glass-card text-center py-10">
-          <p className="text-xl text-slate-500 dark:text-slate-300 mb-3">{t('productsPage.noProductsMatchFilter')}</p>
-          <button type="button" onClick={() => setEbayFilter('ALL')} className="btn-secondary">
-            {t('productsPage.showAllProducts')}
-          </button>
+          <p className="text-xl text-slate-500 dark:text-slate-300 mb-3">
+            {searchQuery ? t('productsPage.noProductsMatchSearch') : t('productsPage.noProductsMatchFilter')}
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {searchQuery && (
+              <button type="button" onClick={() => setSearchQuery('')} className="btn-secondary">
+                {t('productsPage.clearSearch')}
+              </button>
+            )}
+            {ebayFilter !== 'ALL' && (
+              <button type="button" onClick={() => setEbayFilter('ALL')} className="btn-secondary">
+                {t('productsPage.showAllProducts')}
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
@@ -280,4 +339,3 @@ export default function ProductsPage() {
     </div>
   );
 }
-
