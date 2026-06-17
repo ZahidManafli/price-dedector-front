@@ -28,28 +28,73 @@ function calcProfit(ebayPayout, amazonPrice, adRate) {
   return Math.round((salePrice - cogs - feeTotal) * 100) / 100;
 }
 
+// ─── Extract image URL from a listing (mirrors ListingsPage.jsx logic) ────────
+function extractListingThumb(offer) {
+  // rawXml is the most reliable source (legacy Trading API format)
+  if (offer?.rawXml && typeof DOMParser !== 'undefined') {
+    try {
+      const doc = new DOMParser().parseFromString(offer.rawXml, 'text/xml');
+      const pics = Array.from(doc.querySelectorAll('PictureDetails > PictureURL'))
+        .map((n) => n.textContent?.trim())
+        .filter(Boolean);
+      if (pics[0]) return pics[0];
+    } catch {}
+  }
+  // REST / Inventory API fallbacks
+  return (
+    offer?.listing?.image?.imageUrl ||
+    offer?.listing?.thumbnailImages?.[0]?.imageUrl ||
+    offer?.imageUrl ||
+    offer?.thumbnailUrl ||
+    (Array.isArray(offer?.pictureUrls) ? offer.pictureUrls[0] : null) ||
+    ''
+  );
+}
+
+function extractListingTitle(offer) {
+  return (
+    offer?.listing?.title ||
+    offer?.title ||
+    offer?.product?.title ||
+    ''
+  );
+}
+
+function extractListingId(offer) {
+  return (
+    String(offer?.listingId || offer?.listing?.listingId || offer?.listing?.legacyItemId || offer?.offerId || offer?.sku || '')
+      .trim()
+  );
+}
+
 // ─── Custom image dropdown ────────────────────────────────────────────────────
-function ImageSelect({ value, onChange, options, isDark, placeholder }) {
+function ImageSelect({ value, onChange, options, isDark, placeholder, loadingImages }) {
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.value === value);
 
   return (
     <div className="relative">
+      {/* Trigger button */}
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
-        className={`w-full flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+        className={`w-full flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
           isDark
-            ? 'bg-slate-800 border-slate-600 text-slate-100'
-            : 'bg-white border-slate-300 text-slate-900'
+            ? 'bg-slate-800 border-slate-600 text-slate-100 hover:border-slate-400'
+            : 'bg-white border-slate-300 text-slate-900 hover:border-slate-400'
         }`}
       >
-        {selected ? (
+        {loadingImages ? (
+          <span className={`flex items-center gap-2 flex-1 text-left text-xs ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
+            <Loader2 size={13} className="animate-spin" />
+            Loading listing images…
+          </span>
+        ) : selected ? (
           <>
             <img
               src={selected.value}
               alt=""
-              className="h-8 w-8 object-cover rounded flex-shrink-0"
+              className="h-8 w-8 object-cover rounded flex-shrink-0 border"
               onError={(e) => { e.target.style.display = 'none'; }}
             />
             <span className="truncate text-xs flex-1 text-left">{selected.label}</span>
@@ -62,31 +107,57 @@ function ImageSelect({ value, onChange, options, isDark, placeholder }) {
         <ChevronDown size={14} className={`flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
+      {/* Selected image large preview */}
+      {selected && !open && (
+        <div className="mt-2 flex items-start gap-3">
+          <img
+            src={selected.value}
+            alt=""
+            className={`h-16 w-16 object-cover rounded-lg border flex-shrink-0 ${
+              isDark ? 'border-slate-600' : 'border-slate-200'
+            }`}
+            onError={(e) => { e.target.parentElement.style.display = 'none'; }}
+          />
+          <span className={`text-xs mt-1 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            {selected.label}
+          </span>
+        </div>
+      )}
+
+      {/* Dropdown */}
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
-            className={`absolute z-50 top-full left-0 mt-1 w-full max-h-52 overflow-y-auto rounded-lg border shadow-xl ${
+            className={`absolute z-50 top-full left-0 mt-1 w-full max-h-64 overflow-y-auto rounded-lg border shadow-2xl ${
               isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-200'
             }`}
           >
+            {/* Clear option */}
             <button
               type="button"
               onClick={() => { onChange(''); setOpen(false); }}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-xs ${
+              className={`w-full flex items-center gap-2 px-3 py-2 text-xs border-b ${
                 !value
-                  ? isDark ? 'bg-indigo-900/30 text-indigo-300' : 'bg-indigo-50 text-indigo-700'
-                  : isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-50'
+                  ? isDark ? 'bg-indigo-900/30 text-indigo-300 border-indigo-800' : 'bg-indigo-50 text-indigo-700 border-indigo-100'
+                  : isDark ? 'text-slate-400 hover:bg-slate-700 border-slate-700' : 'text-slate-500 hover:bg-slate-50 border-slate-100'
               }`}
             >
-              — {placeholder}
+              <span className="opacity-60">— {placeholder}</span>
             </button>
+
+            {options.length === 0 && !loadingImages && (
+              <div className={`px-3 py-6 text-center text-xs ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
+                No listing images found. Make sure your eBay account is connected.
+              </div>
+            )}
+
             {options.map((opt) => (
               <button
                 key={opt.value}
                 type="button"
                 onClick={() => { onChange(opt.value); setOpen(false); }}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 text-xs transition-colors ${
                   value === opt.value
                     ? isDark ? 'bg-indigo-900/30 text-indigo-300' : 'bg-indigo-50 text-indigo-700'
                     : isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-50'
@@ -95,17 +166,14 @@ function ImageSelect({ value, onChange, options, isDark, placeholder }) {
                 <img
                   src={opt.value}
                   alt=""
-                  className="h-8 w-8 object-cover rounded flex-shrink-0 border"
+                  className={`h-10 w-10 object-cover rounded flex-shrink-0 border ${
+                    isDark ? 'border-slate-600' : 'border-slate-200'
+                  }`}
                   onError={(e) => { e.target.style.display = 'none'; }}
                 />
-                <span className="truncate text-left">{opt.label}</span>
+                <span className="truncate text-left leading-tight">{opt.label}</span>
               </button>
             ))}
-            {options.length === 0 && (
-              <div className={`px-3 py-4 text-center text-xs ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
-                No images available
-              </div>
-            )}
           </div>
         </>
       )}
@@ -212,6 +280,7 @@ export default function ProfitTablePage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [listingImages, setListingImages] = useState([]);
+  const [loadingImages, setLoadingImages] = useState(true);
 
   // ── Derived profit ─────────────────────────────────────────────────────────
   const previewProfit = useMemo(
@@ -234,31 +303,29 @@ export default function ProfitTablePage() {
 
   useEffect(() => { loadEntries(range); }, [range, loadEntries]);
 
-  // ── Load listing images for image select ───────────────────────────────────
+  // ── Load active listing images for image select ───────────────────────────
   useEffect(() => {
+    setLoadingImages(true);
     ebayAPI.getListings(0, 200)
       .then((res) => {
         const items = Array.isArray(res?.data?.items) ? res.data.items : [];
         const images = [];
-        items.forEach((listing) => {
-          const imgUrl =
-            listing?.listing?.image?.imageUrl ||
-            listing?.listing?.thumbnailImages?.[0]?.imageUrl ||
-            listing?.imageUrl ||
-            listing?.thumbnailUrl ||
-            (Array.isArray(listing?.pictureUrls) ? listing.pictureUrls[0] : null) ||
-            '';
-          const title =
-            listing?.listing?.title ||
-            listing?.title ||
-            listing?.listingId ||
-            listing?.offerId ||
-            '';
-          if (imgUrl) images.push({ value: imgUrl, label: title || imgUrl });
+        const seen = new Set();
+        items.forEach((offer) => {
+          const imgUrl = extractListingThumb(offer);
+          if (!imgUrl || seen.has(imgUrl)) return;
+          seen.add(imgUrl);
+          const title = extractListingTitle(offer);
+          const listingId = extractListingId(offer);
+          const label = title
+            ? `${title}${listingId ? ` (${listingId})` : ''}`
+            : listingId || imgUrl;
+          images.push({ value: imgUrl, label });
         });
         setListingImages(images);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoadingImages(false));
   }, []);
 
   // ── Chart data ─────────────────────────────────────────────────────────────
@@ -442,6 +509,7 @@ export default function ProfitTablePage() {
                   options={listingImages}
                   isDark={isDark}
                   placeholder={t('profitTablePage.selectImage')}
+                  loadingImages={loadingImages}
                 />
               </div>
 
