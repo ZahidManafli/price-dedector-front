@@ -63,6 +63,7 @@ const PLAN_TAB_KEYS = [
   TAB_KEYS.MARKET_ANALYSIS,
   TAB_KEYS.DEWISO,
   TAB_KEYS.SETTINGS,
+  TAB_KEYS.PROFIT_TABLE,
 ];
 
 function defaultPlanForm() {
