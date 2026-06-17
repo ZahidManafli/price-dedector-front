@@ -37,6 +37,7 @@ import SignupPage from './pages/SignupPage';
 import ReferralLandingPage from './pages/ReferralLandingPage';
 import ReferralDashboardPage from './pages/ReferralDashboardPage';
 import LearningVideosPage from './pages/LearningVideosPage';
+import ProfitTablePage from './pages/ProfitTablePage';
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
 
@@ -251,6 +252,14 @@ function AppContent() {
               }
             />
             <Route path="/learning" element={<LearningVideosPage />} />
+            <Route
+              path="/profit-table"
+              element={
+                <ProtectedRoute requiredTab={TAB_KEYS.PROFIT_TABLE}>
+                  <ProfitTablePage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/admin"
               element={

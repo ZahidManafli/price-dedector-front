@@ -21,6 +21,7 @@ import {
   ChevronDown,
   Link2,
   BookOpen,
+  TrendingUp,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -54,6 +55,7 @@ export default function Sidebar() {
     { label: t('nav.marketAnalysis'), path: '/market-analysis', icon: BarChart3, tab: TAB_KEYS.MARKET_ANALYSIS, tour: 'sidebar-market-analysis' },
     { label: t('nav.dewiso'), path: '/dewiso', icon: Code2, tab: TAB_KEYS.DEWISO },
     { label: t('nav.learning'), path: '/learning', icon: BookOpen, tab: TAB_KEYS.LEARNING },
+    { label: t('nav.profitTable'), path: '/profit-table', icon: TrendingUp, tab: TAB_KEYS.PROFIT_TABLE },
     ...(user?.role === 'admin' || user?.permissions?.referralAdmin
       ? [{ label: 'Referrals', path: '/referals', icon: Link2, tab: TAB_KEYS.REFERRALS }]
       : []),

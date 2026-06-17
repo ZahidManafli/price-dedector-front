@@ -11,7 +11,8 @@
     "dewiso": "Dewiso",
     "settings": "Ayarlar",
     "adminPanel": "Admin Paneli",
-    "learning": "Dərslik Videoları"
+    "learning": "Dərslik Videoları",
+    "profitTable": "Mənfəət Cədvəli"
   },
   "sidebar": {
     "selectLanguage": "Dil seç",
@@ -596,6 +597,8 @@
       "payment": "Ödəniş",
       "shipment": "Göndəriş",
       "total": "Cəmi",
+      "ordered": "Sifariş edildi",
+      "orderedSent": "Göndərildi",
       "details": "Detallar"
     },
     "empty": "Cari filtrlər üçün sifariş tapılmadı.",
@@ -604,6 +607,41 @@
       "previous": "Əvvəlki",
       "next": "Sonrakı"
     }
+  },
+  "profitTablePage": {
+    "title": "Mənfəət Cədvəli",
+    "addEntry": "Qeyd Əlavə Et",
+    "cancelAdd": "Ləğv et",
+    "formTitle": "Mənfəət Qeydi Əlavə Et",
+    "buyerName": "Alıcı Adı",
+    "buyerNamePlaceholder": "məs. john_buyer",
+    "amazonPrice": "Amazon Qiyməti",
+    "ebayPayout": "eBay Ödənişi",
+    "adRate": "Reklam Dərəcəsi",
+    "itemImage": "Məhsul Şəkli",
+    "selectImage": "Siyahıdan şəkil seçin...",
+    "profit": "Mənfəət (avtomatik)",
+    "cancel": "Ləğv et",
+    "save": "Qeydi Saxla",
+    "range7d": "Son 7 Gün",
+    "range30d": "Son 30 Gün",
+    "range90d": "Son 90 Gün",
+    "range1y": "Son 1 İl",
+    "totalProfit": "Ümumi Mənfəət",
+    "chartTitle": "Zamanla Mənfəət",
+    "colImage": "Şəkil",
+    "colBuyer": "Alıcı",
+    "colAmazonPrice": "Amazon Qiyməti",
+    "colEbayPayout": "eBay Ödənişi",
+    "colAdRate": "Reklam Dərəcəsi",
+    "colCreatedAt": "Tarix",
+    "colProfit": "Mənfəət",
+    "delete": "Sil",
+    "deleteTitle": "Qeyd silinsin?",
+    "deleteText": "Bu mənfəət qeydi həmişəlik silinəcək.",
+    "deleteConfirm": "Bəli, sil",
+    "deleteCancel": "Ləğv et",
+    "empty": "Seçilmiş dövr üçün mənfəət qeydi yoxdur."
   },
   "settingsPage": {
     "title": "Ayarlar",

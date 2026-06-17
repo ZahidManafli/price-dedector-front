@@ -11,7 +11,8 @@
     "dewiso": "Dewiso",
     "settings": "Ayarlar",
     "adminPanel": "Admin Paneli",
-    "learning": "Öğrenme"
+    "learning": "Öğrenme",
+    "profitTable": "Kâr Tablosu"
   },
   "sidebar": {
     "selectLanguage": "Dil Seç",
@@ -596,6 +597,8 @@
       "payment": "Ödeme",
       "shipment": "Gönderi",
       "total": "Toplam",
+      "ordered": "Sipariş edildi",
+      "orderedSent": "Gönderildi",
       "details": "Detaylar"
     },
     "empty": "Mevcut filtreler için sipariş bulunamadı.",
@@ -604,6 +607,41 @@
       "previous": "Önceki",
       "next": "Sonraki"
     }
+  },
+  "profitTablePage": {
+    "title": "Kâr Tablosu",
+    "addEntry": "Kayıt Ekle",
+    "cancelAdd": "İptal",
+    "formTitle": "Kâr Kaydı Ekle",
+    "buyerName": "Alıcı Adı",
+    "buyerNamePlaceholder": "örn. john_buyer",
+    "amazonPrice": "Amazon Fiyatı",
+    "ebayPayout": "eBay Ödemesi",
+    "adRate": "Reklam Oranı",
+    "itemImage": "Ürün Görseli",
+    "selectImage": "İlanlardan görsel seçin...",
+    "profit": "Kâr (otomatik)",
+    "cancel": "İptal",
+    "save": "Kaydı Kaydet",
+    "range7d": "Son 7 Gün",
+    "range30d": "Son 30 Gün",
+    "range90d": "Son 90 Gün",
+    "range1y": "Son 1 Yıl",
+    "totalProfit": "Toplam Kâr",
+    "chartTitle": "Zaman İçinde Kâr",
+    "colImage": "Görsel",
+    "colBuyer": "Alıcı",
+    "colAmazonPrice": "Amazon Fiyatı",
+    "colEbayPayout": "eBay Ödemesi",
+    "colAdRate": "Reklam Oranı",
+    "colCreatedAt": "Tarih",
+    "colProfit": "Kâr",
+    "delete": "Sil",
+    "deleteTitle": "Kayıt silinsin mi?",
+    "deleteText": "Bu kâr kaydı kalıcı olarak kaldırılacak.",
+    "deleteConfirm": "Evet, sil",
+    "deleteCancel": "İptal",
+    "empty": "Seçilen dönem için kâr kaydı bulunamadı."
   },
   "settingsPage": {
     "title": "Ayarlar",

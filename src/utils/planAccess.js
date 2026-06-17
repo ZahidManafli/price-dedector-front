@@ -12,6 +12,7 @@ export const TAB_KEYS = {
   REFERRALS: 'referrals',
   PARTNERS: 'partners',
   LEARNING: 'learning',
+  PROFIT_TABLE: 'profit_table',
 };
 
 export const USER_DEFAULT_ALLOWED_TABS = [
@@ -25,9 +26,13 @@ export const USER_DEFAULT_ALLOWED_TABS = [
   TAB_KEYS.DEWISO,
   TAB_KEYS.SETTINGS,
   TAB_KEYS.LEARNING,
+  TAB_KEYS.PROFIT_TABLE,
 ];
 
 const TAB_ALIASES = {
+  profit_table: TAB_KEYS.PROFIT_TABLE,
+  'profit-table': TAB_KEYS.PROFIT_TABLE,
+  profittable: TAB_KEYS.PROFIT_TABLE,
   dashboard: TAB_KEYS.DASHBOARD,
   products: TAB_KEYS.PRODUCTS,
   listings: TAB_KEYS.LISTINGS,

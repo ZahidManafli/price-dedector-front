@@ -268,6 +268,12 @@ export const maintenanceAPI = {
   getStatus: () => api.get('/auth/maintenance-status'),
 };
 
+export const profitAPI = {
+  list: (range) => api.get('/profits', { params: range ? { range } : {} }),
+  create: (data) => api.post('/profits', data),
+  remove: (id) => api.delete(`/profits/${id}`),
+};
+
 // Partners APIs
 export const partnerAPI = {
   getPublic: () => api.get('/api/partners/public'),

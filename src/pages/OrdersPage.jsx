@@ -4,7 +4,8 @@ import { ebayAPI, productAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
-import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, CreditCard, Pencil } from 'lucide-react';
+import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, CreditCard, Pencil, TrendingUp } from 'lucide-react';
+import { profitAPI } from '../services/api';
 
 const ORDERS_FILTER_STORAGE_KEY = 'checkila.ordersPage.filters.v1';
 const ORDERS_LISTINGS_STORAGE_KEY = 'checkila.ordersPage.listings.v1';
@@ -464,6 +465,78 @@ function AsinCell({ order, isDark, autoAsin, allOrders }) {
         </span>
       )}
     </div>
+  );
+}
+
+function calcProfit(ebayPayout, amazonPrice, adRate) {
+  const salePrice = parseFloat(ebayPayout) || 0;
+  const cogs = parseFloat(amazonPrice) || 0;
+  if (salePrice === 0 || cogs === 0) return 0;
+  const taxRate = 0.06;
+  const fvfRate = 0.136;
+  const adRateDecimal = (parseFloat(adRate) || 0) / 100;
+  const fixedFee = 0.30;
+  const grossAmount = salePrice * (1 + taxRate);
+  const feeTotal = grossAmount * (fvfRate + adRateDecimal) + fixedFee;
+  return Math.round((salePrice - cogs - feeTotal) * 100) / 100;
+}
+
+function SendToProfitCell({ order, matchedProduct, listingImageUrl, buyer, isDark, t }) {
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const handleSend = async () => {
+    if (sent || sending) return;
+    setSending(true);
+    try {
+      const ebayPayout = parseFloat(order?.paymentSummary?.totalDueSeller?.value ?? 0);
+      const amazonPrice = parseFloat(matchedProduct?.currentAmazonPrice ?? 0);
+      const adRate = parseFloat(matchedProduct?.adRate ?? 0);
+      const profit = calcProfit(ebayPayout, amazonPrice, adRate);
+
+      await profitAPI.create({
+        buyer_name: buyer,
+        amazon_price: amazonPrice,
+        ebay_payout: ebayPayout,
+        ad_rate: adRate,
+        item_image_url: listingImageUrl || '',
+        profit,
+      });
+      setSent(true);
+    } catch {
+      // ignore — silently fail
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (sent) {
+    return (
+      <div className={`inline-flex items-center gap-1 text-xs rounded-lg px-2 py-1 font-medium ${
+        isDark ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700' : 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+      }`}>
+        <Check size={11} />
+        {t('ordersPage.table.orderedSent')}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleSend}
+      disabled={sending}
+      className={`inline-flex items-center gap-1 text-xs rounded-lg px-2 py-1 font-medium border transition-colors ${
+        sending ? 'opacity-50 cursor-not-allowed' : ''
+      } ${
+        isDark
+          ? 'bg-indigo-900/30 border-indigo-700 text-indigo-300 hover:bg-indigo-900/50'
+          : 'bg-indigo-50 border-indigo-300 text-indigo-700 hover:bg-indigo-100'
+      }`}
+    >
+      {sending ? <Loader2 size={11} className="animate-spin" /> : <TrendingUp size={11} />}
+      {t('ordersPage.table.ordered')}
+    </button>
   );
 }
 
@@ -935,9 +1008,9 @@ export default function OrdersPage() {
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                     Amazon
                   </th>
-                  {/* ─── Profit column ─── */}
+                  {/* ─── Ordered / Send to Profit column ─── */}
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    Profit
+                    {t('ordersPage.table.ordered')}
                   </th>
                   <th className="px-4 py-3" />
                 </tr>
@@ -954,20 +1027,7 @@ export default function OrdersPage() {
                   const buyer = getBuyerDisplay(order);
                   const createdAt = order?.creationDate ? new Date(order.creationDate).toLocaleString() : '-';
 
-                  // ─── Profit calculation ───
-                  const totalDueSeller = parseFloat(order?.paymentSummary?.totalDueSeller?.value ?? NaN);
                   const matchedProduct = listingId ? productByItemId.get(listingId) : null;
-                  const amazonPrice = parseFloat(matchedProduct?.currentAmazonPrice ?? NaN);
-                  const profit = (!isNaN(totalDueSeller) && !isNaN(amazonPrice))
-                    ? totalDueSeller - amazonPrice*order.lineItems[0]?.quantity
-                    : null;
-                  const profitColor = profit === null
-                    ? null
-                    : profit > 0
-                      ? { bg: isDark ? 'bg-emerald-900/40' : 'bg-emerald-50', text: isDark ? 'text-emerald-300' : 'text-emerald-700', border: isDark ? 'border-emerald-700' : 'border-emerald-300' }
-                      : profit < 0
-                        ? { bg: isDark ? 'bg-rose-900/40' : 'bg-rose-50', text: isDark ? 'text-rose-300' : 'text-rose-700', border: isDark ? 'border-rose-700' : 'border-rose-300' }
-                        : { bg: isDark ? 'bg-slate-700/40' : 'bg-slate-100', text: isDark ? 'text-slate-300' : 'text-slate-600', border: isDark ? 'border-slate-600' : 'border-slate-300' };
 
                   return (
                     <React.Fragment key={id}>
@@ -1018,15 +1078,16 @@ export default function OrdersPage() {
                             allOrders={orders}
                           />
                         </td>
-                        {/* ─── Profit cell ─── */}
+                        {/* ─── Send to Profit button ─── */}
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                          {profit !== null ? (
-                            <div className={`inline-flex items-center rounded-lg px-2 py-1 text-xs font-semibold border ${profitColor.bg} ${profitColor.text} ${profitColor.border}`}>
-                              {profit > 0 ? '+' : ''}{profit.toFixed(2)} {order?.paymentSummary?.totalDueSeller?.currency || ''}
-                            </div>
-                          ) : (
-                            <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>—</span>
-                          )}
+                          <SendToProfitCell
+                            order={order}
+                            matchedProduct={matchedProduct}
+                            listingImageUrl={listingImageUrl}
+                            buyer={buyer}
+                            isDark={isDark}
+                            t={t}
+                          />
                         </td>
                         <td className="px-4 py-3 text-right">
                           <button
@@ -1048,7 +1109,7 @@ export default function OrdersPage() {
 
                 {filteredOrders.length === 0 && (
                   <tr>
-                      <td colSpan={7} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <td colSpan={8} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       {t('ordersPage.empty')}
                     </td>
                   </tr>

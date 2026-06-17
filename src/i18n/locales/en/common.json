@@ -11,7 +11,8 @@
     "dewiso": "Dewiso",
     "settings": "Settings",
     "adminPanel": "Admin Panel",
-    "learning": "Learning"
+    "learning": "Learning",
+    "profitTable": "Profit Table"
   },
   "sidebar": {
     "selectLanguage": "Select Language",
@@ -791,6 +792,8 @@
       "payment": "Payment",
       "shipment": "Shipment",
       "total": "Total",
+      "ordered": "Ordered",
+      "orderedSent": "Sent",
       "details": "Details"
     },
     "empty": "No orders found for current filters.",
@@ -799,6 +802,41 @@
       "previous": "Previous",
       "next": "Next"
     }
+  },
+  "profitTablePage": {
+    "title": "Profit Table",
+    "addEntry": "Add Entry",
+    "cancelAdd": "Cancel",
+    "formTitle": "Add Profit Entry",
+    "buyerName": "Buyer Name",
+    "buyerNamePlaceholder": "e.g. john_buyer",
+    "amazonPrice": "Amazon Price",
+    "ebayPayout": "eBay Payout",
+    "adRate": "Ad Rate",
+    "itemImage": "Item Image",
+    "selectImage": "Select image from listings...",
+    "profit": "Profit (auto)",
+    "cancel": "Cancel",
+    "save": "Save Entry",
+    "range7d": "Last 7 Days",
+    "range30d": "Last 30 Days",
+    "range90d": "Last 90 Days",
+    "range1y": "Last 1 Year",
+    "totalProfit": "Total Profit",
+    "chartTitle": "Profit Over Time",
+    "colImage": "Image",
+    "colBuyer": "Buyer",
+    "colAmazonPrice": "Amazon Price",
+    "colEbayPayout": "eBay Payout",
+    "colAdRate": "Ad Rate",
+    "colCreatedAt": "Date",
+    "colProfit": "Profit",
+    "delete": "Delete",
+    "deleteTitle": "Delete entry?",
+    "deleteText": "This profit entry will be permanently removed.",
+    "deleteConfirm": "Yes, delete",
+    "deleteCancel": "Cancel",
+    "empty": "No profit entries for the selected period."
   },
   "orderDetailPage": {
     "noOrder": {

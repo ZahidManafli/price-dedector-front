@@ -11,7 +11,8 @@
     "dewiso": "Dewiso",
     "settings": "Настройки",
     "adminPanel": "Админ панель",
-    "learning": "Обучение"
+    "learning": "Обучение",
+    "profitTable": "Таблица прибыли"
   },
   "sidebar": {
     "selectLanguage": "Выбрать язык",
@@ -596,6 +597,8 @@
       "payment": "Платеж",
       "shipment": "Отправка",
       "total": "Итого",
+      "ordered": "Заказано",
+      "orderedSent": "Отправлено",
       "details": "Подробности"
     },
     "empty": "По текущим фильтрам заказы не найдены.",
@@ -604,6 +607,41 @@
       "previous": "Предыдущая",
       "next": "Следующая"
     }
+  },
+  "profitTablePage": {
+    "title": "Таблица прибыли",
+    "addEntry": "Добавить запись",
+    "cancelAdd": "Отмена",
+    "formTitle": "Добавить запись о прибыли",
+    "buyerName": "Имя покупателя",
+    "buyerNamePlaceholder": "напр. john_buyer",
+    "amazonPrice": "Цена Amazon",
+    "ebayPayout": "Выплата eBay",
+    "adRate": "Ставка рекламы",
+    "itemImage": "Изображение товара",
+    "selectImage": "Выбрать изображение из объявлений...",
+    "profit": "Прибыль (авто)",
+    "cancel": "Отмена",
+    "save": "Сохранить запись",
+    "range7d": "Последние 7 дней",
+    "range30d": "Последние 30 дней",
+    "range90d": "Последние 90 дней",
+    "range1y": "Последний год",
+    "totalProfit": "Общая прибыль",
+    "chartTitle": "Прибыль за период",
+    "colImage": "Изображение",
+    "colBuyer": "Покупатель",
+    "colAmazonPrice": "Цена Amazon",
+    "colEbayPayout": "Выплата eBay",
+    "colAdRate": "Ставка рекламы",
+    "colCreatedAt": "Дата",
+    "colProfit": "Прибыль",
+    "delete": "Удалить",
+    "deleteTitle": "Удалить запись?",
+    "deleteText": "Эта запись о прибыли будет удалена навсегда.",
+    "deleteConfirm": "Да, удалить",
+    "deleteCancel": "Отмена",
+    "empty": "За выбранный период записей о прибыли нет."
   },
   "settingsPage": {
     "title": "Настройки",
