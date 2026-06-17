@@ -15,9 +15,11 @@ import Swal from 'sweetalert2';
 import { TrendingUp, Plus, Trash2, X, ChevronDown, Loader2 } from 'lucide-react';
 
 // ─── Profit formula (mirrors backend profitCalculator.js) ─────────────────────
-function calcProfit(ebayPayout, amazonPrice, adRate) {
+function calcProfit(ebayPayout, amazonPrice, adRate, count = 1) {
   const salePrice = parseFloat(ebayPayout) || 0;
-  const cogs = parseFloat(amazonPrice) || 0;
+  const unitCost = parseFloat(amazonPrice) || 0;
+  const qty = Math.max(1, parseInt(count) || 1);
+  const cogs = unitCost * qty;
   if (salePrice === 0 || cogs === 0) return 0;
   const taxRate = 0.06;
   const fvfRate = 0.136;
@@ -263,6 +265,7 @@ const EMPTY_FORM = {
   amazon_price: '',
   ebay_payout: '',
   ad_rate: '',
+  count: '1',
   item_image_url: '',
 };
 
@@ -284,8 +287,8 @@ export default function ProfitTablePage() {
 
   // ── Derived profit ─────────────────────────────────────────────────────────
   const previewProfit = useMemo(
-    () => calcProfit(form.ebay_payout, form.amazon_price, form.ad_rate),
-    [form.ebay_payout, form.amazon_price, form.ad_rate]
+    () => calcProfit(form.ebay_payout, form.amazon_price, form.ad_rate, form.count),
+    [form.ebay_payout, form.amazon_price, form.ad_rate, form.count]
   );
 
   // ── Load entries ───────────────────────────────────────────────────────────
@@ -348,6 +351,7 @@ export default function ProfitTablePage() {
         amazon_price: parseFloat(form.amazon_price) || 0,
         ebay_payout: parseFloat(form.ebay_payout) || 0,
         ad_rate: parseFloat(form.ad_rate) || 0,
+        count: Math.max(1, parseInt(form.count) || 1),
         item_image_url: form.item_image_url,
         profit: previewProfit,
       });
@@ -460,6 +464,23 @@ export default function ProfitTablePage() {
                   value={form.amazon_price}
                   onChange={handleFormChange('amazon_price')}
                   placeholder="0.00"
+                  required
+                />
+              </div>
+
+              {/* Count */}
+              <div>
+                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  {t('profitTablePage.count')}
+                </label>
+                <input
+                  type="number"
+                  step="1"
+                  min="1"
+                  className={inputCls}
+                  value={form.count}
+                  onChange={handleFormChange('count')}
+                  placeholder="1"
                   required
                 />
               </div>
@@ -614,6 +635,7 @@ export default function ProfitTablePage() {
                   t('profitTablePage.colAmazonPrice'),
                   t('profitTablePage.colEbayPayout'),
                   t('profitTablePage.colAdRate'),
+                  t('profitTablePage.colCount'),
                   t('profitTablePage.colCreatedAt'),
                   t('profitTablePage.colProfit'),
                   '',
@@ -632,14 +654,14 @@ export default function ProfitTablePage() {
             <tbody className={isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center">
+                  <td colSpan={9} className="px-4 py-10 text-center">
                     <Loader2 className="animate-spin mx-auto text-indigo-500" size={24} />
                   </td>
                 </tr>
               ) : entries.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className={`px-4 py-8 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
                   >
                     {t('profitTablePage.empty')}
@@ -707,6 +729,11 @@ export default function ProfitTablePage() {
                       {/* Ad rate */}
                       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                         {parseFloat(entry.ad_rate ?? 0).toFixed(2)}%
+                      </td>
+
+                      {/* Count */}
+                      <td className={`px-4 py-3 text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                        ×{parseInt(entry.count ?? 1)}
                       </td>
 
                       {/* Created at */}

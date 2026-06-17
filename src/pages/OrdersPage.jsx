@@ -468,9 +468,11 @@ function AsinCell({ order, isDark, autoAsin, allOrders }) {
   );
 }
 
-function calcProfit(ebayPayout, amazonPrice, adRate) {
+function calcProfit(ebayPayout, amazonPrice, adRate, count = 1) {
   const salePrice = parseFloat(ebayPayout) || 0;
-  const cogs = parseFloat(amazonPrice) || 0;
+  const unitCost = parseFloat(amazonPrice) || 0;
+  const qty = Math.max(1, parseInt(count) || 1);
+  const cogs = unitCost * qty;
   if (salePrice === 0 || cogs === 0) return 0;
   const taxRate = 0.06;
   const fvfRate = 0.136;
@@ -492,13 +494,15 @@ function SendToProfitCell({ order, matchedProduct, listingImageUrl, buyer, isDar
       const ebayPayout = parseFloat(order?.pricingSummary?.total?.value ?? 0);
       const amazonPrice = parseFloat(matchedProduct?.currentAmazonPrice ?? 0);
       const adRate = parseFloat(matchedProduct?.adRate ?? 0);
-      const profit = calcProfit(ebayPayout, amazonPrice, adRate);
+      const count = Math.max(1, parseInt(order?.lineItems?.[0]?.quantity ?? 1));
+      const profit = calcProfit(ebayPayout, amazonPrice, adRate, count);
 
       await profitAPI.create({
         buyer_name: buyer,
         amazon_price: amazonPrice,
         ebay_payout: ebayPayout,
         ad_rate: adRate,
+        count,
         item_image_url: listingImageUrl || '',
         profit,
       });
