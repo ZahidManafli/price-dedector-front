@@ -489,7 +489,7 @@ function SendToProfitCell({ order, matchedProduct, listingImageUrl, buyer, isDar
     if (sent || sending) return;
     setSending(true);
     try {
-      const ebayPayout = parseFloat(order?.paymentSummary?.totalDueSeller?.value ?? 0);
+      const ebayPayout = parseFloat(order?.pricingSummary?.total?.value ?? 0);
       const amazonPrice = parseFloat(matchedProduct?.currentAmazonPrice ?? 0);
       const adRate = parseFloat(matchedProduct?.adRate ?? 0);
       const profit = calcProfit(ebayPayout, amazonPrice, adRate);
