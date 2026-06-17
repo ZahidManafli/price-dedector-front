@@ -237,7 +237,7 @@ function CardLast4Banner({ isDark }) {
   );
 }
 
-function AsinCell({ order, isDark, autoAsin, allOrders }) {
+function AsinCell({ order, isDark, autoAsin, allOrders, isInProfit, isCancelled }) {
   const orderId = order?.orderId;
   const quantity = order?.lineItems?.[0]?.quantity ?? 1;
   const orderTitle = String(order?.lineItems?.[0]?.title || '').trim();
@@ -417,9 +417,9 @@ function AsinCell({ order, isDark, autoAsin, allOrders }) {
         </button>
       )}
 
-      {/* Order on Amazon button — only shown when an ASIN is assigned */}
-      {asin && !editing && (
-        String(order?.orderFulfillmentStatus || '').toUpperCase() === 'NOT_STARTED' && String(order?.orderFulfillmentStatus || '').toUpperCase() !== 'ORDER_CANCELLED' ? (
+      {/* Order on Amazon button — hidden when cancelled or already in profit table */}
+      {asin && !editing && !isCancelled && !isInProfit && (
+        String(order?.orderFulfillmentStatus || '').toUpperCase() === 'NOT_STARTED' ? (
           <button
             type="button"
             onClick={handleOrderOnAmazon}
@@ -483,12 +483,14 @@ function calcProfit(ebayPayout, amazonPrice, adRate, count = 1) {
   return Math.round((salePrice - cogs - feeTotal) * 100) / 100;
 }
 
-function SendToProfitCell({ order, matchedProduct, listingImageUrl, buyer, isDark, t }) {
+function SendToProfitCell({ order, matchedProduct, listingImageUrl, buyer, isDark, t, orderId, alreadySent, onSent }) {
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
 
+  const isAdded = sent || alreadySent;
+
   const handleSend = async () => {
-    if (sent || sending) return;
+    if (isAdded || sending) return;
     setSending(true);
     try {
       const ebayPayout = parseFloat(order?.pricingSummary?.total?.value ?? 0);
@@ -498,6 +500,7 @@ function SendToProfitCell({ order, matchedProduct, listingImageUrl, buyer, isDar
       const profit = calcProfit(ebayPayout, amazonPrice, adRate, count);
 
       await profitAPI.create({
+        order_id: orderId || '',
         buyer_name: buyer,
         amazon_price: amazonPrice,
         ebay_payout: ebayPayout,
@@ -507,6 +510,7 @@ function SendToProfitCell({ order, matchedProduct, listingImageUrl, buyer, isDar
         profit,
       });
       setSent(true);
+      if (onSent && orderId) onSent(orderId);
     } catch {
       // ignore — silently fail
     } finally {
@@ -514,7 +518,7 @@ function SendToProfitCell({ order, matchedProduct, listingImageUrl, buyer, isDar
     }
   };
 
-  if (sent) {
+  if (isAdded) {
     return (
       <div className={`inline-flex items-center gap-1 text-xs rounded-lg px-2 py-1 font-medium ${
         isDark ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700' : 'bg-emerald-100 text-emerald-700 border border-emerald-300'
@@ -584,6 +588,8 @@ export default function OrdersPage() {
   const [productAsinMap, setProductAsinMap] = useState(() => new Map());
   // Map of ebayItemId -> full product object (for currentAmazonPrice)
   const [productByItemId, setProductByItemId] = useState(() => new Map());
+  // Set of order IDs already added to the profit table
+  const [profitOrderIds, setProfitOrderIds] = useState(() => new Set());
   const storedFilters = useMemo(() => readStoredOrdersFilters(), []);
   const [query, setQuery] = useState(() => String(storedFilters.query || ''));
   const [fulfillmentFilter, setFulfillmentFilter] = useState(() => String(storedFilters.fulfillmentFilter || 'ALL'));
@@ -755,6 +761,16 @@ export default function OrdersPage() {
     };
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fetch recent profit order IDs so we can mark already-added orders
+  useEffect(() => {
+    profitAPI.recentOrderIds()
+      .then((res) => {
+        const ids = Array.isArray(res.data) ? res.data : [];
+        setProfitOrderIds(new Set(ids.filter(Boolean)));
+      })
+      .catch(() => {});
   }, []);
 
   const applyOrdersPayload = (data = {}, pageIndex = 0) => {
@@ -1080,6 +1096,8 @@ export default function OrdersPage() {
                             isDark={isDark}
                             autoAsin={productAsinMap.get(String(order?.lineItems?.[0]?.legacyItemId || '').trim()) || ''}
                             allOrders={orders}
+                            isCancelled={isOrderCancelled(order)}
+                            isInProfit={profitOrderIds.has(String(id))}
                           />
                         </td>
                         {/* ─── Send to Profit button ─── */}
@@ -1091,6 +1109,9 @@ export default function OrdersPage() {
                             buyer={buyer}
                             isDark={isDark}
                             t={t}
+                            orderId={String(id)}
+                            alreadySent={profitOrderIds.has(String(id))}
+                            onSent={(oid) => setProfitOrderIds((prev) => new Set([...prev, oid]))}
                           />
                         </td>
                         <td className="px-4 py-3 text-right">

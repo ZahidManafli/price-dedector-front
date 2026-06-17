@@ -272,6 +272,7 @@ export const profitAPI = {
   list: (range) => api.get('/profits', { params: range ? { range } : {} }),
   create: (data) => api.post('/profits', data),
   remove: (id) => api.delete(`/profits/${id}`),
+  recentOrderIds: () => api.get('/profits/recent-order-ids'),
 };
 
 // Partners APIs

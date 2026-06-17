@@ -262,6 +262,7 @@ function prepareChartData(entries, range) {
 
 const EMPTY_FORM = {
   buyer_name: '',
+  order_id: '',
   amazon_price: '',
   ebay_payout: '',
   ad_rate: '',
@@ -348,6 +349,7 @@ export default function ProfitTablePage() {
     try {
       await profitAPI.create({
         buyer_name: form.buyer_name,
+        order_id: form.order_id || '',
         amazon_price: parseFloat(form.amazon_price) || 0,
         ebay_payout: parseFloat(form.ebay_payout) || 0,
         ad_rate: parseFloat(form.ad_rate) || 0,
@@ -448,6 +450,19 @@ export default function ProfitTablePage() {
                   value={form.buyer_name}
                   onChange={handleFormChange('buyer_name')}
                   placeholder={t('profitTablePage.buyerNamePlaceholder')}
+                />
+              </div>
+
+              {/* Order ID */}
+              <div>
+                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  {t('profitTablePage.orderId')}
+                </label>
+                <input
+                  className={inputCls}
+                  value={form.order_id}
+                  onChange={handleFormChange('order_id')}
+                  placeholder={t('profitTablePage.orderIdPlaceholder')}
                 />
               </div>
 
@@ -632,6 +647,7 @@ export default function ProfitTablePage() {
                 {[
                   t('profitTablePage.colImage'),
                   t('profitTablePage.colBuyer'),
+                  t('profitTablePage.colOrderId'),
                   t('profitTablePage.colAmazonPrice'),
                   t('profitTablePage.colEbayPayout'),
                   t('profitTablePage.colAdRate'),
@@ -654,14 +670,14 @@ export default function ProfitTablePage() {
             <tbody className={isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}>
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center">
+                  <td colSpan={10} className="px-4 py-10 text-center">
                     <Loader2 className="animate-spin mx-auto text-indigo-500" size={24} />
                   </td>
                 </tr>
               ) : entries.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={10}
                     className={`px-4 py-8 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
                   >
                     {t('profitTablePage.empty')}
@@ -714,6 +730,11 @@ export default function ProfitTablePage() {
                       {/* Buyer */}
                       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                         {entry.buyer_name || '—'}
+                      </td>
+
+                      {/* Order ID */}
+                      <td className={`px-4 py-3 text-xs font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {entry.order_id || '—'}
                       </td>
 
                       {/* Amazon price */}
