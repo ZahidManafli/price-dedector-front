@@ -13,6 +13,7 @@ import { TAB_KEYS, USER_DEFAULT_ALLOWED_TABS } from '../utils/planAccess';
 import * as XLSX from 'xlsx';
 import { NotificationsTab } from '../components/NotificationsTab';
 import AdminVideosTab from '../components/AdminVideosTab';
+import AdminAnalytics from '../components/AdminAnalytics';
 
 function safeToString(v) {
   if (v === null || v === undefined) return '';
@@ -866,6 +867,8 @@ export default function AdminPanelPage() {
         {loading && <LoadingSpinner />}
 
         {!loading && activeTab === 'users' && (
+          <>
+          <AdminAnalytics isDark={isDark} />
           <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             {/* Toolbar */}
             <div className={`flex flex-wrap items-center gap-3 px-5 py-4 border-b ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-100 bg-slate-50/80'}`}>
@@ -1011,6 +1014,7 @@ export default function AdminPanelPage() {
               </table>
             </div>
           </div>
+          </>
         )}
 
         {/* ── Create User Modal ─────────────────────────────────────────── */}

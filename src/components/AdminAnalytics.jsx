@@ -1,0 +1,410 @@
+import { useState, useEffect, useRef } from 'react';
+import {
+  ComposedChart, Bar, Line, XAxis, YAxis,
+  CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
+import { TrendingUp, Wallet, Users, Plus, Trash2, Check, X, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
+import { adminAPI } from '../services/api';
+
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function fillChartData(rawRows, range) {
+  const now = new Date();
+
+  if (range === '7d') {
+    const dataMap = {};
+    rawRows.forEach((r) => { dataMap[String(r.date).slice(0, 10)] = r; });
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - (6 - i));
+      const key = d.toISOString().slice(0, 10);
+      const row = dataMap[key] || {};
+      return { label: DAY_NAMES[d.getDay()], user_count: Number(row.user_count || 0), revenue: Number(row.revenue || 0) };
+    });
+  }
+
+  if (range === '1m') {
+    const dataMap = {};
+    rawRows.forEach((r) => { dataMap[String(r.date).slice(0, 10)] = r; });
+    return Array.from({ length: 30 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - (29 - i));
+      const key = d.toISOString().slice(0, 10);
+      const row = dataMap[key] || {};
+      return { label: String(d.getDate()), user_count: Number(row.user_count || 0), revenue: Number(row.revenue || 0) };
+    });
+  }
+
+  // 1y — monthly
+  const dataMap = {};
+  rawRows.forEach((r) => { dataMap[`${r.yr}-${r.mo}`] = r; });
+  return Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+    const row = dataMap[key] || {};
+    return { label: MONTH_NAMES[d.getMonth()], user_count: Number(row.user_count || 0), revenue: Number(row.revenue || 0) };
+  });
+}
+
+function StatCard({ label, value, sub, color, isDark, children }) {
+  const textPrimary = isDark ? 'text-slate-100' : 'text-slate-800';
+  const textSub = isDark ? 'text-slate-400' : 'text-slate-500';
+  const bg = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
+  return (
+    <div className={`rounded-2xl border p-4 ${bg}`}>
+      <div className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${textSub}`}>{label}</div>
+      {children || (
+        <>
+          <div className={`text-2xl font-bold ${color || textPrimary}`}>{value}</div>
+          {sub && <div className={`text-[11px] mt-0.5 ${textSub}`}>{sub}</div>}
+        </>
+      )}
+    </div>
+  );
+}
+
+function CustomTooltip({ active, payload, label, isDark }) {
+  if (!active || !payload?.length) return null;
+  const bg = isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-200 text-slate-800';
+  const sub = isDark ? 'text-slate-400' : 'text-slate-500';
+  return (
+    <div className={`rounded-xl border px-3 py-2.5 shadow-xl text-xs ${bg}`}>
+      <p className="font-semibold mb-1.5">{label}</p>
+      {payload.map((p) => (
+        <div key={p.dataKey} className="flex items-center gap-2 mb-0.5">
+          <span className="inline-block h-2 w-2 rounded-full flex-shrink-0" style={{ background: p.color }} />
+          <span className={sub}>{p.dataKey === 'user_count' ? 'Users' : 'Revenue'}:</span>
+          <span className="font-semibold ml-auto pl-3">
+            {p.dataKey === 'revenue' ? `${Number(p.value).toFixed(2)} ₼` : p.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function AdminAnalytics({ isDark }) {
+  const [range, setRange] = useState('7d');
+  const [chartData, setChartData] = useState([]);
+  const [balance, setBalance] = useState(null);
+  const [editingBalance, setEditingBalance] = useState(false);
+  const [balanceInput, setBalanceInput] = useState('');
+  const [expenses, setExpenses] = useState([]);
+  const [newExpense, setNewExpense] = useState({ name: '', amount: '' });
+  const [showExpenses, setShowExpenses] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const rangeInitialized = useRef(false);
+
+  // Initial full load
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [sr, er, br] = await Promise.all([
+          adminAPI.getSignups(range),
+          adminAPI.listExpenses(),
+          adminAPI.getBalance(),
+        ]);
+        setChartData(fillChartData(sr.data.rows, range));
+        setExpenses(er.data);
+        setBalance(br.data);
+      } catch (err) {
+        console.error('AdminAnalytics load error:', err);
+      } finally {
+        setLoading(false);
+        rangeInitialized.current = true;
+      }
+    };
+    load();
+  }, []);
+
+  // Range change — only reload signups
+  useEffect(() => {
+    if (!rangeInitialized.current) return;
+    adminAPI.getSignups(range)
+      .then((r) => setChartData(fillChartData(r.data.rows, range)))
+      .catch(console.error);
+  }, [range]);
+
+  const totalRevenue = chartData.reduce((s, r) => s + r.revenue, 0);
+  const totalUsers = chartData.reduce((s, r) => s + r.user_count, 0);
+  const totalMonthlyExp = expenses.filter((e) => e.is_recurring).reduce((s, e) => s + Number(e.amount), 0);
+  const netProfit = totalRevenue - totalMonthlyExp;
+
+  const handleSaveBalance = async () => {
+    try {
+      const res = await adminAPI.updateBalance(parseFloat(balanceInput) || 0);
+      setBalance(res.data);
+      setEditingBalance(false);
+    } catch (err) {
+      console.error('Balance update error:', err);
+    }
+  };
+
+  const handleAddExpense = async (e) => {
+    e.preventDefault();
+    if (!newExpense.name || !newExpense.amount) return;
+    try {
+      const res = await adminAPI.createExpense({ name: newExpense.name, amount: parseFloat(newExpense.amount) });
+      setExpenses((prev) => [...prev, res.data]);
+      setNewExpense({ name: '', amount: '' });
+    } catch (err) {
+      console.error('Create expense error:', err);
+    }
+  };
+
+  const handleDeleteExpense = async (id) => {
+    try {
+      await adminAPI.deleteExpense(id);
+      setExpenses((prev) => prev.filter((ex) => ex.id !== id));
+    } catch (err) {
+      console.error('Delete expense error:', err);
+    }
+  };
+
+  const card = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
+  const tp = isDark ? 'text-slate-100' : 'text-slate-800';
+  const ts = isDark ? 'text-slate-400' : 'text-slate-500';
+  const divider = isDark ? 'border-slate-700' : 'border-slate-100';
+  const rowHover = isDark ? 'hover:bg-slate-700/40' : 'hover:bg-slate-50/60';
+
+  return (
+    <div className="space-y-4 pb-6">
+      {/* ── Stat cards ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Balance */}
+        <div className={`rounded-2xl border p-4 ${card}`}>
+          <div className={`text-[11px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5 ${ts}`}>
+            <Wallet size={11} /> Balance
+          </div>
+          {editingBalance ? (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number"
+                value={balanceInput}
+                onChange={(e) => setBalanceInput(e.target.value)}
+                className="input-base h-8 text-sm flex-1 min-w-0"
+                step="0.01"
+                autoFocus
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveBalance(); if (e.key === 'Escape') setEditingBalance(false); }}
+              />
+              <button onClick={handleSaveBalance} className="h-8 w-8 rounded-lg bg-blue-600 text-white flex items-center justify-center flex-shrink-0 hover:bg-blue-700">
+                <Check size={13} />
+              </button>
+              <button onClick={() => setEditingBalance(false)} className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                <X size={13} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-end justify-between gap-2">
+              <div>
+                <div className={`text-2xl font-bold ${tp}`}>{balance != null ? Number(balance.balance).toFixed(2) : '—'}</div>
+                <div className={`text-[11px] mt-0.5 ${ts}`}>AZN</div>
+              </div>
+              <button
+                onClick={() => { setBalanceInput(String(balance?.balance ?? 0)); setEditingBalance(true); }}
+                className={`h-7 w-7 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-700'}`}
+              >
+                <Pencil size={13} />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* New users */}
+        <div className={`rounded-2xl border p-4 ${card}`}>
+          <div className={`text-[11px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5 ${ts}`}>
+            <Users size={11} /> New Users
+          </div>
+          <div className={`text-2xl font-bold ${tp}`}>{loading ? '—' : totalUsers}</div>
+          <div className={`text-[11px] mt-0.5 ${ts}`}>in selected period</div>
+        </div>
+
+        {/* Revenue */}
+        <div className={`rounded-2xl border p-4 ${card}`}>
+          <div className={`text-[11px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5 ${ts}`}>
+            <TrendingUp size={11} /> Revenue
+          </div>
+          <div className="text-2xl font-bold text-emerald-500">{loading ? '—' : totalRevenue.toFixed(2)}</div>
+          <div className={`text-[11px] mt-0.5 ${ts}`}>AZN in period</div>
+        </div>
+
+        {/* Net profit / monthly expenses */}
+        <div className={`rounded-2xl border p-4 ${card}`}>
+          <div className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${ts}`}>
+            {range === '1m' ? 'Net Profit (30d)' : 'Monthly Expenses'}
+          </div>
+          {range === '1m' ? (
+            <>
+              <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                {loading ? '—' : netProfit.toFixed(2)}
+              </div>
+              <div className={`text-[11px] mt-0.5 ${ts}`}>after {totalMonthlyExp.toFixed(2)} ₼ exp.</div>
+            </>
+          ) : (
+            <>
+              <div className="text-2xl font-bold text-amber-500">{totalMonthlyExp.toFixed(2)}</div>
+              <div className={`text-[11px] mt-0.5 ${ts}`}>₼ / month recurring</div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ── Chart ── */}
+      <div className={`rounded-2xl border p-4 ${card}`}>
+        <div className="flex items-center justify-between mb-4 gap-3">
+          <h3 className={`font-semibold text-sm ${tp}`}>Signups &amp; Revenue</h3>
+          <div className={`flex rounded-xl overflow-hidden border text-xs ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+            {[['7d', 'Last 7 days'], ['1m', 'Last month'], ['1y', 'Last year']].map(([r, label]) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRange(r)}
+                className={`px-3 py-1.5 font-semibold transition-colors ${range === r
+                  ? 'bg-blue-600 text-white'
+                  : isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="h-52 flex items-center justify-center">
+            <div className={`text-sm ${ts}`}>Loading chart…</div>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <ComposedChart data={chartData} margin={{ top: 4, right: 48, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
+              <YAxis
+                yAxisId="left"
+                tick={{ fontSize: 11, fill: isDark ? '#94a3b8' : '#64748b' }}
+                axisLine={false} tickLine={false}
+                allowDecimals={false}
+                width={28}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                tick={{ fontSize: 11, fill: '#10b981' }}
+                axisLine={false} tickLine={false}
+                tickFormatter={(v) => `${v}₼`}
+                width={46}
+              />
+              <Tooltip content={<CustomTooltip isDark={isDark} />} />
+              <Legend
+                formatter={(v) => (
+                  <span className="text-xs">{v === 'user_count' ? 'Users' : 'Revenue (₼)'}</span>
+                )}
+              />
+              <Bar
+                yAxisId="left"
+                dataKey="user_count"
+                name="user_count"
+                fill={isDark ? '#3b82f6' : '#60a5fa'}
+                fillOpacity={0.85}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={36}
+              />
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="revenue"
+                name="revenue"
+                stroke="#10b981"
+                strokeWidth={2.5}
+                dot={{ r: 3, fill: '#10b981', strokeWidth: 0 }}
+                activeDot={{ r: 5 }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* ── Expenses ── */}
+      <div className={`rounded-2xl border overflow-hidden ${card}`}>
+        <button
+          type="button"
+          onClick={() => setShowExpenses((v) => !v)}
+          className={`w-full flex items-center justify-between px-5 py-3.5 transition-colors ${isDark ? 'hover:bg-slate-700/40' : 'hover:bg-slate-50'}`}
+        >
+          <div className="flex items-center gap-2">
+            <span className={`text-sm font-semibold ${tp}`}>Monthly Expenses</span>
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+              {expenses.length}
+            </span>
+            {totalMonthlyExp > 0 && (
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                {totalMonthlyExp.toFixed(2)} ₼/mo
+              </span>
+            )}
+          </div>
+          {showExpenses ? <ChevronUp size={15} className={ts} /> : <ChevronDown size={15} className={ts} />}
+        </button>
+
+        {showExpenses && (
+          <div className={`border-t ${divider}`}>
+            <div className="px-5 pt-3 pb-4 space-y-2">
+              {expenses.length === 0 && (
+                <p className={`text-xs py-2 ${ts}`}>No expenses yet. Add recurring monthly costs below.</p>
+              )}
+              {expenses.map((exp) => (
+                <div
+                  key={exp.id}
+                  className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition-colors ${isDark ? 'bg-slate-700/40 hover:bg-slate-700/60' : 'bg-slate-50 hover:bg-slate-100/80'}`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`text-sm font-medium truncate ${tp}`}>{exp.name}</span>
+                    {!!exp.is_recurring && (
+                      <span className={`text-[10px] font-semibold rounded-full px-1.5 py-0.5 flex-shrink-0 ${isDark ? 'bg-slate-600 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>
+                        monthly
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-sm font-bold text-amber-500">{Number(exp.amount).toFixed(2)} ₼</span>
+                    <button
+                      onClick={() => handleDeleteExpense(exp.id)}
+                      className={`h-6 w-6 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'hover:bg-red-900/30 text-slate-500 hover:text-red-400' : 'hover:bg-red-50 text-slate-400 hover:text-red-500'}`}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <form onSubmit={handleAddExpense} className="flex items-center gap-2 pt-1">
+                <input
+                  value={newExpense.name}
+                  onChange={(e) => setNewExpense((p) => ({ ...p, name: e.target.value }))}
+                  className="input-base h-9 text-sm flex-1 min-w-0"
+                  placeholder="Expense name (e.g. Server cost)"
+                  type="text"
+                />
+                <input
+                  value={newExpense.amount}
+                  onChange={(e) => setNewExpense((p) => ({ ...p, amount: e.target.value }))}
+                  className="input-base h-9 text-sm w-32 flex-shrink-0"
+                  placeholder="Amount (₼)"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                />
+                <button
+                  type="submit"
+                  className="h-9 px-3 rounded-xl bg-blue-600 text-white text-xs font-semibold inline-flex items-center gap-1.5 hover:bg-blue-700 transition-colors flex-shrink-0"
+                >
+                  <Plus size={13} /> Add
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

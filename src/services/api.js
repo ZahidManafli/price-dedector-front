@@ -257,6 +257,12 @@ export const adminAPI = {
   addReferralUser: (id, data) => api.post(`/admin/referrals/${encodeURIComponent(id)}/users`, data),
   removeReferralUser: (id, userId) => api.delete(`/admin/referrals/${encodeURIComponent(id)}/users/${encodeURIComponent(userId)}`),
   recordReferralPayout: (id, data) => api.post(`/admin/referrals/${encodeURIComponent(id)}/payouts`, data),
+  getSignups: (range) => api.get('/admin/analytics/signups', { params: { range } }),
+  listExpenses: () => api.get('/admin/expenses'),
+  createExpense: (data) => api.post('/admin/expenses', data),
+  deleteExpense: (id) => api.delete(`/admin/expenses/${id}`),
+  getBalance: () => api.get('/admin/balance'),
+  updateBalance: (balance) => api.put('/admin/balance', { balance }),
 };
 
 export const referralAPI = {
