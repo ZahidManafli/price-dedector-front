@@ -207,6 +207,20 @@ export default function AdminAnalytics({ isDark }) {
     }
   };
 
+  const [payingId, setPayingId] = useState(null);
+  const handlePayExpense = async (id) => {
+    setPayingId(id);
+    try {
+      const res = await adminAPI.payExpense(id);
+      setExpenses((prev) => prev.map((ex) => ex.id === id ? res.data.expense : ex));
+      setBalance(res.data.balance);
+    } catch (err) {
+      console.error('Pay expense error:', err);
+    } finally {
+      setPayingId(null);
+    }
+  };
+
   // ── style shortcuts ──
   const card    = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
   const tp      = isDark ? 'text-slate-100' : 'text-slate-800';
@@ -466,33 +480,83 @@ export default function AdminAnalytics({ isDark }) {
             <div className="px-5 pt-3 pb-4 space-y-2">
               {expenses.length === 0 && (
                 <p className={`text-xs py-2 ${ts}`}>
-                  No expenses yet. Add recurring monthly costs below — they auto-deduct from balance each month.
+                  No expenses yet. Add recurring monthly costs below.
                 </p>
               )}
-              {expenses.map((exp) => (
-                <div
-                  key={exp.id}
-                  className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition-colors ${isDark ? 'bg-slate-700/40 hover:bg-slate-700/60' : 'bg-slate-50 hover:bg-slate-100/80'}`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className={`text-sm font-medium truncate ${tp}`}>{exp.name}</span>
-                    {!!exp.is_recurring && (
-                      <span className={`text-[10px] font-semibold rounded-full px-1.5 py-0.5 flex-shrink-0 ${isDark ? 'bg-slate-600 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>
-                        monthly
-                      </span>
-                    )}
+              {expenses.map((exp) => {
+                const today = new Date(); today.setHours(0,0,0,0);
+                const nextDue = exp.next_due_at ? new Date(exp.next_due_at) : null;
+                const isPaid = nextDue && nextDue > today;
+                const isDue  = !isPaid;
+                const isPaying = payingId === exp.id;
+
+                return (
+                  <div
+                    key={exp.id}
+                    className={`rounded-xl px-3 py-2.5 transition-colors ${isDark ? 'bg-slate-700/40' : 'bg-slate-50'}`}
+                  >
+                    {/* Row 1: name + amount + buttons */}
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`text-sm font-medium truncate ${tp}`}>{exp.name}</span>
+                        {!!exp.is_recurring && (
+                          <span className={`text-[10px] font-semibold rounded-full px-1.5 py-0.5 flex-shrink-0 ${isDark ? 'bg-slate-600 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>
+                            monthly
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-sm font-bold text-amber-500">{Number(exp.amount).toFixed(2)} ₼</span>
+                        {/* Paid button — only when due */}
+                        {isDue && (
+                          <button
+                            type="button"
+                            disabled={isPaying}
+                            onClick={() => handlePayExpense(exp.id)}
+                            className={`h-7 px-2.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-colors ${
+                              isPaying
+                                ? 'opacity-50 cursor-wait bg-emerald-700/40 text-emerald-300'
+                                : isDark
+                                ? 'bg-emerald-700/30 text-emerald-300 hover:bg-emerald-700/60'
+                                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+                            }`}
+                          >
+                            <Check size={11} strokeWidth={3} />
+                            Ödənildi
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExpense(exp.id)}
+                          className={`h-6 w-6 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'hover:bg-red-900/30 text-slate-500 hover:text-red-400' : 'hover:bg-red-50 text-slate-400 hover:text-red-500'}`}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
+                    {/* Row 2: payment status */}
+                    <div className="mt-1.5 flex items-center gap-1.5">
+                      {isPaid ? (
+                        <>
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                          <span className="text-[11px] text-emerald-400 font-medium">
+                            Ödənilib · növbəti {new Date(exp.next_due_at).toLocaleDateString('az-AZ', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                          <span className="text-[11px] text-amber-400 font-medium">
+                            {exp.last_paid_at
+                              ? `Son ödəniş: ${new Date(exp.last_paid_at).toLocaleDateString('az-AZ', { day: '2-digit', month: 'short', year: 'numeric' })} · İndi ödənilib olmalıdır`
+                              : 'Hələ ödənilməyib'}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-sm font-bold text-amber-500">{Number(exp.amount).toFixed(2)} ₼</span>
-                    <button
-                      onClick={() => handleDeleteExpense(exp.id)}
-                      className={`h-6 w-6 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'hover:bg-red-900/30 text-slate-500 hover:text-red-400' : 'hover:bg-red-50 text-slate-400 hover:text-red-500'}`}
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
               <form onSubmit={handleAddExpense} className="flex items-center gap-2 pt-1">
                 <input

@@ -1013,6 +1013,11 @@ export default function AdminPanelPage() {
                                   </span>
                                 );
                               })()}
+                              {u.planPrice != null && u.planPrice > 0 && (
+                                <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-emerald-400">
+                                  +{Number(u.planPrice).toFixed(2)} ₼
+                                </span>
+                              )}
                             </div>
                           ) : (
                             <span className="italic text-slate-400 text-sm">{t('adminPanelPage.customNone')}</span>

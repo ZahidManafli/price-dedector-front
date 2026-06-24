@@ -262,6 +262,7 @@ export const adminAPI = {
   listExpenses: () => api.get('/admin/expenses'),
   createExpense: (data) => api.post('/admin/expenses', data),
   deleteExpense: (id) => api.delete(`/admin/expenses/${id}`),
+  payExpense: (id) => api.post(`/admin/expenses/${id}/pay`),
   getBalance: () => api.get('/admin/balance'),
   updateBalance: (balance) => api.put('/admin/balance', { balance }),
 };
