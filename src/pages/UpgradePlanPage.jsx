@@ -25,6 +25,7 @@ function normalizePlan(raw = {}) {
     id: raw.id,
     name: planName,
     duration: raw.duration || '',
+    price: raw.price || '',
     actualPrice: raw.actualPrice ?? null,
     discountedPrice: raw.discountedPrice ?? null,
     summary: raw.description || raw.summary || '',
@@ -114,7 +115,13 @@ function PlanCard({ plan, isCurrent, onUpgrade }) {
     ? Math.round(((Number(plan.actualPrice) - Number(plan.discountedPrice)) / Number(plan.actualPrice)) * 100)
     : 0;
 
-  const displayPrice = plan.actualPrice != null ? `₼${Number(plan.actualPrice).toFixed(2)}` : '—';
+  // Fall back to the legacy price string (e.g. "1 AZN") when actualPrice is null — mirrors LandingPage behaviour
+  const rawFallback = plan.price ? Number(plan.price.match(/[\d.]+/)?.[0] || 0) : null;
+  const displayPrice = plan.actualPrice != null
+    ? `₼${Number(plan.actualPrice).toFixed(2)}`
+    : rawFallback != null
+    ? `₼${rawFallback.toFixed(2)}`
+    : '—';
   const discountedDisplay = plan.discountedPrice != null ? `₼${Number(plan.discountedPrice).toFixed(2)}` : null;
 
   const featuredClasses = plan.featured
