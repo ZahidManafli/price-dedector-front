@@ -955,6 +955,7 @@ export default function AdminPanelPage() {
                     <th className="px-4 py-3 text-left">User</th>
                     <th className="px-4 py-3 text-left">Plan</th>
                     <th className="px-4 py-3 text-left">Expires</th>
+                    <th className="px-4 py-3 text-left">Joined</th>
                     <th className="px-4 py-3 text-left">Status</th>
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
@@ -962,7 +963,7 @@ export default function AdminPanelPage() {
                 <tbody className={isDark ? 'divide-y divide-slate-700/60' : 'divide-y divide-slate-100'}>
                   {filteredUsers.length === 0 && (
                     <tr>
-                      <td colSpan={6} className={`px-4 py-12 text-center text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      <td colSpan={7} className={`px-4 py-12 text-center text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                         No users match the current filters.
                       </td>
                     </tr>
@@ -995,15 +996,23 @@ export default function AdminPanelPage() {
                         </td>
                         <td className="px-4 py-3">
                           {u.selectedPlanName ? (
-                            <div>
-                              <div className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                            <div className="space-y-1">
+                              <div className={`text-sm font-medium leading-tight ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                                 {u.selectedPlanName}
-                                {u.selectedPlanCategory && (
-                                  <span className={`ml-1.5 text-[11px] font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                                    {({ subscription: 'Subscription', analytics: 'Analytics', amazon_monitoring: 'Amazon Monitoring' }[u.selectedPlanCategory] || u.selectedPlanCategory)}
-                                  </span>
-                                )}
                               </div>
+                              {u.selectedPlanCategory && (() => {
+                                const catMap = {
+                                  subscription:     { label: 'Subscription',      cls: isDark ? 'bg-blue-900/40 text-blue-300' : 'bg-blue-50 text-blue-700' },
+                                  analytics:        { label: 'Analytics',         cls: isDark ? 'bg-violet-900/40 text-violet-300' : 'bg-violet-50 text-violet-700' },
+                                  amazon_monitoring:{ label: 'Amazon Monitoring', cls: isDark ? 'bg-amber-900/40 text-amber-300' : 'bg-amber-50 text-amber-700' },
+                                };
+                                const cat = catMap[u.selectedPlanCategory] || { label: u.selectedPlanCategory, cls: isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600' };
+                                return (
+                                  <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${cat.cls}`}>
+                                    {cat.label}
+                                  </span>
+                                );
+                              })()}
                             </div>
                           ) : (
                             <span className="italic text-slate-400 text-sm">{t('adminPanelPage.customNone')}</span>
@@ -1012,6 +1021,11 @@ export default function AdminPanelPage() {
                         <td className="px-4 py-3">
                           <span className={`text-xs ${isExpired ? 'text-red-500 font-semibold' : isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                             {u.planExpiresAt ? new Date(u.planExpiresAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                            {u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                           </span>
                         </td>
                         <td className="px-4 py-3">
