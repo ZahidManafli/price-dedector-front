@@ -14,6 +14,7 @@ import * as XLSX from 'xlsx';
 import { NotificationsTab } from '../components/NotificationsTab';
 import AdminVideosTab from '../components/AdminVideosTab';
 import AdminAnalytics from '../components/AdminAnalytics';
+import DateRangePicker from '../components/DateRangePicker';
 
 function safeToString(v) {
   if (v === null || v === undefined) return '';
@@ -99,6 +100,8 @@ export default function AdminPanelPage() {
 
   const [users, setUsers] = useState([]);
   const [userBlockFilter, setUserBlockFilter] = useState('all'); // all | blocked | unblocked
+  const [expiryFrom, setExpiryFrom] = useState(null);
+  const [expiryTo, setExpiryTo] = useState(null);
   const [ipModal, setIpModal] = useState({ open: false, user: null, ipHistory: [] });
   const [requests, setRequests] = useState([]);
   const [plans, setPlans] = useState([]);
@@ -413,16 +416,30 @@ export default function AdminPanelPage() {
   const filteredUsers = useMemo(() => {
     const q = userSearch.trim().toLowerCase();
     let list = users;
-    if (userBlockFilter === 'blocked') list = list.filter((u) => u.isBlocked);
+    if (userBlockFilter === 'blocked')   list = list.filter((u) => u.isBlocked);
     if (userBlockFilter === 'unblocked') list = list.filter((u) => !u.isBlocked);
+    if (expiryFrom || expiryTo) {
+      list = list.filter((u) => {
+        if (!u.planExpiresAt) return false;
+        const exp = new Date(u.planExpiresAt);
+        exp.setHours(0, 0, 0, 0);
+        if (expiryFrom && exp < expiryFrom) return false;
+        if (expiryTo) {
+          const toEnd = new Date(expiryTo);
+          toEnd.setHours(23, 59, 59, 999);
+          if (exp > toEnd) return false;
+        }
+        return true;
+      });
+    }
     if (!q) return list;
     return list.filter((u) => {
-      const name = String(u.name || '').toLowerCase();
+      const name  = String(u.name  || '').toLowerCase();
       const email = String(u.email || '').toLowerCase();
-      const plan = String(u.selectedPlanName || '').toLowerCase();
+      const plan  = String(u.selectedPlanName || '').toLowerCase();
       return name.includes(q) || email.includes(q) || plan.includes(q);
     });
-  }, [users, userSearch, userBlockFilter]);
+  }, [users, userSearch, userBlockFilter, expiryFrom, expiryTo]);
   const handleBlockUser = async (userId) => {
     const { value: reason } = await Swal.fire({
       title: t('adminPanelPage.blockUserTitle'),
@@ -881,6 +898,12 @@ export default function AdminPanelPage() {
                 <option value="blocked">{t('adminPanelPage.blockedOnly')}</option>
                 <option value="unblocked">{t('adminPanelPage.unblockedOnly')}</option>
               </select>
+              <DateRangePicker
+                from={expiryFrom}
+                to={expiryTo}
+                onChange={({ from, to }) => { setExpiryFrom(from); setExpiryTo(to); }}
+                isDark={isDark}
+              />
               <button type="button" onClick={toggleSelectAllFiltered} className="btn-secondary h-9 px-3 text-xs">
                 {allFilteredSelected ? t('adminPanelPage.unselectAll') : t('adminPanelPage.selectFiltered')}
               </button>
@@ -908,6 +931,12 @@ export default function AdminPanelPage() {
             <div className={`flex items-center gap-2 px-5 py-2 border-b text-xs ${isDark ? 'border-slate-700/60 text-slate-400' : 'border-slate-100 text-slate-500'}`}>
               <span className="font-medium">{filteredUsers.length} {t('adminPanelPage.users')}</span>
               {selectedUserIds.length > 0 && <span className="text-blue-500">· {selectedUserIds.length} selected</span>}
+              {(expiryFrom || expiryTo) && (
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${isDark ? 'bg-blue-900/40 text-blue-300' : 'bg-blue-50 text-blue-600'}`}>
+                  Expiry filtered
+                  <button onClick={() => { setExpiryFrom(null); setExpiryTo(null); }} className="hover:opacity-70"><X size={9} /></button>
+                </span>
+              )}
               <div className="ml-auto flex gap-2">
                 <button type="button" onClick={() => onRefreshSubscriptions(true)} className="hover:text-blue-500 transition-colors">{t('adminPanelPage.refreshAllUsersPlusOneMonth')}</button>
                 <span>·</span>
@@ -965,7 +994,20 @@ export default function AdminPanelPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{u.selectedPlanName || <span className="italic text-slate-400">{t('adminPanelPage.customNone')}</span>}</span>
+                          {u.selectedPlanName ? (
+                            <div>
+                              <div className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                                {u.selectedPlanName}
+                                {u.selectedPlanCategory && (
+                                  <span className={`ml-1.5 text-[11px] font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    {({ subscription: 'Subscription', analytics: 'Analytics', amazon_monitoring: 'Amazon Monitoring' }[u.selectedPlanCategory] || u.selectedPlanCategory)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="italic text-slate-400 text-sm">{t('adminPanelPage.customNone')}</span>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <span className={`text-xs ${isExpired ? 'text-red-500 font-semibold' : isDark ? 'text-slate-400' : 'text-slate-500'}`}>
