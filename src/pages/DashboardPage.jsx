@@ -9,7 +9,6 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Gauge, LineChart, ShieldCheck, X } from 'lucide-react';
-import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import { useTranslation } from 'react-i18next';
 import DailyFinanceFlowChart from '../components/DailyFinanceFlowChart';
 
@@ -39,8 +38,6 @@ export default function DashboardPage() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState(null);
   const [hideAnalyticsAccessAlert, setHideAnalyticsAccessAlert] = useState(false);
-  const [requestUpgradeOpen, setRequestUpgradeOpen] = useState(false);
-  const [publicPlans, setPublicPlans] = useState([]);
   const financeData = analytics?.finance || null;
 
   useEffect(() => {
@@ -310,15 +307,8 @@ export default function DashboardPage() {
 
   const userPlan = limits?.plan || null;
 
-  const onOpenUpgradeRequest = async () => {
-    setRequestUpgradeOpen(true);
-    if (publicPlans.length > 0) return;
-    try {
-      const response = await settingsAPI.getPublicPlans();
-      setPublicPlans(response?.data?.plans || []);
-    } catch {
-      setPublicPlans([]);
-    }
+  const onOpenUpgradeRequest = () => {
+    navigate('/upgrade-plan');
   };
 
   const rateLimitRows = useMemo(() => {
@@ -1412,21 +1402,6 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <SubscriptionRequestModal
-        open={requestUpgradeOpen}
-        onClose={() => setRequestUpgradeOpen(false)}
-        plans={publicPlans}
-        lockPlan={false}
-        defaultValues={{
-          name: user?.name || '',
-          surname: user?.surname || user?.lastName || '',
-          email: user?.email || '',
-          phoneNumber: user?.phoneNumber || user?.phone || '',
-        }}
-        onSuccess={() => {
-          setAlert({ type: 'success', message: t('dashboard.upgradeRequestSent') });
-        }}
-      />
     </div>
   );
 }

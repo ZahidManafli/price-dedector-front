@@ -38,6 +38,7 @@ import ReferralLandingPage from './pages/ReferralLandingPage';
 import ReferralDashboardPage from './pages/ReferralDashboardPage';
 import LearningVideosPage from './pages/LearningVideosPage';
 import ProfitTablePage from './pages/ProfitTablePage';
+import UpgradePlanPage from './pages/UpgradePlanPage';
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
 
@@ -127,6 +128,14 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/upgrade-plan"
+              element={
+                <ProtectedRoute>
+                  <UpgradePlanPage />
                 </ProtectedRoute>
               }
             />
