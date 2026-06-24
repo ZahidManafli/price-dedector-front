@@ -3,70 +3,79 @@ import {
   ComposedChart, Bar, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
-import { TrendingUp, Wallet, Users, Plus, Trash2, Check, X, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
+import {
+  TrendingUp, Wallet, Users, Plus, Trash2,
+  Check, X, ChevronDown, ChevronUp, Pencil, CalendarClock,
+} from 'lucide-react';
 import { adminAPI } from '../services/api';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-function fillChartData(rawRows, range) {
+// ── Data helpers ──────────────────────────────────────────────────────────────
+
+function fillSignupData(rawRows, range) {
   const now = new Date();
 
   if (range === '7d') {
-    const dataMap = {};
-    rawRows.forEach((r) => { dataMap[String(r.date).slice(0, 10)] = r; });
+    const map = {};
+    rawRows.forEach((r) => { map[String(r.date).slice(0, 10)] = r; });
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(now);
       d.setDate(d.getDate() - (6 - i));
       const key = d.toISOString().slice(0, 10);
-      const row = dataMap[key] || {};
+      const row = map[key] || {};
       return { label: DAY_NAMES[d.getDay()], user_count: Number(row.user_count || 0), revenue: Number(row.revenue || 0) };
     });
   }
 
   if (range === '1m') {
-    const dataMap = {};
-    rawRows.forEach((r) => { dataMap[String(r.date).slice(0, 10)] = r; });
+    const map = {};
+    rawRows.forEach((r) => { map[String(r.date).slice(0, 10)] = r; });
     return Array.from({ length: 30 }, (_, i) => {
       const d = new Date(now);
       d.setDate(d.getDate() - (29 - i));
       const key = d.toISOString().slice(0, 10);
-      const row = dataMap[key] || {};
+      const row = map[key] || {};
       return { label: String(d.getDate()), user_count: Number(row.user_count || 0), revenue: Number(row.revenue || 0) };
     });
   }
 
-  // 1y — monthly
-  const dataMap = {};
-  rawRows.forEach((r) => { dataMap[`${r.yr}-${r.mo}`] = r; });
+  // 1y — monthly buckets
+  const map = {};
+  rawRows.forEach((r) => { map[`${r.yr}-${r.mo}`] = r; });
   return Array.from({ length: 12 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
     const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-    const row = dataMap[key] || {};
+    const row = map[key] || {};
     return { label: MONTH_NAMES[d.getMonth()], user_count: Number(row.user_count || 0), revenue: Number(row.revenue || 0) };
   });
 }
 
-function StatCard({ label, value, sub, color, isDark, children }) {
-  const textPrimary = isDark ? 'text-slate-100' : 'text-slate-800';
-  const textSub = isDark ? 'text-slate-400' : 'text-slate-500';
-  const bg = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
-  return (
-    <div className={`rounded-2xl border p-4 ${bg}`}>
-      <div className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${textSub}`}>{label}</div>
-      {children || (
-        <>
-          <div className={`text-2xl font-bold ${color || textPrimary}`}>{value}</div>
-          {sub && <div className={`text-[11px] mt-0.5 ${textSub}`}>{sub}</div>}
-        </>
-      )}
-    </div>
-  );
+function fillRenewalData(rawRows) {
+  const map = {};
+  rawRows.forEach((r) => { map[String(r.renewal_date).slice(0, 10)] = r; });
+  const now = new Date();
+  return Array.from({ length: 31 }, (_, i) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() + i);
+    const key = d.toISOString().slice(0, 10);
+    const row = map[key] || {};
+    return {
+      label: `${d.getDate()}/${d.getMonth() + 1}`,
+      user_count: Number(row.user_count || 0),
+      revenue: Number(row.expected_revenue || 0),
+    };
+  });
 }
 
-function CustomTooltip({ active, payload, label, isDark }) {
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+
+function CustomTooltip({ active, payload, label, isDark, isRenewal }) {
   if (!active || !payload?.length) return null;
-  const bg = isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-200 text-slate-800';
+  const bg = isDark
+    ? 'bg-slate-800 border-slate-600 text-slate-100'
+    : 'bg-white border-slate-200 text-slate-800';
   const sub = isDark ? 'text-slate-400' : 'text-slate-500';
   return (
     <div className={`rounded-xl border px-3 py-2.5 shadow-xl text-xs ${bg}`}>
@@ -74,15 +83,30 @@ function CustomTooltip({ active, payload, label, isDark }) {
       {payload.map((p) => (
         <div key={p.dataKey} className="flex items-center gap-2 mb-0.5">
           <span className="inline-block h-2 w-2 rounded-full flex-shrink-0" style={{ background: p.color }} />
-          <span className={sub}>{p.dataKey === 'user_count' ? 'Users' : 'Revenue'}:</span>
+          <span className={sub}>
+            {p.dataKey === 'user_count'
+              ? isRenewal ? 'Renewing users' : 'New users'
+              : isRenewal ? 'Expected revenue' : 'Revenue'}:
+          </span>
           <span className="font-semibold ml-auto pl-3">
-            {p.dataKey === 'revenue' ? `${Number(p.value).toFixed(2)} ₼` : p.value}
+            {p.dataKey === 'revenue'
+              ? `${Number(p.value).toFixed(2)} ₼`
+              : p.value}
           </span>
         </div>
       ))}
     </div>
   );
 }
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+const RANGES = [
+  { key: '7d',         label: '7 days'     },
+  { key: '1m',         label: '30 days'    },
+  { key: '1y',         label: '1 year'     },
+  { key: 'next_month', label: 'Next 30d',  isProjection: true },
+];
 
 export default function AdminAnalytics({ isDark }) {
   const [range, setRange] = useState('7d');
@@ -94,7 +118,18 @@ export default function AdminAnalytics({ isDark }) {
   const [newExpense, setNewExpense] = useState({ name: '', amount: '' });
   const [showExpenses, setShowExpenses] = useState(false);
   const [loading, setLoading] = useState(true);
-  const rangeInitialized = useRef(false);
+  const initialized = useRef(false);
+
+  // ── fetch helpers ──
+  const fetchSignups = (r) =>
+    adminAPI.getSignups(r)
+      .then((res) => setChartData(fillSignupData(res.data.rows, r)))
+      .catch(console.error);
+
+  const fetchRenewals = () =>
+    adminAPI.getExpectedRenewals()
+      .then((res) => setChartData(fillRenewalData(res.data.rows)))
+      .catch(console.error);
 
   // Initial full load
   useEffect(() => {
@@ -102,36 +137,41 @@ export default function AdminAnalytics({ isDark }) {
       setLoading(true);
       try {
         const [sr, er, br] = await Promise.all([
-          adminAPI.getSignups(range),
+          adminAPI.getSignups('7d'),
           adminAPI.listExpenses(),
           adminAPI.getBalance(),
         ]);
-        setChartData(fillChartData(sr.data.rows, range));
+        setChartData(fillSignupData(sr.data.rows, '7d'));
         setExpenses(er.data);
         setBalance(br.data);
       } catch (err) {
-        console.error('AdminAnalytics load error:', err);
+        console.error('AdminAnalytics init error:', err);
       } finally {
         setLoading(false);
-        rangeInitialized.current = true;
+        initialized.current = true;
       }
     };
     load();
   }, []);
 
-  // Range change — only reload signups
+  // Range change
   useEffect(() => {
-    if (!rangeInitialized.current) return;
-    adminAPI.getSignups(range)
-      .then((r) => setChartData(fillChartData(r.data.rows, range)))
-      .catch(console.error);
+    if (!initialized.current) return;
+    if (range === 'next_month') {
+      fetchRenewals();
+    } else {
+      fetchSignups(range);
+    }
   }, [range]);
 
-  const totalRevenue = chartData.reduce((s, r) => s + r.revenue, 0);
-  const totalUsers = chartData.reduce((s, r) => s + r.user_count, 0);
+  // ── derived totals ──
+  const totalRevenue   = chartData.reduce((s, r) => s + r.revenue, 0);
+  const totalUsers     = chartData.reduce((s, r) => s + r.user_count, 0);
   const totalMonthlyExp = expenses.filter((e) => e.is_recurring).reduce((s, e) => s + Number(e.amount), 0);
-  const netProfit = totalRevenue - totalMonthlyExp;
+  const netProfit      = totalRevenue - totalMonthlyExp;
+  const isRenewal      = range === 'next_month';
 
+  // ── balance handlers ──
   const handleSaveBalance = async () => {
     try {
       const res = await adminAPI.updateBalance(parseFloat(balanceInput) || 0);
@@ -142,11 +182,15 @@ export default function AdminAnalytics({ isDark }) {
     }
   };
 
+  // ── expense handlers ──
   const handleAddExpense = async (e) => {
     e.preventDefault();
     if (!newExpense.name || !newExpense.amount) return;
     try {
-      const res = await adminAPI.createExpense({ name: newExpense.name, amount: parseFloat(newExpense.amount) });
+      const res = await adminAPI.createExpense({
+        name: newExpense.name,
+        amount: parseFloat(newExpense.amount),
+      });
       setExpenses((prev) => [...prev, res.data]);
       setNewExpense({ name: '', amount: '' });
     } catch (err) {
@@ -163,16 +207,24 @@ export default function AdminAnalytics({ isDark }) {
     }
   };
 
-  const card = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
-  const tp = isDark ? 'text-slate-100' : 'text-slate-800';
-  const ts = isDark ? 'text-slate-400' : 'text-slate-500';
+  // ── style shortcuts ──
+  const card    = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
+  const tp      = isDark ? 'text-slate-100' : 'text-slate-800';
+  const ts      = isDark ? 'text-slate-400' : 'text-slate-500';
   const divider = isDark ? 'border-slate-700' : 'border-slate-100';
-  const rowHover = isDark ? 'hover:bg-slate-700/40' : 'hover:bg-slate-50/60';
+  const gridLine = isDark ? '#1e293b' : '#f1f5f9';
+  const axisColor = isDark ? '#94a3b8' : '#64748b';
+
+  // Bar / line colours differ between historical and projection views
+  const barFill   = isRenewal ? '#8b5cf6' : (isDark ? '#3b82f6' : '#60a5fa');
+  const lineFill  = isRenewal ? '#f59e0b' : '#10b981';
 
   return (
     <div className="space-y-4 pb-6">
-      {/* ── Stat cards ── */}
+
+      {/* ── Stat cards ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+
         {/* Balance */}
         <div className={`rounded-2xl border p-4 ${card}`}>
           <div className={`text-[11px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5 ${ts}`}>
@@ -187,19 +239,30 @@ export default function AdminAnalytics({ isDark }) {
                 className="input-base h-8 text-sm flex-1 min-w-0"
                 step="0.01"
                 autoFocus
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveBalance(); if (e.key === 'Escape') setEditingBalance(false); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveBalance();
+                  if (e.key === 'Escape') setEditingBalance(false);
+                }}
               />
-              <button onClick={handleSaveBalance} className="h-8 w-8 rounded-lg bg-blue-600 text-white flex items-center justify-center flex-shrink-0 hover:bg-blue-700">
+              <button
+                onClick={handleSaveBalance}
+                className="h-8 w-8 rounded-lg bg-blue-600 text-white flex items-center justify-center flex-shrink-0 hover:bg-blue-700"
+              >
                 <Check size={13} />
               </button>
-              <button onClick={() => setEditingBalance(false)} className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+              <button
+                onClick={() => setEditingBalance(false)}
+                className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >
                 <X size={13} />
               </button>
             </div>
           ) : (
             <div className="flex items-end justify-between gap-2">
               <div>
-                <div className={`text-2xl font-bold ${tp}`}>{balance != null ? Number(balance.balance).toFixed(2) : '—'}</div>
+                <div className={`text-2xl font-bold ${tp}`}>
+                  {balance != null ? Number(balance.balance).toFixed(2) : '—'}
+                </div>
                 <div className={`text-[11px] mt-0.5 ${ts}`}>AZN</div>
               </div>
               <button
@@ -212,31 +275,43 @@ export default function AdminAnalytics({ isDark }) {
           )}
         </div>
 
-        {/* New users */}
+        {/* Users card — label changes for renewal view */}
         <div className={`rounded-2xl border p-4 ${card}`}>
           <div className={`text-[11px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5 ${ts}`}>
-            <Users size={11} /> New Users
+            <Users size={11} /> {isRenewal ? 'Renewing Users' : 'New Users'}
           </div>
           <div className={`text-2xl font-bold ${tp}`}>{loading ? '—' : totalUsers}</div>
-          <div className={`text-[11px] mt-0.5 ${ts}`}>in selected period</div>
+          <div className={`text-[11px] mt-0.5 ${ts}`}>
+            {isRenewal ? 'in next 30 days' : 'in selected period'}
+          </div>
         </div>
 
-        {/* Revenue */}
+        {/* Revenue card */}
         <div className={`rounded-2xl border p-4 ${card}`}>
           <div className={`text-[11px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5 ${ts}`}>
-            <TrendingUp size={11} /> Revenue
+            <TrendingUp size={11} /> {isRenewal ? 'Expected Revenue' : 'Revenue'}
           </div>
-          <div className="text-2xl font-bold text-emerald-500">{loading ? '—' : totalRevenue.toFixed(2)}</div>
-          <div className={`text-[11px] mt-0.5 ${ts}`}>AZN in period</div>
+          <div className={`text-2xl font-bold ${isRenewal ? 'text-amber-500' : 'text-emerald-500'}`}>
+            {loading ? '—' : totalRevenue.toFixed(2)}
+          </div>
+          <div className={`text-[11px] mt-0.5 ${ts}`}>
+            {isRenewal ? 'AZN projected (30d)' : 'AZN in period'}
+          </div>
         </div>
 
-        {/* Net profit / monthly expenses */}
+        {/* 4th card: net profit in 1m, expected net in next_month, else monthly expenses */}
         <div className={`rounded-2xl border p-4 ${card}`}>
-          <div className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${ts}`}>
-            {range === '1m' ? 'Net Profit (30d)' : 'Monthly Expenses'}
-          </div>
-          {range === '1m' ? (
+          {isRenewal ? (
             <>
+              <div className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${ts}`}>Expected Net</div>
+              <div className={`text-2xl font-bold ${(totalRevenue - totalMonthlyExp) >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                {loading ? '—' : (totalRevenue - totalMonthlyExp).toFixed(2)}
+              </div>
+              <div className={`text-[11px] mt-0.5 ${ts}`}>after {totalMonthlyExp.toFixed(2)} ₼ exp.</div>
+            </>
+          ) : range === '1m' ? (
+            <>
+              <div className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${ts}`}>Net Profit (30d)</div>
               <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                 {loading ? '—' : netProfit.toFixed(2)}
               </div>
@@ -244,6 +319,7 @@ export default function AdminAnalytics({ isDark }) {
             </>
           ) : (
             <>
+              <div className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${ts}`}>Monthly Expenses</div>
               <div className="text-2xl font-bold text-amber-500">{totalMonthlyExp.toFixed(2)}</div>
               <div className={`text-[11px] mt-0.5 ${ts}`}>₼ / month recurring</div>
             </>
@@ -251,20 +327,38 @@ export default function AdminAnalytics({ isDark }) {
         </div>
       </div>
 
-      {/* ── Chart ── */}
+      {/* ── Chart ──────────────────────────────────────────────────────────── */}
       <div className={`rounded-2xl border p-4 ${card}`}>
-        <div className="flex items-center justify-between mb-4 gap-3">
-          <h3 className={`font-semibold text-sm ${tp}`}>Signups &amp; Revenue</h3>
-          <div className={`flex rounded-xl overflow-hidden border text-xs ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-            {[['7d', 'Last 7 days'], ['1m', 'Last month'], ['1y', 'Last year']].map(([r, label]) => (
+        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+          <div>
+            <h3 className={`font-semibold text-sm ${tp}`}>
+              {isRenewal ? 'Expected Renewals — next 30 days' : 'Signups & Revenue'}
+            </h3>
+            {isRenewal && (
+              <p className={`text-[11px] mt-0.5 ${ts}`}>
+                Users whose paid plans expire in the next 30 days (trial/free excluded)
+              </p>
+            )}
+          </div>
+
+          {/* Period switcher */}
+          <div className={`flex rounded-xl overflow-hidden border text-xs flex-shrink-0 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+            {RANGES.map(({ key, label, isProjection }) => (
               <button
-                key={r}
+                key={key}
                 type="button"
-                onClick={() => setRange(r)}
-                className={`px-3 py-1.5 font-semibold transition-colors ${range === r
-                  ? 'bg-blue-600 text-white'
-                  : isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+                onClick={() => setRange(key)}
+                className={`px-3 py-1.5 font-semibold transition-colors flex items-center gap-1 ${
+                  range === key
+                    ? isProjection
+                      ? 'bg-violet-600 text-white'
+                      : 'bg-blue-600 text-white'
+                    : isDark
+                      ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                }`}
               >
+                {isProjection && <CalendarClock size={10} />}
                 {label}
               </button>
             ))}
@@ -276,36 +370,48 @@ export default function AdminAnalytics({ isDark }) {
             <div className={`text-sm ${ts}`}>Loading chart…</div>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            <ComposedChart data={chartData} margin={{ top: 4, right: 48, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
-              <XAxis dataKey="label" tick={{ fontSize: 11, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
+          <ResponsiveContainer width="100%" height={224}>
+            <ComposedChart data={chartData} margin={{ top: 4, right: 52, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={gridLine} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: axisColor }}
+                axisLine={false}
+                tickLine={false}
+                interval={range === '1m' ? 4 : range === 'next_month' ? 4 : 0}
+              />
               <YAxis
                 yAxisId="left"
-                tick={{ fontSize: 11, fill: isDark ? '#94a3b8' : '#64748b' }}
-                axisLine={false} tickLine={false}
+                tick={{ fontSize: 11, fill: axisColor }}
+                axisLine={false}
+                tickLine={false}
                 allowDecimals={false}
                 width={28}
               />
               <YAxis
                 yAxisId="right"
                 orientation="right"
-                tick={{ fontSize: 11, fill: '#10b981' }}
-                axisLine={false} tickLine={false}
+                tick={{ fontSize: 11, fill: lineFill }}
+                axisLine={false}
+                tickLine={false}
                 tickFormatter={(v) => `${v}₼`}
-                width={46}
+                width={50}
               />
-              <Tooltip content={<CustomTooltip isDark={isDark} />} />
+              <Tooltip content={<CustomTooltip isDark={isDark} isRenewal={isRenewal} />} />
               <Legend
                 formatter={(v) => (
-                  <span className="text-xs">{v === 'user_count' ? 'Users' : 'Revenue (₼)'}</span>
+                  <span className="text-xs">
+                    {v === 'user_count'
+                      ? isRenewal ? 'Renewing users' : 'New users'
+                      : isRenewal ? 'Expected revenue (₼)' : 'Revenue (₼)'}
+                  </span>
                 )}
               />
               <Bar
                 yAxisId="left"
                 dataKey="user_count"
                 name="user_count"
-                fill={isDark ? '#3b82f6' : '#60a5fa'}
+                fill={barFill}
                 fillOpacity={0.85}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={36}
@@ -315,17 +421,24 @@ export default function AdminAnalytics({ isDark }) {
                 type="monotone"
                 dataKey="revenue"
                 name="revenue"
-                stroke="#10b981"
+                stroke={lineFill}
                 strokeWidth={2.5}
-                dot={{ r: 3, fill: '#10b981', strokeWidth: 0 }}
+                strokeDasharray={isRenewal ? '6 3' : undefined}
+                dot={{ r: 3, fill: lineFill, strokeWidth: 0 }}
                 activeDot={{ r: 5 }}
               />
             </ComposedChart>
           </ResponsiveContainer>
         )}
+
+        {isRenewal && (
+          <p className={`mt-2 text-[11px] text-center ${ts}`}>
+            Dashed line = projected revenue · Bars = number of users renewing that day
+          </p>
+        )}
       </div>
 
-      {/* ── Expenses ── */}
+      {/* ── Monthly Expenses ────────────────────────────────────────────────── */}
       <div className={`rounded-2xl border overflow-hidden ${card}`}>
         <button
           type="button"
@@ -343,14 +456,18 @@ export default function AdminAnalytics({ isDark }) {
               </span>
             )}
           </div>
-          {showExpenses ? <ChevronUp size={15} className={ts} /> : <ChevronDown size={15} className={ts} />}
+          {showExpenses
+            ? <ChevronUp size={15} className={ts} />
+            : <ChevronDown size={15} className={ts} />}
         </button>
 
         {showExpenses && (
           <div className={`border-t ${divider}`}>
             <div className="px-5 pt-3 pb-4 space-y-2">
               {expenses.length === 0 && (
-                <p className={`text-xs py-2 ${ts}`}>No expenses yet. Add recurring monthly costs below.</p>
+                <p className={`text-xs py-2 ${ts}`}>
+                  No expenses yet. Add recurring monthly costs below — they auto-deduct from balance each month.
+                </p>
               )}
               {expenses.map((exp) => (
                 <div
