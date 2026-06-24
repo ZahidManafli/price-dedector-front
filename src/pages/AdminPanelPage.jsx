@@ -7,7 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import PartnersManagement from '../components/PartnersManagement';
 import ZikAccounts from '../components/ZikAccounts';
 import ReferralManagementTab from '../components/ReferralManagementTab';
-import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle, CalendarClock, Clock3, ShieldAlert } from 'lucide-react';
+import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle, CalendarClock, Clock3, ShieldAlert, Plus, X, Eye, Star, Check, Shield, ChevronDown, Zap, Globe } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { TAB_KEYS, USER_DEFAULT_ALLOWED_TABS } from '../utils/planAccess';
 import * as XLSX from 'xlsx';
@@ -116,6 +116,9 @@ export default function AdminPanelPage() {
 
   const [edits, setEdits] = useState({});
   const [resetUsage, setResetUsage] = useState({});
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [showPlanModal, setShowPlanModal] = useState(false);
   const [requestAction, setRequestAction] = useState({});
   const [planForm, setPlanForm] = useState(defaultPlanForm());
   const [userSearch, setUserSearch] = useState('');
@@ -317,6 +320,7 @@ export default function AdminPanelPage() {
 
       await refreshData();
       setPlanForm(defaultPlanForm());
+      setShowPlanModal(false);
       setAlert({ type: 'success', message: t('adminPanelPage.planSavedSuccessfully') });
     } catch (err) {
       setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToSavePlan') });
@@ -352,6 +356,7 @@ export default function AdminPanelPage() {
       featured: !!plan.featured,
       isActive: plan.isActive !== false,
     });
+    setShowPlanModal(true);
   };
 
   const onSyncPlanToStripe = async (planId) => {
@@ -861,373 +866,331 @@ export default function AdminPanelPage() {
         {loading && <LoadingSpinner />}
 
         {!loading && activeTab === 'users' && (
-          <div className="grid grid-cols-1 lg:grid-cols-[440px_1fr] gap-4 lg:gap-6">
-            <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
-              <div className="flex items-center gap-2 mb-4">
-                <UserPlus size={18} className="text-blue-600" />
-                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('adminPanelPage.createUser')}</h2>
+          <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+            {/* Toolbar */}
+            <div className={`flex flex-wrap items-center gap-3 px-5 py-4 border-b ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-100 bg-slate-50/80'}`}>
+              <div className="relative flex-1 min-w-[180px]">
+                <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="input-base pl-9 h-9 text-sm" placeholder={t('adminPanelPage.searchUsersPlaceholder')} />
               </div>
-
-              <form onSubmit={onCreateUser} className="space-y-3">
-                <input value={createForm.name} onChange={(e) => setCreateForm((p) => ({ ...p, name: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.name')} type="text" />
-                <input value={createForm.email} onChange={(e) => setCreateForm((p) => ({ ...p, email: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.email')} type="email" />
-                <input value={createForm.password} onChange={(e) => setCreateForm((p) => ({ ...p, password: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.temporaryPassword')} type="password" />
-
-                <select value={createForm.role} onChange={(e) => setCreateForm((p) => ({ ...p, role: e.target.value }))} className="input-base">
-                  <option value="user">{t('adminPanelPage.userRole')}</option>
-                  <option value="admin">{t('adminPanelPage.adminRole')}</option>
-                </select>
-
-                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={!!createForm.referralAdmin}
-                    onChange={(e) => setCreateForm((p) => ({ ...p, referralAdmin: e.target.checked }))}
-                  />
-                  Referral admin access
-                </label>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <input value={createForm.amazonLookupRequestLimitPerWeek} onChange={(e) => setCreateForm((p) => ({ ...p, amazonLookupRequestLimitPerWeek: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.amazonPerWeek')} type="number" min="0" />
-                  <input value={createForm.productsLimit} onChange={(e) => setCreateForm((p) => ({ ...p, productsLimit: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.products')} type="number" min="0" />
-                </div>
-                <input
-                  value={createForm.marketAnalysisCreditsLimit}
-                  onChange={(e) => setCreateForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))}
-                  className="input-base"
-                  placeholder={t('adminPanelPage.checkilaCredits')}
-                  type="number"
-                  min="0"
-                />
-                <input
-                  value={createForm.ebayAccountsLimit}
-                  onChange={(e) => setCreateForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))}
-                  className="input-base"
-                  placeholder={t('adminPanelPage.ebayAccountsLimit')}
-                  type="number"
-                  min="0"
-                />
-
-                <button type="submit" className="btn-primary w-full py-3 flex items-center justify-center gap-2">
-                  <Users size={16} />
-                  {t('adminPanelPage.createAccess')}
+              <select value={userBlockFilter} onChange={e => setUserBlockFilter(e.target.value)} className="input-base h-9 text-sm pr-8" style={{ minWidth: 130 }}>
+                <option value="all">{t('adminPanelPage.allUsers')}</option>
+                <option value="blocked">{t('adminPanelPage.blockedOnly')}</option>
+                <option value="unblocked">{t('adminPanelPage.unblockedOnly')}</option>
+              </select>
+              <button type="button" onClick={toggleSelectAllFiltered} className="btn-secondary h-9 px-3 text-xs">
+                {allFilteredSelected ? t('adminPanelPage.unselectAll') : t('adminPanelPage.selectFiltered')}
+              </button>
+              <button type="button" onClick={exportUsersToExcel} disabled={filteredUsers.length === 0} className="btn-secondary h-9 px-3 text-xs disabled:opacity-50">
+                {t('adminPanelPage.exportExcel')}
+              </button>
+              {selectedUserIds.length > 0 && (
+                <>
+                  <button type="button" onClick={() => onRefreshSubscriptions(false)} className="btn-secondary h-9 px-3 text-xs inline-flex items-center gap-1.5">
+                    <RefreshCw size={12} /> +1 mo
+                  </button>
+                  <button type="button" onClick={() => onDeleteUsers(false)} className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-600 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-400">
+                    {t('adminPanelPage.removeSelected')} ({selectedUserIds.length})
+                  </button>
+                </>
+              )}
+              <div className="ml-auto">
+                <button type="button" onClick={() => setShowCreateUserModal(true)} className="btn-primary h-9 px-4 text-sm inline-flex items-center gap-2">
+                  <Plus size={15} /> {t('adminPanelPage.createUser')}
                 </button>
-              </form>
+              </div>
             </div>
 
-            <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
-              <div className="flex items-center gap-2 mb-4">
-                <Users size={18} className="text-blue-600" />
-                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('adminPanelPage.users')}</h2>
+            {/* Sub-toolbar for bulk actions */}
+            <div className={`flex items-center gap-2 px-5 py-2 border-b text-xs ${isDark ? 'border-slate-700/60 text-slate-400' : 'border-slate-100 text-slate-500'}`}>
+              <span className="font-medium">{filteredUsers.length} {t('adminPanelPage.users')}</span>
+              {selectedUserIds.length > 0 && <span className="text-blue-500">· {selectedUserIds.length} selected</span>}
+              <div className="ml-auto flex gap-2">
+                <button type="button" onClick={() => onRefreshSubscriptions(true)} className="hover:text-blue-500 transition-colors">{t('adminPanelPage.refreshAllUsersPlusOneMonth')}</button>
+                <span>·</span>
+                <button type="button" onClick={() => onDeleteUsers(true)} className="hover:text-red-500 transition-colors">{t('adminPanelPage.removeAllUsers')}</button>
               </div>
+            </div>
 
-              <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_auto_auto_auto_auto]">
-                <div className="relative">
-                  <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    value={userSearch}
-                    onChange={(e) => setUserSearch(e.target.value)}
-                    className="input-base pl-9"
-                    placeholder={t('adminPanelPage.searchUsersPlaceholder')}
-                  />
-                </div>
-                <button type="button" onClick={toggleSelectAllFiltered} className="btn-secondary px-3 py-2 text-xs">
-                  {allFilteredSelected ? t('adminPanelPage.unselectAll') : t('adminPanelPage.selectFiltered')}
-                </button>
-                <button
-                  type="button"
-                  onClick={exportUsersToExcel}
-                  disabled={filteredUsers.length === 0}
-                  className="btn-secondary px-3 py-2 text-xs disabled:opacity-60"
-                  title={t('adminPanelPage.exportsCurrentFilteredList')}
-                >
-                  {t('adminPanelPage.exportExcel')}
-                </button>
-                <select
-                  value={userBlockFilter}
-                  onChange={e => setUserBlockFilter(e.target.value)}
-                  className="input-base text-xs"
-                  style={{ minWidth: 120 }}
-                >
-                  <option value="all">{t('adminPanelPage.allUsers')}</option>
-                  <option value="blocked">{t('adminPanelPage.blockedOnly')}</option>
-                  <option value="unblocked">{t('adminPanelPage.unblockedOnly')}</option>
-                </select>
-                <button
-                  type="button"
-                  onClick={() => onRefreshSubscriptions(false)}
-                  disabled={selectedUserIds.length === 0}
-                  className="btn-primary px-3 py-2 text-xs inline-flex items-center gap-1.5 disabled:opacity-60"
-                >
-                  <RefreshCw size={13} /> {t('adminPanelPage.refreshPlusOneMonth')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDeleteUsers(false)}
-                  disabled={selectedUserIds.length === 0}
-                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
-                >
-                  {t('adminPanelPage.removeSelected')}
-                </button>
-              </div>
-
-              <div className="mb-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => onRefreshSubscriptions(true)}
-                  className="btn-secondary px-3 py-2 text-xs"
-                >
-                  {t('adminPanelPage.refreshAllUsersPlusOneMonth')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDeleteUsers(true)}
-                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100"
-                >
-                  {t('adminPanelPage.removeAllUsers')}
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                {filteredUsers.map((u) => {
-                  const rowEdits = edits[u.id] || defaultEditForUser(u);
-                  return (
-                    <div key={u.id} className={`border rounded-xl p-3 ${isDark ? 'bg-slate-950 border-slate-700' : 'bg-white border-slate-200'} ${u.isBlocked ? 'opacity-60' : ''}`}>
-                      <div className="flex items-start justify-between gap-2">
-                        <label className="flex items-start gap-2">
-                          <input
-                            type="checkbox"
-                            checked={selectedUserIds.includes(u.id)}
-                            onChange={() => toggleSelectUser(u.id)}
-                            className="mt-0.5"
-                          />
-                          <span className="text-sm font-semibold">{u.name || t('adminPanelPage.user')} ({u.email})</span>
-                          {u.isBlocked && (
-                            <span className="ml-2 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold">{t('adminPanelPage.blocked')}</span>
-                          )}
-                          {u.isUntouched && (
-                            <span className="ml-2 px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
-                              {t('adminPanelPage.untouched')}
-                            </span>
-                          )}
-                          {u.isIt6HourChecker && (
-                            <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold inline-flex items-center gap-1">
-                              <Clock3 size={10} /> 6h checker
-                            </span>
-                          )}
-                        </label>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleShowIpHistory(u)}
-                            className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
-                            title={t('adminPanelPage.viewIpHistory')}
-                          >
-                            {t('adminPanelPage.ips')}
-                          </button>
-                          {u.isBlocked ? (
-                            <button
-                              type="button"
-                              onClick={() => handleUnblockUser(u.id)}
-                              className="rounded-lg border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 hover:bg-green-100"
-                              title={t('adminPanelPage.unblockUser')}
-                            >
-                              {t('adminPanelPage.unblock')}
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleBlockUser(u.id)}
-                              className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
-                              title={t('adminPanelPage.blockUser')}
-                            >
-                              {t('adminPanelPage.block')}
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => onDeleteSingleUser(u.id)}
-                            className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 inline-flex items-center gap-1"
-                            title={t('adminPanelPage.removeUser')}
-                          >
-                            <Trash2 size={12} /> {t('adminPanelPage.remove')}
-                          </button>
-                        </div>
-                            {/* IP History Modal */}
-                            {ipModal.open && (
-                              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                                <div className={`rounded-xl shadow-lg max-w-lg w-full bg-white dark:bg-slate-900 border p-6 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                                  <div className="flex items-center justify-between mb-4">
-                                    <div>
-                                      <div className="font-semibold text-lg">{t('adminPanelPage.ipHistoryFor', { email: ipModal.user?.email })}</div>
-                                      {ipModal.user?.isBlocked && <div className="text-xs text-red-600 font-semibold">{t('adminPanelPage.blocked')}</div>}
-                                    </div>
-                                    <button className="text-xl font-bold" onClick={() => setIpModal({ open: false, user: null, ipHistory: [] })}>{t('adminPanelPage.close')}</button>
-                                  </div>
-                                  <div className="overflow-x-auto max-h-96">
-                                    <table className="w-full text-xs border">
-                                      <thead>
-                                        <tr className="bg-slate-100 dark:bg-slate-800">
-                                          <th className="p-2 border">{t('adminPanelPage.ip')}</th>
-                                          <th className="p-2 border">{t('adminPanelPage.country')}</th>
-                                          <th className="p-2 border">{t('adminPanelPage.city')}</th>
-                                          <th className="p-2 border">{t('adminPanelPage.region')}</th>
-                                          <th className="p-2 border">{t('adminPanelPage.timezone')}</th>
-                                          <th className="p-2 border">{t('adminPanelPage.device')}</th>
-                                          <th className="p-2 border">{t('adminPanelPage.model')}</th>
-                                          <th className="p-2 border">{t('adminPanelPage.date')}</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {ipModal.ipHistory.length === 0 ? (
-                                          <tr><td colSpan={8} className="text-center p-4">{t('adminPanelPage.noIpHistoryFound')}</td></tr>
-                                        ) : (
-                                          ipModal.ipHistory.map((row, idx) => (
-                                            <tr key={idx}>
-                                              <td className="border p-1">{row.ip}</td>
-                                              <td className="border p-1">{row.country}</td>
-                                              <td className="border p-1">{row.city}</td>
-                                              <td className="border p-1">{row.region}</td>
-                                              <td className="border p-1">{row.timezone}</td>
-                                              <td className="border p-1">{row.device}</td>
-                                              <td className="border p-1">{row.device_model}</td>
-                                              <td className="border p-1">{row.created_at ? new Date(row.created_at).toLocaleString() : ''}</td>
-                                            </tr>
-                                          ))
-                                        )}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                </div>
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'bg-slate-800/40 text-slate-400' : 'bg-slate-50/80 text-slate-500'}`}>
+                    <th className="w-10 px-4 py-3">
+                      <input type="checkbox" checked={allFilteredSelected} onChange={toggleSelectAllFiltered} className="rounded" />
+                    </th>
+                    <th className="px-4 py-3 text-left">User</th>
+                    <th className="px-4 py-3 text-left">Plan</th>
+                    <th className="px-4 py-3 text-left">Expires</th>
+                    <th className="px-4 py-3 text-left">Status</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className={isDark ? 'divide-y divide-slate-700/60' : 'divide-y divide-slate-100'}>
+                  {filteredUsers.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className={`px-4 py-12 text-center text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        No users match the current filters.
+                      </td>
+                    </tr>
+                  )}
+                  {filteredUsers.map((u) => {
+                    const initials = (u.name || u.email || '?').slice(0, 2).toUpperCase();
+                    const isExpired = u.planExpiresAt && new Date(u.planExpiresAt) < new Date();
+                    return (
+                      <tr key={u.id} className={`transition-colors ${isDark ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50/60'} ${u.isBlocked ? 'opacity-60' : ''}`}>
+                        <td className="px-4 py-3">
+                          <input type="checkbox" checked={selectedUserIds.includes(u.id)} onChange={() => toggleSelectUser(u.id)} className="rounded" />
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                              u.role === 'admin'
+                                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300'
+                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                            }`}>
+                              {initials}
+                            </div>
+                            <div className="min-w-0">
+                              <div className={`text-sm font-semibold truncate ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+                                {u.name || '—'}
+                                {u.role === 'admin' && <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">ADMIN</span>}
                               </div>
+                              <div className={`text-xs truncate max-w-[200px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{u.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{u.selectedPlanName || <span className="italic text-slate-400">{t('adminPanelPage.customNone')}</span>}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs ${isExpired ? 'text-red-500 font-semibold' : isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                            {u.planExpiresAt ? new Date(u.planExpiresAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {u.isBlocked && <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700 dark:bg-red-950/50 dark:text-red-400">{t('adminPanelPage.blocked')}</span>}
+                            {u.isUntouched && <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[11px] font-semibold text-purple-700 dark:bg-purple-950/50 dark:text-purple-300">{t('adminPanelPage.untouched')}</span>}
+                            {u.isIt6HourChecker && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"><Clock3 size={9} />6h</span>}
+                            {!u.isBlocked && !u.isUntouched && !u.isIt6HourChecker && <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">Active</span>}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button type="button" onClick={() => handleShowIpHistory(u)} title={t('adminPanelPage.viewIpHistory')}
+                              className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-400 hover:text-blue-400' : 'hover:bg-blue-50 text-slate-400 hover:text-blue-600'}`}>
+                              <Globe size={14} />
+                            </button>
+                            <button type="button" onClick={() => { setEditingUserId(u.id); }} title="Edit user limits"
+                              className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-400 hover:text-indigo-400' : 'hover:bg-indigo-50 text-slate-400 hover:text-indigo-600'}`}>
+                              <Pencil size={14} />
+                            </button>
+                            {u.isBlocked ? (
+                              <button type="button" onClick={() => handleUnblockUser(u.id)} title={t('adminPanelPage.unblockUser')}
+                                className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'hover:bg-emerald-900/30 text-slate-400 hover:text-emerald-400' : 'hover:bg-emerald-50 text-slate-400 hover:text-emerald-600'}`}>
+                                <Shield size={14} />
+                              </button>
+                            ) : (
+                              <button type="button" onClick={() => handleBlockUser(u.id)} title={t('adminPanelPage.blockUser')}
+                                className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'hover:bg-red-900/30 text-slate-400 hover:text-red-400' : 'hover:bg-red-50 text-slate-400 hover:text-red-500'}`}>
+                                <Shield size={14} />
+                              </button>
                             )}
+                            <button type="button" onClick={() => onDeleteSingleUser(u.id)} title={t('adminPanelPage.removeUser')}
+                              className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'hover:bg-red-900/30 text-slate-400 hover:text-red-400' : 'hover:bg-red-50 text-slate-400 hover:text-red-500'}`}>
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── Create User Modal ─────────────────────────────────────────── */}
+        {showCreateUserModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowCreateUserModal(false); }}>
+            <div className={`relative w-full max-w-md rounded-2xl shadow-2xl border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+              <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? 'border-slate-700 bg-slate-800/60' : 'border-slate-100 bg-slate-50/80'}`}>
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center"><UserPlus size={15} className="text-white" /></div>
+                  <h3 className={`font-semibold text-base ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{t('adminPanelPage.createUser')}</h3>
+                </div>
+                <button onClick={() => setShowCreateUserModal(false)} className={`h-7 w-7 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}><X size={15} /></button>
+              </div>
+              <form onSubmit={async (e) => { await onCreateUser(e); if (!alert || alert?.type === 'success') setShowCreateUserModal(false); }} className="px-6 py-5 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('adminPanelPage.name')}</label>
+                    <input value={createForm.name} onChange={(e) => setCreateForm((p) => ({ ...p, name: e.target.value }))} className="input-base h-9 text-sm" placeholder="Full name" type="text" required />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Role</label>
+                    <select value={createForm.role} onChange={(e) => setCreateForm((p) => ({ ...p, role: e.target.value }))} className="input-base h-9 text-sm">
+                      <option value="user">{t('adminPanelPage.userRole')}</option>
+                      <option value="admin">{t('adminPanelPage.adminRole')}</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('adminPanelPage.email')}</label>
+                  <input value={createForm.email} onChange={(e) => setCreateForm((p) => ({ ...p, email: e.target.value }))} className="input-base h-9 text-sm" placeholder="user@example.com" type="email" required />
+                </div>
+                <div>
+                  <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('adminPanelPage.temporaryPassword')}</label>
+                  <input value={createForm.password} onChange={(e) => setCreateForm((p) => ({ ...p, password: e.target.value }))} className="input-base h-9 text-sm" placeholder="••••••••" type="password" required />
+                </div>
+                <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'}`}>
+                  <p className={`text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Limits <span className="font-normal opacity-60">(leave blank for unlimited)</span></p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input value={createForm.amazonLookupRequestLimitPerWeek} onChange={(e) => setCreateForm((p) => ({ ...p, amazonLookupRequestLimitPerWeek: e.target.value }))} className="input-base h-8 text-xs" placeholder={t('adminPanelPage.amazonPerWeek')} type="number" min="0" />
+                    <input value={createForm.productsLimit} onChange={(e) => setCreateForm((p) => ({ ...p, productsLimit: e.target.value }))} className="input-base h-8 text-xs" placeholder={t('adminPanelPage.products')} type="number" min="0" />
+                    <input value={createForm.marketAnalysisCreditsLimit} onChange={(e) => setCreateForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))} className="input-base h-8 text-xs" placeholder="Analysis credits" type="number" min="0" />
+                    <input value={createForm.ebayAccountsLimit} onChange={(e) => setCreateForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))} className="input-base h-8 text-xs" placeholder="eBay accounts" type="number" min="0" />
+                  </div>
+                </div>
+                <label className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  <input type="checkbox" checked={!!createForm.referralAdmin} onChange={(e) => setCreateForm((p) => ({ ...p, referralAdmin: e.target.checked }))} className="rounded" />
+                  Referral admin access
+                </label>
+                <div className="flex gap-3 pt-1">
+                  <button type="button" onClick={() => setShowCreateUserModal(false)} className="btn-secondary flex-1 h-10">Cancel</button>
+                  <button type="submit" className="btn-primary flex-1 h-10 inline-flex items-center justify-center gap-2"><UserPlus size={14} /> {t('adminPanelPage.createAccess')}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ── Edit User Modal ───────────────────────────────────────────── */}
+        {editingUserId && (() => {
+          const u = users.find(x => x.id === editingUserId);
+          if (!u) return null;
+          const rowEdits = edits[u.id] || defaultEditForUser(u);
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setEditingUserId(null); }}>
+              <div className={`relative w-full max-w-lg rounded-2xl shadow-2xl border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+                <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? 'border-slate-700 bg-slate-800/60' : 'border-slate-100 bg-slate-50/80'}`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold ${u.role === 'admin' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'}`}>
+                      {(u.name || u.email || '?').slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <h3 className={`font-semibold text-sm ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{u.name || u.email}</h3>
+                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{u.email}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setEditingUserId(null)} className={`h-7 w-7 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}><X size={15} /></button>
+                </div>
+                <div className="px-6 py-5 space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Role</label>
+                      <select value={rowEdits.role} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], role: e.target.value } }))} className="input-base h-9 text-sm">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    <div className="flex items-end pb-1">
+                      <label className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                        <input type="checkbox" checked={!!rowEdits.referralAdmin} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], referralAdmin: e.target.checked } }))} className="rounded" />
+                        Referral admin
+                      </label>
+                    </div>
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Usage Limits <span className="font-normal opacity-60">(blank = unlimited)</span></label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Amazon / week</label>
+                        <input value={rowEdits.amazonLookupRequestLimitPerWeek} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], amazonLookupRequestLimitPerWeek: e.target.value } }))} className="input-base h-8 text-sm" type="number" min="0" />
                       </div>
-                      <div className="mt-1 text-xs text-slate-500">{t('adminPanelPage.plan')}: {u.selectedPlanName || t('adminPanelPage.customNone')}</div>
-                      <div className="mt-1 text-xs text-slate-500">
-                        {t('adminPanelPage.expires')}: {u.planExpiresAt ? new Date(u.planExpiresAt).toLocaleDateString() : t('adminPanelPage.na')}
+                      <div>
+                        <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Products</label>
+                        <input value={rowEdits.productsLimit} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], productsLimit: e.target.value } }))} className="input-base h-8 text-sm" type="number" min="0" />
                       </div>
-
-                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <select
-                          value={rowEdits.role}
-                          onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], role: e.target.value } }))}
-                          className="input-base"
-                        >
-                          <option value="user">user</option>
-                          <option value="admin">admin</option>
-                        </select>
-
-                        <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 sm:col-span-2">
-                          <input
-                            type="checkbox"
-                            checked={!!rowEdits.referralAdmin}
-                            onChange={(e) =>
-                              setEdits((prev) => ({
-                                ...prev,
-                                [u.id]: { ...prev[u.id], referralAdmin: e.target.checked },
-                              }))
-                            }
-                          />
-                          Referral admin access
-                        </label>
-
-                        <input
-                          value={rowEdits.amazonLookupRequestLimitPerWeek}
-                          onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], amazonLookupRequestLimitPerWeek: e.target.value } }))}
-                          className="input-base"
-                          placeholder="Amazon / week"
-                          type="number"
-                          min="0"
-                        />
-
-                        <input
-                          value={rowEdits.productsLimit}
-                          onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], productsLimit: e.target.value } }))}
-                          className="input-base sm:col-span-2"
-                          placeholder="Products limit"
-                          type="number"
-                          min="0"
-                        />
-
-                        <input
-                          value={rowEdits.marketAnalysisCreditsLimit}
-                          onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], marketAnalysisCreditsLimit: e.target.value } }))}
-                          className="input-base sm:col-span-2"
-                          placeholder="Checkila Analysis credits limit"
-                          type="number"
-                          min="0"
-                        />
-
-                        <input
-                          value={rowEdits.ebayAccountsLimit}
-                          onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], ebayAccountsLimit: e.target.value } }))}
-                          className="input-base sm:col-span-2"
-                          placeholder="eBay accounts limit"
-                          type="number"
-                          min="0"
-                        />
+                      <div>
+                        <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Analysis credits</label>
+                        <input value={rowEdits.marketAnalysisCreditsLimit} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], marketAnalysisCreditsLimit: e.target.value } }))} className="input-base h-8 text-sm" type="number" min="0" />
                       </div>
-
-                      <div className="mt-3 flex items-center justify-between gap-2">
-                        <div className="flex flex-col gap-1">
-                          <label className="text-xs flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={!!resetUsage[u.id]}
-                              onChange={(e) => setResetUsage((prev) => ({ ...prev, [u.id]: e.target.checked }))}
-                            />
-                            {t('adminPanelPage.resetAmazonUsageNow')}
-                          </label>
-                          <label className="text-xs flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={!!resetUsage[`${u.id}__marketAnalysis`]}
-                              onChange={(e) =>
-                                setResetUsage((prev) => ({
-                                  ...prev,
-                                  [`${u.id}__marketAnalysis`]: e.target.checked,
-                                }))
-                              }
-                            />
-                            {t('adminPanelPage.resetCheckilaAnalysisCreditsUsageNow')}
-                          </label>
-                          <label className="text-xs flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={!!rowEdits.isUntouched}
-                              onChange={(e) =>
-                                setEdits((prev) => ({
-                                  ...prev,
-                                  [u.id]: { ...prev[u.id], isUntouched: e.target.checked },
-                                }))
-                              }
-                            />
-                            <span className="font-semibold text-purple-600">{t('adminPanelPage.untouched')}</span>
-                            <span className="text-slate-400">({t('adminPanelPage.unlimitedIps')})</span>
-                          </label>
-                          <label className="text-xs flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={!!rowEdits.isIt6HourChecker}
-                              onChange={(e) =>
-                                setEdits((prev) => ({
-                                  ...prev,
-                                  [u.id]: { ...prev[u.id], isIt6HourChecker: e.target.checked },
-                                }))
-                              }
-                            />
-                            <Clock3 size={12} className="text-amber-500" />
-                            <span className="font-semibold text-amber-600">6-hour Amazon checker</span>
-                          </label>
-                        </div>
-
-                        <button type="button" onClick={() => onSaveLimits(u.id)} className="btn-primary inline-flex items-center gap-2 px-4 py-2">
-                          <Pencil size={14} /> {t('adminPanelPage.save')}
-                        </button>
+                      <div>
+                        <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>eBay accounts</label>
+                        <input value={rowEdits.ebayAccountsLimit} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], ebayAccountsLimit: e.target.value } }))} className="input-base h-8 text-sm" type="number" min="0" />
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                  <div className={`rounded-xl border p-3 space-y-2 ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'}`}>
+                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Flags &amp; resets</p>
+                    <label className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <input type="checkbox" checked={!!resetUsage[u.id]} onChange={(e) => setResetUsage((prev) => ({ ...prev, [u.id]: e.target.checked }))} className="rounded" />
+                      {t('adminPanelPage.resetAmazonUsageNow')}
+                    </label>
+                    <label className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <input type="checkbox" checked={!!resetUsage[`${u.id}__marketAnalysis`]} onChange={(e) => setResetUsage((prev) => ({ ...prev, [`${u.id}__marketAnalysis`]: e.target.checked }))} className="rounded" />
+                      {t('adminPanelPage.resetCheckilaAnalysisCreditsUsageNow')}
+                    </label>
+                    <label className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <input type="checkbox" checked={!!rowEdits.isUntouched} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], isUntouched: e.target.checked } }))} className="rounded" />
+                      <span className="text-purple-500 font-semibold">{t('adminPanelPage.untouched')}</span>
+                      <span className={`opacity-60 ${isDark ? 'text-slate-400' : ''}`}>({t('adminPanelPage.unlimitedIps')})</span>
+                    </label>
+                    <label className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <input type="checkbox" checked={!!rowEdits.isIt6HourChecker} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], isIt6HourChecker: e.target.checked } }))} className="rounded" />
+                      <Clock3 size={11} className="text-amber-500" />
+                      <span className="text-amber-500 font-semibold">6-hour Amazon checker</span>
+                    </label>
+                  </div>
+                  <div className="flex gap-3">
+                    <button type="button" onClick={() => setEditingUserId(null)} className="btn-secondary flex-1 h-10">Cancel</button>
+                    <button type="button" onClick={async () => { await onSaveLimits(u.id); setEditingUserId(null); }} className="btn-primary flex-1 h-10 inline-flex items-center justify-center gap-2"><Check size={14} /> Save changes</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── IP History Modal (lifted out of row) ──────────────────────── */}
+        {ipModal.open && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setIpModal({ open: false, user: null, ipHistory: [] }); }}>
+            <div className={`relative w-full max-w-2xl rounded-2xl shadow-2xl border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+              <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? 'border-slate-700 bg-slate-800/60' : 'border-slate-100 bg-slate-50/80'}`}>
+                <div>
+                  <h3 className={`font-semibold ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{t('adminPanelPage.ipHistoryFor', { email: ipModal.user?.email })}</h3>
+                  {ipModal.user?.isBlocked && <p className="text-xs text-red-500 font-semibold mt-0.5">{t('adminPanelPage.blocked')}</p>}
+                </div>
+                <button onClick={() => setIpModal({ open: false, user: null, ipHistory: [] })} className={`h-7 w-7 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}><X size={15} /></button>
+              </div>
+              <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
+                <table className="min-w-full text-xs">
+                  <thead className={`sticky top-0 ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
+                    <tr>
+                      {[t('adminPanelPage.ip'), t('adminPanelPage.country'), t('adminPanelPage.city'), t('adminPanelPage.device'), t('adminPanelPage.model'), t('adminPanelPage.date')].map(h => (
+                        <th key={h} className="px-4 py-2.5 text-left font-semibold uppercase tracking-wider text-[11px]">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className={isDark ? 'divide-y divide-slate-700/60' : 'divide-y divide-slate-100'}>
+                    {ipModal.ipHistory.length === 0 ? (
+                      <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">{t('adminPanelPage.noIpHistoryFound')}</td></tr>
+                    ) : ipModal.ipHistory.map((row, idx) => (
+                      <tr key={idx} className={isDark ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50/60'}>
+                        <td className="px-4 py-2 font-mono">{row.ip}</td>
+                        <td className="px-4 py-2">{row.country || '—'}</td>
+                        <td className="px-4 py-2">{row.city || '—'}</td>
+                        <td className="px-4 py-2">{row.device || '—'}</td>
+                        <td className="px-4 py-2">{row.device_model || '—'}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{row.created_at ? new Date(row.created_at).toLocaleString() : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -1323,150 +1286,234 @@ export default function AdminPanelPage() {
         )}
 
         {!loading && activeTab === 'plans' && (
-          <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-4 lg:gap-6">
-            <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
-              <div className="flex items-center gap-2 mb-4">
-                <PackageOpen size={18} className="text-blue-600" />
-                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                  {planForm.id ? t('adminPanelPage.editPlan') : t('adminPanelPage.createPlan')}
-                </h2>
+          <div>
+            {/* Plans toolbar */}
+            <div className={`flex items-center justify-between gap-4 mb-5 px-1`}>
+              <div>
+                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{t('adminPanelPage.plans')}</h2>
+                <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{plans.length} plan{plans.length !== 1 ? 's' : ''} configured</p>
+              </div>
+              <button type="button" onClick={() => { setPlanForm(defaultPlanForm()); setShowPlanModal(true); }} className="btn-primary h-9 px-4 text-sm inline-flex items-center gap-2">
+                <Plus size={15} /> {t('adminPanelPage.createPlan')}
+              </button>
+            </div>
+
+            {/* Plans grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {plans.length === 0 && (
+                <div className={`sm:col-span-2 xl:col-span-3 rounded-2xl border border-dashed p-12 text-center ${isDark ? 'border-slate-700 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
+                  No plans yet. Click "+ {t('adminPanelPage.createPlan')}" to add one.
+                </div>
+              )}
+              {plans.map((plan) => {
+                const categoryColors = {
+                  subscription: isDark ? 'bg-blue-900/30 text-blue-300 border-blue-800/40' : 'bg-blue-50 text-blue-700 border-blue-200',
+                  analytics: isDark ? 'bg-violet-900/30 text-violet-300 border-violet-800/40' : 'bg-violet-50 text-violet-700 border-violet-200',
+                  amazon_monitoring: isDark ? 'bg-amber-900/30 text-amber-300 border-amber-800/40' : 'bg-amber-50 text-amber-700 border-amber-200',
+                };
+                const catColor = categoryColors[plan.category] || (isDark ? 'bg-slate-700/40 text-slate-300 border-slate-600/40' : 'bg-slate-100 text-slate-600 border-slate-200');
+                const hasDiscount = plan.discountedPrice != null && plan.actualPrice != null && plan.discountedPrice < plan.actualPrice;
+                return (
+                  <div key={plan.id} className={`relative rounded-2xl border flex flex-col ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} ${!plan.isActive ? 'opacity-60' : ''}`}>
+                    {plan.featured && (
+                      <div className="absolute -top-2.5 left-4">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2.5 py-0.5 text-[11px] font-bold text-amber-900"><Star size={9} fill="currentColor" /> Featured</span>
+                      </div>
+                    )}
+                    <div className="p-4 flex-1">
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div className="min-w-0">
+                          <h3 className={`font-bold text-base leading-tight truncate ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{plan.name}</h3>
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            <span className={`inline-block rounded-full border px-2 py-0.5 text-[11px] font-semibold ${catColor}`}>{plan.category}</span>
+                            {!plan.isActive && <span className="inline-block rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">Inactive</span>}
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          {hasDiscount ? (
+                            <>
+                              <div className={`text-xs line-through ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{plan.actualPrice} {plan.currency || 'AZN'}</div>
+                              <div className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{plan.discountedPrice} <span className="text-xs font-normal">{plan.currency || 'AZN'}</span></div>
+                            </>
+                          ) : (
+                            <div className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{plan.price || (plan.actualPrice ? `${plan.actualPrice} ${plan.currency || 'AZN'}` : '—')}</div>
+                          )}
+                          {plan.duration && <div className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{plan.duration}</div>}
+                        </div>
+                      </div>
+
+                      <div className={`space-y-1.5 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        <div className="flex items-center justify-between">
+                          <span>Amazon / week</span>
+                          <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.amazonLookupLimitPerWeek ?? <span className="text-emerald-500">∞</span>}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Products</span>
+                          <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.productsLimit ?? <span className="text-emerald-500">∞</span>}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Analysis credits</span>
+                          <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.marketAnalysisCreditsLimit ?? <span className="text-emerald-500">∞</span>}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>eBay accounts</span>
+                          <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.ebayAccountsLimit ?? <span className="text-emerald-500">∞</span>}</span>
+                        </div>
+                      </div>
+
+                      {Array.isArray(plan.allowedTabs) && plan.allowedTabs.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1">
+                          {plan.allowedTabs.map((key) => (
+                            <span key={key} className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                              {t(`adminPanelPage.planTabs.${key}`)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={`border-t px-4 py-3 flex items-center gap-2 ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
+                      <button type="button" onClick={() => onSyncPlanToStripe(plan.id)}
+                        className={`flex-1 h-8 rounded-lg text-xs font-semibold transition-colors ${isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}>
+                        <Zap size={11} className="inline-block mr-1" />Sync Stripe
+                      </button>
+                      <button type="button" onClick={() => startEditPlan(plan)}
+                        className="flex-1 h-8 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors inline-flex items-center justify-center gap-1">
+                        <Pencil size={11} /> {t('adminPanelPage.edit')}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Plan Create/Edit Modal ────────────────────────────────────── */}
+        {showPlanModal && (
+          <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 bg-black/50 backdrop-blur-sm overflow-y-auto" onClick={(e) => { if (e.target === e.currentTarget) { setShowPlanModal(false); setPlanForm(defaultPlanForm()); } }}>
+            <div className={`relative w-full max-w-2xl rounded-2xl shadow-2xl border mb-8 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`} onClick={(e) => e.stopPropagation()}>
+              <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? 'border-slate-700 bg-slate-800/60' : 'border-slate-100 bg-slate-50/80'}`}>
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center"><PackageOpen size={15} className="text-white" /></div>
+                  <h3 className={`font-semibold text-base ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{planForm.id ? t('adminPanelPage.editPlan') : t('adminPanelPage.createPlan')}</h3>
+                </div>
+                <button onClick={() => { setShowPlanModal(false); setPlanForm(defaultPlanForm()); }} className={`h-7 w-7 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}><X size={15} /></button>
               </div>
 
-              <form onSubmit={onSavePlan} className="space-y-3">
-                <input value={planForm.name} onChange={(e) => setPlanForm((p) => ({ ...p, name: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.planName')} type="text" />
-
+              <form onSubmit={async (e) => { await onSavePlan(e); }} className="px-6 py-5 space-y-4">
+                {/* Row 1: Name + Category */}
                 <div className="grid grid-cols-2 gap-3">
-                  <select value={planForm.category} onChange={(e) => setPlanForm((p) => ({ ...p, category: e.target.value }))} className="input-base">
-                    <option value="subscription">{t('adminPanelPage.subscription')}</option>
-                    <option value="analytics">{t('adminPanelPage.analytics')}</option>
-                    <option value="amazon_monitoring">{t('adminPanelPage.amazonMonitoring')}</option>
-                  </select>
-                  <input value={planForm.price} onChange={(e) => setPlanForm((p) => ({ ...p, price: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.price')} type="text" />
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('adminPanelPage.planName')}</label>
+                    <input value={planForm.name} onChange={(e) => setPlanForm((p) => ({ ...p, name: e.target.value }))} className="input-base h-9 text-sm" placeholder="e.g. Pro Monthly" type="text" required />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Category</label>
+                    <select value={planForm.category} onChange={(e) => setPlanForm((p) => ({ ...p, category: e.target.value }))} className="input-base h-9 text-sm">
+                      <option value="subscription">{t('adminPanelPage.subscription')}</option>
+                      <option value="analytics">{t('adminPanelPage.analytics')}</option>
+                      <option value="amazon_monitoring">{t('adminPanelPage.amazonMonitoring')}</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <input
-                    value={planForm.actualPrice}
-                    onChange={(e) => setPlanForm((p) => ({ ...p, actualPrice: e.target.value }))}
-                    className="input-base"
-                    placeholder={t('adminPanelPage.actualPrice')}
-                    type="number"
-                    min="0"
-                    step="0.01"
-                  />
-                  <input
-                    value={planForm.discountedPrice}
-                    onChange={(e) => setPlanForm((p) => ({ ...p, discountedPrice: e.target.value }))}
-                    className="input-base"
-                    placeholder={t('adminPanelPage.discountedPrice')}
-                    type="number"
-                    min="0"
-                    step="0.01"
-                  />
-                  <input
-                    value={planForm.currency}
-                    onChange={(e) => setPlanForm((p) => ({ ...p, currency: e.target.value.toUpperCase() }))}
-                    className="input-base"
-                    placeholder={t('adminPanelPage.currency')}
-                    type="text"
-                  />
+                {/* Row 2: Pricing */}
+                <div>
+                  <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Pricing</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    <div>
+                      <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Display label</label>
+                      <input value={planForm.price} onChange={(e) => setPlanForm((p) => ({ ...p, price: e.target.value }))} className="input-base h-8 text-sm" placeholder="e.g. $29/mo" type="text" />
+                    </div>
+                    <div>
+                      <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Actual price</label>
+                      <input value={planForm.actualPrice} onChange={(e) => setPlanForm((p) => ({ ...p, actualPrice: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" step="0.01" />
+                    </div>
+                    <div>
+                      <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Discounted</label>
+                      <input value={planForm.discountedPrice} onChange={(e) => setPlanForm((p) => ({ ...p, discountedPrice: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" step="0.01" />
+                    </div>
+                    <div>
+                      <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Currency</label>
+                      <input value={planForm.currency} onChange={(e) => setPlanForm((p) => ({ ...p, currency: e.target.value.toUpperCase() }))} className="input-base h-8 text-sm" placeholder="AZN" type="text" />
+                    </div>
+                  </div>
                 </div>
 
-                <input value={planForm.duration} onChange={(e) => setPlanForm((p) => ({ ...p, duration: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.duration')} type="text" />
-                <textarea value={planForm.description} onChange={(e) => setPlanForm((p) => ({ ...p, description: e.target.value }))} className="input-base min-h-[88px]" placeholder={t('adminPanelPage.description')} />
-                <textarea value={planForm.featuresText} onChange={(e) => setPlanForm((p) => ({ ...p, featuresText: e.target.value }))} className="input-base min-h-[110px]" placeholder={t('adminPanelPage.featuresOnePerLine')} />
+                {/* Duration + Description */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('adminPanelPage.duration')}</label>
+                    <input value={planForm.duration} onChange={(e) => setPlanForm((p) => ({ ...p, duration: e.target.value }))} className="input-base h-9 text-sm" placeholder="e.g. 1 month" type="text" />
+                  </div>
+                  <div className="flex items-end gap-4 pb-1">
+                    <label className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <input type="checkbox" checked={planForm.featured} onChange={(e) => setPlanForm((p) => ({ ...p, featured: e.target.checked }))} className="rounded" />
+                      <Star size={11} className="text-amber-400" /> {t('adminPanelPage.featured')}
+                    </label>
+                    <label className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <input type="checkbox" checked={planForm.isActive} onChange={(e) => setPlanForm((p) => ({ ...p, isActive: e.target.checked }))} className="rounded" />
+                      <Eye size={11} /> {t('adminPanelPage.active')}
+                    </label>
+                  </div>
+                </div>
 
-                <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-slate-50'}`}>
-                  <p className="text-sm font-semibold mb-2">{t('adminPanelPage.visibleTabsForThisPlan')}</p>
-                  <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('adminPanelPage.description')}</label>
+                  <textarea value={planForm.description} onChange={(e) => setPlanForm((p) => ({ ...p, description: e.target.value }))} className="input-base min-h-[72px] text-sm" placeholder={t('adminPanelPage.description')} />
+                </div>
+
+                <div>
+                  <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('adminPanelPage.featuresOnePerLine')}</label>
+                  <textarea value={planForm.featuresText} onChange={(e) => setPlanForm((p) => ({ ...p, featuresText: e.target.value }))} className="input-base min-h-[88px] text-sm" placeholder={t('adminPanelPage.featuresOnePerLine')} />
+                </div>
+
+                {/* Tabs */}
+                <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'}`}>
+                  <p className={`text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('adminPanelPage.visibleTabsForThisPlan')}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-1.5 gap-x-3">
                     {PLAN_TAB_KEYS.map((tabKey) => {
                       const checked = planForm.allowedTabs.includes(tabKey);
                       return (
-                        <label key={tabKey} className="text-xs flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={(e) =>
-                              setPlanForm((prev) => ({
-                                ...prev,
-                                allowedTabs: e.target.checked
-                                  ? Array.from(new Set([...prev.allowedTabs, tabKey]))
-                                  : prev.allowedTabs.filter((item) => item !== tabKey),
-                              }))
-                            }
-                          />
+                        <label key={tabKey} className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          <input type="checkbox" checked={checked} onChange={(e) => setPlanForm((prev) => ({ ...prev, allowedTabs: e.target.checked ? Array.from(new Set([...prev.allowedTabs, tabKey])) : prev.allowedTabs.filter((item) => item !== tabKey) }))} className="rounded" />
                           {t(`adminPanelPage.planTabs.${tabKey}`)}
                         </label>
                       );
                     })}
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">{t('adminPanelPage.dashboardAlwaysVisible')}</p>
+                  <p className={`mt-2 text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('adminPanelPage.dashboardAlwaysVisible')}</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <input value={planForm.amazonLookupLimitPerWeek} onChange={(e) => setPlanForm((p) => ({ ...p, amazonLookupLimitPerWeek: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.amazonPerWeek')} type="number" min="0" />
-                  <input value={planForm.productsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, productsLimit: e.target.value }))} className="input-base" placeholder={t('adminPanelPage.products')} type="number" min="0" />
-                </div>
-                <input
-                  value={planForm.marketAnalysisCreditsLimit}
-                  onChange={(e) => setPlanForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))}
-                  className="input-base"
-                  placeholder={t('adminPanelPage.checkilaAnalysisCredits')}
-                  type="number"
-                  min="0"
-                />
-                <input
-                  value={planForm.ebayAccountsLimit}
-                  onChange={(e) => setPlanForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))}
-                  className="input-base"
-                  placeholder={t('adminPanelPage.ebayAccountsLimit')}
-                  type="number"
-                  min="0"
-                />
-
-                <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={planForm.featured} onChange={(e) => setPlanForm((p) => ({ ...p, featured: e.target.checked }))} /> {t('adminPanelPage.featured')}</label>
-                <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={planForm.isActive} onChange={(e) => setPlanForm((p) => ({ ...p, isActive: e.target.checked }))} /> {t('adminPanelPage.active')}</label>
-
-                <button type="submit" className="btn-primary w-full py-2.5">{t('adminPanelPage.savePlan')}</button>
-                {planForm.id ? (
-                  <button type="button" onClick={() => setPlanForm(defaultPlanForm())} className="btn-secondary w-full py-2.5">
-                    {t('adminPanelPage.cancelEdit')}
-                  </button>
-                ) : null}
-              </form>
-            </div>
-
-            <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
-              <div className="flex items-center gap-2 mb-4">
-                <PackageOpen size={18} className="text-blue-600" />
-                <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('adminPanelPage.plans')}</h2>
-              </div>
-
-              <div className="space-y-3">
-                {plans.map((plan) => (
-                  <div key={plan.id} className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-white'}`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold">{plan.name}</p>
-                        <p className="text-xs text-slate-500">{plan.category} • {plan.price || t('adminPanelPage.noPrice')} • {plan.duration || t('adminPanelPage.noDuration')}</p>
-                        <p className="text-xs text-slate-500">{t('adminPanelPage.pricing')}: {plan.actualPrice ?? '-'} → {plan.discountedPrice ?? '-'} {plan.currency || 'AZN'}</p>
-                        <p className="text-xs text-slate-500">Stripe Product: {plan.stripeProductId || '-'}</p>
-                        <p className="text-xs text-slate-500">Stripe Monthly Price: {plan.stripePriceIdMonthly || '-'}</p>
-                        <p className="mt-1 text-xs text-slate-500">{t('adminPanelPage.amazonPerWeek')}: {plan.amazonLookupLimitPerWeek ?? t('adminPanelPage.unlimited')} | {t('adminPanelPage.products')}: {plan.productsLimit ?? t('adminPanelPage.unlimited')} | {t('adminPanelPage.checkilaAnalysisCredits')}: {plan.marketAnalysisCreditsLimit ?? t('adminPanelPage.unlimited')} | {t('adminPanelPage.ebayAccounts')}: {plan.ebayAccountsLimit ?? t('adminPanelPage.unlimited')}</p>
-                        <p className="mt-1 text-xs text-slate-500">{t('adminPanelPage.visibleTabs')}: {Array.isArray(plan.allowedTabs) ? plan.allowedTabs.map((key) => t(`adminPanelPage.planTabs.${key}`)).join(', ') : t('adminPanelPage.allDefaultTabs')}</p>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <button type="button" className="btn-secondary px-3 py-1.5" onClick={() => onSyncPlanToStripe(plan.id)}>
-                          Sync Stripe
-                        </button>
-                        <button type="button" className="btn-secondary px-3 py-1.5" onClick={() => startEditPlan(plan)}>
-                          {t('adminPanelPage.edit')}
-                        </button>
-                      </div>
+                {/* Limits */}
+                <div>
+                  <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Usage Limits <span className="font-normal opacity-60">(blank = unlimited)</span></label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Amazon / week</label>
+                      <input value={planForm.amazonLookupLimitPerWeek} onChange={(e) => setPlanForm((p) => ({ ...p, amazonLookupLimitPerWeek: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
+                    </div>
+                    <div>
+                      <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Products</label>
+                      <input value={planForm.productsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, productsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
+                    </div>
+                    <div>
+                      <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Analysis credits</label>
+                      <input value={planForm.marketAnalysisCreditsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
+                    </div>
+                    <div>
+                      <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>eBay accounts</label>
+                      <input value={planForm.ebayAccountsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+
+                <div className="flex gap-3 pt-1">
+                  <button type="button" onClick={() => { setShowPlanModal(false); setPlanForm(defaultPlanForm()); }} className="btn-secondary flex-1 h-10">Cancel</button>
+                  <button type="submit" className="btn-primary flex-1 h-10 inline-flex items-center justify-center gap-2"><Check size={14} /> {t('adminPanelPage.savePlan')}</button>
+                </div>
+              </form>
             </div>
           </div>
         )}
