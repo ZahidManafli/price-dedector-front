@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { authAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import { useTheme } from '../context/ThemeContext';
@@ -165,6 +165,15 @@ export default function LoginPage() {
           >
             {loading ? t('loginPage.loggingIn') : t('auth.login')}
           </button>
+
+          <div className="text-right">
+            <Link
+              to="/forgot-password"
+              className={`text-sm font-medium ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}
+            >
+              Forgot password?
+            </Link>
+          </div>
         </form>
 
         <div className={`mt-6 text-center text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>

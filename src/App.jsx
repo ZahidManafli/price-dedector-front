@@ -35,6 +35,8 @@ import MarketListingDetailPage from './pages/MarketListingDetailPage';
 import LandingPage from './pages/LandingPage';
 import SignupPage from './pages/SignupPage';
 import ReferralLandingPage from './pages/ReferralLandingPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import ReferralDashboardPage from './pages/ReferralDashboardPage';
 import LearningVideosPage from './pages/LearningVideosPage';
 import ProfitTablePage from './pages/ProfitTablePage';
@@ -121,6 +123,8 @@ function AppContent() {
             <Route path="/maintenance" element={<MaintenancePage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/ref/:slug" element={<ReferralLandingPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             {/* Protected Routes */}
             <Route

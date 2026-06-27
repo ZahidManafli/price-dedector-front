@@ -80,6 +80,8 @@ export const authAPI = {
   logout: () => api.post('/auth/logout'),
   verifyToken: () => api.get('/auth/verify'),
   getMaintenanceStatus: () => api.get('/auth/maintenance-status'),
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, newPassword }),
 };
 
 // Product APIs
