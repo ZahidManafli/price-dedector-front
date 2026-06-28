@@ -13,6 +13,7 @@ export const TAB_KEYS = {
   PARTNERS: 'partners',
   LEARNING: 'learning',
   PROFIT_TABLE: 'profit_table',
+  BUYER_CRM: 'buyer_crm',
 };
 
 export const USER_DEFAULT_ALLOWED_TABS = [
@@ -54,6 +55,9 @@ const TAB_ALIASES = {
   referrals: TAB_KEYS.REFERRALS,
   referals: TAB_KEYS.REFERRALS,
   partners: TAB_KEYS.PARTNERS,
+  buyer_crm: TAB_KEYS.BUYER_CRM,
+  buyercrm: TAB_KEYS.BUYER_CRM,
+  'buyer-crm': TAB_KEYS.BUYER_CRM,
 };
 
 export function normalizeTabKey(value) {

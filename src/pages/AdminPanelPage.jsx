@@ -66,6 +66,7 @@ const PLAN_TAB_KEYS = [
   TAB_KEYS.DEWISO,
   TAB_KEYS.SETTINGS,
   TAB_KEYS.PROFIT_TABLE,
+  TAB_KEYS.BUYER_CRM,
 ];
 
 function defaultPlanForm() {

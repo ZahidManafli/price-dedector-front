@@ -260,7 +260,7 @@ function AppContent() {
             <Route
               path="/buyers"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredTab={TAB_KEYS.BUYER_CRM}>
                   <BuyersPage />
                 </ProtectedRoute>
               }
