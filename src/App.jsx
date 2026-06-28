@@ -37,6 +37,7 @@ import SignupPage from './pages/SignupPage';
 import ReferralLandingPage from './pages/ReferralLandingPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import BuyersPage from './pages/BuyersPage';
 import ReferralDashboardPage from './pages/ReferralDashboardPage';
 import LearningVideosPage from './pages/LearningVideosPage';
 import ProfitTablePage from './pages/ProfitTablePage';
@@ -253,6 +254,14 @@ function AppContent() {
               element={
                 <ProtectedRoute requiredTab={TAB_KEYS.ORDERS}>
                   <OrderDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/buyers"
+              element={
+                <ProtectedRoute>
+                  <BuyersPage />
                 </ProtectedRoute>
               }
             />

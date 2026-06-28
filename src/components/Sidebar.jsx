@@ -22,6 +22,7 @@ import {
   Link2,
   BookOpen,
   TrendingUp,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -50,6 +51,7 @@ export default function Sidebar() {
     { label: t('nav.products'), path: '/products', icon: Package, tab: TAB_KEYS.PRODUCTS, tour: 'sidebar-products' },
     { label: t('nav.listings'), path: '/listings', icon: Package, tab: TAB_KEYS.LISTINGS },
     { label: t('nav.orders'), path: '/orders', icon: Package, tab: TAB_KEYS.ORDERS },
+    { label: 'Alıcı CRM', path: '/buyers', icon: Users, tab: TAB_KEYS.ORDERS },
     { label: t('nav.amazonLookup'), path: '/amazon-lookup', icon: Search, tab: TAB_KEYS.AMAZON_LOOKUP, tour: 'sidebar-amazon-lookup' },
     { label: t('nav.ebayCalculator'), path: '/ebay-calculator', icon: Calculator, tab: TAB_KEYS.EBAY_CALCULATOR },
     { label: t('nav.marketAnalysis'), path: '/market-analysis', icon: BarChart3, tab: TAB_KEYS.MARKET_ANALYSIS, tour: 'sidebar-market-analysis' },

@@ -337,4 +337,17 @@ export const learningAPI = {
     api.delete(`/api/learning-videos/${videoId}/comments/${commentId}`),
 };
 
+export const buyersAPI = {
+  list: () => api.get('/buyers'),
+  get: (username) => api.get(`/buyers/${encodeURIComponent(username)}`),
+  addNote: (username, note) =>
+    api.post(`/buyers/${encodeURIComponent(username)}/notes`, { note }),
+  deleteNote: (username, noteId) =>
+    api.delete(`/buyers/${encodeURIComponent(username)}/notes/${noteId}`),
+  addTag: (username, tag, color) =>
+    api.post(`/buyers/${encodeURIComponent(username)}/tags`, { tag, color }),
+  deleteTag: (username, tag) =>
+    api.delete(`/buyers/${encodeURIComponent(username)}/tags/${encodeURIComponent(tag)}`),
+};
+
 export default api;
