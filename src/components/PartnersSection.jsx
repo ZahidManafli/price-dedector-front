@@ -2,6 +2,25 @@ import React, { useEffect, useState } from 'react';
 import { partnerAPI } from '../services/api';
 import { useTranslation } from 'react-i18next';
 
+const PARTNER_STYLES = {
+  'Luhive': {
+    wrapClass: 'flex items-center justify-center p-6 rounded-lg border border-slate-800 bg-slate-900/40 backdrop-blur hover:border-cyan-300/30 hover:bg-slate-900/60 transition-all duration-300 group',
+    imgClass: 'max-h-16 max-w-full object-contain cursor-pointer transition-all duration-300',
+    imgStyle: { height: '4rem' },
+  },
+  'Lumu Hub': {
+    wrapClass: 'flex items-center justify-center rounded-lg border border-slate-800 bg-slate-900/40 backdrop-blur hover:border-cyan-300/30 hover:bg-slate-900/60 transition-all duration-300 group',
+    imgClass: 'object-contain cursor-pointer transition-all duration-300',
+    imgStyle: { height: '7rem' },
+  },
+};
+
+const DEFAULT_PARTNER_STYLE = {
+  wrapClass: 'flex items-center justify-center p-6 rounded-lg border border-slate-800 bg-slate-900/40 backdrop-blur hover:border-cyan-300/30 hover:bg-slate-900/60 transition-all duration-300 group',
+  imgClass: 'max-h-16 max-w-full object-contain cursor-pointer transition-all duration-300',
+  imgStyle: {},
+};
+
 function PartnersSection() {
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,28 +67,32 @@ function PartnersSection() {
 
         {/* Partners Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 items-center justify-center">
-          {partners.map((partner) => (
-            <a
-              key={partner.id}
-              href={partner.website_url || undefined}
-              target={partner.website_url ? '_blank' : undefined}
-              rel={partner.website_url ? 'noreferrer noopener' : undefined}
-              className="flex items-center justify-center p-6 rounded-lg border border-slate-800 bg-slate-900/40 backdrop-blur hover:border-cyan-300/30 hover:bg-slate-900/60 transition-all duration-300 group"
-            >
-              {partner.logo_url ? (
-                <img
-                  src={partner.logo_url}
-                  alt={partner.name}
-                  className="max-h-16 max-w-full object-contain cursor-pointer transition-all duration-300"
-                  title={partner.name}
-                />
-              ) : (
-                <div className="text-center">
-                  <span className="text-sm font-medium text-slate-400">{partner.name}</span>
-                </div>
-              )}
-            </a>
-          ))}
+          {partners.map((partner) => {
+            const style = PARTNER_STYLES[partner.name] || DEFAULT_PARTNER_STYLE;
+            return (
+              <a
+                key={partner.id}
+                href={partner.website_url || undefined}
+                target={partner.website_url ? '_blank' : undefined}
+                rel={partner.website_url ? 'noreferrer noopener' : undefined}
+                className={style.wrapClass}
+              >
+                {partner.logo_url ? (
+                  <img
+                    src={partner.logo_url}
+                    alt={partner.name}
+                    className={style.imgClass}
+                    style={style.imgStyle}
+                    title={partner.name}
+                  />
+                ) : (
+                  <div className="text-center">
+                    <span className="text-sm font-medium text-slate-400">{partner.name}</span>
+                  </div>
+                )}
+              </a>
+            );
+          })}
         </div>
       </div>
     </section>
