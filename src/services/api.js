@@ -135,6 +135,7 @@ export const ebayAPI = {
     }),
   deleteListing: (listingId, params = {}) =>
     api.delete(`/ebay/listings/${encodeURIComponent(listingId)}`, { params }),
+  sendDeadStockNotify: () => api.post('/ebay/dead-stock/notify'),
   updateListing: (listingId, payload) => api.patch(`/ebay/listings/${listingId}`, payload),
   getListingAutoStockRule: (listingId) => api.get(`/ebay/listings/${encodeURIComponent(listingId)}/auto-stock`),
   saveListingAutoStockRule: (listingId, payload) =>

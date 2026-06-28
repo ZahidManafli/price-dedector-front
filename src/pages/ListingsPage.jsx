@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ebayAPI } from '../services/api';
 import Alert from '../components/Alert';
-import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal, Trash2, AlertTriangle, X, Mail } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 export default function ListingsPage() {
@@ -24,6 +24,9 @@ export default function ListingsPage() {
   const [sortKey, setSortKey] = useState('title');
   const [sortDir, setSortDir] = useState('asc');
   const [deletingListingId, setDeletingListingId] = useState('');
+  const [deadStockBannerDismissed, setDeadStockBannerDismissed] = useState(false);
+  const [sendingDeadStockEmail, setSendingDeadStockEmail] = useState(false);
+  const [deadStockEmailSent, setDeadStockEmailSent] = useState(false);
   const listingsRequestRef = useRef(0);
 
   useEffect(() => {
@@ -133,6 +136,18 @@ export default function ListingsPage() {
     }
   };
 
+  const handleSendDeadStockEmail = async () => {
+    try {
+      setSendingDeadStockEmail(true);
+      await ebayAPI.sendDeadStockNotify();
+      setDeadStockEmailSent(true);
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Email göndərilə bilmədi');
+    } finally {
+      setSendingDeadStockEmail(false);
+    }
+  };
+
   const canPrev = page > 0;
 
   const parseNumberish = (value) => {
@@ -153,6 +168,7 @@ export default function ListingsPage() {
         let rawQuantity = null;
         let rawSold = null;
         let rawThumb = '';
+        let rawStartTime = null;
         if (offer?.rawXml && typeof DOMParser !== 'undefined') {
           try {
             const doc = new DOMParser().parseFromString(offer.rawXml, 'text/xml');
@@ -164,14 +180,21 @@ export default function ListingsPage() {
             const q = getText('Quantity');
             const s = getText('SellingStatus > QuantitySold');
             const pics = getAllText('PictureDetails > PictureURL');
+            const st = getText('StartTime');
             rawQuantity = parseNumberish(q);
             rawSold = parseNumberish(s);
             rawThumb = pics[0] || '';
+            if (st) { const d = new Date(st); if (!isNaN(d)) rawStartTime = d; }
           } catch {
             rawQuantity = null;
             rawSold = null;
             rawThumb = '';
+            rawStartTime = null;
           }
+        }
+        if (!rawStartTime && offer?.startTime) {
+          const d = new Date(offer.startTime);
+          if (!isNaN(d)) rawStartTime = d;
         }
         const fallbackQuantity =
           parseNumberish(offer?.availableQuantity) ??
@@ -188,6 +211,11 @@ export default function ListingsPage() {
             ? Math.max(0, rawQuantity - Number(soldCount || 0))
             : fallbackQuantity;
         const priceNumber = parseNumberish(offer?.pricingSummary?.price?.value);
+        const DEAD_STOCK_MS = 30 * 24 * 60 * 60 * 1000;
+        const daysSinceListed = rawStartTime
+          ? Math.floor((Date.now() - rawStartTime.getTime()) / (1000 * 60 * 60 * 24))
+          : null;
+        const isDeadStock = soldCount === 0 && daysSinceListed !== null && daysSinceListed >= 30;
         return {
           ...offer,
           _id: id,
@@ -195,6 +223,8 @@ export default function ListingsPage() {
           _title: title,
           _stock: stockCount ?? null,
           _sold: soldCount,
+          _isDeadStock: isDeadStock,
+          _daysSinceListed: daysSinceListed,
           _priceText:
             offer?.pricingSummary?.price?.value != null
               ? `${offer.pricingSummary.price.value} ${offer.pricingSummary.price.currency || ''}`.trim()
@@ -212,7 +242,10 @@ export default function ListingsPage() {
         !q ||
         offer._title.toLowerCase().includes(q) ||
         String(offer._id).toLowerCase().includes(q);
-      const matchesStatus = statusFilter === 'ALL' || offer._status.toUpperCase() === statusFilter;
+      const matchesStatus =
+        statusFilter === 'DEAD_STOCK'
+          ? offer._isDeadStock
+          : statusFilter === 'ALL' || offer._status.toUpperCase() === statusFilter;
       return matchesQuery && matchesStatus;
     });
     const compareNullableNumber = (left, right) => {
@@ -262,6 +295,10 @@ export default function ListingsPage() {
   );
   const completedCount = useMemo(
     () => normalizedItems.filter((i) => String(i._status).toUpperCase() === 'COMPLETED').length,
+    [normalizedItems]
+  );
+  const deadStockCount = useMemo(
+    () => normalizedItems.filter((i) => i._isDeadStock).length,
     [normalizedItems]
   );
   const getStatusPill = (statusRaw) => {
@@ -350,7 +387,7 @@ export default function ListingsPage() {
         </>
       ) : (
         <>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
             <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('listingsPage.showing')}</p>
             <p className={`text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{filteredItems.length}</p>
@@ -363,7 +400,74 @@ export default function ListingsPage() {
             <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('listingsPage.completed')}</p>
             <p className={`text-2xl font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{completedCount}</p>
           </div>
+          <button
+            type="button"
+            onClick={() => { setStatusFilter('DEAD_STOCK'); setDeadStockBannerDismissed(false); }}
+            className={`rounded-xl border p-4 text-left transition-colors ${
+              deadStockCount > 0
+                ? isDark
+                  ? 'bg-amber-900/20 border-amber-700/60 hover:bg-amber-900/30'
+                  : 'bg-amber-50 border-amber-200 hover:bg-amber-100'
+                : isDark
+                  ? 'bg-slate-900/50 border-slate-700'
+                  : 'bg-white border-slate-200'
+            }`}
+          >
+            <p className={`text-xs flex items-center gap-1 ${deadStockCount > 0 ? (isDark ? 'text-amber-400' : 'text-amber-600') : (isDark ? 'text-slate-400' : 'text-slate-500')}`}>
+              {deadStockCount > 0 && <AlertTriangle size={11} />}
+              Donmuş Stok
+            </p>
+            <p className={`text-2xl font-bold ${deadStockCount > 0 ? (isDark ? 'text-amber-300' : 'text-amber-700') : (isDark ? 'text-slate-200' : 'text-slate-700')}`}>
+              {deadStockCount}
+            </p>
+          </button>
         </div>
+
+        {/* Dead Stock Banner */}
+        {deadStockCount > 0 && !deadStockBannerDismissed && (
+          <div className={`mb-4 rounded-xl border p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 ${
+            isDark ? 'bg-amber-900/20 border-amber-700/50' : 'bg-amber-50 border-amber-200'
+          }`}>
+            <AlertTriangle size={18} className={isDark ? 'text-amber-400 shrink-0' : 'text-amber-600 shrink-0'} />
+            <div className="flex-1 min-w-0">
+              <p className={`font-semibold text-sm ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>
+                {deadStockCount} listinqiniz 30+ gündür satılmayıb
+              </p>
+              <p className={`text-xs mt-0.5 ${isDark ? 'text-amber-400/80' : 'text-amber-700'}`}>
+                Bu listinqlər üçün qiymət azaltmağı və ya silməyi nəzərə alın.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {deadStockEmailSent ? (
+                <span className={`text-xs font-medium px-2 py-1 rounded-full ${isDark ? 'bg-emerald-900/40 text-emerald-300' : 'bg-emerald-100 text-emerald-700'}`}>
+                  Email göndərildi ✓
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSendDeadStockEmail}
+                  disabled={sendingDeadStockEmail}
+                  className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
+                    isDark
+                      ? 'border-amber-700 text-amber-300 hover:bg-amber-800/40 disabled:opacity-50'
+                      : 'border-amber-300 text-amber-700 hover:bg-amber-100 disabled:opacity-50'
+                  }`}
+                >
+                  {sendingDeadStockEmail ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
+                  {sendingDeadStockEmail ? 'Göndərilir...' : 'Email göndər'}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setDeadStockBannerDismissed(true)}
+                className={`p-1 rounded ${isDark ? 'text-amber-500 hover:text-amber-300' : 'text-amber-500 hover:text-amber-700'}`}
+                title="Bağla"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+        )}
         <div className={`mb-4 rounded-xl border p-3 ${isDark ? 'bg-slate-900/40 border-slate-700' : 'bg-white border-slate-200'}`}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <label className="relative md:col-span-2">
@@ -389,6 +493,7 @@ export default function ListingsPage() {
                 <option value="ALL">{t('listingsPage.allStatus')}</option>
                 <option value="ACTIVE">{t('listingsPage.statusActive')}</option>
                 <option value="COMPLETED">{t('listingsPage.statusCompleted')}</option>
+                <option value="DEAD_STOCK">⚠ Donmuş Stok (30+ gün)</option>
               </select>
             </label>
           </div>
@@ -422,7 +527,10 @@ export default function ListingsPage() {
                   const deleteKey = ebayListingId || internalSku || offerId || '';
                   return (
                     <React.Fragment key={`${key}-${idx}`}>
-                      <tr className={`${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+                      <tr className={offer._isDeadStock
+                          ? isDark ? 'bg-amber-950/20' : 'bg-amber-50/60'
+                          : isDark ? 'bg-slate-900' : 'bg-white'
+                        }>
                         <td className="px-4 py-3">
                           <div className={`w-12 h-12 rounded-md overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
                             {offer._thumb ? (
@@ -430,7 +538,21 @@ export default function ListingsPage() {
                             ) : null}
                           </div>
                         </td>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{title}</td>
+                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                          <div className="flex flex-col gap-1">
+                            <span>{title}</span>
+                            {offer._isDeadStock && (
+                              <span className={`inline-flex items-center gap-1 w-fit text-xs font-medium px-2 py-0.5 rounded-full ${
+                                isDark
+                                  ? 'bg-amber-900/40 text-amber-300 border border-amber-700/60'
+                                  : 'bg-amber-50 text-amber-700 border border-amber-200'
+                              }`}>
+                                <AlertTriangle size={10} />
+                                Donmuş Stok · {offer._daysSinceListed} gün
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{listingId}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{offer._priceText}</td>
                         <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{offer._stock ?? '-'}</td>
