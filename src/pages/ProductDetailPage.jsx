@@ -7,6 +7,10 @@ import Alert from '../components/Alert';
 import { useTheme } from '../context/ThemeContext';
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import {
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis,
+  CartesianGrid, Tooltip, Legend,
+} from 'recharts';
 
 export default function ProductDetailPage() {
   const { isDark } = useTheme();
@@ -148,10 +152,75 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Price History */}
+            {/* Price History Chart */}
+            {history.length > 1 && (
+              <div>
+                <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  {t('productDetailPage.priceHistory')}
+                </h2>
+                <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-700 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <LineChart
+                      data={[...history].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).map((r) => ({
+                        date: new Date(r.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                        amazon: Number(r.amazonPrice || 0),
+                        ebay: Number(r.ebayPrice || 0),
+                      }))}
+                      margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#334155' : '#e2e8f0'} />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 11, fill: isDark ? '#94a3b8' : '#64748b' }}
+                        axisLine={{ stroke: isDark ? '#334155' : '#e2e8f0' }}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 11, fill: isDark ? '#94a3b8' : '#64748b' }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(v) => `$${v}`}
+                        width={52}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: isDark ? '#1e293b' : '#fff',
+                          border: `1px solid ${isDark ? '#334155' : '#e2e8f0'}`,
+                          borderRadius: '10px',
+                          fontSize: '12px',
+                          color: isDark ? '#f1f5f9' : '#1e293b',
+                        }}
+                        formatter={(v, name) => [`$${Number(v).toFixed(2)}`, name === 'amazon' ? 'Amazon' : 'eBay']}
+                      />
+                      <Legend
+                        formatter={(v) => v === 'amazon' ? 'Amazon' : 'eBay'}
+                        wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="amazon"
+                        stroke="#f97316"
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: '#f97316' }}
+                        activeDot={{ r: 5 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="ebay"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: '#3b82f6' }}
+                        activeDot={{ r: 5 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* Price History Table */}
             {history.length > 0 && (
               <div>
-                <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('productDetailPage.priceHistory')}</h2>
                 <div className={`overflow-x-auto border rounded-lg ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                   <table className="w-full text-sm">
                     <thead className={isDark ? 'bg-slate-800/90' : 'bg-slate-100'}>

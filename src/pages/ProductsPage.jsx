@@ -115,7 +115,7 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // New state
-  const [viewMode, setViewMode] = useState(() => localStorage.getItem('products_view') || 'grid');
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('products_view') || 'table');
   const [sortKey, setSortKey] = useState('createdAt');
   const [sortDir, setSortDir] = useState('desc');
   const [sortDropOpen, setSortDropOpen] = useState(false);
