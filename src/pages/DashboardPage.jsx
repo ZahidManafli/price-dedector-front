@@ -8,7 +8,7 @@ import { ProductFormModal } from './ProductFormPage';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Gauge, LineChart, ShieldCheck, X } from 'lucide-react';
+import { AlertCircle, Download, Gauge, LineChart, Lock, ShieldCheck, TrendingUp, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import DailyFinanceFlowChart from '../components/DailyFinanceFlowChart';
 
@@ -280,6 +280,53 @@ export default function DashboardPage() {
     } catch {}
   };
 
+  const handleExportFinanceCSV = () => {
+    const rows = [
+      ['Type', 'ID / Label', 'Amount', 'Currency', 'Extra'],
+      ['--- SUMMARY ---', '', '', '', ''],
+      ...financeSummaryCards.map((c) => ['Summary', c.label, c.value, c.currency, c.hint]),
+      ['', '', '', '', ''],
+      ['--- ORDER EARNINGS ---', '', '', '', ''],
+      ...recentOrderEarnings.map((item) => [
+        'Order Earning',
+        item.orderId || '',
+        item?.orderEarningsSummary?.orderEarnings?.value || 0,
+        item?.orderEarningsSummary?.orderEarnings?.currency || financeCurrency,
+        `Gross: ${item?.orderEarningsSummary?.grossAmount?.value || 0} | Refunds: ${item?.orderEarningsSummary?.refunds?.value || 0}`,
+      ]),
+      ['', '', '', '', ''],
+      ['--- PAYOUTS ---', '', '', '', ''],
+      ...recentPayouts.map((item) => [
+        'Payout',
+        item.payoutId || '',
+        item?.amount?.value || 0,
+        item?.amount?.currency || financeCurrency,
+        `Status: ${item.payoutStatus || ''} | Txns: ${item.transactionCount || 0}`,
+      ]),
+      ['', '', '', '', ''],
+      ['--- TRANSACTIONS ---', '', '', '', ''],
+      ...recentTransactions.map((item, i) => [
+        'Transaction',
+        item.transactionId || item.transactionType || `txn-${i}`,
+        item.amount || 0,
+        item.currency || financeCurrency,
+        `Status: ${item.transactionStatus || ''} | Date: ${item.transactionDate ? new Date(item.transactionDate).toLocaleDateString() : ''}`,
+      ]),
+    ];
+    const csv = rows
+      .map((r) => r.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `checkila-finance-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleConnectEbay = async () => {
     try {
       setAlert(null);
@@ -304,6 +351,12 @@ export default function DashboardPage() {
   const marketCreditsLimit = limits?.marketAnalysis?.creditsLimit;
   const isProductQuotaReached =
     productsLeft !== null && productsLeft !== undefined && productsLeft <= 0;
+
+  const productsLow = !isProductQuotaReached && productsLeft != null && productsLeft <= 5;
+  const lookupLow = lookupLeft != null && lookupLeft > 0 && lookupLeft <= 5;
+  const lookupEmpty = lookupLeft != null && lookupLeft <= 0;
+  const marketLow = marketCreditsLeft != null && marketCreditsLeft > 0 && marketCreditsLeft <= 3;
+  const marketEmpty = marketCreditsLeft != null && marketCreditsLeft <= 0;
 
   const userPlan = limits?.plan || null;
 
@@ -485,6 +538,23 @@ export default function DashboardPage() {
                     style={{ width: `${usedPct ?? 0}%` }}
                   />
                 </div>
+
+                {danger && (
+                  <div className={`mt-2 flex items-start gap-1.5 rounded-lg px-2.5 py-2 text-xs ${
+                    isDark ? 'bg-rose-950/50 border border-rose-800/50 text-rose-300' : 'bg-rose-50 border border-rose-200 text-rose-700'
+                  }`}>
+                    <AlertCircle size={12} className="mt-0.5 shrink-0" />
+                    <span>Kritik: API sorğularını dərhal azaldın. Mümkün olduğunda batch əməliyyatlardan istifadə et, cavabları 5+ dəqiqə cache et.</span>
+                  </div>
+                )}
+                {warn && !danger && (
+                  <div className={`mt-2 flex items-start gap-1.5 rounded-lg px-2.5 py-2 text-xs ${
+                    isDark ? 'bg-amber-950/50 border border-amber-800/50 text-amber-300' : 'bg-amber-50 border border-amber-200 text-amber-700'
+                  }`}>
+                    <AlertCircle size={12} className="mt-0.5 shrink-0" />
+                    <span>Diqqət: İstifadəni izlə. Lazımsız sorğuları azalt, response caching aktivləşdir.</span>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -612,38 +682,72 @@ export default function DashboardPage() {
           */}
           {analytics?.analyticsAccessDenied && !hideAnalyticsAccessAlert && (
             <div className="mb-4">
-              <Alert
-                type="error"
-                message={
-                  analytics?.analyticsAccessErrorMessage ||
-                    t('dashboard.analyticsDenied')
-                }
-                onClose={() => setHideAnalyticsAccessAlert(true)}
-                autoClose={false}
-              />
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => navigate('/settings')}
-                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                    isDark
-                      ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-900/30'
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-600/20'
-                  }`}
-                >
-                  {t('dashboard.goToSettings')}
-                </button>
+              <div className={`relative overflow-hidden rounded-2xl border p-5 ${
+                isDark ? 'border-indigo-800/50 bg-indigo-950/30' : 'border-indigo-200 bg-indigo-50'
+              }`}>
                 <button
                   type="button"
                   onClick={() => setHideAnalyticsAccessAlert(true)}
-                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                    isDark
-                      ? 'bg-slate-900/30 hover:bg-slate-900/50 text-slate-100 border border-slate-700'
-                      : 'bg-white hover:bg-slate-50 text-slate-900 border border-slate-200'
+                  className={`absolute top-3 right-3 h-8 w-8 rounded-lg flex items-center justify-center transition ${
+                    isDark ? 'bg-slate-900/60 hover:bg-slate-900 border border-slate-700' : 'bg-white/70 hover:bg-white border border-slate-200'
                   }`}
                 >
-                  {t('dashboard.dismiss')}
+                  <X size={14} />
                 </button>
+
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${isDark ? 'bg-indigo-900/60' : 'bg-indigo-100'}`}>
+                    <Lock size={16} className={isDark ? 'text-indigo-300' : 'text-indigo-600'} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-bold ${isDark ? 'text-indigo-200' : 'text-indigo-900'}`}>
+                      eBay Analytics — Giriş Yoxdur
+                    </p>
+                    <p className={`text-xs ${isDark ? 'text-indigo-300/70' : 'text-indigo-700'}`}>
+                      {analytics?.analyticsAccessErrorMessage || 'Bu hesab eBay Seller Analytics API-yə çıxış icazəsinə malik deyil.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                  {[
+                    { icon: TrendingUp, label: 'Konversiya Qrafiki', desc: '7 günlük traffic & satış trendi' },
+                    { icon: ShieldCheck, label: 'Satıcı Standartları', desc: 'Defect rate, gecikmə, profil' },
+                    { icon: Gauge, label: 'Müştəri Xidməti', desc: 'Şikayət nisbəti & reytinq' },
+                    { icon: LineChart, label: 'Finance Analitika', desc: 'Qazanc, xərc, payout axışı' },
+                  ].map((f) => (
+                    <div key={f.label} className={`relative rounded-xl border p-3 overflow-hidden ${
+                      isDark ? 'border-slate-700/50 bg-slate-900/40' : 'border-slate-200 bg-white/60'
+                    }`}>
+                      <div className="absolute inset-0 backdrop-blur-[1px]" />
+                      <div className="relative">
+                        <f.icon size={16} className={`mb-1.5 ${isDark ? 'text-indigo-400' : 'text-indigo-500'}`} />
+                        <p className={`text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{f.label}</p>
+                        <p className={`text-[11px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{f.desc}</p>
+                        <div className={`mt-2 h-4 rounded w-3/4 ${isDark ? 'bg-slate-700/60' : 'bg-slate-200'}`} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleConnectEbay}
+                    className="rounded-xl px-4 py-2 text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-sm"
+                  >
+                    eBay-i Yenidən Qoş
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/settings')}
+                    className={`rounded-xl px-4 py-2 text-sm font-semibold transition border ${
+                      isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-900/50' : 'border-slate-200 text-slate-700 hover:bg-white'
+                    }`}
+                  >
+                    {t('dashboard.goToSettings')}
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -1069,16 +1173,29 @@ export default function DashboardPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5" data-tour="dashboard-credit-cards">
-        <div
-          className={`glass-card p-5 border ${
-            isDark
-              ? 'bg-slate-950 text-white border-slate-800'
-              : 'bg-slate-200 text-slate-900 border-slate-300'
-          }`}
-        >
-          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('dashboard.productUploadLeft')}</p>
+        {/* Product Credits */}
+        <div className={`glass-card p-5 border transition-all ${
+          isProductQuotaReached
+            ? isDark ? 'bg-slate-950 text-white border-rose-700/60' : 'bg-rose-50 text-slate-900 border-rose-300'
+            : productsLow
+              ? isDark ? 'bg-slate-950 text-white border-amber-700/60' : 'bg-amber-50 text-slate-900 border-amber-300'
+              : isDark ? 'bg-slate-950 text-white border-slate-800' : 'bg-slate-200 text-slate-900 border-slate-300'
+        }`}>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('dashboard.productUploadLeft')}</p>
+            {(isProductQuotaReached || productsLow) && (
+              <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                isProductQuotaReached
+                  ? isDark ? 'bg-rose-900/50 text-rose-300' : 'bg-rose-100 text-rose-700'
+                  : isDark ? 'bg-amber-900/50 text-amber-300' : 'bg-amber-100 text-amber-700'
+              }`}>
+                <AlertCircle size={10} />
+                {isProductQuotaReached ? 'Limit doldu' : 'Az qalıb'}
+              </span>
+            )}
+          </div>
           <div className="mt-2 flex items-center justify-between gap-3">
-            <p className="text-3xl font-bold">
+            <p className={`text-3xl font-bold ${isProductQuotaReached ? 'text-rose-500' : productsLow ? 'text-amber-500' : ''}`}>
               {productsLeft === null || productsLeft === undefined ? t('unlimited', { ns: 'common' }) : productsLeft}
             </p>
             <button
@@ -1086,11 +1203,7 @@ export default function DashboardPage() {
               disabled={isProductQuotaReached}
               onClick={() => {
                 if (isProductQuotaReached) {
-                  setAlert({
-                    type: 'warning',
-                    message:
-                      t('dashboard.productQuotaReached'),
-                  });
+                  setAlert({ type: 'warning', message: t('dashboard.productQuotaReached') });
                   return;
                 }
                 setIsFormOpen(true);
@@ -1107,38 +1220,104 @@ export default function DashboardPage() {
           <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
             Used {productsUsed}{productsLimit != null ? ` / ${productsLimit}` : ''}
           </p>
+          {(isProductQuotaReached || productsLow) && (
+            <button
+              type="button"
+              onClick={onOpenUpgradeRequest}
+              className={`mt-3 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                isProductQuotaReached
+                  ? 'bg-rose-600 text-white hover:bg-rose-700'
+                  : 'bg-amber-500 text-white hover:bg-amber-600'
+              }`}
+            >
+              Planı Yüksəlt
+            </button>
+          )}
         </div>
-        <div
-          className={`glass-card p-5 border ${
-            isDark
-              ? 'bg-slate-950 text-white border-slate-800'
-              : 'bg-slate-200 text-slate-900 border-slate-300'
-          }`}
-        >
-          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('dashboard.autoTrackingCredits')}</p>
-          <p className="mt-2 text-3xl font-bold">
+
+        {/* Amazon Lookup Credits */}
+        <div className={`glass-card p-5 border transition-all ${
+          lookupEmpty
+            ? isDark ? 'bg-slate-950 text-white border-rose-700/60' : 'bg-rose-50 text-slate-900 border-rose-300'
+            : lookupLow
+              ? isDark ? 'bg-slate-950 text-white border-amber-700/60' : 'bg-amber-50 text-slate-900 border-amber-300'
+              : isDark ? 'bg-slate-950 text-white border-slate-800' : 'bg-slate-200 text-slate-900 border-slate-300'
+        }`}>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('dashboard.autoTrackingCredits')}</p>
+            {(lookupEmpty || lookupLow) && (
+              <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                lookupEmpty
+                  ? isDark ? 'bg-rose-900/50 text-rose-300' : 'bg-rose-100 text-rose-700'
+                  : isDark ? 'bg-amber-900/50 text-amber-300' : 'bg-amber-100 text-amber-700'
+              }`}>
+                <AlertCircle size={10} />
+                {lookupEmpty ? 'Limit doldu' : 'Az qalıb'}
+              </span>
+            )}
+          </div>
+          <p className={`mt-2 text-3xl font-bold ${lookupEmpty ? 'text-rose-500' : lookupLow ? 'text-amber-500' : ''}`}>
             {lookupLeft === null || lookupLeft === undefined ? t('unlimited', { ns: 'common' }) : lookupLeft}
           </p>
           <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>{t('dashboard.amazonLookupsRemaining')}</p>
+          {(lookupEmpty || lookupLow) && (
+            <button
+              type="button"
+              onClick={onOpenUpgradeRequest}
+              className={`mt-3 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                lookupEmpty
+                  ? 'bg-rose-600 text-white hover:bg-rose-700'
+                  : 'bg-amber-500 text-white hover:bg-amber-600'
+              }`}
+            >
+              Planı Yüksəlt
+            </button>
+          )}
         </div>
-        <div
-          className={`glass-card p-5 border ${
-            isDark
-              ? 'bg-slate-950 text-white border-slate-800'
-              : 'bg-slate-200 text-slate-900 border-slate-300'
-          }`}
-        >
-          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('dashboard.checkilaAnalysisCredits')}</p>
-          <p className="mt-2 text-3xl font-bold">
+
+        {/* Market Analysis Credits */}
+        <div className={`glass-card p-5 border transition-all ${
+          marketEmpty
+            ? isDark ? 'bg-slate-950 text-white border-rose-700/60' : 'bg-rose-50 text-slate-900 border-rose-300'
+            : marketLow
+              ? isDark ? 'bg-slate-950 text-white border-amber-700/60' : 'bg-amber-50 text-slate-900 border-amber-300'
+              : isDark ? 'bg-slate-950 text-white border-slate-800' : 'bg-slate-200 text-slate-900 border-slate-300'
+        }`}>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('dashboard.checkilaAnalysisCredits')}</p>
+            {(marketEmpty || marketLow) && (
+              <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                marketEmpty
+                  ? isDark ? 'bg-rose-900/50 text-rose-300' : 'bg-rose-100 text-rose-700'
+                  : isDark ? 'bg-amber-900/50 text-amber-300' : 'bg-amber-100 text-amber-700'
+              }`}>
+                <AlertCircle size={10} />
+                {marketEmpty ? 'Limit doldu' : 'Az qalıb'}
+              </span>
+            )}
+          </div>
+          <p className={`mt-2 text-3xl font-bold ${marketEmpty ? 'text-rose-500' : marketLow ? 'text-amber-500' : ''}`}>
             {marketCreditsLeft === null || marketCreditsLeft === undefined ? t('unlimited', { ns: 'common' }) : marketCreditsLeft}
           </p>
           <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
-            Used {marketCreditsUsed ?? 0}
-            {marketCreditsLimit != null ? ` / ${marketCreditsLimit}` : ''}
+            Used {marketCreditsUsed ?? 0}{marketCreditsLimit != null ? ` / ${marketCreditsLimit}` : ''}
           </p>
           <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
             {t('dashboard.sellerSearchCost')}
           </p>
+          {(marketEmpty || marketLow) && (
+            <button
+              type="button"
+              onClick={onOpenUpgradeRequest}
+              className={`mt-3 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                marketEmpty
+                  ? 'bg-rose-600 text-white hover:bg-rose-700'
+                  : 'bg-amber-500 text-white hover:bg-amber-600'
+              }`}
+            >
+              Planı Yüksəlt
+            </button>
+          )}
         </div>
       </div>
 
@@ -1151,9 +1330,26 @@ export default function DashboardPage() {
               Live seller finances from order earnings, payouts, funds on hold, and transaction summaries.
             </p>
           </div>
-          <div className={`rounded-2xl border px-4 py-3 ${isDark ? 'border-slate-700 bg-slate-900/60' : 'border-slate-200 bg-slate-50'}`}>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Time range</p>
-            <p className="text-sm font-semibold">{financeData?.timeframe?.label || 'Last 12 months'}</p>
+          <div className="flex items-center gap-2">
+            <div className={`rounded-2xl border px-4 py-3 ${isDark ? 'border-slate-700 bg-slate-900/60' : 'border-slate-200 bg-slate-50'}`}>
+              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Time range</p>
+              <p className="text-sm font-semibold">{financeData?.timeframe?.label || 'Last 12 months'}</p>
+            </div>
+            {financeData && !financeData.financeAccessDenied && (
+              <button
+                type="button"
+                onClick={handleExportFinanceCSV}
+                title="Finance məlumatlarını CSV kimi yüklə"
+                className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                  isDark
+                    ? 'border-slate-700 bg-slate-900/60 text-slate-200 hover:bg-slate-900 hover:border-slate-600'
+                    : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-white hover:border-slate-300'
+                }`}
+              >
+                <Download size={15} />
+                <span className="hidden sm:inline">CSV</span>
+              </button>
+            )}
           </div>
         </div>
 
