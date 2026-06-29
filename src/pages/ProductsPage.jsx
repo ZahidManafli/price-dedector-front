@@ -12,7 +12,7 @@ import Alert from '../components/Alert';
 import { ProductFormModal } from './ProductFormPage';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
-import { calculateProfit, formatCurrency } from '../utils/helpers';
+import { buildAmazonProductUrl, calculateProfit, formatCurrency } from '../utils/helpers';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -186,10 +186,10 @@ export default function ProductsPage() {
       const fd = new FormData();
       fd.append('productName', (inlineValues.productName ?? product.productName) || '');
       fd.append('adRate', (inlineValues.adRate ?? product.adRate ?? 0).toString());
-      fd.append('amazonAsin', product.amazonAsin || '');
-      fd.append('ebayItemId', product.ebayItemId || '');
-      fd.append('currentAmazonPrice', product.currentAmazonPrice ?? '');
-      fd.append('currentEbayPrice', product.currentEbayPrice ?? '');
+      fd.append('amazonAsin', (inlineValues.amazonAsin ?? product.amazonAsin) || '');
+      fd.append('ebayItemId', (inlineValues.ebayItemId ?? product.ebayItemId) || '');
+      fd.append('currentAmazonPrice', (inlineValues.currentAmazonPrice ?? product.currentAmazonPrice ?? '').toString());
+      fd.append('currentEbayPrice', (inlineValues.currentEbayPrice ?? product.currentEbayPrice ?? '').toString());
       fd.append('userEmail', product.userEmail || '');
       await productAPI.update(product.id, fd);
       setProducts((prev) =>
@@ -199,6 +199,10 @@ export default function ProductsPage() {
                 ...p,
                 productName: (inlineValues.productName ?? p.productName) || p.productName,
                 adRate: inlineValues.adRate ?? p.adRate,
+                amazonAsin: (inlineValues.amazonAsin ?? p.amazonAsin) || p.amazonAsin,
+                ebayItemId: (inlineValues.ebayItemId ?? p.ebayItemId) || p.ebayItemId,
+                currentAmazonPrice: inlineValues.currentAmazonPrice ?? p.currentAmazonPrice,
+                currentEbayPrice: inlineValues.currentEbayPrice ?? p.currentEbayPrice,
               }
             : p
         )
@@ -554,15 +558,16 @@ export default function ProductsPage() {
         /* ── TABLE VIEW ── */
         <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px]">
+            <table className="w-full min-w-[1060px]">
               <thead>
                 <tr className={`border-b ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <th className={`${thCls} w-14`}></th>
+                  <th className={`${thCls} w-12`}></th>
                   <th className={thCls}>
                     <button onClick={() => handleTableSort('productName')} className="flex items-center gap-1.5 hover:opacity-80 transition">
                       Product <SortIcon active={sortKey === 'productName'} dir={sortDir} />
                     </button>
                   </th>
+                  <th className={thCls}>ASIN / eBay ID</th>
                   <th className={thCls}>Status</th>
                   <th className={thCls}>
                     <button onClick={() => handleTableSort('currentAmazonPrice')} className="flex items-center gap-1.5 hover:opacity-80 transition">
@@ -593,7 +598,9 @@ export default function ProductsPage() {
                   const status = getProductStatus(product);
                   const amazonTrend = priceTrendPct(product.currentAmazonPrice, product.oldAmazonPrice);
                   const ebayTrend = priceTrendPct(product.currentEbayPrice, product.oldEbayPrice);
-                  const profit = calculateProfit(product.currentEbayPrice, product.currentAmazonPrice, {
+                  const liveEbayPrice = isEditing ? (inlineValues.currentEbayPrice ?? product.currentEbayPrice) : product.currentEbayPrice;
+                  const liveAmazonPrice = isEditing ? (inlineValues.currentAmazonPrice ?? product.currentAmazonPrice) : product.currentAmazonPrice;
+                  const profit = calculateProfit(liveEbayPrice, liveAmazonPrice, {
                     taxRate: 0.06, fvfRate: 0.136,
                     adRate: (parseFloat(isEditing ? (inlineValues.adRate ?? product.adRate) : product.adRate) || 0) / 100,
                     fixedFee: 0.3,
@@ -626,8 +633,8 @@ export default function ProductsPage() {
                         )}
                       </td>
 
-                      {/* Product name + IDs */}
-                      <td className={`${tdCls} max-w-[240px]`}>
+                      {/* Product name */}
+                      <td className={`${tdCls} max-w-[200px]`}>
                         {isEditing ? (
                           <input
                             value={inlineValues.productName ?? product.productName}
@@ -636,14 +643,65 @@ export default function ProductsPage() {
                             autoFocus
                           />
                         ) : (
-                          <div>
-                            <p className="font-medium leading-tight truncate" title={product.productName}>
-                              {product.productName}
-                            </p>
-                            <p className={`text-[11px] mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                              {[product.amazonAsin && `ASIN: ${product.amazonAsin}`, product.ebayItemId && `eBay: ${product.ebayItemId}`]
-                                .filter(Boolean).join(' · ')}
-                            </p>
+                          <p className="font-medium leading-tight truncate" title={product.productName}>
+                            {product.productName}
+                          </p>
+                        )}
+                      </td>
+
+                      {/* ASIN / eBay ID with links */}
+                      <td className={`${tdCls} min-w-[160px]`}>
+                        {isEditing ? (
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1">
+                              <span className={`text-[10px] w-10 shrink-0 ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>ASIN</span>
+                              <input
+                                value={inlineValues.amazonAsin ?? product.amazonAsin ?? ''}
+                                onChange={(e) => setInlineValues((v) => ({ ...v, amazonAsin: e.target.value }))}
+                                placeholder="B0..."
+                                className={`${inputCls} text-xs`}
+                              />
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className={`text-[10px] w-10 shrink-0 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>eBay</span>
+                              <input
+                                value={inlineValues.ebayItemId ?? product.ebayItemId ?? ''}
+                                onChange={(e) => setInlineValues((v) => ({ ...v, ebayItemId: e.target.value }))}
+                                placeholder="Item ID"
+                                className={`${inputCls} text-xs`}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-1">
+                            {product.amazonAsin ? (
+                              <a
+                                href={buildAmazonProductUrl(product.amazonAsin)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`inline-flex items-center gap-1 text-[11px] font-mono hover:underline ${isDark ? 'text-orange-400' : 'text-orange-600'}`}
+                                title="Open on Amazon"
+                              >
+                                <ExternalLink size={10} />
+                                {product.amazonAsin}
+                              </a>
+                            ) : (
+                              <span className={`text-[11px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>—</span>
+                            )}
+                            {product.ebayItemId ? (
+                              <a
+                                href={`https://www.ebay.com/itm/${product.ebayItemId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`inline-flex items-center gap-1 text-[11px] font-mono hover:underline ${isDark ? 'text-blue-400' : 'text-blue-600'}`}
+                                title="Open on eBay"
+                              >
+                                <ExternalLink size={10} />
+                                {product.ebayItemId}
+                              </a>
+                            ) : (
+                              <span className={`text-[11px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>—</span>
+                            )}
                           </div>
                         )}
                       </td>
@@ -655,14 +713,42 @@ export default function ProductsPage() {
 
                       {/* Amazon price + trend */}
                       <td className={tdCls}>
-                        <p className="font-semibold tabular-nums">{formatCurrency(product.currentAmazonPrice)}</p>
-                        {amazonTrend !== null && <TrendBadge pct={amazonTrend} invert />}
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            min="0" step="0.01"
+                            value={inlineValues.currentAmazonPrice ?? product.currentAmazonPrice ?? ''}
+                            onChange={(e) => setInlineValues((v) => ({ ...v, currentAmazonPrice: e.target.value }))}
+                            className={`w-24 rounded-lg border px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-orange-500/40 ${
+                              isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+                            }`}
+                          />
+                        ) : (
+                          <>
+                            <p className="font-semibold tabular-nums">{formatCurrency(product.currentAmazonPrice)}</p>
+                            {amazonTrend !== null && <TrendBadge pct={amazonTrend} invert />}
+                          </>
+                        )}
                       </td>
 
                       {/* eBay price + trend */}
                       <td className={tdCls}>
-                        <p className="font-semibold tabular-nums">{formatCurrency(product.currentEbayPrice)}</p>
-                        {ebayTrend !== null && <TrendBadge pct={ebayTrend} />}
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            min="0" step="0.01"
+                            value={inlineValues.currentEbayPrice ?? product.currentEbayPrice ?? ''}
+                            onChange={(e) => setInlineValues((v) => ({ ...v, currentEbayPrice: e.target.value }))}
+                            className={`w-24 rounded-lg border px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-blue-500/40 ${
+                              isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+                            }`}
+                          />
+                        ) : (
+                          <>
+                            <p className="font-semibold tabular-nums">{formatCurrency(product.currentEbayPrice)}</p>
+                            {ebayTrend !== null && <TrendBadge pct={ebayTrend} />}
+                          </>
+                        )}
                       </td>
 
                       {/* Profit + Ad Rate edit */}
@@ -728,7 +814,17 @@ export default function ProductsPage() {
                           ) : (
                             <>
                               <button
-                                onClick={() => { setInlineEditId(product.id); setInlineValues({ productName: product.productName, adRate: product.adRate ?? 0 }); }}
+                                onClick={() => {
+                                  setInlineEditId(product.id);
+                                  setInlineValues({
+                                    productName: product.productName,
+                                    adRate: product.adRate ?? 0,
+                                    amazonAsin: product.amazonAsin ?? '',
+                                    ebayItemId: product.ebayItemId ?? '',
+                                    currentAmazonPrice: product.currentAmazonPrice ?? '',
+                                    currentEbayPrice: product.currentEbayPrice ?? '',
+                                  });
+                                }}
                                 title="Quick edit"
                                 className={`h-8 w-8 rounded-lg border flex items-center justify-center transition ${
                                   isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
