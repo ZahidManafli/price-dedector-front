@@ -1120,7 +1120,7 @@ export default function OrdersPage() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="inline-flex items-center gap-2">
-                            {true && listingId && (
+                            {false && listingId && (
                               <button
                                 type="button"
                                 onClick={() => setMessagePanelOrder(order)}
