@@ -146,9 +146,12 @@ export const ebayAPI = {
     api.get(`/ebay/listings/${encodeURIComponent(listingId)}/feedback`, { params }),
   respondToListingFeedback: (listingId, payload) =>
     api.post(`/ebay/listings/${encodeURIComponent(listingId)}/feedback/respond`, payload),
-  getItemMessages: (itemId, params = {}) =>
-    api.get('/ebay/messages', { params: { itemId, ...params } }),
-  sendItemMessage: (payload) => api.post('/ebay/messages', payload),
+  getOrderConversations: (params = {}) =>
+    api.get('/ebay/messages', { params }),
+  getConversationMessages: (conversationId, params = {}) =>
+    api.get(`/ebay/messages/${encodeURIComponent(conversationId)}`, { params }),
+  sendMessage: (payload) => api.post('/ebay/messages', payload),
+  updateConversation: (payload) => api.post('/ebay/messages/update', payload),
   createListingDraft: (payload) => api.post('/ebay/listing/draft', payload),
   updateListingDraft: (draftId, payload) => api.patch(`/ebay/listing/draft/${encodeURIComponent(draftId)}`, payload),
   submitListingDraft: (draftId) => api.post('/ebay/listing/submit', { draftId }),
