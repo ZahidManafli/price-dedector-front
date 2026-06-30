@@ -4,7 +4,8 @@ import { ebayAPI, productAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
-import { ArrowDownUp, Loader2, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, CreditCard, Pencil, TrendingUp } from 'lucide-react';
+import { ArrowDownUp, Loader2, MessageSquare, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, CreditCard, Pencil, TrendingUp } from 'lucide-react';
+import OrderMessageSidebar from '../components/OrderMessageSidebar';
 import { profitAPI } from '../services/api';
 
 const ORDERS_FILTER_STORAGE_KEY = 'checkila.ordersPage.filters.v1';
@@ -598,6 +599,9 @@ export default function OrdersPage() {
   const [sortDir, setSortDir] = useState(() => String(storedFilters.sortDir || 'desc'));
   const ordersRequestRef = useRef(0);
 
+  // ── Message Panel state ───────────────────────────────────────────────────
+  const [messagePanelOrder, setMessagePanelOrder] = useState(null);
+
   const listingImageById = useMemo(() => {
     const map = new Map();
     (listingCache || []).forEach((listing) => {
@@ -1115,17 +1119,30 @@ export default function OrdersPage() {
                           />
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              navigate(`/orders/${encodeURIComponent(String(id))}`, {
-                                state: { order },
-                              })
-                            }
-                            className={`inline-flex items-center gap-1 ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`}
-                          >
-                            {t('ordersPage.table.details')}
-                          </button>
+                          <div className="inline-flex items-center gap-2">
+                            {listingId && (
+                              <button
+                                type="button"
+                                onClick={() => setMessagePanelOrder(order)}
+                                className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors ${isDark ? 'border-indigo-800/60 text-indigo-300 hover:bg-indigo-950/40' : 'border-indigo-200 text-indigo-700 hover:bg-indigo-50'}`}
+                                title="Open message panel"
+                              >
+                                <MessageSquare size={12} />
+                                Message Panel
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                navigate(`/orders/${encodeURIComponent(String(id))}`, {
+                                  state: { order },
+                                })
+                              }
+                              className={`inline-flex items-center gap-1 ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`}
+                            >
+                              {t('ordersPage.table.details')}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     </React.Fragment>
@@ -1166,6 +1183,13 @@ export default function OrdersPage() {
           </div>
         </div>
         </>
+      )}
+
+      {messagePanelOrder && (
+        <OrderMessageSidebar
+          order={messagePanelOrder}
+          onClose={() => setMessagePanelOrder(null)}
+        />
       )}
     </div>
   );
