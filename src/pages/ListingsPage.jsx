@@ -4,9 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { ebayAPI } from '../services/api';
 import Alert from '../components/Alert';
 import {
-  ArrowDownUp, Check, Loader2, Mail, Package, Link2,
+  ArrowDownUp, Check, Loader2, Mail, MessageSquare, Package, Link2,
   Pencil, Search, SlidersHorizontal, Trash2, AlertTriangle, X,
 } from 'lucide-react';
+import FeedbackSidebar from '../components/FeedbackSidebar';
 import { useTheme } from '../context/ThemeContext';
 
 export default function ListingsPage() {
@@ -38,6 +39,9 @@ export default function ListingsPage() {
   const [inlineEditId, setInlineEditId] = useState(null);
   const [inlineValues, setInlineValues] = useState({});
   const [savingInline, setSavingInline] = useState(false);
+
+  // ── Feedback sidebar state ────────────────────────────────────────────────
+  const [feedbackListing, setFeedbackListing] = useState(null);
 
   // ── Auto stock state ──────────────────────────────────────────────────────
   // autoStockMap: { [ebayListingId]: rule | null }
@@ -831,6 +835,17 @@ export default function ListingsPage() {
                                   >
                                     {t('listingsPage.details')}
                                   </button>
+                                  {ebayListingId && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setFeedbackListing({ offer, ebayListingId })}
+                                      className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors ${isDark ? 'border-blue-800/60 text-blue-300 hover:bg-blue-950/40' : 'border-blue-200 text-blue-700 hover:bg-blue-50'}`}
+                                      title="View feedback"
+                                    >
+                                      <MessageSquare size={12} />
+                                      Feedback
+                                    </button>
+                                  )}
                                   <button
                                     type="button"
                                     onClick={() => handleDeleteListing({ ebayListingId, internalSku, offerId })}
@@ -876,6 +891,14 @@ export default function ListingsPage() {
             </div>
           </div>
         </>
+      )}
+
+      {feedbackListing && (
+        <FeedbackSidebar
+          listing={feedbackListing.offer}
+          ebayListingId={feedbackListing.ebayListingId}
+          onClose={() => setFeedbackListing(null)}
+        />
       )}
     </div>
   );
