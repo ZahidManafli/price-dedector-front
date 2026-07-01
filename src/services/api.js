@@ -327,7 +327,8 @@ export const partnerAPI = {
 };
 
 export const zikAPI = {
-  getMarketInsights: () => api.get('/zik/market-insights'),
+  requestMarketInsights: () => api.get('/zik/market-insights'),
+  pollJob: (jobId) => api.get(`/ebay/extension-scrape/${encodeURIComponent(jobId)}`),
 };
 
 export const learningAPI = {

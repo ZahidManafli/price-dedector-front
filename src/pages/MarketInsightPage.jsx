@@ -86,8 +86,23 @@ export default function MarketInsightPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await zikAPI.getMarketInsights();
-      setData(res.data);
+      const jobRes = await zikAPI.requestMarketInsights();
+      const jobId = jobRes.data?.jobId;
+      if (!jobId) throw new Error('Failed to create market insights job');
+
+      const TIMEOUT_MS = 45_000;
+      const POLL_MS = 2_000;
+      const deadline = Date.now() + TIMEOUT_MS;
+
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, POLL_MS));
+        const pollRes = await zikAPI.pollJob(jobId);
+        const { status, data: jobData, error: jobError } = pollRes.data;
+        if (status === 'done') { setData(jobData); return; }
+        if (status === 'error') throw new Error(jobError || 'Market insights job failed');
+      }
+
+      throw new Error('Timed out — make sure the Checkila extension is running and connected.');
     } catch (err) {
       setError(
         err?.response?.data?.error ||
