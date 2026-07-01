@@ -124,6 +124,7 @@ export const ebayAPI = {
     api.patch(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}/name`, { connectionName }),
   disconnectAccount: (ebayAccountId) => api.patch(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}/disconnect`),
   deleteAccount: (ebayAccountId) => api.delete(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}`),
+  refreshAccountToken: (ebayAccountId) => api.post(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}/refresh-token`),
   disconnect: () => api.delete('/ebay/disconnect'),
   getListings: (offset = 0, limit = 25, options = {}) =>
     api.get('/ebay/listings', {

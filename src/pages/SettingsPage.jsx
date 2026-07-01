@@ -271,6 +271,24 @@ export default function SettingsPage() {
     }
   };
 
+  const handleRefreshConnection = async (ebayAccountId) => {
+    try {
+      setEbayLoading(true);
+      await ebayAPI.refreshAccountToken(ebayAccountId);
+      const ebayRes = await ebayAPI.getStatus();
+      setEbayStatus(ebayRes.data || {});
+      setAlert({ type: 'success', message: 'Connection refreshed successfully' });
+      window.dispatchEvent(new Event('ebay:updated'));
+    } catch (error) {
+      setAlert({
+        type: 'error',
+        message: error.response?.data?.error || 'Failed to refresh connection',
+      });
+    } finally {
+      setEbayLoading(false);
+    }
+  };
+
   const handleSaveAccountName = async (ebayAccountId) => {
     const connectionName = String(nameDrafts[ebayAccountId] || '').trim();
     if (!connectionName) {
@@ -655,6 +673,19 @@ export default function SettingsPage() {
                               </span>
                             )}
                             {connected && <CheckCircle2 size={16} className={isDark ? 'text-emerald-300' : 'text-emerald-600'} />}
+                            <button
+                              type="button"
+                              onClick={() => handleRefreshConnection(acc.id)}
+                              disabled={ebayLoading || !connected}
+                              className={`text-xs font-semibold rounded-md px-2 py-1 border ${
+                                isDark
+                                  ? 'border-blue-700 text-blue-200 hover:bg-blue-900/30 disabled:opacity-40'
+                                  : 'border-blue-200 text-blue-700 hover:bg-blue-50 disabled:opacity-40'
+                              }`}
+                              title="Refresh token and permissions"
+                            >
+                              Refresh Connection
+                            </button>
                             <button
                               type="button"
                               onClick={() => handleDeleteEbayAccount(acc.id)}
