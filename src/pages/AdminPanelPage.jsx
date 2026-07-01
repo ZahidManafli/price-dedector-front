@@ -954,6 +954,7 @@ export default function AdminPanelPage() {
                       <input type="checkbox" checked={allFilteredSelected} onChange={toggleSelectAllFiltered} className="rounded" />
                     </th>
                     <th className="px-4 py-3 text-left">User</th>
+                    <th className="px-4 py-3 text-left">Phone</th>
                     <th className="px-4 py-3 text-left">Plan</th>
                     <th className="px-4 py-3 text-left">Expires</th>
                     <th className="px-4 py-3 text-left">Joined</th>
@@ -964,7 +965,7 @@ export default function AdminPanelPage() {
                 <tbody className={isDark ? 'divide-y divide-slate-700/60' : 'divide-y divide-slate-100'}>
                   {filteredUsers.length === 0 && (
                     <tr>
-                      <td colSpan={7} className={`px-4 py-12 text-center text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      <td colSpan={8} className={`px-4 py-12 text-center text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                         No users match the current filters.
                       </td>
                     </tr>
@@ -994,6 +995,13 @@ export default function AdminPanelPage() {
                               <div className={`text-xs truncate max-w-[200px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{u.email}</div>
                             </div>
                           </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {u.phoneNumber ? (
+                            <span className={`text-sm font-mono ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{u.phoneNumber}</span>
+                          ) : (
+                            <span className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           {u.selectedPlanName ? (
