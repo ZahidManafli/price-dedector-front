@@ -6,9 +6,19 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const LOOKAHEAD_DAYS = 20;
 
 const pad2 = (n) => String(n).padStart(2, '0');
 const toISODate = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
+const addDaysToISODate = (isoDate, days) => {
+  const d = new Date(`${isoDate}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return toISODate(d.getFullYear(), d.getMonth(), d.getDate());
+};
+const formatDisplayDate = (isoDate) => {
+  const d = new Date(`${isoDate}T00:00:00`);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
 
 function buildMonthGrid(year, month) {
   const firstDay = new Date(year, month, 1).getDay();
@@ -43,7 +53,9 @@ function SkeletonCalendar() {
 
 export default function UpcomingEventsCalendar({ events, loading, error, onRetry }) {
   const today = useMemo(() => new Date(), []);
+  const todayKey = useMemo(() => toISODate(today.getFullYear(), today.getMonth(), today.getDate()), [today]);
   const [cursor, setCursor] = useState({ year: today.getFullYear(), month: today.getMonth() });
+  const [selectedDate, setSelectedDate] = useState(todayKey);
 
   const eventsByDate = useMemo(() => {
     const map = new Map();
@@ -54,29 +66,35 @@ export default function UpcomingEventsCalendar({ events, loading, error, onRetry
     return map;
   }, [events]);
 
-  const nextEvent = useMemo(() => {
-    const todayKey = toISODate(today.getFullYear(), today.getMonth(), today.getDate());
-    const upcoming = (events || [])
-      .filter((ev) => String(ev?.eventDate || '').slice(0, 10) >= todayKey)
-      .sort((a, b) => String(a.eventDate).localeCompare(String(b.eventDate)));
-    return upcoming[0] || null;
-  }, [events, today]);
+  // Nearest event within [selectedDate, selectedDate + LOOKAHEAD_DAYS] — the
+  // window the user is asking about by clicking a day on the calendar.
+  const rangeEndKey = useMemo(() => addDaysToISODate(selectedDate, LOOKAHEAD_DAYS), [selectedDate]);
 
-  const daysUntilNextEvent = useMemo(() => {
-    if (!nextEvent?.eventDate) return null;
-    const target = new Date(`${nextEvent.eventDate}T00:00:00`);
-    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const nearestEvent = useMemo(() => {
+    const inRange = (events || [])
+      .filter((ev) => {
+        const key = String(ev?.eventDate || '').slice(0, 10);
+        return key && key >= selectedDate && key <= rangeEndKey;
+      })
+      .sort((a, b) => String(a.eventDate).localeCompare(String(b.eventDate)));
+    return inRange[0] || null;
+  }, [events, selectedDate, rangeEndKey]);
+
+  const daysUntilNearestEvent = useMemo(() => {
+    if (!nearestEvent?.eventDate) return null;
+    const target = new Date(`${nearestEvent.eventDate}T00:00:00`);
+    const start = new Date(`${selectedDate}T00:00:00`);
     return Math.round((target - start) / 86_400_000);
-  }, [nextEvent, today]);
+  }, [nearestEvent, selectedDate]);
 
   const goPrevMonth = () => setCursor((c) => (c.month === 0 ? { year: c.year - 1, month: 11 } : { year: c.year, month: c.month - 1 }));
   const goNextMonth = () => setCursor((c) => (c.month === 11 ? { year: c.year + 1, month: 0 } : { year: c.year, month: c.month + 1 }));
 
   const cells = useMemo(() => buildMonthGrid(cursor.year, cursor.month), [cursor]);
-  const todayKey = toISODate(today.getFullYear(), today.getMonth(), today.getDate());
 
-  const isEventText = nextEvent?.values === 1;
-  const keywords = !isEventText ? (nextEvent?.trendingNiche || []).filter(Boolean) : [];
+  const isEventText = nearestEvent?.values === 1;
+  const keywords = !isEventText ? (nearestEvent?.trendingNiche || []).filter(Boolean) : [];
+  const isTodaySelected = selectedDate === todayKey;
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
@@ -134,63 +152,79 @@ export default function UpcomingEventsCalendar({ events, loading, error, onRetry
               {cells.map((cell, i) => {
                 const dateKey = cell.inMonth ? toISODate(cursor.year, cursor.month, cell.day) : null;
                 const isToday = dateKey === todayKey;
+                const isSelected = !!dateKey && dateKey === selectedDate;
                 const hasEvent = dateKey ? eventsByDate.has(dateKey) : false;
                 return (
-                  <div
+                  <button
                     key={i}
+                    type="button"
+                    disabled={!cell.inMonth}
+                    onClick={() => dateKey && setSelectedDate(dateKey)}
                     title={hasEvent ? eventsByDate.get(dateKey)?.eventName : undefined}
-                    className={`relative aspect-square flex items-center justify-center rounded-lg text-xs ${
+                    className={`relative aspect-square flex items-center justify-center rounded-lg text-xs transition ${
                       !cell.inMonth
-                        ? 'text-slate-300 dark:text-slate-700'
-                        : isToday
+                        ? 'text-slate-300 dark:text-slate-700 cursor-default'
+                        : isSelected
                         ? 'bg-blue-600 text-white font-bold'
+                        : isToday
+                        ? 'ring-2 ring-blue-400 text-blue-600 dark:text-blue-400 font-bold'
                         : hasEvent
-                        ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-semibold ring-1 ring-rose-200 dark:ring-rose-800'
-                        : 'text-slate-600 dark:text-slate-300'
+                        ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-semibold ring-1 ring-rose-200 dark:ring-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/30'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >
                     {cell.day}
-                    {hasEvent && !isToday && (
+                    {hasEvent && !isSelected && (
                       <span className="absolute bottom-0 right-0 text-[8px]">🇺🇸</span>
                     )}
-                  </div>
+                  </button>
                 );
               })}
             </div>
           </div>
 
-          {nextEvent && (
-            <div className="px-4 pb-4 pt-3 mt-2 border-t border-slate-100 dark:border-slate-800">
-              <p className="text-sm font-semibold text-teal-500 dark:text-teal-400">
-                {daysUntilNextEvent === 0
-                  ? `Today: ${nextEvent.eventName}`
-                  : `${daysUntilNextEvent} day${daysUntilNextEvent === 1 ? '' : 's'} until ${nextEvent.eventName}`}
-              </p>
+          <div className="px-4 pb-4 pt-3 mt-2 border-t border-slate-100 dark:border-slate-800">
+            <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 mb-1.5">
+              {isTodaySelected ? 'Today' : formatDisplayDate(selectedDate)} + next {LOOKAHEAD_DAYS} days
+            </p>
 
-              {isEventText ? (
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                  {String(nextEvent.trendingNiche?.[0] || '').replace(/\\n/g, ' ').replace(/\\r/g, '')}
+            {!nearestEvent ? (
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                No upcoming special day for the next {LOOKAHEAD_DAYS} days
+              </p>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-teal-500 dark:text-teal-400">
+                  {daysUntilNearestEvent === 0
+                    ? `Today: ${nearestEvent.eventName}`
+                    : `${daysUntilNearestEvent} day${daysUntilNearestEvent === 1 ? '' : 's'} until ${nearestEvent.eventName}`}
                 </p>
-              ) : keywords.length > 0 ? (
-                <>
-                  <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-3 mb-2">
-                    Trending Keywords for {nextEvent.eventName}
+
+                {isEventText ? (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                    {String(nearestEvent.trendingNiche?.[0] || '').replace(/\\n/g, ' ').replace(/\\r/g, '')}
                   </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {keywords.slice(0, 8).map((kw, i) => (
-                      <span
-                        key={i}
-                        className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                      >
-                        <TrendingUp size={10} className="text-emerald-500" />
-                        {kw}
-                      </span>
-                    ))}
-                  </div>
-                </>
-              ) : null}
-            </div>
-          )}
+                ) : keywords.length > 0 ? (
+                  <>
+                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-3 mb-2">
+                      Trending Keywords for {nearestEvent.eventName}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {keywords.slice(0, 8).map((kw, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                        >
+                          <TrendingUp size={10} className="text-emerald-500" />
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                ) : null}
+              </>
+            )}
+          </div>
         </>
       )}
     </div>
