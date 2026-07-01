@@ -160,22 +160,28 @@ export default function MarketInsightPage() {
   useEffect(() => { loadData(); }, [loadData]);
   useEffect(() => { loadEvents(); }, [loadEvents]);
 
+  // Hands the search off to the Market Analysis page (same openSearch=1 query
+  // contract it already reads on mount — see MarketAnalysisPage.jsx) instead of
+  // linking straight out to ZIK/eBay, so results stay inside our own app.
   const openSearch = (type, value) => {
-    let url;
-    if (type === 'keyword') {
-      url = fastMode
-        ? `https://app.zikanalytics.com/ebay/product-research?keyword=${encodeURIComponent(value)}`
-        : `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(value)}`;
+    let query;
+    if (type === 'keyword' || type === 'product') {
+      const q = type === 'keyword' ? String(value || '').trim() : String(value?.title || '').trim();
+      if (!q) return;
+      query = new URLSearchParams({
+        openSearch: '1',
+        q,
+        condition: 'ALL',
+        limit: '20',
+        offset: '0',
+        type: fastMode ? 'fast' : 'slow',
+      });
     } else if (type === 'seller') {
-      url = fastMode
-        ? `https://app.zikanalytics.com/ebay/competitor-research?seller=${encodeURIComponent(value)}`
-        : `https://www.ebay.com/usr/${encodeURIComponent(value)}`;
-    } else if (type === 'product') {
-      url = fastMode
-        ? `https://app.zikanalytics.com/ebay/product-research?keyword=${encodeURIComponent(value.title)}`
-        : `https://www.ebay.com/itm/${value.itemId}`;
+      const seller = String(value || '').trim();
+      if (!seller) return;
+      query = new URLSearchParams({ openSearch: '1', sellerUsername: seller, offset: '0' });
     }
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    if (query) window.open(`/market-analysis?${query.toString()}`, '_blank', 'noopener,noreferrer');
   };
 
   const niches = data?.niches || [];
