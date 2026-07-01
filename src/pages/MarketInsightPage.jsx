@@ -3,6 +3,11 @@ import {
   RefreshCw, Zap, Globe, Search, Flame, Tag, Users, ShoppingBag, AlertCircle,
 } from 'lucide-react';
 import { zikAPI } from '../services/api';
+import AmazonFinderSidebar from '../components/AmazonFinderSidebar';
+import UpcomingEventsCalendar from '../components/UpcomingEventsCalendar';
+import { countryCodeToFlagEmoji } from '../utils/helpers';
+
+const AMAZON_ICON_URL = 'https://www.amazon.com/favicon.ico';
 
 const fmtCurrency = (n) => {
   if (n == null) return '—';
@@ -42,7 +47,7 @@ function FireBadge() {
   );
 }
 
-function Panel({ title, subtitle, icon, topColor, count, loading, children }) {
+function Panel({ title, subtitle, icon, topColor, count, loading, children, maxHeight = 340 }) {
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
       <div className={`h-0.5 w-full ${topColor}`} />
@@ -60,7 +65,7 @@ function Panel({ title, subtitle, icon, topColor, count, loading, children }) {
           </span>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto" style={{ maxHeight: 580 }}>
+      <div className="flex-1 overflow-y-auto" style={{ maxHeight }}>
         {children}
       </div>
     </div>
@@ -81,6 +86,12 @@ export default function MarketInsightPage() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [events, setEvents] = useState([]);
+  const [eventsError, setEventsError] = useState(null);
+
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -114,7 +125,40 @@ export default function MarketInsightPage() {
     }
   }, []);
 
+  const loadEvents = useCallback(async () => {
+    setEventsLoading(true);
+    setEventsError(null);
+    try {
+      const jobRes = await zikAPI.requestUpcomingEvents('US');
+      const jobId = jobRes.data?.jobId;
+      if (!jobId) throw new Error('Failed to create upcoming events job');
+
+      const TIMEOUT_MS = 45_000;
+      const POLL_MS = 2_000;
+      const deadline = Date.now() + TIMEOUT_MS;
+
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, POLL_MS));
+        const pollRes = await zikAPI.pollJob(jobId);
+        const { status, data: jobData, error: jobError } = pollRes.data;
+        if (status === 'done') { setEvents(Array.isArray(jobData) ? jobData : (jobData?.events || [])); return; }
+        if (status === 'error') throw new Error(jobError || 'Upcoming events job failed');
+      }
+
+      throw new Error('Timed out — make sure the Checkila extension is running and connected.');
+    } catch (err) {
+      setEventsError(
+        err?.response?.data?.error ||
+        err?.message ||
+        'Failed to load upcoming events'
+      );
+    } finally {
+      setEventsLoading(false);
+    }
+  }, []);
+
   useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { loadEvents(); }, [loadEvents]);
 
   const openSearch = (type, value) => {
     let url;
@@ -179,7 +223,7 @@ export default function MarketInsightPage() {
           </div>
 
           <button
-            onClick={loadData}
+            onClick={() => { loadData(); loadEvents(); }}
             disabled={loading}
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition disabled:opacity-50"
           >
@@ -197,178 +241,219 @@ export default function MarketInsightPage() {
         </div>
       )}
 
-      {/* 3-panel grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* ─── Keywords / Niches ─── */}
-        <Panel
-          title="Trending Keywords"
-          subtitle="Top eBay niche keywords this week"
-          icon={<Tag size={15} />}
-          topColor="bg-gradient-to-r from-blue-500 to-indigo-500"
-          count={niches.length || undefined}
-          loading={loading}
-        >
-          {loading ? (
-            Array.from({ length: 10 }).map((_, i) => <SkeletonRow key={i} />)
-          ) : niches.length === 0 ? (
-            <EmptyPanel />
-          ) : (
-            niches.map((item, i) => (
-              <div
-                key={i}
-                className="group flex items-center gap-2 px-3 py-2.5 border-b border-slate-50 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
-              >
-                <span className="text-xs text-slate-400 w-5 text-right flex-shrink-0 font-mono">{i + 1}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate leading-tight">
-                    {item.keywords}
-                  </p>
-                  <p className="text-xs text-emerald-500 font-semibold mt-0.5">
-                    {fmtCurrency(item.salesEarning)} revenue
-                  </p>
-                </div>
-                {item.isFire && <FireBadge />}
-                <button
-                  onClick={() => openSearch('keyword', item.keywords)}
-                  className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition opacity-0 group-hover:opacity-100"
+      {/* Dashboard grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* ─── Left column: Niches + Dropshippers ─── */}
+        <div className="lg:col-span-3 flex flex-col gap-4">
+          <Panel
+            title="Trending eBay Niches"
+            subtitle="Top eBay niche keywords this week"
+            icon={<Tag size={15} />}
+            topColor="bg-gradient-to-r from-blue-500 to-indigo-500"
+            count={niches.length || undefined}
+            loading={loading}
+            maxHeight={300}
+          >
+            {loading ? (
+              Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
+            ) : niches.length === 0 ? (
+              <EmptyPanel />
+            ) : (
+              niches.map((item, i) => (
+                <div
+                  key={i}
+                  className="group flex items-center gap-2 px-3 py-2.5 border-b border-slate-50 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
                 >
-                  <Search size={11} />
-                  Search
-                </button>
-              </div>
-            ))
-          )}
-        </Panel>
-
-        {/* ─── Trending Products ─── */}
-        <Panel
-          title="Trending Products"
-          subtitle="Hot eBay dropshipping products"
-          icon={<ShoppingBag size={15} />}
-          topColor="bg-gradient-to-r from-violet-500 to-purple-500"
-          count={products.length || undefined}
-          loading={loading}
-        >
-          {loading ? (
-            Array.from({ length: 10 }).map((_, i) => <SkeletonRow key={i} hasImage />)
-          ) : products.length === 0 ? (
-            <EmptyPanel />
-          ) : (
-            products.map((item, i) => (
-              <div
-                key={i}
-                className="group flex items-center gap-2.5 px-3 py-2.5 border-b border-slate-50 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
-              >
-                <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 border border-slate-100 dark:border-slate-700">
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <ShoppingBag size={14} className="text-slate-400" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-slate-800 dark:text-slate-100 truncate leading-snug">
-                    {item.title}
-                  </p>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    {item.price != null && (
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
-                        ${Number(item.price).toFixed(2)}
-                      </span>
-                    )}
-                    {item.profit != null && (
-                      <span
-                        className={`text-xs font-semibold ${
-                          item.profit >= 0 ? 'text-emerald-500' : 'text-red-400'
-                        }`}
-                      >
-                        {item.profit >= 0 ? '+' : ''}${Number(item.profit).toFixed(2)} profit
-                      </span>
-                    )}
-                    {item.totalSold != null && (
-                      <span className="text-xs text-slate-400">{fmtNum(item.totalSold)} sold</span>
-                    )}
+                  <span className="text-xs text-slate-400 w-5 text-right flex-shrink-0 font-mono">{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate leading-tight">
+                      {item.keywords}
+                    </p>
+                    <p className="text-xs text-emerald-500 font-semibold mt-0.5">
+                      {fmtCurrency(item.salesEarning)} revenue
+                    </p>
                   </div>
-                </div>
-                <div className="flex flex-col items-end gap-1 flex-shrink-0">
                   {item.isFire && <FireBadge />}
                   <button
-                    onClick={() => openSearch('product', { title: item.title, itemId: item.itemId })}
-                    className="flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/50 transition opacity-0 group-hover:opacity-100"
+                    onClick={() => openSearch('keyword', item.keywords)}
+                    className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition opacity-0 group-hover:opacity-100"
                   >
                     <Search size={11} />
                     Search
                   </button>
                 </div>
-              </div>
-            ))
-          )}
-        </Panel>
+              ))
+            )}
+          </Panel>
 
-        {/* ─── Trending Sellers ─── */}
-        <Panel
-          title="Trending Sellers"
-          subtitle="Active eBay dropshippers this week"
-          icon={<Users size={15} />}
-          topColor="bg-gradient-to-r from-cyan-500 to-teal-500"
-          count={sellers.length || undefined}
-          loading={loading}
-        >
-          {loading ? (
-            Array.from({ length: 10 }).map((_, i) => <SkeletonRow key={i} />)
-          ) : sellers.length === 0 ? (
-            <EmptyPanel />
-          ) : (
-            sellers.map((item, i) => (
-              <div
-                key={i}
-                className="group flex items-center gap-2.5 px-3 py-2.5 border-b border-slate-50 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
-              >
-                <div className="w-8 h-8 rounded-full bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">
-                    {(item.sellerName?.[0] || '?').toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate leading-tight">
-                      {item.sellerName}
-                    </p>
-                    {item.sellerLocation && (
-                      <span className="text-xs text-slate-400 flex-shrink-0 bg-slate-100 dark:bg-slate-800 px-1.5 rounded-full">
-                        {item.sellerLocation}
+          <Panel
+            title="Trending Dropshippers"
+            subtitle="Active eBay dropshippers this week"
+            icon={<Users size={15} />}
+            topColor="bg-gradient-to-r from-cyan-500 to-teal-500"
+            count={sellers.length || undefined}
+            loading={loading}
+            maxHeight={300}
+          >
+            {loading ? (
+              Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
+            ) : sellers.length === 0 ? (
+              <EmptyPanel />
+            ) : (
+              sellers.map((item, i) => (
+                <div
+                  key={i}
+                  className="group flex items-center gap-2.5 px-3 py-2.5 border-b border-slate-50 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
+                >
+                  <div className="w-8 h-8 rounded-full bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">
+                      {(item.sellerName?.[0] || '?').toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate leading-tight">
+                        {item.sellerName}
+                      </p>
+                      {item.sellerLocation && (
+                        <span className="text-xs flex-shrink-0" title={item.sellerLocation}>
+                          {countryCodeToFlagEmoji(item.sellerLocation) || item.sellerLocation}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-slate-400">
+                        ⭐ {fmtNum(item.feedback)} fb
                       </span>
+                      <span className="text-xs text-emerald-500 font-semibold">
+                        {fmtNum(item.sales)} sales
+                      </span>
+                    </div>
+                  </div>
+                  {item.isFire && <FireBadge />}
+                  <button
+                    onClick={() => openSearch('seller', item.sellerName)}
+                    className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition opacity-0 group-hover:opacity-100"
+                  >
+                    <Search size={11} />
+                    Search
+                  </button>
+                </div>
+              ))
+            )}
+          </Panel>
+        </div>
+
+        {/* ─── Middle column: Trending Products ─── */}
+        <div className="lg:col-span-6">
+          <Panel
+            title="Trending eBay Products"
+            subtitle="Hot eBay dropshipping products, last 7 days"
+            icon={<ShoppingBag size={15} />}
+            topColor="bg-gradient-to-r from-violet-500 to-purple-500"
+            count={products.length || undefined}
+            loading={loading}
+            maxHeight={720}
+          >
+            {loading ? (
+              Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} hasImage />)
+            ) : products.length === 0 ? (
+              <EmptyPanel />
+            ) : (
+              products.map((item, i) => (
+                <div
+                  key={i}
+                  className="group flex items-center gap-3 px-3 py-3 border-b border-slate-50 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
+                >
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 border border-slate-100 dark:border-slate-700">
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ShoppingBag size={14} className="text-slate-400" />
+                      </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs text-slate-400">
-                      ⭐ {fmtNum(item.feedback)} fb
-                    </span>
-                    <span className="text-xs text-emerald-500 font-semibold">
-                      {fmtNum(item.sales)} sales
-                    </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-slate-800 dark:text-slate-100 truncate leading-snug">
+                      {item.title}
+                    </p>
+                    <div className="flex items-center gap-3 mt-1 flex-wrap">
+                      {item.sales != null && (
+                        <span className="text-xs text-slate-400">
+                          <span className="font-semibold text-slate-600 dark:text-slate-300">{fmtNum(item.sales)}</span> sales
+                        </span>
+                      )}
+                      {item.totalSold != null && (
+                        <span className="text-xs text-slate-400">
+                          <span className="font-semibold text-slate-600 dark:text-slate-300">{fmtNum(item.totalSold)}</span> sold
+                        </span>
+                      )}
+                      {item.price != null && (
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          ${Number(item.price).toFixed(2)}
+                        </span>
+                      )}
+                      {item.profit != null && (
+                        <span
+                          className={`text-xs font-semibold ${
+                            item.profit >= 0 ? 'text-emerald-500' : 'text-red-400'
+                          }`}
+                        >
+                          {item.profit >= 0 ? '+' : ''}${Number(item.profit).toFixed(2)} profit
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    {item.isFire && <FireBadge />}
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                      {item.asin && item.itemId && (
+                        <button
+                          onClick={() => setSelectedProduct(item)}
+                          className="flex items-center justify-center p-1.5 rounded-lg bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/50 transition"
+                          title="Find this product on Amazon"
+                        >
+                          <img src={AMAZON_ICON_URL} alt="Amazon" className="h-3 w-3" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => openSearch('product', { title: item.title, itemId: item.itemId })}
+                        className="flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/50 transition"
+                      >
+                        <Search size={11} />
+                        Search
+                      </button>
+                    </div>
                   </div>
                 </div>
-                {item.isFire && <FireBadge />}
-                <button
-                  onClick={() => openSearch('seller', item.sellerName)}
-                  className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition opacity-0 group-hover:opacity-100"
-                >
-                  <Search size={11} />
-                  Search
-                </button>
-              </div>
-            ))
-          )}
-        </Panel>
+              ))
+            )}
+          </Panel>
+        </div>
+
+        {/* ─── Right column: Upcoming Events ─── */}
+        <div className="lg:col-span-3">
+          <UpcomingEventsCalendar
+            events={events}
+            loading={eventsLoading}
+            error={eventsError}
+            onRetry={loadEvents}
+          />
+        </div>
       </div>
+
+      {selectedProduct && (
+        <AmazonFinderSidebar
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </div>
   );
 }
