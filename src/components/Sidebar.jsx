@@ -23,6 +23,7 @@ import {
   BookOpen,
   TrendingUp,
   Users,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -55,6 +56,7 @@ export default function Sidebar() {
     { label: t('nav.amazonLookup'), path: '/amazon-lookup', icon: Search, tab: TAB_KEYS.AMAZON_LOOKUP, tour: 'sidebar-amazon-lookup' },
     { label: t('nav.ebayCalculator'), path: '/ebay-calculator', icon: Calculator, tab: TAB_KEYS.EBAY_CALCULATOR },
     { label: t('nav.marketAnalysis'), path: '/market-analysis', icon: BarChart3, tab: TAB_KEYS.MARKET_ANALYSIS, tour: 'sidebar-market-analysis' },
+    { label: 'Market Insight', path: '/market-insight', icon: Sparkles, tab: TAB_KEYS.MARKET_INSIGHT },
     { label: t('nav.dewiso'), path: '/dewiso', icon: Code2, tab: TAB_KEYS.DEWISO },
     { label: t('nav.learning'), path: '/learning', icon: BookOpen, tab: TAB_KEYS.LEARNING },
     { label: t('nav.profitTable'), path: '/profit-table', icon: TrendingUp, tab: TAB_KEYS.PROFIT_TABLE },

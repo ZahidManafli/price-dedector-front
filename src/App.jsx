@@ -31,6 +31,7 @@ import OrderDetailPage from './pages/OrderDetailPage';
 import EbayCalculatorPage from './pages/EbayCalculatorPage';
 import DewisoPage from './pages/DewisoPage';
 import MarketAnalysisPage from './pages/MarketAnalysisPage';
+import MarketInsightPage from './pages/MarketInsightPage';
 import MarketListingDetailPage from './pages/MarketListingDetailPage';
 import LandingPage from './pages/LandingPage';
 import SignupPage from './pages/SignupPage';
@@ -214,6 +215,14 @@ function AppContent() {
               element={
                 <ProtectedRoute requiredTab={TAB_KEYS.MARKET_ANALYSIS}>
                   <MarketAnalysisPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/market-insight"
+              element={
+                <ProtectedRoute requiredTab={TAB_KEYS.MARKET_INSIGHT}>
+                  <MarketInsightPage />
                 </ProtectedRoute>
               }
             />

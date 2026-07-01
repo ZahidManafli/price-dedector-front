@@ -1,0 +1,359 @@
+import React, { useState, useCallback, useEffect } from 'react';
+import {
+  RefreshCw, Zap, Globe, Search, Flame, Tag, Users, ShoppingBag, AlertCircle,
+} from 'lucide-react';
+import { zikAPI } from '../services/api';
+
+const fmtCurrency = (n) => {
+  if (n == null) return '—';
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(1)}K`;
+  return `$${Number(n).toFixed(2)}`;
+};
+
+const fmtNum = (n) => {
+  if (n == null) return '—';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+};
+
+function SkeletonRow({ hasImage = false }) {
+  return (
+    <div className="flex items-center gap-3 px-3 py-3 animate-pulse">
+      {hasImage && (
+        <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 flex-shrink-0" />
+      )}
+      <div className="flex-1 space-y-2">
+        <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-4/5" />
+        <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded w-2/5" />
+      </div>
+      <div className="h-7 w-16 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+    </div>
+  );
+}
+
+function FireBadge() {
+  return (
+    <span className="inline-flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-500 dark:text-orange-400 border border-orange-200 dark:border-orange-800 flex-shrink-0">
+      <Flame size={10} />
+      Hot
+    </span>
+  );
+}
+
+function Panel({ title, subtitle, icon, topColor, count, loading, children }) {
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
+      <div className={`h-0.5 w-full ${topColor}`} />
+      <div className="flex items-center justify-between px-4 pt-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-2.5">
+          <span className="text-slate-500 dark:text-slate-400">{icon}</span>
+          <div>
+            <h2 className="text-sm font-bold text-slate-800 dark:text-white leading-tight">{title}</h2>
+            <p className="text-xs text-slate-400 dark:text-slate-500 leading-tight">{subtitle}</p>
+          </div>
+        </div>
+        {!loading && count != null && (
+          <span className="text-xs font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+            {count}
+          </span>
+        )}
+      </div>
+      <div className="flex-1 overflow-y-auto" style={{ maxHeight: 580 }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function EmptyPanel() {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+      <AlertCircle size={28} className="mb-2 opacity-50" />
+      <p className="text-sm">No data available</p>
+    </div>
+  );
+}
+
+export default function MarketInsightPage() {
+  const [fastMode, setFastMode] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await zikAPI.getMarketInsights();
+      setData(res.data);
+    } catch (err) {
+      setError(
+        err?.response?.data?.error ||
+        err?.message ||
+        'Failed to load market insights'
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const openSearch = (type, value) => {
+    let url;
+    if (type === 'keyword') {
+      url = fastMode
+        ? `https://app.zikanalytics.com/ebay/product-research?keyword=${encodeURIComponent(value)}`
+        : `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(value)}`;
+    } else if (type === 'seller') {
+      url = fastMode
+        ? `https://app.zikanalytics.com/ebay/competitor-research?seller=${encodeURIComponent(value)}`
+        : `https://www.ebay.com/usr/${encodeURIComponent(value)}`;
+    } else if (type === 'product') {
+      url = fastMode
+        ? `https://app.zikanalytics.com/ebay/product-research?keyword=${encodeURIComponent(value.title)}`
+        : `https://www.ebay.com/itm/${value.itemId}`;
+    }
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const niches = data?.niches || [];
+  const products = data?.products || [];
+  const sellers = data?.sellers || [];
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-4 md:p-6">
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white">Market Insight</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            Live eBay trending data — keywords, products &amp; sellers
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Mode toggle */}
+          <div className="flex items-center rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold">
+            <button
+              onClick={() => setFastMode(true)}
+              className={`flex items-center gap-1.5 px-3 py-2 transition ${
+                fastMode
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+              }`}
+              title="Fast mode — opens ZIK Analytics"
+            >
+              <Zap size={12} />
+              Fast
+            </button>
+            <button
+              onClick={() => setFastMode(false)}
+              className={`flex items-center gap-1.5 px-3 py-2 transition ${
+                !fastMode
+                  ? 'bg-slate-600 text-white'
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+              }`}
+              title="Slow mode — opens eBay"
+            >
+              <Globe size={12} />
+              Slow
+            </button>
+          </div>
+
+          <button
+            onClick={loadData}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition disabled:opacity-50"
+          >
+            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Error banner */}
+      {error && !loading && (
+        <div className="mb-5 flex items-start gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+          <AlertCircle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+        </div>
+      )}
+
+      {/* 3-panel grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* ─── Keywords / Niches ─── */}
+        <Panel
+          title="Trending Keywords"
+          subtitle="Top eBay niche keywords this week"
+          icon={<Tag size={15} />}
+          topColor="bg-gradient-to-r from-blue-500 to-indigo-500"
+          count={niches.length || undefined}
+          loading={loading}
+        >
+          {loading ? (
+            Array.from({ length: 10 }).map((_, i) => <SkeletonRow key={i} />)
+          ) : niches.length === 0 ? (
+            <EmptyPanel />
+          ) : (
+            niches.map((item, i) => (
+              <div
+                key={i}
+                className="group flex items-center gap-2 px-3 py-2.5 border-b border-slate-50 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
+              >
+                <span className="text-xs text-slate-400 w-5 text-right flex-shrink-0 font-mono">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate leading-tight">
+                    {item.keywords}
+                  </p>
+                  <p className="text-xs text-emerald-500 font-semibold mt-0.5">
+                    {fmtCurrency(item.salesEarning)} revenue
+                  </p>
+                </div>
+                {item.isFire && <FireBadge />}
+                <button
+                  onClick={() => openSearch('keyword', item.keywords)}
+                  className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition opacity-0 group-hover:opacity-100"
+                >
+                  <Search size={11} />
+                  Search
+                </button>
+              </div>
+            ))
+          )}
+        </Panel>
+
+        {/* ─── Trending Products ─── */}
+        <Panel
+          title="Trending Products"
+          subtitle="Hot eBay dropshipping products"
+          icon={<ShoppingBag size={15} />}
+          topColor="bg-gradient-to-r from-violet-500 to-purple-500"
+          count={products.length || undefined}
+          loading={loading}
+        >
+          {loading ? (
+            Array.from({ length: 10 }).map((_, i) => <SkeletonRow key={i} hasImage />)
+          ) : products.length === 0 ? (
+            <EmptyPanel />
+          ) : (
+            products.map((item, i) => (
+              <div
+                key={i}
+                className="group flex items-center gap-2.5 px-3 py-2.5 border-b border-slate-50 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
+              >
+                <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 border border-slate-100 dark:border-slate-700">
+                  {item.image ? (
+                    <img
+                      src={item.image}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <ShoppingBag size={14} className="text-slate-400" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-slate-800 dark:text-slate-100 truncate leading-snug">
+                    {item.title}
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    {item.price != null && (
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        ${Number(item.price).toFixed(2)}
+                      </span>
+                    )}
+                    {item.profit != null && (
+                      <span
+                        className={`text-xs font-semibold ${
+                          item.profit >= 0 ? 'text-emerald-500' : 'text-red-400'
+                        }`}
+                      >
+                        {item.profit >= 0 ? '+' : ''}${Number(item.profit).toFixed(2)} profit
+                      </span>
+                    )}
+                    {item.totalSold != null && (
+                      <span className="text-xs text-slate-400">{fmtNum(item.totalSold)} sold</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  {item.isFire && <FireBadge />}
+                  <button
+                    onClick={() => openSearch('product', { title: item.title, itemId: item.itemId })}
+                    className="flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/50 transition opacity-0 group-hover:opacity-100"
+                  >
+                    <Search size={11} />
+                    Search
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </Panel>
+
+        {/* ─── Trending Sellers ─── */}
+        <Panel
+          title="Trending Sellers"
+          subtitle="Active eBay dropshippers this week"
+          icon={<Users size={15} />}
+          topColor="bg-gradient-to-r from-cyan-500 to-teal-500"
+          count={sellers.length || undefined}
+          loading={loading}
+        >
+          {loading ? (
+            Array.from({ length: 10 }).map((_, i) => <SkeletonRow key={i} />)
+          ) : sellers.length === 0 ? (
+            <EmptyPanel />
+          ) : (
+            sellers.map((item, i) => (
+              <div
+                key={i}
+                className="group flex items-center gap-2.5 px-3 py-2.5 border-b border-slate-50 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
+              >
+                <div className="w-8 h-8 rounded-full bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 flex items-center justify-center flex-shrink-0">
+                  <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">
+                    {(item.sellerName?.[0] || '?').toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate leading-tight">
+                      {item.sellerName}
+                    </p>
+                    {item.sellerLocation && (
+                      <span className="text-xs text-slate-400 flex-shrink-0 bg-slate-100 dark:bg-slate-800 px-1.5 rounded-full">
+                        {item.sellerLocation}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs text-slate-400">
+                      ⭐ {fmtNum(item.feedback)} fb
+                    </span>
+                    <span className="text-xs text-emerald-500 font-semibold">
+                      {fmtNum(item.sales)} sales
+                    </span>
+                  </div>
+                </div>
+                {item.isFire && <FireBadge />}
+                <button
+                  onClick={() => openSearch('seller', item.sellerName)}
+                  className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition opacity-0 group-hover:opacity-100"
+                >
+                  <Search size={11} />
+                  Search
+                </button>
+              </div>
+            ))
+          )}
+        </Panel>
+      </div>
+    </div>
+  );
+}

@@ -326,6 +326,10 @@ export const partnerAPI = {
   toggleStatus: (id, is_active) => api.patch(`/api/partners/${id}/status`, { is_active }),
 };
 
+export const zikAPI = {
+  getMarketInsights: () => api.get('/zik/market-insights'),
+};
+
 export const learningAPI = {
   list:   ()     => api.get('/api/learning-videos'),
   get:    (id)   => api.get(`/api/learning-videos/${id}`),
