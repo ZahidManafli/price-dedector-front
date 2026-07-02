@@ -51,7 +51,7 @@ function SkeletonCalendar() {
   );
 }
 
-export default function UpcomingEventsCalendar({ events, loading, error, onRetry }) {
+export default function UpcomingEventsCalendar({ events, loading, error, onRetry, onKeywordSearch }) {
   const today = useMemo(() => new Date(), []);
   const todayKey = useMemo(() => toISODate(today.getFullYear(), today.getMonth(), today.getDate()), [today]);
   const [cursor, setCursor] = useState({ year: today.getFullYear(), month: today.getMonth() });
@@ -211,13 +211,15 @@ export default function UpcomingEventsCalendar({ events, loading, error, onRetry
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {keywords.slice(0, 8).map((kw, i) => (
-                        <span
+                        <button
                           key={i}
-                          className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                          type="button"
+                          onClick={() => onKeywordSearch?.(kw)}
+                          className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:underline transition"
                         >
                           <TrendingUp size={10} className="text-emerald-500" />
                           {kw}
-                        </span>
+                        </button>
                       ))}
                     </div>
                   </>

@@ -450,6 +450,7 @@ export default function MarketInsightPage() {
             loading={eventsLoading}
             error={eventsError}
             onRetry={loadEvents}
+            onKeywordSearch={(kw) => openSearch('keyword', kw)}
           />
         </div>
       </div>
