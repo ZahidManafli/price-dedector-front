@@ -209,7 +209,7 @@ export default function MarketInsightPage() {
                   ? 'bg-blue-600 text-white'
                   : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
-              title="Fast mode — opens ZIK Analytics"
+              title="Fast mode — real eBay data"
             >
               <Zap size={12} />
               Fast
