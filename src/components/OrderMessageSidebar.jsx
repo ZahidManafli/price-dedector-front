@@ -123,6 +123,7 @@ export default function OrderMessageSidebar({ order, onClose }) {
   const dark = theme === 'dark';
 
   const orderId = order?.orderId || '';
+  const itemId = order?.lineItems?.[0]?.legacyItemId || '';
   const buyerUsername = order?.buyer?.username || '';
   const itemTitle = order?.lineItems?.[0]?.title || 'Order';
 
@@ -178,7 +179,7 @@ export default function OrderMessageSidebar({ order, onClose }) {
     setError(null);
     try {
       const params = { conversationType: CONV_TYPE };
-      if (orderId) { params.orderId = orderId; }
+      if (itemId) { params.itemId = itemId; }
       if (buyerUsername) params.buyerUsername = buyerUsername;
       const resp = await ebayAPI.getOrderConversations(params);
       const convos = resp?.data?.conversations || [];
@@ -191,7 +192,7 @@ export default function OrderMessageSidebar({ order, onClose }) {
     } finally {
       setLoadingConvos(false);
     }
-  }, [orderId, buyerUsername, openConversation]);
+  }, [itemId, buyerUsername, openConversation]);
 
   const handleSend = useCallback(async () => {
     const text = composeText.trim();
@@ -204,7 +205,7 @@ export default function OrderMessageSidebar({ order, onClose }) {
         payload.conversationId = selectedConvo.conversationId;
       } else {
         payload.otherPartyUsername = buyerUsername;
-        if (orderId) payload.reference = { referenceId: orderId, referenceType: 'ORDER_ID' };
+        if (itemId) payload.reference = { referenceId: itemId, referenceType: 'LISTING' };
       }
       await ebayAPI.sendMessage(payload);
       setComposeText('');
@@ -224,7 +225,7 @@ export default function OrderMessageSidebar({ order, onClose }) {
     } finally {
       setSending(false);
     }
-  }, [composeText, sending, newConvoMode, selectedConvo, buyerUsername, orderId, loadConversations]);
+  }, [composeText, sending, newConvoMode, selectedConvo, buyerUsername, itemId, loadConversations]);
 
   const toggleStatus = useCallback(async () => {
     if (!selectedConvo || updatingStatus) return;
