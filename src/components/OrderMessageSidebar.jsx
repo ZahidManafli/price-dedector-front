@@ -28,10 +28,11 @@ function statusColors(status, dark) {
   }
 }
 
-function ConversationCard({ convo, onClick, dark }) {
-  const other = convo.otherParty?.username || convo.buyer?.username || convo.recipient || 'Buyer';
+function ConversationCard({ convo, onClick, dark, fallbackUsername }) {
+  const other = convo.otherParty?.username || convo.buyer?.username || convo.recipient
+    || fallbackUsername || 'Buyer';
   const latest = convo.latestMessage || (Array.isArray(convo.messages) ? convo.messages.at(-1) : null);
-  const previewText = latest?.messageText || latest?.text || '';
+  const previewText = latest?.messageBody || latest?.messageText || latest?.text || '';
   const previewDate = latest?.createdDate || latest?.receiveDate || convo.lastModifiedDate || '';
   const unread = convo.messagesSummary?.unreadCount || convo.unreadCount || 0;
   const status = convo.conversationStatus || 'ACTIVE';
@@ -77,9 +78,9 @@ function ConversationCard({ convo, onClick, dark }) {
 }
 
 function MessageBubble({ message, isMe, dark }) {
-  const text = message.messageText || message.text || message.content || '';
+  const text = message.messageBody || message.messageText || message.text || message.content || '';
   const dateStr = message.createdDate || message.receiveDate || '';
-  const sender = message.sender?.username || message.sender || '';
+  const sender = message.senderUsername || message.sender?.username || message.sender || '';
 
   return (
     <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -253,7 +254,7 @@ export default function OrderMessageSidebar({ order, onClose }) {
   useEffect(() => { if (messages.length) scrollToBottom(); }, [messages]);
 
   const isMe = (msg) => {
-    const senderName = msg?.sender?.username || msg?.sender || '';
+    const senderName = msg?.senderUsername || msg?.sender?.username || msg?.sender || '';
     if (!senderName || !buyerUsername) return false;
     return senderName.toLowerCase() !== buyerUsername.toLowerCase();
   };
@@ -376,7 +377,7 @@ export default function OrderMessageSidebar({ order, onClose }) {
                     </button>
                   </div>
                   {conversations.map((c) => (
-                    <ConversationCard key={c.conversationId} convo={c} onClick={openConversation} dark={dark} />
+                    <ConversationCard key={c.conversationId} convo={c} onClick={openConversation} dark={dark} fallbackUsername={buyerUsername} />
                   ))}
                 </div>
               )}
