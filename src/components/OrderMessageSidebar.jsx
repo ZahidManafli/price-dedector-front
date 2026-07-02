@@ -3,7 +3,7 @@ import { X, Send, MessageSquare, RefreshCw, Archive, ArrowLeft, Plus, ChevronRig
 import { useTheme } from '../context/ThemeContext';
 import { ebayAPI } from '../services/api';
 
-const CONV_TYPE = 'BUYER_SELLER_MESSAGING';
+const CONV_TYPE = 'FROM_MEMBERS';
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
