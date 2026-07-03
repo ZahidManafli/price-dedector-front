@@ -5,6 +5,14 @@ import { ebayAPI } from '../services/api';
 
 const CONV_TYPE = 'FROM_MEMBERS';
 
+function sortMessagesAscending(msgs) {
+  return [...msgs].sort((a, b) => {
+    const ad = new Date(a.createdDate || a.receiveDate || 0).getTime();
+    const bd = new Date(b.createdDate || b.receiveDate || 0).getTime();
+    return ad - bd;
+  });
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return '';
   try {
@@ -155,7 +163,7 @@ export default function OrderMessageSidebar({ order, onClose }) {
         limit: 50,
       });
       const msgs = resp?.data?.messages || [];
-      setMessages(msgs);
+      setMessages(sortMessagesAscending(msgs));
       ebayAPI.updateConversation({
         conversationId: convo.conversationId,
         conversationType: convo.conversationType || CONV_TYPE,
@@ -215,7 +223,7 @@ export default function OrderMessageSidebar({ order, onClose }) {
           conversationType: selectedConvo.conversationType || CONV_TYPE,
           limit: 50,
         });
-        setMessages(resp?.data?.messages || []);
+        setMessages(sortMessagesAscending(resp?.data?.messages || []));
       } else {
         setNewConvoMode(false);
         setView('list');
