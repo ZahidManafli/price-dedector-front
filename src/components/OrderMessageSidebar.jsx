@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Send, MessageSquare, RefreshCw, Archive, ArrowLeft, Plus, ChevronRight, User } from 'lucide-react';
+import { X, Send, MessageSquare, RefreshCw, Archive, ArrowLeft, Plus, ChevronRight, User, Paperclip } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { ebayAPI } from '../services/api';
 
@@ -89,6 +89,9 @@ function MessageBubble({ message, isMe, dark }) {
   const text = message.messageBody || message.messageText || message.text || message.content || '';
   const dateStr = message.createdDate || message.receiveDate || '';
   const sender = message.senderUsername || message.sender?.username || message.sender || '';
+  const media = Array.isArray(message.messageMedia) ? message.messageMedia
+    : Array.isArray(message.media) ? message.media : [];
+  const images = media.filter((m) => !m.mediaType || /^image\//i.test(m.mediaType) || m.mediaType === 'IMAGE');
 
   return (
     <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -103,17 +106,28 @@ function MessageBubble({ message, isMe, dark }) {
         {!isMe && sender && (
           <span className={`text-xs mb-1 px-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{sender}</span>
         )}
-        <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed break-words ${
-          isMe
-            ? dark
-              ? 'bg-blue-600 text-white rounded-br-sm'
-              : 'bg-blue-500 text-white rounded-br-sm'
-            : dark
-              ? 'bg-gray-700 text-gray-100 rounded-bl-sm'
-              : 'bg-gray-100 text-gray-800 rounded-bl-sm'
-        }`}>
-          {text}
-        </div>
+        {images.map((img, i) => (
+          <a key={i} href={img.mediaUrl} target="_blank" rel="noopener noreferrer" className="mb-1.5 block">
+            <img
+              src={img.mediaUrl}
+              alt={img.mediaName || 'attachment'}
+              className="max-w-full max-h-64 rounded-xl object-cover border border-black/10"
+            />
+          </a>
+        ))}
+        {text && (
+          <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed break-words ${
+            isMe
+              ? dark
+                ? 'bg-blue-600 text-white rounded-br-sm'
+                : 'bg-blue-500 text-white rounded-br-sm'
+              : dark
+                ? 'bg-gray-700 text-gray-100 rounded-bl-sm'
+                : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+          }`}>
+            {text}
+          </div>
+        )}
         <span className={`text-xs mt-1 px-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{formatDate(dateStr)}</span>
       </div>
       {isMe && (
@@ -148,8 +162,32 @@ export default function OrderMessageSidebar({ order, onClose }) {
   const [sending, setSending] = useState(false);
   const [newConvoMode, setNewConvoMode] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [attachedImage, setAttachedImage] = useState(null); // { dataUrl, fileName }
+  const [attachError, setAttachError] = useState(null);
 
   const bottomRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+
+  const handlePickImage = useCallback((e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setAttachError(null);
+    if (!file.type.startsWith('image/')) {
+      setAttachError('Please select an image file');
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setAttachError('Image must be smaller than 8MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setAttachedImage({ dataUrl: reader.result, fileName: file.name });
+    reader.onerror = () => setAttachError('Failed to read image');
+    reader.readAsDataURL(file);
+  }, []);
 
   const scrollToBottom = () => bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
 
@@ -205,11 +243,15 @@ export default function OrderMessageSidebar({ order, onClose }) {
 
   const handleSend = useCallback(async () => {
     const text = composeText.trim();
-    if (!text || sending) return;
+    if ((!text && !attachedImage) || sending) return;
     setSending(true);
     setMsgError(null);
     try {
-      const payload = { messageText: text };
+      const payload = { messageText: text || '📷 Photo' };
+      if (attachedImage) {
+        payload.imageDataUrl = attachedImage.dataUrl;
+        payload.imageFileName = attachedImage.fileName;
+      }
       if (!newConvoMode && selectedConvo) {
         payload.conversationId = selectedConvo.conversationId;
       } else {
@@ -218,6 +260,7 @@ export default function OrderMessageSidebar({ order, onClose }) {
       }
       await ebayAPI.sendMessage(payload);
       setComposeText('');
+      setAttachedImage(null);
       if (!newConvoMode && selectedConvo) {
         const resp = await ebayAPI.getConversationMessages(selectedConvo.conversationId, {
           conversationType: selectedConvo.conversationType || CONV_TYPE,
@@ -234,7 +277,7 @@ export default function OrderMessageSidebar({ order, onClose }) {
     } finally {
       setSending(false);
     }
-  }, [composeText, sending, newConvoMode, selectedConvo, buyerUsername, itemId, loadConversations]);
+  }, [composeText, attachedImage, sending, newConvoMode, selectedConvo, buyerUsername, itemId, loadConversations]);
 
   const toggleStatus = useCallback(async () => {
     if (!selectedConvo || updatingStatus) return;
@@ -443,11 +486,45 @@ export default function OrderMessageSidebar({ order, onClose }) {
                 {msgError && !loadingMsgs && (
                   <p className={`text-xs mb-2 ${dark ? 'text-red-400' : 'text-red-500'}`}>{msgError}</p>
                 )}
+                {attachError && (
+                  <p className={`text-xs mb-2 ${dark ? 'text-red-400' : 'text-red-500'}`}>{attachError}</p>
+                )}
+                {attachedImage && (
+                  <div className="relative inline-block mb-2">
+                    <img
+                      src={attachedImage.dataUrl}
+                      alt={attachedImage.fileName}
+                      className="h-20 w-20 object-cover rounded-lg border border-black/10"
+                    />
+                    <button
+                      onClick={() => setAttachedImage(null)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black"
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                )}
                 <div className={`flex items-end gap-2 rounded-xl border px-3 py-2 transition-colors ${
                   dark
                     ? 'bg-gray-800 border-gray-600 focus-within:border-blue-500'
                     : 'bg-gray-50 border-gray-200 focus-within:border-blue-400'
                 }`}>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePickImage}
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Attach image"
+                    className={`flex-shrink-0 p-2 rounded-lg transition-colors ${
+                      dark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-200 text-gray-500'
+                    }`}
+                  >
+                    <Paperclip size={16} />
+                  </button>
                   <textarea
                     value={composeText}
                     onChange={(e) => setComposeText(e.target.value)}
@@ -461,9 +538,9 @@ export default function OrderMessageSidebar({ order, onClose }) {
                   />
                   <button
                     onClick={handleSend}
-                    disabled={!composeText.trim() || sending}
+                    disabled={(!composeText.trim() && !attachedImage) || sending}
                     className={`flex-shrink-0 p-2.5 rounded-lg transition-all ${
-                      composeText.trim() && !sending
+                      (composeText.trim() || attachedImage) && !sending
                         ? 'bg-blue-500 hover:bg-blue-600 text-white'
                         : dark ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}
