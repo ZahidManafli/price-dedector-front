@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import api, { browseAPI } from '../services/api';
 
 const MARKET_ANALYSIS_STORAGE_KEY = 'marketAnalysisState:v1';
@@ -383,6 +383,10 @@ export default function useBrowseSearch(initialParams = {}) {
   const [soldQuantityDeferred, setSoldQuantityDeferred] = useState(Boolean(persisted.restored?.soldQuantityDeferred));
   const [searchRaw, setSearchRaw] = useState(persisted.restored?.raw || null);
 
+  // Tracks the most recently started search so a slower/overlapping request
+  // (fast mode can poll for up to 20s) can never clobber a newer one's state.
+  const requestSeqRef = useRef(0);
+
   const setParams = useCallback((updater) => {
     setParamsState((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : updater;
@@ -400,6 +404,11 @@ export default function useBrowseSearch(initialParams = {}) {
   }, [params]);
 
   const searchNow = useCallback(async (nextParams = params, { force = false } = {}) => {
+    // Claim this as the latest search. Fast mode can poll for up to 20s, so an
+    // older, slower request must never commit state after a newer one has started.
+    const mySeq = ++requestSeqRef.current;
+    const isStale = () => requestSeqRef.current !== mySeq;
+
     const searchType = String(nextParams?.type || '').trim().toLowerCase();
     const isFastMode = searchType === 'fast';
     const sellerOnlySearch = isPureSellerOnlySearch(nextParams);
@@ -499,6 +508,7 @@ export default function useBrowseSearch(initialParams = {}) {
         let polled = null;
         let pollFailure = null;
         while (Date.now() - start < TIMEOUT_MS) {
+          if (isStale()) return; // a newer search superseded this one; stop polling
           try {
             const pollResp = await api.get(pollUrl);
             if (pollResp?.data?.status === 'done') {
@@ -562,6 +572,8 @@ export default function useBrowseSearch(initialParams = {}) {
       const sellerWindowStartOffset = sellerOnly && !isFastMode ? Number(effectiveParams.offset || 0) : null;
       const sellerWindowSize = sellerOnly && !isFastMode ? hydratedItems.length : null;
 
+      if (isStale()) return; // a newer search already committed its results; don't clobber them
+
       const displayedResults = sellerOnly && !isFastMode ? hydratedItems.slice(0, SELLER_PAGE_SIZE) : hydratedItems;
       setResults(displayedResults);
       setTotal(nextTotal);
@@ -599,9 +611,10 @@ export default function useBrowseSearch(initialParams = {}) {
         return nextCache;
       });
     } catch (err) {
+      if (isStale()) return; // a newer search is in flight; don't surface this stale error
       setError(err?.response?.data?.error || err?.message || 'Market search failed');
     } finally {
-      setLoading(false);
+      if (!isStale()) setLoading(false);
     }
   }, [params, cache]);
 
