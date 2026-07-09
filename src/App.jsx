@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
@@ -24,6 +24,7 @@ import PrivacyPage from './pages/PrivacyPage';
 import ExtensionPrivacyPage from './pages/ExtensionPrivacyPage';
 import AboutPage from './pages/AboutPage';
 import MaintenancePage from './pages/MaintenancePage';
+import PlanExpiredPage from './pages/PlanExpiredPage';
 import ListingsPage from './pages/ListingsPage';
 import OrdersPage from './pages/OrdersPage';
 import ListingDetailPage from './pages/ListingDetailPage';
@@ -46,10 +47,15 @@ import UpgradePlanPage from './pages/UpgradePlanPage';
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
 
+// Routes that stay reachable even for a user whose plan has expired, so they can
+// still see the notice and renew instead of getting redirected in a loop.
+const PLAN_EXPIRY_EXEMPT_ROUTES = ['/plan-expired', '/upgrade-plan'];
+
 // Protected Route Component
 const ProtectedRoute = ({ children, requiredTab = null }) => {
-  const { isAuthenticated, loading, hasTabAccess } = useAuth();
+  const { isAuthenticated, loading, hasTabAccess, isPlanExpired } = useAuth();
   const hasToken = typeof window !== 'undefined' ? !!localStorage.getItem('authToken') : false;
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -61,6 +67,10 @@ const ProtectedRoute = ({ children, requiredTab = null }) => {
 
   if (!(isAuthenticated && hasToken)) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (isPlanExpired && !PLAN_EXPIRY_EXEMPT_ROUTES.includes(location.pathname)) {
+    return <Navigate to="/plan-expired" replace />;
   }
 
   if (requiredTab && !hasTabAccess(requiredTab)) {
@@ -142,6 +152,14 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <UpgradePlanPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/plan-expired"
+              element={
+                <ProtectedRoute>
+                  <PlanExpiredPage />
                 </ProtectedRoute>
               }
             />

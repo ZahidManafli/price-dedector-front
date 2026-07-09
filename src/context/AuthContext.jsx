@@ -136,6 +136,13 @@ export const AuthProvider = ({ children }) => {
     setMaintenance(null);
   };
 
+  const isPlanExpired = !!(
+    user &&
+    String(user.role || '').toLowerCase() !== 'admin' &&
+    user.planExpiresAt &&
+    new Date(user.planExpiresAt).getTime() <= Date.now()
+  );
+
   const value = {
     user,
     loading,
@@ -144,6 +151,7 @@ export const AuthProvider = ({ children }) => {
     setSession,
     maintenance,
     isAuthenticated: !!user,
+    isPlanExpired,
     allowedTabs: getAllowedTabs(user),
     hasTabAccess: (tabKey) => checkTabAccess(user, tabKey),
   };

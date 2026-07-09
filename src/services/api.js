@@ -64,6 +64,11 @@ api.interceptors.response.use(
       if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
         window.location.href = '/dashboard';
       }
+    } else if (status === 403 && code === 'PLAN_EXPIRED') {
+      const path = typeof window !== 'undefined' ? window.location.pathname : '';
+      if (path && path !== '/plan-expired' && path !== '/upgrade-plan') {
+        window.location.href = '/plan-expired';
+      }
     }
     return Promise.reject(error);
   }
