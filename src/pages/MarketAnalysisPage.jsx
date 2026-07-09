@@ -1567,9 +1567,9 @@ export default function MarketAnalysisPage() {
                                   >
                                     {t('marketListingDetailPage.sellSimilar')}
                                   </button>
-                                  <button type="button" className="btn-primary" onClick={() => handleInspect(item)}>
+                                  {false && (<button type="button" className="btn-primary" onClick={() => handleInspect(item)}>
                                     {t('marketAnalysisPage.details')}
-                                  </button>
+                                  </button>)}
                                   <button type="button" className="btn-secondary" onClick={() => handleSelect(item)}>
                                     {selectedIds.includes(item.id) ? 'Selected' : 'Compare'}
                                   </button>
