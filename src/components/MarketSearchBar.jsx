@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Zap } from 'lucide-react';
 
 export default function MarketSearchBar({
   params,
@@ -41,24 +42,24 @@ export default function MarketSearchBar({
         onSubmit();
       }}
     >
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-        <div className="md:col-span-4">
-          <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.keyword')}</label>
-          <input
-            className="input-base"
-            placeholder={t('marketSearchBar.keywordPlaceholder')}
-            value={params.q}
-            list="recent-checkila-titles"
-            disabled={productInputDisabled}
-            onChange={(e) => setValue('q', e.target.value)}
-          />
-          <datalist id="recent-checkila-titles">
-            {recentTitles.map((title) => (
-              <option key={title} value={title} />
-            ))}
-          </datalist>
-        </div>
+      <div>
+        <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.keyword')}</label>
+        <input
+          className="input-base"
+          placeholder={t('marketSearchBar.keywordPlaceholder')}
+          value={params.q}
+          list="recent-checkila-titles"
+          disabled={productInputDisabled}
+          onChange={(e) => setValue('q', e.target.value)}
+        />
+        <datalist id="recent-checkila-titles">
+          {recentTitles.map((title) => (
+            <option key={title} value={title} />
+          ))}
+        </datalist>
+      </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mt-3">
         <div className="md:col-span-4">
           <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.seller')}</label>
           <input
@@ -76,7 +77,7 @@ export default function MarketSearchBar({
           </datalist>
         </div>
 
-        <div className="md:col-span-2">
+        <div className="md:col-span-3">
           <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.categoryId')}</label>
           <input
             className="input-base"
@@ -86,7 +87,7 @@ export default function MarketSearchBar({
           />
         </div>
 
-        <div className="md:col-span-1">
+        <div className="md:col-span-3">
           <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.buying')}</label>
           <select
             className="input-base"
@@ -99,7 +100,7 @@ export default function MarketSearchBar({
           </select>
         </div>
 
-        <div className="md:col-span-1">
+        <div className="md:col-span-2">
           <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.sort')}</label>
           <select className="input-base" value={params.sort} onChange={(e) => setValue('sort', e.target.value)}>
             {sortOptions.map((opt) => (
@@ -141,7 +142,7 @@ export default function MarketSearchBar({
           </select>
         </div>
 
-        <div className="md:col-span-2 flex items-center gap-2">
+        <div className="md:col-span-2 flex items-center gap-2 md:pb-2.5">
           <input
             id="freeShipping"
             type="checkbox"
@@ -153,13 +154,24 @@ export default function MarketSearchBar({
           </label>
         </div>
 
-        <div className="md:col-span-2 flex justify-end">
-          <button type="submit" disabled={disabled} className="btn-primary w-full md:w-auto">
-            {t('marketSearchBar.runAnalysis')}
-            {typeof searchCost === 'number' ? ` (${t('marketSearchBar.credit', { count: searchCost })})` : ''}
-            {marketCreditsRemaining !== null && marketCreditsRemaining !== undefined
-              ? ` • ${t('marketSearchBar.remaining')}: ${marketCreditsRemaining}`
-              : ''}
+        <div className="md:col-span-4">
+          <button
+            type="submit"
+            disabled={disabled}
+            className="flex w-full flex-col items-center justify-center gap-0.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-white shadow-lg shadow-indigo-500/25 transition hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span className="flex items-center gap-2 text-sm font-semibold">
+              <Zap size={14} className="fill-current" />
+              {t('marketSearchBar.runAnalysis')}
+            </span>
+            {(typeof searchCost === 'number' || (marketCreditsRemaining !== null && marketCreditsRemaining !== undefined)) && (
+              <span className="text-[11px] font-medium text-white/80">
+                {typeof searchCost === 'number' ? t('marketSearchBar.credit', { count: searchCost }) : ''}
+                {marketCreditsRemaining !== null && marketCreditsRemaining !== undefined
+                  ? ` • ${t('marketSearchBar.remaining')}: ${marketCreditsRemaining}`
+                  : ''}
+              </span>
+            )}
           </button>
         </div>
       </div>

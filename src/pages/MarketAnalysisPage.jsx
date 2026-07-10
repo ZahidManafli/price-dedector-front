@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DollarSign, Gavel, Heart, History, Info, LayoutGrid, List, RefreshCw, Search, SearchCheck, Tag, TrendingUp, X } from 'lucide-react';
+import { Activity, DollarSign, Heart, History, Info, LayoutGrid, List, RefreshCw, Search, SearchCheck, ShoppingBag, Tag, Trash2, TrendingUp, X } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Swal from 'sweetalert2';
@@ -113,47 +113,69 @@ function getSearchSiteLabel(rawStats) {
   return `ebay${site.startsWith('.') ? site : `.${site}`}`;
 }
 
+const MARKET_SHARE_COLORS = ['#7c3aed', '#6366f1', '#a78bfa', '#22d3ee', '#c4b5fd', '#06b6d4', '#8b5cf6', '#67e8f9'];
+
+const STAT_CARD_THEME = {
+  blue: 'bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300',
+  violet: 'bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300',
+  rose: 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300',
+  emerald: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300',
+  pink: 'bg-pink-50 text-pink-600 dark:bg-pink-500/15 dark:text-pink-300',
+};
+
+function getSellThroughQuality(value) {
+  const n = toNumber(value);
+  if (n >= 70) return { text: 'Excellent', className: 'text-emerald-600 dark:text-emerald-400' };
+  if (n >= 40) return { text: 'Good', className: 'text-amber-600 dark:text-amber-400' };
+  return { text: 'Needs work', className: 'text-rose-600 dark:text-rose-400' };
+}
+
 function buildMarketShareGradient(items) {
-  const colors = ['#7c3aed', '#27e0cf', '#a78bfa', '#22d3ee', '#c4b5fd', '#06b6d4', '#8b5cf6', '#67e8f9'];
   const positiveItems = items.filter((item) => toNumber(item.value) > 0).slice(-8);
   const totalValue = positiveItems.reduce((sum, item) => sum + toNumber(item.value), 0);
   if (!positiveItems.length || totalValue <= 0) {
-    return 'conic-gradient(#27e0cf 0deg 360deg)';
+    return 'conic-gradient(#6366f1 0deg 360deg)';
   }
 
   let cursor = 0;
   return `conic-gradient(${positiveItems.map((item, index) => {
     const next = cursor + (toNumber(item.value) / totalValue) * 360;
-    const segment = `${colors[index % colors.length]} ${cursor}deg ${next}deg`;
+    const segment = `${MARKET_SHARE_COLORS[index % MARKET_SHARE_COLORS.length]} ${cursor}deg ${next}deg`;
     cursor = next;
     return segment;
   }).join(', ')})`;
 }
 
-function FastStatCard({ icon: Icon, label, value }) {
+function FastStatCard({ icon: Icon, label, value, color = 'blue', quality }) {
+  const theme = STAT_CARD_THEME[color] || STAT_CARD_THEME.blue;
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/80 dark:bg-[#242424] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-      <div className="flex items-start justify-between gap-3">
-        <Icon size={17} className="shrink-0 text-slate-700 dark:text-slate-200" />
-        <Info size={12} className="shrink-0 text-slate-400 dark:text-slate-400" />
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex items-center justify-between gap-3">
+        <span className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${theme}`}>
+          <Icon size={18} />
+        </span>
+        <Info size={13} className="shrink-0 text-slate-300 dark:text-slate-600" />
       </div>
-      <p className="mt-1 text-center text-[11px] font-bold text-slate-700 dark:text-slate-100">{label}</p>
-      <p className="mt-3 text-center text-2xl font-extrabold text-teal-600 dark:text-[#27e0cf]">{value}</p>
+      <p className="mt-3 text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
+      {quality && <p className={`mt-0.5 text-xs font-semibold ${quality.className}`}>{quality.text}</p>}
     </div>
   );
 }
 
 function FastSearchInfoCard({ label, query }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/80 dark:bg-[#242424] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-      <div className="flex items-start justify-between gap-3">
-        <Search size={18} className="shrink-0 text-slate-700 dark:text-slate-200" />
-        <Info size={12} className="shrink-0 text-slate-400 dark:text-slate-400" />
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex items-center justify-between gap-3">
+        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
+          <Search size={18} />
+        </span>
+        <Info size={13} className="shrink-0 text-slate-300 dark:text-slate-600" />
       </div>
-      <p className="mt-1 text-center text-[11px] font-bold text-slate-700 dark:text-slate-100">
-        Searched on: <span className="text-teal-600 dark:text-[#27e0cf]">{label}</span>
+      <p className="mt-3 text-xs font-medium text-slate-500 dark:text-slate-400">
+        Searched on: <span className="font-semibold text-slate-900 dark:text-white">{label}</span>
       </p>
-      <p className="mx-auto mt-2 line-clamp-2 max-w-[220px] text-center text-[12px] font-semibold leading-4 text-slate-800 dark:text-slate-100" title={query}>
+      <p className="mt-1 line-clamp-2 text-sm font-semibold leading-5 text-slate-700 dark:text-slate-200" title={query}>
         {query || 'Fast search'}
       </p>
     </div>
@@ -172,37 +194,42 @@ function ProfitCalculatorPanel({
   compact = false,
 }) {
   return (
-    <div className={`flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700/80 dark:bg-[#242424] ${compact ? 'h-full' : ''}`}>
-      <span className="whitespace-nowrap text-xs font-bold text-slate-700 dark:text-slate-100">{t('marketAnalysisPage.profitCalc')}</span>
-      <input
-        type="number"
-        min="0"
-        step="0.01"
-        value={amazonPrice}
-        onChange={(e) => onAmazonPriceChange(e.target.value)}
-        placeholder={t('marketAnalysisPage.profitAmazon')}
-        className="input-base h-9 w-[110px] text-xs dark:bg-slate-950/70"
-      />
-      <input
-        type="number"
-        min="0"
-        step="0.01"
-        value={ebayPrice}
-        onChange={(e) => onEbayPriceChange(e.target.value)}
-        placeholder={t('marketAnalysisPage.profitEbay')}
-        className="input-base h-9 w-[110px] text-xs dark:bg-slate-950/70"
-      />
-      <input
-        type="number"
-        min="0"
-        step="0.01"
-        value={adRate}
-        onChange={(e) => onAdRateChange(e.target.value)}
-        placeholder={t('marketAnalysisPage.profitRate')}
-        className="input-base h-9 w-[88px] text-xs dark:bg-slate-950/70"
-      />
-      <div className="min-w-[88px] text-xs font-bold text-slate-900 dark:text-slate-100">
-        {profit === null ? t('marketAnalysisPage.profitNone') : `${t('marketAnalysisPage.profitLabel')} ${formatCurrency(profit)}`}
+    <div className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 ${compact ? 'h-full' : ''}`}>
+      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('marketAnalysisPage.profitCalc')}</p>
+      <div className="mt-2 grid grid-cols-3 gap-2">
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          value={amazonPrice}
+          onChange={(e) => onAmazonPriceChange(e.target.value)}
+          placeholder={t('marketAnalysisPage.profitAmazon')}
+          className="input-base h-9 text-xs"
+        />
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          value={ebayPrice}
+          onChange={(e) => onEbayPriceChange(e.target.value)}
+          placeholder={t('marketAnalysisPage.profitEbay')}
+          className="input-base h-9 text-xs"
+        />
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          value={adRate}
+          onChange={(e) => onAdRateChange(e.target.value)}
+          placeholder={t('marketAnalysisPage.profitRate')}
+          className="input-base h-9 text-xs"
+        />
+      </div>
+      <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+        <p className="text-2xl font-bold text-slate-900 dark:text-white">
+          {profit === null ? '—' : formatCurrency(profit)}
+        </p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{t('marketAnalysisPage.profitLabel')}</p>
       </div>
     </div>
   );
@@ -212,16 +239,27 @@ function FastMarketShareChart({ data }) {
   const visible = data.filter((item) => toNumber(item.value) > 0).slice(-8);
   const featured = visible[visible.length - 1] || data[data.length - 1] || null;
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700/80 dark:bg-[#242424]">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-bold text-slate-700 dark:text-slate-100">Market Share</p>
-        <Info size={12} className="text-slate-400 dark:text-slate-400" />
-      </div>
-      <div className="mx-auto mt-3 flex h-40 w-40 items-center justify-center rounded-full" style={{ background: buildMarketShareGradient(data) }}>
-        <div className="flex h-20 w-20 flex-col items-center justify-center rounded-full bg-white text-center dark:bg-[#242424]">
-          <span className="max-w-[70px] truncate text-[11px] font-extrabold text-slate-800 dark:text-slate-100">{featured?.label || 'seller'}</span>
-          <span className="text-[10px] font-bold text-violet-600 dark:text-[#bfb7ff]">{toNumber(featured?.value).toFixed(1)}%</span>
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <p className="text-sm font-bold text-slate-900 dark:text-white">Market Share</p>
+      <div className="mt-3 flex items-center gap-5">
+        <div className="relative flex h-36 w-36 shrink-0 items-center justify-center rounded-full" style={{ background: buildMarketShareGradient(data) }}>
+          <div className="flex h-[5.5rem] w-[5.5rem] flex-col items-center justify-center rounded-full bg-white text-center dark:bg-slate-900">
+            <span className="max-w-[70px] truncate text-[11px] font-extrabold text-slate-800 dark:text-slate-100">{featured?.label || 'seller'}</span>
+            <span className="text-[11px] font-bold text-violet-600 dark:text-violet-300">{toNumber(featured?.value).toFixed(1)}%</span>
+          </div>
         </div>
+        <ul className="min-w-0 flex-1 space-y-1.5">
+          {visible.map((item, index) => (
+            <li key={item.label || index} className="flex items-center gap-2 text-xs">
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ background: MARKET_SHARE_COLORS[index % MARKET_SHARE_COLORS.length] }}
+              />
+              <span className="truncate font-medium text-slate-600 dark:text-slate-300">{item.label || 'seller'}</span>
+              <span className="ml-auto pl-2 font-semibold text-slate-900 dark:text-white">{toNumber(item.value).toFixed(1)}%</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
@@ -229,33 +267,30 @@ function FastMarketShareChart({ data }) {
 
 function FastSalesTrendChart({ data, isDark }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700/80 dark:bg-[#242424]">
-      <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-bold text-slate-700 dark:text-slate-100">Sales Trend</p>
-        <Info size={12} className="text-slate-400 dark:text-slate-400" />
-      </div>
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <p className="mb-2 text-sm font-bold text-slate-900 dark:text-white">Sales Trend</p>
       <div className="h-40">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 6, right: 12, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="fastSalesTrend" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8dd7cf" stopOpacity={0.9} />
-                <stop offset="95%" stopColor="#27e0cf" stopOpacity={0.45} />
+                <stop offset="5%" stopColor="#818cf8" stopOpacity={0.85} />
+                <stop offset="95%" stopColor="#6366f1" stopOpacity={0.12} />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke={isDark ? '#151515' : '#e2e8f0'} vertical={false} />
-            <XAxis dataKey="date" tick={{ fill: isDark ? '#cbd5e1' : '#475569', fontSize: 10 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: isDark ? '#cbd5e1' : '#475569', fontSize: 10 }} axisLine={false} tickLine={false} />
+            <CartesianGrid stroke={isDark ? '#1e293b' : '#e2e8f0'} vertical={false} />
+            <XAxis dataKey="date" tick={{ fill: isDark ? '#94a3b8' : '#475569', fontSize: 10 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: isDark ? '#94a3b8' : '#475569', fontSize: 10 }} axisLine={false} tickLine={false} />
             <Tooltip
               contentStyle={{
-                background: isDark ? '#191919' : '#ffffff',
-                border: `1px solid ${isDark ? '#3f3f46' : '#cbd5e1'}`,
+                background: isDark ? '#0f172a' : '#ffffff',
+                border: `1px solid ${isDark ? '#334155' : '#cbd5e1'}`,
                 borderRadius: 8,
                 color: isDark ? '#f8fafc' : '#0f172a',
               }}
               labelStyle={{ color: isDark ? '#f8fafc' : '#0f172a' }}
             />
-            <Area type="monotone" dataKey="sales" stroke="#8dd7cf" strokeWidth={2} fill="url(#fastSalesTrend)" />
+            <Area type="monotone" dataKey="sales" stroke="#6366f1" strokeWidth={2} fill="url(#fastSalesTrend)" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -1014,21 +1049,21 @@ export default function MarketAnalysisPage() {
 
     const cards = isProduct
       ? [
-          { label: 'Sell through', value: formatStatPercent(searchRaw?.sellThrough), icon: Tag },
-          { label: 'Listings', value: formatStatNumber(listings), icon: List },
-          { label: 'Sold Items', value: formatStatNumber(soldItems), icon: Gavel },
-          { label: 'Sale Earnings', value: formatCurrency(toNumber(searchRaw?.totalEarnings)), icon: DollarSign },
-          { label: 'Successful Listings', value: formatStatPercent(successfulListings ?? fallbackSuccessfulListings), icon: Tag },
-          { label: 'Average Price', value: formatCurrency(toNumber(averagePrice)), icon: TrendingUp },
+          { label: 'Sell through', value: formatStatPercent(searchRaw?.sellThrough), icon: Activity, color: 'blue' },
+          { label: 'Listings', value: formatStatNumber(listings), icon: List, color: 'violet' },
+          { label: 'Sold Items', value: formatStatNumber(soldItems), icon: ShoppingBag, color: 'rose' },
+          { label: 'Sale Earnings', value: formatCurrency(toNumber(searchRaw?.totalEarnings)), icon: DollarSign, color: 'emerald' },
+          { label: 'Successful Listings', value: formatStatPercent(successfulListings ?? fallbackSuccessfulListings), icon: Tag, color: 'pink' },
+          { label: 'Average Price', value: formatCurrency(toNumber(averagePrice)), icon: TrendingUp, color: 'pink' },
         ]
       : [
-          { label: 'Sell through', value: formatStatPercent(searchRaw?.sellThrough), icon: Tag },
-          { label: 'Active Listings', value: formatStatNumber(listings), icon: List },
-          { label: 'Sold Items', value: formatStatNumber(soldItems), icon: Gavel },
-          { label: 'Revenue', value: formatCurrency(toNumber(searchRaw?.totalEarnings)), icon: DollarSign },
-          { label: 'Successful Listings', value: formatStatPercent(successfulListings ?? fallbackSuccessfulListings), icon: Tag },
-          { label: 'Feedback score', value: formatStatNumber(searchRaw?.feedback), icon: Tag },
-          { label: 'Average Price', value: formatCurrency(toNumber(averagePrice)), icon: TrendingUp },
+          { label: 'Sell through', value: formatStatPercent(searchRaw?.sellThrough), icon: Activity, color: 'blue' },
+          { label: 'Active Listings', value: formatStatNumber(listings), icon: List, color: 'violet' },
+          { label: 'Sold Items', value: formatStatNumber(soldItems), icon: ShoppingBag, color: 'rose' },
+          { label: 'Revenue', value: formatCurrency(toNumber(searchRaw?.totalEarnings)), icon: DollarSign, color: 'emerald' },
+          { label: 'Successful Listings', value: formatStatPercent(successfulListings ?? fallbackSuccessfulListings), icon: Tag, color: 'pink' },
+          { label: 'Feedback score', value: formatStatNumber(searchRaw?.feedback), icon: Tag, color: 'violet' },
+          { label: 'Average Price', value: formatCurrency(toNumber(averagePrice)), icon: TrendingUp, color: 'pink' },
         ];
 
     return {
@@ -1055,21 +1090,24 @@ export default function MarketAnalysisPage() {
             {t('marketAnalysisPage.subtitle')}
           </p>
         </div>
-        <button type="button" onClick={() => searchNow(params)} className="btn-secondary flex items-center gap-2">
-          <RefreshCw size={14} />
-          {t('marketAnalysisPage.refresh')}
-        </button>
-        <button type="button" onClick={clearCache} className="btn-secondary flex items-center gap-2">
-          {t('marketAnalysisPage.clearCache')}
-        </button>
-        <button
-          type="button"
-          onClick={() => setSavedSellersOpen((prev) => !prev)}
-          className="btn-secondary flex items-center gap-2"
-        >
-          <Heart size={14} fill="currentColor" className="text-rose-500" />
-          {t('marketAnalysisPage.savedSellers')} ({savedSellers.length})
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => searchNow(params)} className="btn-secondary flex items-center gap-2">
+            <RefreshCw size={14} />
+            {t('marketAnalysisPage.refresh')}
+          </button>
+          <button type="button" onClick={clearCache} className="btn-secondary flex items-center gap-2">
+            <Trash2 size={14} />
+            {t('marketAnalysisPage.clearCache')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSavedSellersOpen((prev) => !prev)}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <Heart size={14} fill="currentColor" className="text-rose-500" />
+            {t('marketAnalysisPage.savedSellers')} ({savedSellers.length})
+          </button>
+        </div>
       </header>
 
       {savedSellersMounted && (
@@ -1227,20 +1265,27 @@ export default function MarketAnalysisPage() {
       </div>
 
       {showFastStatisticsPanel && loading ? (
-        <section className="flex min-h-[148px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm dark:border-slate-800 dark:bg-[#151515] dark:shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
+        <section className="flex min-h-[148px] items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/40">
           <div className="flex items-center gap-3 text-sm font-semibold text-slate-600 dark:text-slate-200">
-            <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-teal-500 border-t-transparent" />
+            <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
             {t('marketAnalysisPage.loading')}
           </div>
         </section>
       ) : fastStatistics && showFastStatisticsPanel ? (
-        <section className="rounded-xl border border-slate-200 bg-slate-50 p-2 shadow-sm dark:border-slate-800 dark:bg-[#151515] dark:shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900/40">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             {fastStatistics.cards.slice(0, 4).map((card) => (
-              <FastStatCard key={card.label} icon={card.icon} label={card.label} value={card.value} />
+              <FastStatCard
+                key={card.label}
+                icon={card.icon}
+                label={card.label}
+                value={card.value}
+                color={card.color}
+                quality={card.label === 'Sell through' ? getSellThroughQuality(searchRaw?.sellThrough) : null}
+              />
             ))}
             {fastStatistics.cards.slice(4).map((card) => (
-              <FastStatCard key={card.label} icon={card.icon} label={card.label} value={card.value} />
+              <FastStatCard key={card.label} icon={card.icon} label={card.label} value={card.value} color={card.color} />
             ))}
             {fastStatistics.isProduct && (
               <FastSearchInfoCard label={fastStatistics.searchLabel} query={fastStatistics.searchQuery} />
@@ -1261,7 +1306,7 @@ export default function MarketAnalysisPage() {
           </div>
 
           {fastStatistics.isProduct && (fastStatistics.marketShare.length > 0 || fastStatistics.salesTrend.length > 0) && (
-            <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-12">
+            <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
               {fastStatistics.marketShare.length > 0 && (
                 <div className="lg:col-span-4 xl:col-span-3">
                   <FastMarketShareChart data={fastStatistics.marketShare} />
