@@ -4,19 +4,19 @@ import { useTranslation } from 'react-i18next';
 
 const PARTNER_STYLES = {
   'Luhive': {
-    wrapClass: 'flex items-center justify-center p-6 rounded-lg border border-slate-800 bg-slate-900/40 backdrop-blur hover:border-cyan-300/30 hover:bg-slate-900/60 transition-all duration-300 group',
+    wrapClass: 'flex items-center justify-center p-6 rounded-lg border border-slate-200 bg-white shadow-sm hover:border-cyan-500/30 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/40 dark:shadow-none dark:backdrop-blur dark:hover:border-cyan-300/30 dark:hover:bg-slate-900/60 transition-all duration-300 group',
     imgClass: 'max-h-16 max-w-full object-contain cursor-pointer transition-all duration-300',
     imgStyle: { height: '4rem' },
   },
   'Lumu Hub': {
-    wrapClass: 'flex items-center justify-center rounded-lg border border-slate-800 bg-slate-900/40 backdrop-blur hover:border-cyan-300/30 hover:bg-slate-900/60 transition-all duration-300 group',
+    wrapClass: 'flex items-center justify-center rounded-lg border border-slate-200 bg-white shadow-sm hover:border-cyan-500/30 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/40 dark:shadow-none dark:backdrop-blur dark:hover:border-cyan-300/30 dark:hover:bg-slate-900/60 transition-all duration-300 group',
     imgClass: 'object-contain cursor-pointer transition-all duration-300',
     imgStyle: { height: '7rem' },
   },
 };
 
 const DEFAULT_PARTNER_STYLE = {
-  wrapClass: 'flex items-center justify-center p-6 rounded-lg border border-slate-800 bg-slate-900/40 backdrop-blur hover:border-cyan-300/30 hover:bg-slate-900/60 transition-all duration-300 group',
+  wrapClass: 'flex items-center justify-center p-6 rounded-lg border border-slate-200 bg-white shadow-sm hover:border-cyan-500/30 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/40 dark:shadow-none dark:backdrop-blur dark:hover:border-cyan-300/30 dark:hover:bg-slate-900/60 transition-all duration-300 group',
   imgClass: 'max-h-16 max-w-full object-contain cursor-pointer transition-all duration-300',
   imgStyle: {},
 };
@@ -50,17 +50,17 @@ function PartnersSection() {
   if (!partners || partners.length === 0) return null;
 
   return (
-    <section className="w-full py-16 md:py-24 bg-slate-950">
+    <section className="w-full py-16 md:py-24 bg-white dark:bg-slate-950">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="flex flex-col items-center text-center gap-3 mb-12">
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
+          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 dark:border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-100">
             {t('landing:partners.eyebrow')}
           </div>
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-white">
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">
             {t('landing:partners.title')}
           </h2>
-          <p className="max-w-2xl text-sm leading-7 text-slate-300 md:text-base">
+          <p className="max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300 md:text-base">
             {t('landing:partners.description')}
           </p>
         </div>
@@ -87,7 +87,7 @@ function PartnersSection() {
                   />
                 ) : (
                   <div className="text-center">
-                    <span className="text-sm font-medium text-slate-400">{partner.name}</span>
+                    <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{partner.name}</span>
                   </div>
                 )}
               </a>

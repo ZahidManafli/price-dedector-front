@@ -15,6 +15,7 @@ import {
 import Swal from 'sweetalert2';
 import { partnerAPI, settingsAPI } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import PartnersSection from '../components/PartnersSection';
 import { applySeo } from '../utils/seo';
@@ -24,11 +25,11 @@ function SectionHeader({ eyebrow, title, description, align = 'left' }) {
 
   return (
     <div className={`flex flex-col gap-3 ${alignClasses}`}>
-      <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
+      <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 dark:border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-100">
         {eyebrow}
       </div>
-      <h2 className="max-w-3xl text-3xl font-semibold tracking-tight text-white md:text-5xl">{title}</h2>
-      <p className="max-w-2xl text-sm leading-7 text-slate-300 md:text-base">{description}</p>
+      <h2 className="max-w-3xl text-3xl font-semibold tracking-tight text-slate-900 dark:text-white md:text-5xl">{title}</h2>
+      <p className="max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300 md:text-base">{description}</p>
     </div>
   );
 }
@@ -50,7 +51,7 @@ function LanguageSelector() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/15"
+        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-200 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:border-white/25 dark:hover:bg-white/15"
       >
         <Globe2 size={16} />
         <span className="hidden sm:inline">{currentLangLabel.split(' ')[0]}</span>
@@ -58,7 +59,7 @@ function LanguageSelector() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 rounded-xl border border-white/15 bg-slate-900 shadow-xl z-50">
+        <div className="absolute right-0 mt-2 w-48 rounded-xl border border-slate-200 bg-white shadow-xl z-50 overflow-hidden dark:border-white/15 dark:bg-slate-900">
           {languages.map((lang) => (
             <button
               key={lang.code}
@@ -68,8 +69,8 @@ function LanguageSelector() {
               }}
               className={`w-full px-4 py-3 text-left text-sm font-medium transition ${
                 currentLanguage === lang.code
-                  ? 'bg-cyan-500/20 text-cyan-100'
-                  : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                  ? 'bg-cyan-50 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-100'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white'
               }`}
             >
               {lang.label}
@@ -86,8 +87,8 @@ function PlanCard({ plan, onSubscribe }) {
   const { t } = useTranslation('pricing');
 
   const featuredClasses = plan.featured
-    ? 'border-cyan-300/50 bg-slate-900/95 shadow-[0_20px_80px_rgba(34,211,238,0.14)]'
-    : 'border-white/10 bg-slate-900/70';
+    ? 'border-cyan-500/40 bg-white shadow-[0_16px_60px_rgba(8,145,178,0.14)] dark:border-cyan-300/50 dark:bg-slate-900/95 dark:shadow-[0_20px_80px_rgba(34,211,238,0.14)]'
+    : 'border-slate-200 bg-white shadow-md dark:border-white/10 dark:bg-slate-900/70';
 
   const hasDiscount =
     Number.isFinite(Number(plan.actualPrice)) &&
@@ -106,50 +107,50 @@ function PlanCard({ plan, onSubscribe }) {
 
   return (
     <article
-      className={`relative flex h-full flex-col overflow-hidden rounded-3xl border p-5 shadow-lg backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-white/20 ${featuredClasses}`}
+      className={`relative flex h-full flex-col overflow-hidden rounded-3xl border p-5 shadow-lg backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-slate-300 dark:hover:border-white/20 ${featuredClasses}`}
       style={{ animation: 'fadeIn 0.4s ease both' }}
     >
       <div className={`absolute inset-0 bg-gradient-to-br ${plan.accent} opacity-100`} />
       <div className="relative z-10 flex h-full flex-col">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-xl font-semibold text-white">{plan.name}</h3>
-            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">{plan.duration}</p>
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-white">{plan.name}</h3>
+            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{plan.duration}</p>
           </div>
           {plan.featured ? (
-            <span className="rounded-full border border-cyan-300/30 bg-cyan-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
+            <span className="rounded-full border border-cyan-500/30 dark:border-cyan-300/30 bg-cyan-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-100">
               {t('planCard.featured')}
             </span>
           ) : null}
         </div>
 
-        <div className="mt-5 rounded-2xl border border-cyan-300/20 bg-slate-950/45 p-3">
+        <div className="mt-5 rounded-2xl border border-cyan-500/20 dark:border-cyan-300/20 bg-cyan-50/60 dark:bg-slate-950/45 p-3">
           {hasDiscount && discountedDisplay ? (
             <>
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm text-slate-300 line-through">{displayPrice}</p>
-                <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-100">
+                <p className="text-sm text-slate-400 dark:text-slate-300 line-through">{displayPrice}</p>
+                <span className="rounded-full border border-emerald-500/30 dark:border-emerald-300/30 bg-emerald-400/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-100">
                   {t('pricing:planCard.save', { percent: discountPercent })}
                 </span>
               </div>
               <div className="mt-1 flex items-end gap-2">
-                <span className="text-3xl font-semibold tracking-tight text-white">{discountedDisplay}</span>
-                <span className="text-xs text-slate-400">{t('pricing:planCard.specialOffer')}</span>
+                <span className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">{discountedDisplay}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{t('pricing:planCard.specialOffer')}</span>
               </div>
             </>
           ) : (
             <div className="flex items-end gap-2">
-              <span className="text-3xl font-semibold tracking-tight text-white">{displayPrice}</span>
+              <span className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">{displayPrice}</span>
             </div>
           )}
         </div>
 
-        <p className="mt-3 min-h-[3rem] text-sm leading-6 text-slate-300">{plan.summary}</p>
+        <p className="mt-3 min-h-[3rem] text-sm leading-6 text-slate-600 dark:text-slate-300">{plan.summary}</p>
 
-        <ul className="mt-5 flex-1 space-y-3 text-sm text-slate-200">
+        <ul className="mt-5 flex-1 space-y-3 text-sm text-slate-700 dark:text-slate-200">
           {plan.features.map((feature) => (
             <li key={feature} className="flex items-start gap-3">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-300" />
               <span>{feature}</span>
             </li>
           ))}
@@ -211,6 +212,7 @@ function normalizePlan(raw = {}) {
 export default function LandingPage() {
   const { t } = useTranslation(['landing', 'common', 'pricing']);
   const { changeLanguage } = useLanguage();
+  const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState('subscription');
   const [plans, setPlans] = useState([]);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
@@ -298,18 +300,18 @@ export default function LandingPage() {
       try {
         const existingUserLanguage = localStorage.getItem('userLanguage');
         const geoLanguageApplied = localStorage.getItem('_geoLanguageApplied');
-        
+
         // Only apply geo suggestion if no user language saved AND we haven't already tried
         if (existingUserLanguage || geoLanguageApplied) return;
 
         const resp = await partnerAPI.getPublic();
         const suggested = String(resp?.data?.suggestedLanguage || '').trim().toLowerCase();
         const geo = resp?.data?.geo || {};
-        
+
         // Store the suggestion from backend for debugging
         localStorage.setItem('_geoSuggestedLanguage', suggested);
         localStorage.setItem('_geoCountry', geo.country || '');
-        
+
         const supported = ['en', 'az', 'ru', 'tr'];
         if (!cancelled && supported.includes(suggested)) {
           await changeLanguage(suggested);
@@ -407,14 +409,15 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
-      <div className="pointer-events-none absolute inset-0 opacity-70">
+    <div className="relative min-h-screen overflow-hidden bg-white text-slate-700 dark:bg-slate-950 dark:text-slate-100">
+      <div className={`pointer-events-none absolute inset-0 transition-opacity duration-300 ${isDark ? 'opacity-70' : 'opacity-40'}`}>
         <div className="absolute -top-24 left-[-8rem] h-96 w-96 rounded-full bg-cyan-500/18 blur-3xl" />
         <div className="absolute top-28 right-[-7rem] h-96 w-96 rounded-full bg-blue-500/16 blur-3xl" />
         <div className="absolute bottom-0 left-1/4 h-80 w-80 rounded-full bg-amber-300/10 blur-3xl" />
         <div
-          className="absolute inset-0 opacity-[0.12]"
+          className="absolute inset-0"
           style={{
+            opacity: isDark ? 0.12 : 0.06,
             backgroundImage:
               'linear-gradient(rgba(148,163,184,0.16) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.16) 1px, transparent 1px)',
             backgroundSize: '72px 72px',
@@ -429,21 +432,21 @@ export default function LandingPage() {
               <img
                 src="/logo-2.png"
                 alt="Checkila"
-                className="h-12 w-12 rounded-xl object-cover ring-1 ring-white/20"
+                className="h-12 w-12 rounded-xl object-cover ring-1 ring-slate-200 dark:ring-white/20"
               />
-              <span className="text-2xl font-semibold tracking-tight">Checkila</span>
+              <span className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">Checkila</span>
             </div>
-            <nav className="hidden items-center gap-6 text-sm text-slate-300 md:flex">
-              <a href="#features" className="transition hover:text-white">
+            <nav className="hidden items-center gap-6 text-sm text-slate-600 dark:text-slate-300 md:flex">
+              <a href="#features" className="transition hover:text-slate-900 dark:hover:text-white">
                 {t('landing:navigation.features')}
               </a>
-              <a href="#plans" className="transition hover:text-white">
+              <a href="#plans" className="transition hover:text-slate-900 dark:hover:text-white">
                 {t('landing:navigation.plans')}
               </a>
-              <a href="/ebay-calculator" className="transition hover:text-white">
+              <a href="/ebay-calculator" className="transition hover:text-slate-900 dark:hover:text-white">
                 {t('common:nav.ebayCalculator')}
               </a>
-              <a href="#contact" className="transition hover:text-white">
+              <a href="#contact" className="transition hover:text-slate-900 dark:hover:text-white">
                 {t('landing:navigation.contact')}
               </a>
             </nav>
@@ -451,7 +454,7 @@ export default function LandingPage() {
               <LanguageSelector />
               <Link
                 to="/login"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/15"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-200 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:border-white/25 dark:hover:bg-white/15"
               >
                 {t('common:auth.login')}
                 <ArrowRight size={14} />
@@ -461,14 +464,14 @@ export default function LandingPage() {
 
           <div className="mt-14 grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 dark:border-cyan-300/25 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-100">
                 <Sparkles size={14} />
                 {t('landing:hero.eyebrow')}
               </div>
-              <h1 className="mt-5 text-4xl font-semibold leading-tight tracking-tight text-white md:text-6xl xl:text-7xl">
+              <h1 className="mt-5 text-4xl font-semibold leading-tight tracking-tight text-slate-900 dark:text-white md:text-6xl xl:text-7xl">
                 {t('landing:hero.title')}
               </h1>
-              <p className="mt-6 max-w-xl text-base leading-7 text-slate-300 md:text-lg">
+              <p className="mt-6 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300 md:text-lg">
                 {t('landing:hero.subtitle')}
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -481,7 +484,7 @@ export default function LandingPage() {
                 </Link>
                 <a
                   href="#plans"
-                  className="inline-flex items-center rounded-xl border border-white/15 px-5 py-3 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/10"
+                  className="inline-flex items-center rounded-xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 dark:border-white/15 dark:text-white dark:hover:border-white/25 dark:hover:bg-white/10"
                 >
                   {t('landing:hero.viewPlans')}
                 </a>
@@ -489,10 +492,13 @@ export default function LandingPage() {
 
               <div className="mt-10 grid gap-4 sm:grid-cols-3">
                 {heroStats.map((stat) => (
-                  <article key={stat.label} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
-                    <stat.icon className="h-5 w-5 text-cyan-300" />
-                    <p className="mt-3 text-sm font-medium text-white">{stat.value}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-400">{stat.label}</p>
+                  <article
+                    key={stat.label}
+                    className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none"
+                  >
+                    <stat.icon className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
+                    <p className="mt-3 text-sm font-medium text-slate-900 dark:text-white">{stat.value}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{stat.label}</p>
                   </article>
                 ))}
               </div>
@@ -500,8 +506,8 @@ export default function LandingPage() {
 
             <div className="relative">
               <div className="absolute -inset-6 rounded-[2rem] bg-gradient-to-br from-cyan-400/10 via-blue-500/5 to-transparent blur-2xl" />
-              <div className="relative rounded-[2rem] border border-white/10 bg-slate-900/80 p-4 shadow-2xl shadow-black/40 backdrop-blur-xl md:p-5">
-                <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-950/60">
+              <div className="relative rounded-[2rem] border border-slate-200 bg-white/80 p-4 shadow-2xl shadow-slate-300/40 backdrop-blur-xl md:p-5 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-black/40">
+                <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-slate-950/60">
                   <img
                     src="/analytic.jpg"
                     alt="Checkila Analysis preview"
@@ -524,26 +530,26 @@ export default function LandingPage() {
           />
 
           <div className="mt-10 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-            <article className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-6 shadow-lg backdrop-blur">
-              <h3 className="text-xl font-semibold text-white">{t('landing:dropshippingSection.cardTitle')}</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-300">{t('landing:dropshippingSection.cardDescription')}</p>
-              <ul className="mt-5 space-y-3 text-sm text-slate-200">
+            <article className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60 backdrop-blur dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none">
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white">{t('landing:dropshippingSection.cardTitle')}</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('landing:dropshippingSection.cardDescription')}</p>
+              <ul className="mt-5 space-y-3 text-sm text-slate-700 dark:text-slate-200">
                 {t('landing:dropshippingSection.bullets', { returnObjects: true }).map((bullet) => (
                   <li key={bullet} className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-300" />
                     <span>{bullet}</span>
                   </li>
                 ))}
               </ul>
             </article>
 
-            <article className="rounded-[2rem] border border-cyan-300/20 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 p-6 shadow-lg backdrop-blur">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100">{t('landing:dropshippingSection.sideEyebrow')}</p>
-              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-white">{t('landing:dropshippingSection.sideTitle')}</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-300">{t('landing:dropshippingSection.sideDescription')}</p>
-              <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                <p className="text-sm font-medium text-white">{t('landing:dropshippingSection.sideHighlightTitle')}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{t('landing:dropshippingSection.sideHighlightDescription')}</p>
+            <article className="rounded-[2rem] border border-cyan-500/20 dark:border-cyan-300/20 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 p-6 shadow-lg shadow-slate-200/60 backdrop-blur dark:shadow-none">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-100">{t('landing:dropshippingSection.sideEyebrow')}</p>
+              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">{t('landing:dropshippingSection.sideTitle')}</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('landing:dropshippingSection.sideDescription')}</p>
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/50">
+                <p className="text-sm font-medium text-slate-900 dark:text-white">{t('landing:dropshippingSection.sideHighlightTitle')}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('landing:dropshippingSection.sideHighlightDescription')}</p>
               </div>
             </article>
           </div>
@@ -559,9 +565,12 @@ export default function LandingPage() {
 
           <div className="mt-10 grid gap-4 md:grid-cols-3">
             {faqItems.map((item) => (
-              <article key={item.question} className="rounded-3xl border border-white/10 bg-white/[0.05] p-5 shadow-lg backdrop-blur">
-                <h3 className="text-base font-semibold text-white">{item.question}</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-300">{item.answer}</p>
+              <article
+                key={item.question}
+                className="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60 backdrop-blur dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none"
+              >
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">{item.question}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.answer}</p>
               </article>
             ))}
           </div>
@@ -579,52 +588,52 @@ export default function LandingPage() {
             {featureCards.map((feature, idx) => (
               <article
                 key={feature.title}
-                className="rounded-3xl border border-white/10 bg-white/[0.05] p-6 shadow-lg backdrop-blur"
+                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60 backdrop-blur dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none"
                 style={{ animation: `fadeIn 0.35s ease ${idx * 0.08}s both` }}
               >
-                <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10">
-                  <feature.icon className="h-5 w-5 text-cyan-300" />
+                <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/20 dark:border-cyan-300/20 bg-cyan-400/10">
+                  <feature.icon className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
                 </div>
-                <h2 className="mt-4 text-lg font-semibold text-white">{feature.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{feature.description}</p>
+                <h2 className="mt-4 text-lg font-semibold text-slate-900 dark:text-white">{feature.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{feature.description}</p>
               </article>
             ))}
           </div>
 
           <div className="mt-6 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="rounded-[2rem] border border-white/10 bg-slate-900/75 p-6 shadow-xl shadow-black/25 backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{t('landing:workflowSection.eyebrow')}</p>
-              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-white md:text-3xl">
+            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/60 backdrop-blur dark:border-white/10 dark:bg-slate-900/75 dark:shadow-black/25">
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">{t('landing:workflowSection.eyebrow')}</p>
+              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white md:text-3xl">
                 {t('landing:workflowSection.title')}
               </h3>
               <div className="mt-6 grid gap-4 md:grid-cols-3">
                 {workflowSteps.map((step, index) => (
-                  <div key={step.title} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-cyan-100">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-400/15 text-xs text-cyan-100">
+                  <div key={step.title} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-cyan-700 dark:text-cyan-100">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-400/15 text-xs text-cyan-700 dark:text-cyan-100">
                         0{index + 1}
                       </span>
                       {step.title}
                     </div>
-                    <p className="mt-3 text-sm leading-6 text-slate-300">{step.description}</p>
+                    <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{step.description}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-white/10 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 p-6 shadow-xl shadow-black/20 backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.24em] text-cyan-100">{t('landing:workflowSection.operationalClarity')}</p>
-              <ul className="mt-5 space-y-4 text-sm text-slate-200">
+            <div className="rounded-[2rem] border border-cyan-500/20 dark:border-white/10 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 p-6 shadow-xl shadow-slate-200/60 backdrop-blur dark:shadow-black/20">
+              <p className="text-xs uppercase tracking-[0.24em] text-cyan-700 dark:text-cyan-100">{t('landing:workflowSection.operationalClarity')}</p>
+              <ul className="mt-5 space-y-4 text-sm text-slate-700 dark:text-slate-200">
                 <li className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-300" />
                   <span>{t('landing:workflowSection.clarity1')}</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-300" />
                   <span>{t('landing:workflowSection.clarity2')}</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-300" />
                   <span>{t('landing:workflowSection.clarity3')}</span>
                 </li>
               </ul>
@@ -641,13 +650,13 @@ export default function LandingPage() {
           />
 
           <div className="mt-10 flex justify-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] p-1.5 backdrop-blur">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 p-1.5 backdrop-blur dark:border-white/15 dark:bg-white/[0.05]">
               <button
                 onClick={() => setActiveTab('subscription')}
                 className={`rounded-full px-6 py-2 text-sm font-semibold transition ${
                   activeTab === 'subscription'
                     ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20'
-                    : 'text-slate-300 hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
                 }`}
               >
                 {t('landing:pricing.subscriptionPlans')}
@@ -657,7 +666,7 @@ export default function LandingPage() {
                 className={`rounded-full px-6 py-2 text-sm font-semibold transition ${
                   activeTab === 'analytics'
                     ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20'
-                    : 'text-slate-300 hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
                 }`}
               >
                 {t('landing:pricing.analyticsPlans')}
@@ -667,7 +676,7 @@ export default function LandingPage() {
                 className={`rounded-full px-6 py-2 text-sm font-semibold transition ${
                   activeTab === 'amazon_monitoring'
                     ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20'
-                    : 'text-slate-300 hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
                 }`}
               >
                 {t('landing:pricing.amazonMonitoringPlans')}
@@ -680,10 +689,10 @@ export default function LandingPage() {
               <div>
                 <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-100">
                       {t('landing:pricing.subscriptionPlans')}
                     </p>
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
                       {t('landing:pricing.subscriptionDescription')}
                     </p>
                   </div>
@@ -693,7 +702,7 @@ export default function LandingPage() {
                   <button
                     type="button"
                     onClick={() => onSubscribePlan({ id: 'custom' })}
-                    className="rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20"
+                    className="rounded-xl border border-cyan-500/25 dark:border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-700 dark:text-cyan-100 transition hover:bg-cyan-400/20"
                   >
                     {t('landing:pricing.requestCustom')}
                   </button>
@@ -701,7 +710,7 @@ export default function LandingPage() {
 
                 <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
                   {subscriptionVisiblePlans.length === 0 ? (
-                    <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-300">
+                    <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
                       {t('landing:pricing.noPlans')}
                     </div>
                   ) : (
@@ -717,10 +726,10 @@ export default function LandingPage() {
               <div>
                 <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-100">
                       {t('landing:pricing.analyticsPlans')}
                     </p>
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
                       {t('landing:pricing.analyticsDescription')}
                     </p>
                   </div>
@@ -730,7 +739,7 @@ export default function LandingPage() {
                   <button
                     type="button"
                     onClick={() => onSubscribePlan({ id: 'custom' })}
-                    className="rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20"
+                    className="rounded-xl border border-cyan-500/25 dark:border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-700 dark:text-cyan-100 transition hover:bg-cyan-400/20"
                   >
                     {t('landing:pricing.requestCustom')}
                   </button>
@@ -738,7 +747,7 @@ export default function LandingPage() {
 
                 <div className="mt-6 grid gap-5 lg:grid-cols-2">
                   {analyticsVisiblePlans.length === 0 ? (
-                    <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-300">
+                    <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
                       {t('landing:pricing.noPlans')}
                     </div>
                   ) : (
@@ -754,10 +763,10 @@ export default function LandingPage() {
               <div>
                 <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-100">
                       {t('landing:pricing.amazonMonitoringPlans')}
                     </p>
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
                       {t('landing:pricing.amazonMonitoringDescription')}
                     </p>
                   </div>
@@ -767,7 +776,7 @@ export default function LandingPage() {
                   <button
                     type="button"
                     onClick={() => onSubscribePlan({ id: 'custom' })}
-                    className="rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20"
+                    className="rounded-xl border border-cyan-500/25 dark:border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-700 dark:text-cyan-100 transition hover:bg-cyan-400/20"
                   >
                     {t('landing:pricing.requestCustom')}
                   </button>
@@ -775,7 +784,7 @@ export default function LandingPage() {
 
                 <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
                   {amazonMonitoringVisiblePlans.length === 0 ? (
-                    <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-300">
+                    <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
                       {t('landing:pricing.noPlans')}
                     </div>
                   ) : (
@@ -790,18 +799,18 @@ export default function LandingPage() {
         </section>
 
         <section id="contact" className="mx-auto max-w-7xl px-6 pb-16 md:pb-24">
-          <div className="grid gap-4 overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/75 p-6 shadow-2xl shadow-black/25 backdrop-blur lg:grid-cols-[1.15fr_0.85fr] lg:p-8">
+          <div className="grid gap-4 overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-200/60 backdrop-blur lg:grid-cols-[1.15fr_0.85fr] lg:p-8 dark:border-white/10 dark:bg-slate-900/75 dark:shadow-black/25">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-cyan-100">{t('landing:cta.needHelp')}</p>
-              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-white md:text-4xl">
+              <p className="text-xs uppercase tracking-[0.24em] text-cyan-700 dark:text-cyan-100">{t('landing:cta.needHelp')}</p>
+              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white md:text-4xl">
                 {t('landing:cta.startWithPlan')}
               </h3>
             </div>
 
-            <div className="flex flex-col justify-between gap-4 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5">
+            <div className="flex flex-col justify-between gap-4 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 dark:border-white/10 dark:bg-white/[0.04]">
               <div>
-                <p className="text-sm font-medium text-slate-200">{t('landing:cta.ready')}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-400">
+                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{t('landing:cta.ready')}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
                   {t('landing:cta.readyDescription')}
                 </p>
               </div>
@@ -815,7 +824,7 @@ export default function LandingPage() {
                 </Link>
                 <a
                   href="#plans"
-                  className="inline-flex items-center rounded-xl border border-white/15 px-5 py-3 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/10"
+                  className="inline-flex items-center rounded-xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 dark:border-white/15 dark:text-white dark:hover:border-white/25 dark:hover:bg-white/10"
                 >
                   {t('landing:cta.reviewPlans')}
                 </a>
@@ -824,11 +833,11 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-6 pb-10 text-sm text-slate-400">
-          <Link to="/privacy" className="transition hover:text-white">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-6 pb-10 text-sm text-slate-500 dark:text-slate-400">
+          <Link to="/privacy" className="transition hover:text-slate-900 dark:hover:text-white">
             Privacy Policy
           </Link>
-          <Link to="/extension-privacy" className="transition hover:text-white">
+          <Link to="/extension-privacy" className="transition hover:text-slate-900 dark:hover:text-white">
             Extension Privacy Policy
           </Link>
         </div>
