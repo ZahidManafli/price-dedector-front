@@ -99,43 +99,44 @@ export default function Sidebar() {
       {/* Mobile menu button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 md:hidden bg-blue-600 text-white p-3 rounded-full shadow-lg z-40"
+        className="fixed bottom-4 right-4 md:hidden bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg shadow-blue-600/30 z-40 transition-colors"
+        aria-label={isOpen ? 'Close menu' : 'Open menu'}
       >
         ☰
       </button>
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 h-screen md:relative md:h-auto bg-gray-900 dark:bg-slate-950 text-white transition-all duration-300 z-30 md:z-auto flex flex-col ${
+        className={`fixed left-0 h-screen md:relative md:h-auto bg-white dark:bg-slate-950 text-slate-900 dark:text-white border-r border-slate-200 dark:border-slate-800/80 shadow-[6px_0_24px_-12px_rgba(15,23,42,0.15)] dark:shadow-none transition-all duration-300 z-30 md:z-auto flex flex-col ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0 ${
           isCollapsed ? 'w-20' : 'w-64'
         }`}
       >
-        <div className={`flex-shrink-0 flex items-center ${
+        <div className={`flex-shrink-0 flex items-center border-b border-slate-100 dark:border-slate-800/60 ${
           isCollapsed ? 'justify-center px-2 py-6' : 'justify-between px-4 py-4'
         }`}>
           {!isCollapsed && (
             <div className="flex items-center gap-3 w-full">
-              <img src="/logo-2.png" alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-slate-700/50 flex-shrink-0" />
+              <img src="/logo-2.png" alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700/50 flex-shrink-0" />
               <div className="min-w-0">
-                <span className="block text-lg font-semibold">Checkila</span>
+                <span className="block text-lg font-semibold text-slate-900 dark:text-white">Checkila</span>
                 {activeEbayLabel ? (
-                  <span className="block text-xs text-slate-300 truncate">
-                    {t('sidebar.ebayStatus')}: <span className="font-medium text-slate-100">{activeEbayLabel}</span>
+                  <span className="block text-xs text-slate-500 dark:text-slate-300 truncate">
+                    {t('sidebar.ebayStatus')}: <span className="font-medium text-slate-700 dark:text-slate-100">{activeEbayLabel}</span>
                   </span>
                 ) : (
-                  <span className="block text-xs text-slate-400 truncate">{t('sidebar.ebayStatus')}: —</span>
+                  <span className="block text-xs text-slate-400 dark:text-slate-400 truncate">{t('sidebar.ebayStatus')}: —</span>
                 )}
               </div>
             </div>
           )}
           {isCollapsed && (
-            <img src="/logo-2.png" alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-slate-700/50" />
+            <img src="/logo-2.png" alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700/50" />
           )}
           <button
             onClick={toggleSidebar}
-            className="hidden md:flex items-center justify-center p-1 hover:bg-slate-800 rounded transition flex-shrink-0"
+            className="hidden md:flex items-center justify-center p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 rounded-lg transition-colors flex-shrink-0"
             title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
@@ -145,9 +146,9 @@ export default function Sidebar() {
         <nav
           className="flex-1 overflow-y-auto"
           data-tour="sidebar-nav"
-          style={{ paddingLeft: isCollapsed ? '0.5rem' : '1rem', paddingRight: isCollapsed ? '0.5rem' : '1rem' }}
+          style={{ paddingLeft: isCollapsed ? '0.5rem' : '1rem', paddingRight: isCollapsed ? '0.5rem' : '1rem', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
         >
-          <div className="space-y-2">
+          <div className="space-y-1">
             {links.map((link) => {
               const canAccess = hasTabAccess(link.tab);
               if (!canAccess) {
@@ -155,9 +156,9 @@ export default function Sidebar() {
                   <div
                     key={link.path}
                     data-tour={link.tour || undefined}
-                    className={`flex items-center gap-3 px-3 py-3 rounded-xl transition opacity-55 cursor-not-allowed ${
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-not-allowed ${
                       isCollapsed ? 'justify-center' : ''
-                    } text-slate-400 bg-slate-900/40 border border-slate-800`}
+                    } text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800`}
                     title={isCollapsed ? `${link.label} (locked)` : ''}
                   >
                     <link.icon size={18} className="flex-shrink-0" />
@@ -171,22 +172,24 @@ export default function Sidebar() {
                 );
               }
 
+              const active = isActive(link.path);
+
               return (
                 <Link
                   key={link.path}
                   data-tour={link.tour || undefined}
                   to={link.path}
                   onClick={() => setIsOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-xl transition ${
+                  className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
                     isCollapsed ? 'justify-center' : ''
                   } ${
-                    isActive(link.path)
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-300 hover:bg-slate-800'
+                    active
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
                   }`}
                   title={isCollapsed ? link.label : ''}
                 >
-                  <link.icon size={18} className="flex-shrink-0" />
+                  <link.icon size={18} className={`flex-shrink-0 ${active ? '' : 'text-slate-400 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'}`} />
                   {!isCollapsed && <span className="text-sm">{link.label}</span>}
                 </Link>
               );
@@ -195,24 +198,24 @@ export default function Sidebar() {
         </nav>
 
         {/* Profile footer */}
-        <div className="flex-shrink-0 p-3 border-t border-slate-700">
+        <div className="flex-shrink-0 p-3 border-t border-slate-100 dark:border-slate-700">
           {!isCollapsed ? (
             <>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-3 mb-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 px-3 py-2.5">
+                <div className="h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-white">
                   <User size={16} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">
+                  <p className="text-sm font-medium truncate text-slate-900 dark:text-white">
                     {displayName}
                   </p>
                   {user?.email && (
-                    <p className="text-xs text-slate-400 truncate">{user.email}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
                   )}
                   {hasTabAccess(TAB_KEYS.SETTINGS) ? (
                     <Link
                       to="/settings"
-                      className="text-xs text-slate-300 hover:underline"
+                      className="text-xs text-blue-600 hover:text-blue-700 hover:underline dark:text-slate-300 dark:hover:text-white"
                       onClick={() => setIsOpen(false)}
                     >
                       {t('nav.settings')}
@@ -224,15 +227,15 @@ export default function Sidebar() {
                 <div className="relative flex-1">
                   <button
                     onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
-                    className="w-full flex items-center justify-center gap-2 rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
+                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:hover:text-white px-3 py-2 text-sm transition-colors"
                     title={t('sidebar.selectLanguage')}
                   >
                     <Globe2 size={14} />
-                    <ChevronDown size={12} className={`transition ${languageMenuOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={12} className={`transition-transform ${languageMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {languageMenuOpen && (
-                    <div className="absolute bottom-full left-0 mb-2 w-40 rounded-lg border border-slate-600 bg-slate-800 shadow-xl z-50">
+                    <div className="absolute bottom-full left-0 mb-2 w-40 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-xl z-50 overflow-hidden">
                       {[
                         { code: 'en', label: 'English' },
                         { code: 'az', label: 'Azərbaycanca' },
@@ -245,10 +248,10 @@ export default function Sidebar() {
                             changeLanguage(lang.code);
                             setLanguageMenuOpen(false);
                           }}
-                          className={`w-full px-4 py-2 text-left text-sm font-medium transition ${
+                          className={`w-full px-4 py-2 text-left text-sm font-medium transition-colors ${
                             currentLanguage === lang.code
                               ? 'bg-blue-600 text-white'
-                              : 'text-slate-300 hover:bg-slate-700'
+                              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
                           }`}
                         >
                           {lang.label}
@@ -260,7 +263,7 @@ export default function Sidebar() {
 
                 <button
                   onClick={toggleTheme}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
+                  className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:hover:text-white px-3 py-2 text-sm transition-colors"
                   title={t('sidebar.theme')}
                 >
                   {isDark ? <Sun size={14} /> : <Moon size={14} />}
@@ -268,7 +271,7 @@ export default function Sidebar() {
                 <button
                   data-tour="tour-replay-button"
                   onClick={replayTour}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
+                  className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:hover:text-white px-3 py-2 text-sm transition-colors"
                   title={t('sidebar.replayTour')}
                 >
                   <HelpCircle size={14} />
@@ -278,7 +281,7 @@ export default function Sidebar() {
                     await logout();
                     window.location.href = '/login';
                   }}
-                  className="flex-1 flex items-center justify-center rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm"
+                  className="flex-1 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:hover:text-white px-3 py-2 text-sm transition-colors"
                   title={t('sidebar.logout')}
                 >
                   <LogOut size={14} />
@@ -290,14 +293,14 @@ export default function Sidebar() {
               <div className="relative w-full">
                 <button
                   onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
-                  className="w-full p-2 rounded-md bg-slate-800 hover:bg-slate-700 transition flex items-center justify-center"
+                  className="w-full p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:hover:text-white transition-colors flex items-center justify-center"
                   title="Change language"
                 >
                   <Globe2 size={16} />
                 </button>
 
                 {languageMenuOpen && (
-                  <div className="absolute bottom-full left-0 mb-2 w-40 rounded-lg border border-slate-600 bg-slate-800 shadow-xl z-50">
+                  <div className="absolute bottom-full left-0 mb-2 w-40 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-xl z-50 overflow-hidden">
                     {[
                       { code: 'en', label: 'English' },
                       { code: 'az', label: 'Azərbaycanca' },
@@ -310,10 +313,10 @@ export default function Sidebar() {
                           changeLanguage(lang.code);
                           setLanguageMenuOpen(false);
                         }}
-                        className={`w-full px-4 py-2 text-left text-sm font-medium transition ${
+                        className={`w-full px-4 py-2 text-left text-sm font-medium transition-colors ${
                           currentLanguage === lang.code
                             ? 'bg-blue-600 text-white'
-                            : 'text-slate-300 hover:bg-slate-700'
+                            : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
                         }`}
                       >
                         {lang.label}
@@ -325,7 +328,7 @@ export default function Sidebar() {
 
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 transition"
+                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:hover:text-white transition-colors"
                 title={isDark ? 'Light mode' : 'Dark mode'}
               >
                 {isDark ? <Sun size={16} /> : <Moon size={16} />}
@@ -333,7 +336,7 @@ export default function Sidebar() {
               <button
                 data-tour="tour-replay-button"
                 onClick={replayTour}
-                className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 transition"
+                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:hover:text-white transition-colors"
                 title="Replay onboarding tour"
               >
                 <HelpCircle size={16} />
@@ -343,7 +346,7 @@ export default function Sidebar() {
                   await logout();
                   window.location.href = '/login';
                 }}
-                className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 transition"
+                className="p-2 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:hover:text-white transition-colors"
                 title="Logout"
               >
                 <LogOut size={16} />

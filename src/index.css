@@ -116,7 +116,7 @@ html.dark .btn-secondary {
   background: #94a3b8;
 }
 
-/* Dark mode scrollbar for sidebar */
+/* Sidebar scrollbar */
 aside ::-webkit-scrollbar {
   width: 6px;
 }
@@ -126,10 +126,18 @@ aside ::-webkit-scrollbar-track {
 }
 
 aside ::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: #cbd5e1;
   border-radius: 3px;
 }
 
 aside ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark aside ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+.dark aside ::-webkit-scrollbar-thumb:hover {
   background: #64748b;
 }

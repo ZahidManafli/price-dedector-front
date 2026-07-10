@@ -46,6 +46,7 @@ import ProfitTablePage from './pages/ProfitTablePage';
 import UpgradePlanPage from './pages/UpgradePlanPage';
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
+import SidebarPreviewPage from './pages/__SidebarPreviewPage';
 
 // Routes that stay reachable even for a user whose plan has expired, so they can
 // still see the notice and renew instead of getting redirected in a loop.
@@ -125,6 +126,7 @@ function AppContent() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
+            <Route path="/__sidebar-preview" element={<SidebarPreviewPage />} />
             <Route
               path="/login"
               element={isAuthenticated && hasToken ? <Navigate to="/dashboard" replace /> : <LoginPage />}
