@@ -83,6 +83,7 @@ export default function MarketSearchBar({
             className="input-base"
             placeholder="179697"
             value={params.categoryId}
+            readOnly={isFastMode}
             onChange={(e) => setValue('categoryId', e.target.value)}
           />
         </div>
@@ -93,6 +94,7 @@ export default function MarketSearchBar({
             className="input-base"
             value={params.buyingOptions}
             onChange={(e) => setValue('buyingOptions', e.target.value)}
+            readOnly={isFastMode}
           >
             {buyingOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -102,7 +104,7 @@ export default function MarketSearchBar({
 
         <div className="md:col-span-2">
           <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.sort')}</label>
-          <select className="input-base" value={params.sort} onChange={(e) => setValue('sort', e.target.value)}>
+          <select className="input-base" value={params.sort} onChange={(e) => setValue('sort', e.target.value)} readOnly={isFastMode}>
             {sortOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
@@ -119,6 +121,7 @@ export default function MarketSearchBar({
             min="0"
             value={params.minPrice}
             onChange={(e) => setValue('minPrice', e.target.value)}
+            readOnly={isFastMode}
           />
         </div>
 
@@ -130,12 +133,13 @@ export default function MarketSearchBar({
             min="0"
             value={params.maxPrice}
             onChange={(e) => setValue('maxPrice', e.target.value)}
+            readOnly={isFastMode}
           />
         </div>
 
         <div className="md:col-span-2">
           <label className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{t('marketSearchBar.perPage')}</label>
-          <select className="input-base" value={params.limit} onChange={(e) => setValue('limit', Number(e.target.value))}>
+          <select className="input-base" value={params.limit} onChange={(e) => setValue('limit', Number(e.target.value))} readOnly={isFastMode}>
             <option value={12}>12</option>
             <option value={24}>24</option>
             <option value={48}>48</option>
