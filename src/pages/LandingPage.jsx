@@ -509,7 +509,7 @@ export default function LandingPage() {
               <div className="relative rounded-[2rem] border border-slate-200 bg-white/80 p-4 shadow-2xl shadow-slate-300/40 backdrop-blur-xl md:p-5 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-black/40">
                 <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-slate-950/60">
                   <img
-                    src="/analytic.png"
+                    src="/analytic-1.png"
                     alt="Checkila Analysis preview"
                     className="h-full min-h-[28rem] w-full object-cover"
                   />
