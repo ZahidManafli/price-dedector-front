@@ -12,7 +12,8 @@
     "settings": "Settings",
     "adminPanel": "Admin Panel",
     "learning": "Learning",
-    "profitTable": "Profit Table"
+    "profitTable": "Profit Table",
+    "tracking": "Tracking"
   },
   "sidebar": {
     "selectLanguage": "Select Language",
@@ -1141,7 +1142,8 @@
       "dewiso": "Dewiso",
       "settings": "Settings",
       "profit_table": "Profit Table",
-      "buyer_crm": "Buyer CRM"
+      "buyer_crm": "Buyer CRM",
+      "tracking": "Tracking"
     }
   },
   "back": "Back"

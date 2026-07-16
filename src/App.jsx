@@ -43,6 +43,7 @@ import BuyersPage from './pages/BuyersPage';
 import ReferralDashboardPage from './pages/ReferralDashboardPage';
 import LearningVideosPage from './pages/LearningVideosPage';
 import ProfitTablePage from './pages/ProfitTablePage';
+import TrackingPage from './pages/TrackingPage';
 import UpgradePlanPage from './pages/UpgradePlanPage';
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
@@ -289,6 +290,14 @@ function AppContent() {
               element={
                 <ProtectedRoute requiredTab={TAB_KEYS.BUYER_CRM}>
                   <BuyersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tracking"
+              element={
+                <ProtectedRoute requiredTab={TAB_KEYS.TRACKING}>
+                  <TrackingPage />
                 </ProtectedRoute>
               }
             />

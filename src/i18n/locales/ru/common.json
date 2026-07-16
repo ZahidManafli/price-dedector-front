@@ -12,7 +12,8 @@
     "settings": "Настройки",
     "adminPanel": "Админ панель",
     "learning": "Обучение",
-    "profitTable": "Таблица прибыли"
+    "profitTable": "Таблица прибыли",
+    "tracking": "Отслеживание"
   },
   "sidebar": {
     "selectLanguage": "Выбрать язык",
@@ -1077,7 +1078,8 @@
       "dewiso": "Dewiso",
       "settings": "Настройки",
       "profit_table": "Таблица прибыли",
-      "buyer_crm": "CRM покупателей"
+      "buyer_crm": "CRM покупателей",
+      "tracking": "Отслеживание"
     }
   },
   "back": "Назад"

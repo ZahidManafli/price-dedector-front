@@ -12,7 +12,8 @@
     "settings": "Ayarlar",
     "adminPanel": "Admin Paneli",
     "learning": "Öğrenme",
-    "profitTable": "Kâr Tablosu"
+    "profitTable": "Kâr Tablosu",
+    "tracking": "Takip"
   },
   "sidebar": {
     "selectLanguage": "Dil Seç",
@@ -1077,7 +1078,8 @@
       "dewiso": "Dewiso",
       "settings": "Settings",
       "profit_table": "Kâr Tablosu",
-      "buyer_crm": "Alıcı CRM"
+      "buyer_crm": "Alıcı CRM",
+      "tracking": "Takip"
     }
   },
   "back": "Geri"

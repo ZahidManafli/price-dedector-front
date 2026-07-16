@@ -12,7 +12,8 @@
     "settings": "Ayarlar",
     "adminPanel": "Admin Paneli",
     "learning": "Dərslik Videoları",
-    "profitTable": "Mənfəət Cədvəli"
+    "profitTable": "Mənfəət Cədvəli",
+    "tracking": "İzləmə"
   },
   "sidebar": {
     "selectLanguage": "Dil seç",
@@ -1077,7 +1078,8 @@
       "dewiso": "Dewiso",
       "settings": "Settings",
       "profit_table": "Mənfəət Cədvəli",
-      "buyer_crm": "Alıcı CRM"
+      "buyer_crm": "Alıcı CRM",
+      "tracking": "İzləmə"
     }
   },
   "back": "Geri"
