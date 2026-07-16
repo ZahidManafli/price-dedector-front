@@ -117,11 +117,15 @@ export default function TrackingPage() {
                       {fmtDate(row.updatedAt)}
                     </td>
                     <td className="px-4 py-3 text-right">
+                      {/* OrderDetailPage only renders with the full eBay order passed via router
+                          state (see OrdersPage's navigate(..., { state: { order } })) — this list
+                          only has the tracking row, not the full order, so send users to the Orders
+                          list to open the order rather than a dead-end deep link. */}
                       <Link
-                        to={`/orders/${encodeURIComponent(row.ebayOrderId)}`}
+                        to="/orders"
                         className="inline-flex items-center gap-1 text-xs font-medium text-indigo-500 hover:text-indigo-400"
                       >
-                        View <ExternalLink size={12} />
+                        Open in Orders <ExternalLink size={12} />
                       </Link>
                     </td>
                   </tr>
