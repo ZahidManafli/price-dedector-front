@@ -334,6 +334,7 @@ function AsinCell({ order, isDark, autoAsin, allOrders, isInProfit, isCancelled 
           quantity,
           shipTo,
           cardLast4,
+          ebayOrderId: orderId,
         }),
       });
   

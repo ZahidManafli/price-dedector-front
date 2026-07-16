@@ -186,10 +186,11 @@ export const ebayAPI = {
   uploadOrderTrackingToEbay: (orderId, payload) =>
     api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/upload-ebay`, payload),
   listTracking: () => api.get('/ebay/tracking'),
-  createAquilineShipment: (orderId, payload) =>
-    api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/aquiline/create`, payload),
-  cancelAquilineShipment: (orderId) =>
-    api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/aquiline/cancel`),
+  submitAmazonOrderId: (orderId, payload) =>
+    api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/amazon-order-id`, payload),
+  listUnmatchedAmazonOrders: () => api.get('/ebay/tracking/unmatched'),
+  resolveUnmatchedAmazonOrder: (id, ebayOrderId) =>
+    api.post(`/ebay/tracking/unmatched/${encodeURIComponent(id)}/resolve`, { ebayOrderId }),
   scrapeItemDetails: (url) => api.post('/ebay/scrape-item-details', { url }),
   quickList: (payload) => api.post('/ebay/quick-list', payload),
   listSavedSellers: () => api.get('/ebay/saved-sellers'),
@@ -229,6 +230,12 @@ export const amazonOAuthAPI = {
   getStatus: () => api.get('/amazon/oauth/status'),
   disconnect: () => api.post('/amazon/oauth/disconnect'),
   getAccessToken: () => api.post('/amazon/oauth/access-token'),
+};
+
+// Aquiline profile (marketplace account + ship-from address Aquiline tracks orders against)
+export const aquilineAPI = {
+  getProfile: () => api.get('/aquiline/profile'),
+  saveProfile: (payload) => api.post('/aquiline/profile', payload),
 };
 
 export const dewisoAPI = {

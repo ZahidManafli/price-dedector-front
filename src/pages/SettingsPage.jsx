@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCircle2, Link2, Mail, ShieldCheck, Users } from 'lucide-react';
-import { amazonOAuthAPI, authAPI, ebayAPI, settingsAPI } from '../services/api';
+import { amazonOAuthAPI, aquilineAPI, authAPI, ebayAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import { useAuth } from '../context/AuthContext';
@@ -34,6 +34,19 @@ export default function SettingsPage() {
     profile: null,
     tokenExpiresAt: null,
   });
+  const [aquilineProfile, setAquilineProfile] = useState(null);
+  const [aquilineSaving, setAquilineSaving] = useState(false);
+  const [aquilineForm, setAquilineForm] = useState({
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: '',
+    firstName: '',
+    lastName: '',
+    phoneNumber: '',
+  });
   const [alert, setAlert] = useState(null);
   const [nameDrafts, setNameDrafts] = useState({});
   const [limits, setLimits] = useState(null);
@@ -56,16 +69,33 @@ export default function SettingsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [prefRes, ebayRes, amazonRes] = await Promise.all([
+        const [prefRes, ebayRes, amazonRes, aquilineRes] = await Promise.all([
           settingsAPI.getPreferences(),
           ebayAPI.getStatus(),
           amazonOAuthAPI.getStatus().catch(() => ({ data: { connected: false } })),
+          aquilineAPI.getProfile().catch(() => ({ data: { profile: null } })),
         ]);
         const limitsRes = await settingsAPI.getLimits().catch(() => null);
         setPreferences((prev) => ({ ...prev, ...(prefRes.data || {}) }));
         const nextStatus = ebayRes.data || {};
         setEbayStatus(nextStatus);
         setAmazonStatus(amazonRes?.data || { connected: false });
+        const existingAquilineProfile = aquilineRes?.data?.profile || null;
+        setAquilineProfile(existingAquilineProfile);
+        if (existingAquilineProfile?.storeAddress) {
+          const addr = existingAquilineProfile.storeAddress;
+          setAquilineForm({
+            addressLine1: addr.address_line1 || '',
+            addressLine2: addr.address_line2 || '',
+            city: addr.city || '',
+            state: addr.state || '',
+            zipCode: addr.zip_code || '',
+            country: addr.country || '',
+            firstName: addr.first_name || '',
+            lastName: addr.last_name || '',
+            phoneNumber: addr.phone_number || '',
+          });
+        }
         const drafts = {};
         (nextStatus.ebayAccounts || []).forEach((a) => {
           drafts[a.id] = a.connectionName || a.username || a.profileUserId || '';
@@ -128,6 +158,41 @@ export default function SettingsPage() {
       setAlert({ type: 'error', message: error.response?.data?.error || t('settingsPage.failedChangePassword') });
     } finally {
       setPasswordSaving(false);
+    }
+  };
+
+  const handleAquilineFormChange = (field) => (e) => {
+    setAquilineForm((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleSaveAquilineProfile = async () => {
+    if (!aquilineForm.addressLine1 || !aquilineForm.city || !aquilineForm.zipCode || !aquilineForm.country) {
+      setAlert({ type: 'error', message: t('settingsPage.aquilineAddressRequired', { defaultValue: 'Address line 1, city, zip code and country are required.' }) });
+      return;
+    }
+
+    try {
+      setAquilineSaving(true);
+      const res = await aquilineAPI.saveProfile({
+        marketplaceHost: 'www.amazon.com',
+        storeAddress: {
+          address_line1: aquilineForm.addressLine1,
+          address_line2: aquilineForm.addressLine2,
+          city: aquilineForm.city,
+          state: aquilineForm.state,
+          zip_code: aquilineForm.zipCode,
+          country: aquilineForm.country,
+          first_name: aquilineForm.firstName,
+          last_name: aquilineForm.lastName,
+          phone_number: aquilineForm.phoneNumber,
+        },
+      });
+      setAquilineProfile(res?.data?.profile || null);
+      setAlert({ type: 'success', message: t('settingsPage.aquilineProfileSaved', { defaultValue: 'Aquiline profile saved.' }) });
+    } catch (error) {
+      setAlert({ type: 'error', message: error.response?.data?.error || t('settingsPage.aquilineProfileSaveFailed', { defaultValue: 'Failed to save Aquiline profile.' }) });
+    } finally {
+      setAquilineSaving(false);
     }
   };
 
@@ -958,6 +1023,135 @@ export default function SettingsPage() {
                       )}
                     </div>
                   )}
+                </div>
+
+                {/* Aquiline profile — ship-from/return address Aquiline tracks Amazon orders against */}
+                <div className={`rounded-lg p-3 mt-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'}`}>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <h3 className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                      {t('settingsPage.aquilineProfileTitle', { defaultValue: 'Aquiline profile' })}
+                    </h3>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        aquilineProfile?.profileId ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {aquilineProfile?.profileId && <CheckCircle2 size={14} />}
+                      {aquilineProfile?.profileId
+                        ? t('settingsPage.connected')
+                        : t('settingsPage.notConnected')}
+                    </span>
+                  </div>
+                  <p className={`text-xs mb-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                    {t('settingsPage.aquilineProfileDescription', {
+                      defaultValue: 'The ship-from/return address Aquiline uses when registering tracking for your Amazon orders.',
+                    })}
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <label className="text-sm">
+                      <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                        {t('settingsPage.aquilineAddressLine1', { defaultValue: 'Address line 1' })}
+                      </span>
+                      <input
+                        value={aquilineForm.addressLine1}
+                        onChange={handleAquilineFormChange('addressLine1')}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                      />
+                    </label>
+                    <label className="text-sm">
+                      <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                        {t('settingsPage.aquilineAddressLine2', { defaultValue: 'Address line 2' })}
+                      </span>
+                      <input
+                        value={aquilineForm.addressLine2}
+                        onChange={handleAquilineFormChange('addressLine2')}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                      />
+                    </label>
+                    <label className="text-sm">
+                      <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                        {t('settingsPage.aquilineCity', { defaultValue: 'City' })}
+                      </span>
+                      <input
+                        value={aquilineForm.city}
+                        onChange={handleAquilineFormChange('city')}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                      />
+                    </label>
+                    <label className="text-sm">
+                      <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                        {t('settingsPage.aquilineState', { defaultValue: 'State' })}
+                      </span>
+                      <input
+                        value={aquilineForm.state}
+                        onChange={handleAquilineFormChange('state')}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                      />
+                    </label>
+                    <label className="text-sm">
+                      <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                        {t('settingsPage.aquilineZipCode', { defaultValue: 'Zip code' })}
+                      </span>
+                      <input
+                        value={aquilineForm.zipCode}
+                        onChange={handleAquilineFormChange('zipCode')}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                      />
+                    </label>
+                    <label className="text-sm">
+                      <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                        {t('settingsPage.aquilineCountry', { defaultValue: 'Country (ISO-2)' })}
+                      </span>
+                      <input
+                        value={aquilineForm.country}
+                        onChange={(e) => setAquilineForm((prev) => ({ ...prev, country: e.target.value.toUpperCase() }))}
+                        placeholder="US"
+                        className={`w-full rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                      />
+                    </label>
+                    <label className="text-sm">
+                      <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                        {t('settingsPage.aquilineFirstName', { defaultValue: 'First name' })}
+                      </span>
+                      <input
+                        value={aquilineForm.firstName}
+                        onChange={handleAquilineFormChange('firstName')}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                      />
+                    </label>
+                    <label className="text-sm">
+                      <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                        {t('settingsPage.aquilineLastName', { defaultValue: 'Last name' })}
+                      </span>
+                      <input
+                        value={aquilineForm.lastName}
+                        onChange={handleAquilineFormChange('lastName')}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                      />
+                    </label>
+                    <label className="text-sm md:col-span-2">
+                      <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                        {t('settingsPage.aquilinePhoneNumber', { defaultValue: 'Phone number' })}
+                      </span>
+                      <input
+                        value={aquilineForm.phoneNumber}
+                        onChange={handleAquilineFormChange('phoneNumber')}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                      />
+                    </label>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveAquilineProfile}
+                    disabled={aquilineSaving}
+                    className="btn-primary mt-3"
+                  >
+                    {aquilineSaving
+                      ? t('settingsPage.saving', { defaultValue: 'Saving…' })
+                      : t('settingsPage.aquilineSaveProfile', { defaultValue: 'Save Aquiline profile' })}
+                  </button>
                 </div>
               </div>
             )}

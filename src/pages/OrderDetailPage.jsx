@@ -21,8 +21,7 @@ export default function OrderDetailPage() {
   const [isRegisteringTracking, setIsRegisteringTracking] = useState(false);
   const [isRefreshingTracking, setIsRefreshingTracking] = useState(false);
   const [isUploadingToEbay, setIsUploadingToEbay] = useState(false);
-  const [isCreatingAquiline, setIsCreatingAquiline] = useState(false);
-  const [isCancelingAquiline, setIsCancelingAquiline] = useState(false);
+  const [isSubmittingAmazonOrderId, setIsSubmittingAmazonOrderId] = useState(false);
   const [selectedLineItems, setSelectedLineItems] = useState({});
   const [trackingForm, setTrackingForm] = useState({
     amazonTrackingNumber: '',
@@ -32,15 +31,7 @@ export default function OrderDetailPage() {
     destination_postal_code: '',
     shippedDate: new Date().toISOString(),
   });
-  const [aquilineForm, setAquilineForm] = useState({
-    amazonOrderId: '',
-    recipientName: '',
-    recipientPhone: '',
-    addressLine1: '',
-    city: '',
-    postalCode: '',
-    countryCode: '',
-  });
+  const [manualAmazonOrderId, setManualAmazonOrderId] = useState('');
 
   const summary = useMemo(() => {
     if (!order) return {};
@@ -141,10 +132,6 @@ export default function OrderDetailPage() {
     setTrackingForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleAquilineInput = (field, value) => {
-    setAquilineForm((prev) => ({ ...prev, [field]: value }));
-  };
-
   const loadTracking = async () => {
     if (!summary.id || summary.id === '-') return;
 
@@ -223,53 +210,32 @@ export default function OrderDetailPage() {
     }
   };
 
-  const handleCreateAquilineShipment = async () => {
-    if (!summary.id || summary.id === '-') return;
+  // Fallback for the rare case the extension misses capturing the Amazon order id
+  // automatically — the seller pastes it in here. Kicks off the same
+  // upsert -> HTML upload (skipped, no HTML here) -> assign pipeline Aquiline-side.
+  const handleSubmitAmazonOrderId = async () => {
+    if (!summary.id || summary.id === '-' || !manualAmazonOrderId.trim()) return;
 
-    setIsCreatingAquiline(true);
+    setIsSubmittingAmazonOrderId(true);
     setTrackingError('');
     setTrackingMessage('');
     try {
-      const response = await ebayAPI.createAquilineShipment(summary.id, {
-        amazonOrderId: aquilineForm.amazonOrderId,
-        ebayOrderId: summary.id,
+      const response = await ebayAPI.submitAmazonOrderId(summary.id, {
+        amazonOrderId: manualAmazonOrderId.trim(),
         order_number: summary.id,
-        recipientName: aquilineForm.recipientName,
-        recipientPhone: aquilineForm.recipientPhone,
-        addressLine1: aquilineForm.addressLine1,
-        city: aquilineForm.city,
-        postalCode: aquilineForm.postalCode,
-        countryCode: aquilineForm.countryCode,
+        destination_country_iso3: trackingForm.destination_country_iso3,
+        destination_postal_code: shipping.postalCode,
       });
       setTracking(response?.data?.tracking || null);
-      setTrackingMessage(t('orderDetailPage.tracking.aquilineCreateSuccess', { defaultValue: 'Aquiline shipment created.' }));
+      setManualAmazonOrderId('');
+      setTrackingMessage(t('orderDetailPage.tracking.amazonOrderIdSuccess', { defaultValue: 'Amazon order synced to Aquiline.' }));
     } catch (error) {
       setTrackingError(
         error?.response?.data?.error ||
-          t('orderDetailPage.tracking.aquilineCreateFailed', { defaultValue: 'Failed to create Aquiline shipment.' })
+          t('orderDetailPage.tracking.amazonOrderIdFailed', { defaultValue: 'Failed to sync Amazon order to Aquiline.' })
       );
     } finally {
-      setIsCreatingAquiline(false);
-    }
-  };
-
-  const handleCancelAquilineShipment = async () => {
-    if (!summary.id || summary.id === '-') return;
-
-    setIsCancelingAquiline(true);
-    setTrackingError('');
-    setTrackingMessage('');
-    try {
-      const response = await ebayAPI.cancelAquilineShipment(summary.id);
-      setTracking(response?.data?.tracking || tracking || null);
-      setTrackingMessage(t('orderDetailPage.tracking.aquilineCancelSuccess', { defaultValue: 'Aquiline shipment cancelled.' }));
-    } catch (error) {
-      setTrackingError(
-        error?.response?.data?.error ||
-          t('orderDetailPage.tracking.aquilineCancelFailed', { defaultValue: 'Failed to cancel Aquiline shipment.' })
-      );
-    } finally {
-      setIsCancelingAquiline(false);
+      setIsSubmittingAmazonOrderId(false);
     }
   };
 
@@ -288,16 +254,7 @@ export default function OrderDetailPage() {
       destination_postal_code: shipping.postalCode || '',
       destination_country_iso3: '',
     }));
-    setAquilineForm((prev) => ({
-      ...prev,
-      recipientName: prev.recipientName || shipping.name || '',
-      recipientPhone: prev.recipientPhone || shipping.phone || '',
-      addressLine1: prev.addressLine1 || shipping.line1 || '',
-      city: prev.city || shipping.city || '',
-      postalCode: prev.postalCode || shipping.postalCode || '',
-      countryCode: prev.countryCode || shipping.country || '',
-    }));
-  }, [order, summary.id, summary.lineItems, shipping.postalCode, shipping.name, shipping.phone, shipping.line1, shipping.city, shipping.country]);
+  }, [order, summary.id, summary.lineItems, shipping.postalCode]);
 
   useEffect(() => {
     loadTracking();
@@ -637,122 +594,39 @@ export default function OrderDetailPage() {
           )}
         </div>
 
-        {/* ── Aquiline shipment creation ── */}
+        {/* ── Aquiline sync status ── */}
         <div className={`mt-6 pt-4 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
           <h3 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-            {t('orderDetailPage.tracking.aquilineTitle', { defaultValue: 'Aquiline Shipment' })}
+            {t('orderDetailPage.tracking.aquilineTitle', { defaultValue: 'Aquiline' })}
           </h3>
 
-          <div className="space-y-3 mb-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <label className="text-sm">
-                <span className={`block mb-1 font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                  {t('orderDetailPage.tracking.amazonOrderIdLabel', { defaultValue: 'Amazon Order ID' })}
-                </span>
-                <input
-                  value={aquilineForm.amazonOrderId}
-                  onChange={(e) => handleAquilineInput('amazonOrderId', e.target.value)}
-                  className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                  placeholder={t('orderDetailPage.tracking.amazonOrderIdPlaceholder', { defaultValue: 'e.g. 111-2223334-5556667' })}
-                />
-              </label>
-              <label className="text-sm">
-                <span className={`block mb-1 font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                  {t('orderDetailPage.tracking.recipientNameLabel', { defaultValue: 'Recipient name' })}
-                </span>
-                <input
-                  value={aquilineForm.recipientName}
-                  onChange={(e) => handleAquilineInput('recipientName', e.target.value)}
-                  className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                />
-              </label>
+          {tracking?.amazonOrderId ? (
+            <div className="space-y-1 mb-3">
+              <p className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                {t('orderDetailPage.tracking.amazonOrderIdCapturedLabel', { defaultValue: 'Amazon Order ID:' })}{' '}
+                <span className="font-semibold">{tracking.amazonOrderId}</span>
+              </p>
+              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {t('orderDetailPage.tracking.aquilineSyncedLabel', { defaultValue: 'Synced to Aquiline:' })}{' '}
+                {tracking.aquilineSyncedAt || t('orderDetailPage.tracking.notYet', { defaultValue: 'not yet' })}
+                {' · '}
+                {t('orderDetailPage.tracking.aquilineHtmlLabel', { defaultValue: 'HTML uploaded:' })}{' '}
+                {tracking.aquilineHtmlUploadedAt || t('orderDetailPage.tracking.notYet', { defaultValue: 'not yet' })}
+                {' · '}
+                {t('orderDetailPage.tracking.aquilineAssignedLabel', { defaultValue: 'Assigned:' })}{' '}
+                {tracking.aquilineAssignedAt || t('orderDetailPage.tracking.notYet', { defaultValue: 'not yet' })}
+              </p>
             </div>
-
-            <details className={`rounded-lg border p-3 ${isDark ? 'border-slate-700 bg-slate-900/30' : 'border-slate-200 bg-slate-50'}`}>
-              <summary className={`cursor-pointer font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                {t('orderDetailPage.tracking.aquilineAddressSummary', { defaultValue: 'Recipient address (pre-filled from eBay)' })}
-              </summary>
-              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                <label className="text-sm">
-                  <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    {t('orderDetailPage.tracking.recipientPhoneLabel', { defaultValue: 'Phone' })}
-                  </span>
-                  <input
-                    value={aquilineForm.recipientPhone}
-                    onChange={(e) => handleAquilineInput('recipientPhone', e.target.value)}
-                    className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                  />
-                </label>
-                <label className="text-sm">
-                  <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    {t('orderDetailPage.tracking.addressLine1Label', { defaultValue: 'Address line 1' })}
-                  </span>
-                  <input
-                    value={aquilineForm.addressLine1}
-                    onChange={(e) => handleAquilineInput('addressLine1', e.target.value)}
-                    className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                  />
-                </label>
-                <label className="text-sm">
-                  <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    {t('orderDetailPage.tracking.cityLabel', { defaultValue: 'City' })}
-                  </span>
-                  <input
-                    value={aquilineForm.city}
-                    onChange={(e) => handleAquilineInput('city', e.target.value)}
-                    className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                  />
-                </label>
-                <label className="text-sm">
-                  <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    {t('orderDetailPage.tracking.postalCodeLabel')}
-                  </span>
-                  <input
-                    value={aquilineForm.postalCode}
-                    onChange={(e) => handleAquilineInput('postalCode', e.target.value)}
-                    className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                  />
-                </label>
-                <label className="text-sm">
-                  <span className={`block mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    {t('orderDetailPage.tracking.countryCodeLabel', { defaultValue: 'Country code (ISO-2)' })}
-                  </span>
-                  <input
-                    value={aquilineForm.countryCode}
-                    onChange={(e) => handleAquilineInput('countryCode', e.target.value.toUpperCase())}
-                    className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                    placeholder="US"
-                  />
-                </label>
-              </div>
-            </details>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={handleCreateAquilineShipment}
-              disabled={isCreatingAquiline || !aquilineForm.amazonOrderId}
-              className="btn-primary"
-            >
-              {isCreatingAquiline
-                ? t('orderDetailPage.tracking.aquilineCreating', { defaultValue: 'Creating…' })
-                : t('orderDetailPage.tracking.aquilineCreate', { defaultValue: 'Create Aquiline Shipment' })}
-            </button>
-            <button
-              type="button"
-              onClick={handleCancelAquilineShipment}
-              disabled={isCancelingAquiline || !tracking?.aquilineShipmentId}
-              className="btn-secondary"
-            >
-              {isCancelingAquiline
-                ? t('orderDetailPage.tracking.aquilineCanceling', { defaultValue: 'Cancelling…' })
-                : t('orderDetailPage.tracking.aquilineCancel', { defaultValue: 'Cancel Aquiline Shipment' })}
-            </button>
-          </div>
+          ) : (
+            <p className={`text-sm mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              {t('orderDetailPage.tracking.awaitingAmazonOrderId', {
+                defaultValue: 'No Amazon order captured yet — this fills in automatically once the order is placed via auto-order.',
+              })}
+            </p>
+          )}
 
           {tracking?.aquilineTrackingNumber && (
-            <div className="mt-4">
+            <div className="mb-3">
               <p className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                 {t('orderDetailPage.tracking.aquilineNumberLabel', { defaultValue: 'Aquiline Tracking Number:' })}{' '}
                 <span className="font-semibold">{tracking.aquilineTrackingNumber}</span>
@@ -761,13 +635,6 @@ export default function OrderDetailPage() {
                 {t('orderDetailPage.tracking.aquilineStatusLabel', { defaultValue: 'Aquiline Status:' })}{' '}
                 <span className="font-semibold">{tracking.aquilineStatus || '-'}</span>
               </p>
-              {tracking.aquilineLabelUrl && (
-                <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  <a href={tracking.aquilineLabelUrl} target="_blank" rel="noreferrer" className="underline">
-                    {t('orderDetailPage.tracking.aquilineLabelLink', { defaultValue: 'View shipping label' })}
-                  </a>
-                </p>
-              )}
 
               <div className="mt-3 space-y-2 max-h-48 overflow-auto pr-1">
                 {(tracking.aquilineEvents || []).map((evt, idx) => (
@@ -792,6 +659,35 @@ export default function OrderDetailPage() {
               </div>
             </div>
           )}
+
+          <details className={`rounded-lg border p-3 ${isDark ? 'border-slate-700 bg-slate-900/30' : 'border-slate-200 bg-slate-50'}`}>
+            <summary className={`cursor-pointer font-medium text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+              {t('orderDetailPage.tracking.manualAmazonOrderIdSummary', { defaultValue: "Extension missed it? Paste the Amazon order id" })}
+            </summary>
+            <div className="mt-3 flex flex-wrap gap-2 items-end">
+              <label className="text-sm flex-1 min-w-[220px]">
+                <span className={`block mb-1 font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t('orderDetailPage.tracking.amazonOrderIdLabel', { defaultValue: 'Amazon Order ID' })}
+                </span>
+                <input
+                  value={manualAmazonOrderId}
+                  onChange={(e) => setManualAmazonOrderId(e.target.value)}
+                  className={`w-full rounded-lg border px-3 py-2 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                  placeholder={t('orderDetailPage.tracking.amazonOrderIdPlaceholder', { defaultValue: 'e.g. 111-2223334-5556667' })}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={handleSubmitAmazonOrderId}
+                disabled={isSubmittingAmazonOrderId || !manualAmazonOrderId.trim()}
+                className="btn-primary"
+              >
+                {isSubmittingAmazonOrderId
+                  ? t('orderDetailPage.tracking.aquilineCreating', { defaultValue: 'Syncing…' })
+                  : t('orderDetailPage.tracking.aquilineCreate', { defaultValue: 'Sync to Aquiline' })}
+              </button>
+            </div>
+          </details>
         </div>
       </div>
       )}
