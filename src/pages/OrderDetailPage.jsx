@@ -4,10 +4,14 @@ import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, User, Receipt, Truck } from 'lucide-react';
 import { ebayAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { TAB_KEYS } from '../utils/planAccess';
 
 export default function OrderDetailPage() {
   const { isDark } = useTheme();
   const { t } = useTranslation();
+  const { hasTabAccess } = useAuth();
+  const canSeeTracking = hasTabAccess(TAB_KEYS.TRACKING);
   const location = useLocation();
   const order = location?.state?.order || null;
   const [tracking, setTracking] = useState(null);
@@ -438,6 +442,7 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
+      {canSeeTracking && (
       <div className={`rounded-2xl border p-4 mt-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
         <h2 className={`font-semibold mb-3 flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
           <Truck size={16} />
@@ -789,6 +794,7 @@ export default function OrderDetailPage() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }
