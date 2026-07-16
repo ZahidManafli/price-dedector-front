@@ -56,9 +56,17 @@ function UnmatchedRow({ item, isDark, onResolved }) {
 
   return (
     <tr className={isDark ? 'bg-slate-900' : 'bg-white'}>
-      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{item.amazonOrderId}</td>
+      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+        {item.amazonOrderLink ? (
+          <a href={item.amazonOrderLink} target="_blank" rel="noreferrer" className="underline hover:text-indigo-400">
+            {item.amazonOrderId}
+          </a>
+        ) : (
+          item.amazonOrderId
+        )}
+      </td>
       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-        {[item.shipTo?.fullName || item.shipTo?.name, item.shipTo?.postalCode || item.shipTo?.zip_code].filter(Boolean).join(' · ') || '—'}
+        {[item.shipTo?.name, item.shipTo?.postalCode].filter(Boolean).join(' · ') || '—'}
       </td>
       <td className={`px-4 py-3 text-sm whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{fmtDate(item.createdAt)}</td>
       <td className="px-4 py-3">
