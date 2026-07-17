@@ -35,6 +35,92 @@ function StatusPill({ status, isDark }) {
   return <span className={`border text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>{s}</span>;
 }
 
+function TrackedRow({ row, isDark, onUpdated }) {
+  const [gettingTracking, setGettingTracking] = useState(false);
+  const [sendingToEbay, setSendingToEbay] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleGetTracking = async () => {
+    setGettingTracking(true);
+    setError('');
+    try {
+      const res = await ebayAPI.getTracking(row.ebayOrderId);
+      onUpdated(res?.data?.tracking);
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Failed to get tracking');
+    } finally {
+      setGettingTracking(false);
+    }
+  };
+
+  const handleSendToEbay = async () => {
+    setSendingToEbay(true);
+    setError('');
+    try {
+      const res = await ebayAPI.uploadOrderTrackingToEbay(row.ebayOrderId, {});
+      onUpdated(res?.data?.tracking);
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Failed to send to eBay');
+    } finally {
+      setSendingToEbay(false);
+    }
+  };
+
+  return (
+    <tr className={isDark ? 'bg-slate-900' : 'bg-white'}>
+      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{row.ebayOrderId}</td>
+      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{row.amazonOrderId || row.amazonTrackingNumber || '—'}</td>
+      <td className="px-4 py-3">
+        <StatusPill status={row.aquilineStatus || row.tag} isDark={isDark} />
+        {row.aquilineTrackingNumber && (
+          <div className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{row.aquilineTrackingNumber}</div>
+        )}
+      </td>
+      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+        {row.ebayFulfillmentId ? 'Uploaded' : '—'}
+      </td>
+      <td className={`px-4 py-3 text-sm whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+        {fmtDate(row.updatedAt)}
+      </td>
+      <td className="px-4 py-3 text-right">
+        <div className="flex items-center justify-end gap-2 flex-wrap">
+          {row.amazonOrderId && !row.aquilineTrackingNumber && (
+            <button
+              type="button"
+              onClick={handleGetTracking}
+              disabled={gettingTracking}
+              className="btn-primary text-xs px-3 py-1.5"
+            >
+              {gettingTracking ? 'Getting…' : 'Get Tracking'}
+            </button>
+          )}
+          {row.aquilineTrackingNumber && !row.ebayFulfillmentId && (
+            <button
+              type="button"
+              onClick={handleSendToEbay}
+              disabled={sendingToEbay}
+              className="btn-secondary text-xs px-3 py-1.5"
+            >
+              {sendingToEbay ? 'Sending…' : 'Send to eBay'}
+            </button>
+          )}
+          {/* OrderDetailPage only renders with the full eBay order passed via router
+              state (see OrdersPage's navigate(..., { state: { order } })) — this list
+              only has the tracking row, not the full order, so send users to the Orders
+              list to open the order rather than a dead-end deep link. */}
+          <Link
+            to="/orders"
+            className="inline-flex items-center gap-1 text-xs font-medium text-indigo-500 hover:text-indigo-400"
+          >
+            <ExternalLink size={12} />
+          </Link>
+        </div>
+        {error && <p className="text-xs text-rose-500 mt-1">{error}</p>}
+      </td>
+    </tr>
+  );
+}
+
 function UnmatchedRow({ item, isDark, onResolved }) {
   const [ebayOrderId, setEbayOrderId] = useState(item.candidateEbayOrderIds?.[0] || '');
   const [resolving, setResolving] = useState(false);
@@ -149,6 +235,11 @@ export default function TrackingPage() {
     loadTracked();
   };
 
+  const handleRowUpdated = (updatedTracking) => {
+    if (!updatedTracking) return;
+    setRows((prev) => prev.map((r) => (r.id === updatedTracking.id ? updatedTracking : r)));
+  };
+
   return (
     <div className="page-shell">
       <div className="flex items-center justify-between mb-6">
@@ -213,31 +304,7 @@ export default function TrackingPage() {
                   </tr>
                 ) : (
                   rows.map((row) => (
-                    <tr key={row.id} className={isDark ? 'bg-slate-900' : 'bg-white'}>
-                      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{row.ebayOrderId}</td>
-                      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{row.amazonOrderId || row.amazonTrackingNumber || '—'}</td>
-                      <td className="px-4 py-3">
-                        <StatusPill status={row.aquilineStatus || row.tag} isDark={isDark} />
-                      </td>
-                      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                        {row.ebayFulfillmentId ? 'Uploaded' : '—'}
-                      </td>
-                      <td className={`px-4 py-3 text-sm whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {fmtDate(row.updatedAt)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        {/* OrderDetailPage only renders with the full eBay order passed via router
-                            state (see OrdersPage's navigate(..., { state: { order } })) — this list
-                            only has the tracking row, not the full order, so send users to the Orders
-                            list to open the order rather than a dead-end deep link. */}
-                        <Link
-                          to="/orders"
-                          className="inline-flex items-center gap-1 text-xs font-medium text-indigo-500 hover:text-indigo-400"
-                        >
-                          Open in Orders <ExternalLink size={12} />
-                        </Link>
-                      </td>
-                    </tr>
+                    <TrackedRow key={row.id} row={row} isDark={isDark} onUpdated={handleRowUpdated} />
                   ))
                 )}
               </tbody>

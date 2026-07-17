@@ -191,6 +191,7 @@ export const ebayAPI = {
   listUnmatchedAmazonOrders: () => api.get('/ebay/tracking/unmatched'),
   resolveUnmatchedAmazonOrder: (id, ebayOrderId) =>
     api.post(`/ebay/tracking/unmatched/${encodeURIComponent(id)}/resolve`, { ebayOrderId }),
+  getTracking: (orderId) => api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/get-tracking`),
   scrapeItemDetails: (url) => api.post('/ebay/scrape-item-details', { url }),
   quickList: (payload) => api.post('/ebay/quick-list', payload),
   listSavedSellers: () => api.get('/ebay/saved-sellers'),
