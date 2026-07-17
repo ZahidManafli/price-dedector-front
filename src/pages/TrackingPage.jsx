@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Truck, Loader2, ExternalLink, AlertTriangle } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { ebayAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 
@@ -45,7 +46,20 @@ function TrackedRow({ row, isDark, onUpdated }) {
     setError('');
     try {
       const res = await ebayAPI.getTracking(row.ebayOrderId);
-      onUpdated(res?.data?.tracking);
+      const tracking = res?.data?.tracking;
+      onUpdated(tracking);
+      if (tracking?.aquilineTrackingNumber) {
+        Swal.fire({
+          title: 'Aquiline code',
+          text: tracking.aquilineTrackingNumber,
+          icon: 'success',
+          confirmButtonText: 'Copy',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            navigator.clipboard?.writeText(tracking.aquilineTrackingNumber);
+          }
+        });
+      }
     } catch (err) {
       setError(err?.response?.data?.error || err.message || 'Failed to get tracking');
     } finally {
