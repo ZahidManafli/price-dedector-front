@@ -7,6 +7,35 @@ import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { readStoredAquilineProfile, writeStoredAquilineProfile } from '../utils/aquilineProfileStorage';
+
+const EMPTY_AQUILINE_FORM = {
+  addressLine1: '',
+  addressLine2: '',
+  city: '',
+  state: '',
+  zipCode: '',
+  country: '',
+  firstName: '',
+  lastName: '',
+  phoneNumber: '',
+};
+
+function aquilineFormFromProfile(profile) {
+  const addr = profile?.storeAddress;
+  if (!addr) return EMPTY_AQUILINE_FORM;
+  return {
+    addressLine1: addr.address_line1 || '',
+    addressLine2: addr.address_line2 || '',
+    city: addr.city || '',
+    state: addr.state || '',
+    zipCode: addr.zip_code || '',
+    country: addr.country || '',
+    firstName: addr.first_name || '',
+    lastName: addr.last_name || '',
+    phoneNumber: addr.phone_number || '',
+  };
+}
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -34,19 +63,9 @@ export default function SettingsPage() {
     profile: null,
     tokenExpiresAt: null,
   });
-  const [aquilineProfile, setAquilineProfile] = useState(null);
+  const [aquilineProfile, setAquilineProfile] = useState(() => readStoredAquilineProfile(user?.email));
   const [aquilineSaving, setAquilineSaving] = useState(false);
-  const [aquilineForm, setAquilineForm] = useState({
-    addressLine1: '',
-    addressLine2: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: '',
-    firstName: '',
-    lastName: '',
-    phoneNumber: '',
-  });
+  const [aquilineForm, setAquilineForm] = useState(() => aquilineFormFromProfile(readStoredAquilineProfile(user?.email)));
   const [alert, setAlert] = useState(null);
   const [nameDrafts, setNameDrafts] = useState({});
   const [limits, setLimits] = useState(null);
@@ -73,28 +92,21 @@ export default function SettingsPage() {
           settingsAPI.getPreferences(),
           ebayAPI.getStatus(),
           amazonOAuthAPI.getStatus().catch(() => ({ data: { connected: false } })),
-          aquilineAPI.getProfile().catch(() => ({ data: { profile: null } })),
+          aquilineAPI.getProfile().catch(() => null), // null = fetch failed, keep cached profile as-is
         ]);
         const limitsRes = await settingsAPI.getLimits().catch(() => null);
         setPreferences((prev) => ({ ...prev, ...(prefRes.data || {}) }));
         const nextStatus = ebayRes.data || {};
         setEbayStatus(nextStatus);
         setAmazonStatus(amazonRes?.data || { connected: false });
-        const existingAquilineProfile = aquilineRes?.data?.profile || null;
-        setAquilineProfile(existingAquilineProfile);
-        if (existingAquilineProfile?.storeAddress) {
-          const addr = existingAquilineProfile.storeAddress;
-          setAquilineForm({
-            addressLine1: addr.address_line1 || '',
-            addressLine2: addr.address_line2 || '',
-            city: addr.city || '',
-            state: addr.state || '',
-            zipCode: addr.zip_code || '',
-            country: addr.country || '',
-            firstName: addr.first_name || '',
-            lastName: addr.last_name || '',
-            phoneNumber: addr.phone_number || '',
-          });
+        if (aquilineRes) {
+          // A successful response, even with profile: null, means "confirmed not set" —
+          // safe to overwrite the cache. A failed request (aquilineRes === null) must not
+          // wipe out a previously cached profile.
+          const existingAquilineProfile = aquilineRes?.data?.profile || null;
+          setAquilineProfile(existingAquilineProfile);
+          setAquilineForm(aquilineFormFromProfile(existingAquilineProfile));
+          writeStoredAquilineProfile(user?.email, existingAquilineProfile);
         }
         const drafts = {};
         (nextStatus.ebayAccounts || []).forEach((a) => {
@@ -187,7 +199,9 @@ export default function SettingsPage() {
           phone_number: aquilineForm.phoneNumber,
         },
       });
-      setAquilineProfile(res?.data?.profile || null);
+      const savedProfile = res?.data?.profile || null;
+      setAquilineProfile(savedProfile);
+      writeStoredAquilineProfile(user?.email, savedProfile);
       setAlert({ type: 'success', message: t('settingsPage.aquilineProfileSaved', { defaultValue: 'Aquiline profile saved.' }) });
     } catch (error) {
       setAlert({ type: 'error', message: error.response?.data?.error || t('settingsPage.aquilineProfileSaveFailed', { defaultValue: 'Failed to save Aquiline profile.' }) });
