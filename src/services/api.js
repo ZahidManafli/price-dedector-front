@@ -236,6 +236,7 @@ export const amazonOAuthAPI = {
 export const aquilineAPI = {
   getProfile: () => api.get('/aquiline/profile'),
   saveProfile: (payload) => api.post('/aquiline/profile', payload),
+  resetProfile: () => api.post('/aquiline/profile/reset'),
 };
 
 export const dewisoAPI = {

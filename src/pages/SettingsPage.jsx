@@ -65,6 +65,7 @@ export default function SettingsPage() {
   });
   const [aquilineProfile, setAquilineProfile] = useState(() => readStoredAquilineProfile(user?.email));
   const [aquilineSaving, setAquilineSaving] = useState(false);
+  const [aquilineResetting, setAquilineResetting] = useState(false);
   const [aquilineForm, setAquilineForm] = useState(() => aquilineFormFromProfile(readStoredAquilineProfile(user?.email)));
   const [alert, setAlert] = useState(null);
   const [nameDrafts, setNameDrafts] = useState({});
@@ -207,6 +208,31 @@ export default function SettingsPage() {
       setAlert({ type: 'error', message: error.response?.data?.error || t('settingsPage.aquilineProfileSaveFailed', { defaultValue: 'Failed to save Aquiline profile.' }) });
     } finally {
       setAquilineSaving(false);
+    }
+  };
+
+  // Escape hatch for a profile that was created before amazonAccountEmail was wired
+  // up — Aquiline's PATCH can't add it retroactively, so the only fix is a fresh
+  // profileId. This just clears our stored reference; the next Save creates a new one.
+  const handleResetAquilineProfile = async () => {
+    if (!window.confirm(
+      t('settingsPage.aquilineResetConfirm', {
+        defaultValue: 'This clears the current Aquiline profile link. Save again afterward to create a new one. Continue?',
+      })
+    )) {
+      return;
+    }
+
+    try {
+      setAquilineResetting(true);
+      await aquilineAPI.resetProfile();
+      setAquilineProfile(null);
+      writeStoredAquilineProfile(user?.email, null);
+      setAlert({ type: 'success', message: t('settingsPage.aquilineProfileReset', { defaultValue: 'Aquiline profile cleared — save again to create a new one.' }) });
+    } catch (error) {
+      setAlert({ type: 'error', message: error.response?.data?.error || t('settingsPage.aquilineProfileResetFailed', { defaultValue: 'Failed to reset Aquiline profile.' }) });
+    } finally {
+      setAquilineResetting(false);
     }
   };
 
@@ -1045,22 +1071,50 @@ export default function SettingsPage() {
                     <h3 className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                       {t('settingsPage.aquilineProfileTitle', { defaultValue: 'Aquiline profile' })}
                     </h3>
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                        aquilineProfile?.profileId ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
-                      }`}
-                    >
-                      {aquilineProfile?.profileId && <CheckCircle2 size={14} />}
-                      {aquilineProfile?.profileId
-                        ? t('settingsPage.connected')
-                        : t('settingsPage.notConnected')}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                          aquilineProfile?.profileId ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
+                        }`}
+                      >
+                        {aquilineProfile?.profileId && <CheckCircle2 size={14} />}
+                        {aquilineProfile?.profileId
+                          ? t('settingsPage.connected')
+                          : t('settingsPage.notConnected')}
+                      </span>
+                      {aquilineProfile?.profileId && (
+                        <button
+                          type="button"
+                          onClick={handleResetAquilineProfile}
+                          disabled={aquilineResetting}
+                          className="text-xs underline text-rose-500 hover:text-rose-400 disabled:opacity-50"
+                          title={t('settingsPage.aquilineResetHint', { defaultValue: 'Use this if syncing fails with a missing-email error' })}
+                        >
+                          {aquilineResetting
+                            ? t('settingsPage.aquilineResetting', { defaultValue: 'Resetting…' })
+                            : t('settingsPage.aquilineResetProfile', { defaultValue: 'Reset profile' })}
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <p className={`text-xs mb-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                     {t('settingsPage.aquilineProfileDescription', {
                       defaultValue: 'The ship-from/return address Aquiline uses when registering tracking for your Amazon orders.',
                     })}
                   </p>
+
+                  {amazonStatus.connected && amazonStatus.profile?.email ? (
+                    <p className={`text-xs mb-3 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                      {t('settingsPage.aquilineUsingAmazonEmail', { defaultValue: 'Using Amazon email:' })}{' '}
+                      <span className="font-medium">{amazonStatus.profile.email}</span>
+                    </p>
+                  ) : !aquilineProfile?.profileId ? (
+                    <p className={`text-xs mb-3 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                      {t('settingsPage.aquilineNeedsAmazonConnection', {
+                        defaultValue: 'Connect your Amazon account above first — Aquiline requires its email before it will sync tracking.',
+                      })}
+                    </p>
+                  ) : null}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <label className="text-sm">
@@ -1159,7 +1213,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={handleSaveAquilineProfile}
-                    disabled={aquilineSaving}
+                    disabled={aquilineSaving || (!aquilineProfile?.profileId && !amazonStatus.connected)}
                     className="btn-primary mt-3"
                   >
                     {aquilineSaving
