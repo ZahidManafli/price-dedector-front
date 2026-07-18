@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Truck, Loader2, ExternalLink, AlertTriangle } from 'lucide-react';
 import Swal from 'sweetalert2';
@@ -36,9 +37,69 @@ function StatusPill({ status, isDark }) {
   return <span className={`border text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>{s}</span>;
 }
 
+// Loading → success/error modal for the "Update Labels" flow. The underlying job
+// takes a while (extension opens the Amazon tracking page in a real tab, waits for
+// it to render, scrapes it, then the backend re-uploads that HTML to Aquiline), so
+// this stays open with a spinner the whole time rather than a quick inline spinner.
+function UpdateLabelsModal({ phase, message, isDark }) {
+  if (!phase) return null;
+  // Rendered via a portal — this can be invoked from inside a <tr>, and a
+  // fixed-position overlay div isn't valid HTML as a direct child of one (browsers
+  // will otherwise hoist/misplace it out of the table in unpredictable ways).
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div
+        className={`rounded-2xl shadow-xl p-8 w-full max-w-sm mx-4 border flex flex-col items-center gap-4 ${
+          isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
+        }`}
+      >
+        {phase === 'loading' && (
+          <>
+            <span className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
+            <p className={`text-sm font-medium text-center ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+              Updating labels…
+            </p>
+            <p className={`text-xs text-center ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Capturing the Amazon tracking page and syncing it to Aquiline. This can take up to a minute.
+            </p>
+          </>
+        )}
+        {phase === 'success' && (
+          <>
+            <svg width="48" height="48" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="26" cy="26" r="24" fill="#f0fff4" stroke="#22c55e" strokeWidth="2" />
+              <polyline
+                points="15,27 22,34 37,18"
+                fill="none"
+                stroke="#22c55e"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <p className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Labels updated</p>
+          </>
+        )}
+        {phase === 'error' && (
+          <>
+            <svg width="48" height="48" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="26" cy="26" r="24" fill="#fff0f0" stroke="#ef4444" strokeWidth="2" />
+              <line x1="17" y1="17" x2="35" y2="35" stroke="#ef4444" strokeWidth="3.5" strokeLinecap="round" />
+              <line x1="35" y1="17" x2="17" y2="35" stroke="#ef4444" strokeWidth="3.5" strokeLinecap="round" />
+            </svg>
+            <p className="text-sm font-medium text-center text-rose-500">{message || 'Failed to update labels'}</p>
+          </>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 function TrackedRow({ row, isDark, onUpdated }) {
   const [gettingTracking, setGettingTracking] = useState(false);
   const [sendingToEbay, setSendingToEbay] = useState(false);
+  const [updateLabelsModal, setUpdateLabelsModal] = useState(null); // { phase, message }
   const [error, setError] = useState('');
 
   const handleGetTracking = async () => {
@@ -80,6 +141,48 @@ function TrackedRow({ row, isDark, onUpdated }) {
     }
   };
 
+  const handleUpdateLabels = async () => {
+    setError('');
+    setUpdateLabelsModal({ phase: 'loading' });
+    try {
+      const startRes = await ebayAPI.updateLabels(row.ebayOrderId);
+      const jobId = startRes?.data?.jobId;
+      if (!jobId) throw new Error('Failed to start label update');
+
+      // Extension has to open a real Amazon tab, wait for it to render, and scrape it —
+      // give this much longer than the ~20s used for the fast-mode search jobs.
+      const TIMEOUT_MS = 60_000;
+      const INTERVAL_MS = 1500;
+      const start = Date.now();
+      let polled = null;
+      let pollFailure = null;
+
+      while (Date.now() - start < TIMEOUT_MS) {
+        await new Promise((r) => setTimeout(r, INTERVAL_MS));
+        const pollRes = await ebayAPI.pollExtensionJob(jobId);
+        if (pollRes?.data?.status === 'done') {
+          polled = pollRes?.data?.data || null;
+          break;
+        }
+        if (pollRes?.data?.status === 'error') {
+          pollFailure = String(pollRes?.data?.error || 'Failed to update labels');
+          break;
+        }
+      }
+
+      if (pollFailure) throw new Error(pollFailure);
+      if (!polled) throw new Error('Timed out waiting for the extension to update labels');
+
+      if (polled?.ebayOrderId) onUpdated(polled);
+      setUpdateLabelsModal({ phase: 'success' });
+      setTimeout(() => setUpdateLabelsModal(null), 1400);
+    } catch (err) {
+      const message = err?.response?.data?.error || err.message || 'Failed to update labels';
+      setUpdateLabelsModal({ phase: 'error', message });
+      setTimeout(() => setUpdateLabelsModal(null), 3000);
+    }
+  };
+
   return (
     <tr className={isDark ? 'bg-slate-900' : 'bg-white'}>
       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{row.ebayOrderId}</td>
@@ -118,6 +221,16 @@ function TrackedRow({ row, isDark, onUpdated }) {
               {sendingToEbay ? 'Sending…' : 'Send to eBay'}
             </button>
           )}
+          {row.amazonOrderId && (
+            <button
+              type="button"
+              onClick={handleUpdateLabels}
+              disabled={!!updateLabelsModal}
+              className="btn-secondary text-xs px-3 py-1.5"
+            >
+              Update Labels
+            </button>
+          )}
           {/* OrderDetailPage only renders with the full eBay order passed via router
               state (see OrdersPage's navigate(..., { state: { order } })) — this list
               only has the tracking row, not the full order, so send users to the Orders
@@ -131,6 +244,9 @@ function TrackedRow({ row, isDark, onUpdated }) {
         </div>
         {error && <p className="text-xs text-rose-500 mt-1">{error}</p>}
       </td>
+      {updateLabelsModal && (
+        <UpdateLabelsModal phase={updateLabelsModal.phase} message={updateLabelsModal.message} isDark={isDark} />
+      )}
     </tr>
   );
 }
