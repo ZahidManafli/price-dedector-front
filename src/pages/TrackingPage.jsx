@@ -367,6 +367,8 @@ export default function TrackingPage() {
   const [error, setError] = useState('');
   const [unmatched, setUnmatched] = useState([]);
   const [unmatchedLoading, setUnmatchedLoading] = useState(true);
+  const [ebayAccounts, setEbayAccounts] = useState([]);
+  const [ebayFilter, setEbayFilter] = useState('ALL');
 
   const loadTracked = async () => {
     setLoading(true);
@@ -393,10 +395,37 @@ export default function TrackingPage() {
     }
   };
 
+  const loadEbayAccounts = async () => {
+    try {
+      const res = await ebayAPI.getStatus();
+      const accounts = Array.isArray(res?.data?.ebayAccounts) ? res.data.ebayAccounts : [];
+      setEbayAccounts(accounts);
+      const activeId = res?.data?.activeEbayAccountId || null;
+      if (activeId && accounts.some((a) => a.id === activeId)) {
+        setEbayFilter(activeId);
+      }
+    } catch {
+      setEbayAccounts([]);
+    }
+  };
+
   useEffect(() => {
     loadTracked();
     loadUnmatched();
+    loadEbayAccounts();
   }, []);
+
+  const accountFilterOptions = ebayAccounts
+    .map((a) => ({
+      id: a.id,
+      label: a.connectionName || a.username || a.profileUserId || 'eBay account',
+    }))
+    .filter((o) => o.id);
+
+  // Rows created before this store-scoping feature shipped have no ebayAccountId yet —
+  // always show them regardless of the selected store filter rather than hiding them.
+  const visibleRows =
+    ebayFilter === 'ALL' ? rows : rows.filter((r) => !r.ebayAccountId || r.ebayAccountId === ebayFilter);
 
   const handleResolved = (id) => {
     setUnmatched((prev) => prev.filter((u) => u.id !== id));
@@ -410,11 +439,23 @@ export default function TrackingPage() {
 
   return (
     <div className="page-shell">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <h1 className="page-title flex items-center gap-2">
           <Truck size={18} />
           Tracking
         </h1>
+        {accountFilterOptions.length > 0 && (
+          <select
+            value={ebayFilter}
+            onChange={(e) => setEbayFilter(e.target.value)}
+            className={`rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-800 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+          >
+            <option value="ALL">All eBay stores</option>
+            {accountFilterOptions.map((opt) => (
+              <option key={opt.id} value={opt.id}>{opt.label}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       <div className={`mb-6 rounded-xl p-1 border inline-flex gap-1 ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
@@ -464,14 +505,14 @@ export default function TrackingPage() {
                       <Loader2 className="animate-spin mx-auto text-indigo-500" size={24} />
                     </td>
                   </tr>
-                ) : rows.length === 0 ? (
+                ) : visibleRows.length === 0 ? (
                   <tr>
                     <td colSpan={6} className={`px-4 py-8 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      No tracked orders yet.
+                      {rows.length === 0 ? 'No tracked orders yet.' : 'No tracked orders for this eBay store.'}
                     </td>
                   </tr>
                 ) : (
-                  rows.map((row) => (
+                  visibleRows.map((row) => (
                     <TrackedRow key={row.id} row={row} isDark={isDark} onUpdated={handleRowUpdated} />
                   ))
                 )}
