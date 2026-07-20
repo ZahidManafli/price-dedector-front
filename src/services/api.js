@@ -198,6 +198,8 @@ export const ebayAPI = {
   quickList: (payload) => api.post('/ebay/quick-list', payload),
   listSavedSellers: () => api.get('/ebay/saved-sellers'),
   toggleSavedSeller: (sellerName) => api.post('/ebay/saved-sellers/toggle', { sellerName }),
+  getMessageTemplates: () => api.get('/ebay/message-templates'),
+  saveMessageTemplates: (payload) => api.put('/ebay/message-templates', payload),
 };
 
 export const browseAPI = {

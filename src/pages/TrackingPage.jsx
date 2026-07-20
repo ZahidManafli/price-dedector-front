@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { Truck, Loader2, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { ebayAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
@@ -359,6 +359,155 @@ function UnmatchedRow({ item, isDark, onResolved }) {
   );
 }
 
+// Sidebar for configuring the buyer-facing messages auto-sent when tracking is
+// uploaded to eBay ("shipped") and when Amazon's own tracking page reports the
+// package as delivered. Loads the user's saved templates (or the crafted defaults
+// if they haven't customized one yet) and lets them edit + save either.
+function MessageTemplatesSidebar({ isDark, onClose }) {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [defaults, setDefaults] = useState({ shipped: '', delivered: '' });
+  const [shippedMessage, setShippedMessage] = useState('');
+  const [deliveredMessage, setDeliveredMessage] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const res = await ebayAPI.getMessageTemplates();
+        setShippedMessage(res?.data?.shippedMessage || '');
+        setDeliveredMessage(res?.data?.deliveredMessage || '');
+        setDefaults({
+          shipped: res?.data?.defaultShippedMessage || '',
+          delivered: res?.data?.defaultDeliveredMessage || '',
+        });
+      } catch (err) {
+        setError(err?.response?.data?.error || err.message || 'Failed to load message templates');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    setSaved(false);
+    try {
+      const res = await ebayAPI.saveMessageTemplates({ shippedMessage, deliveredMessage });
+      setShippedMessage(res?.data?.shippedMessage || shippedMessage);
+      setDeliveredMessage(res?.data?.deliveredMessage || deliveredMessage);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Failed to save message templates');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const labelCls = `block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-200' : 'text-slate-800'}`;
+  const hintCls = `text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`;
+  const textareaCls = `w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 ${
+    isDark ? 'bg-slate-800 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+  }`;
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`h-full w-full max-w-md shadow-2xl border-l flex flex-col ${
+          isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
+        }`}
+      >
+        <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+          <h2 className={`font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+            <MessageSquare size={16} />
+            Buyer messages
+          </h2>
+          <button type="button" onClick={onClose} className={isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            Automatically message the buyer when tracking is uploaded to eBay, and again when
+            Amazon reports the package delivered. Use <code>{'{trackingNumber}'}</code> and{' '}
+            <code>{'{orderNumber}'}</code> as placeholders — they're filled in for each order.
+          </p>
+
+          {loading ? (
+            <div className="py-10 flex justify-center">
+              <Loader2 className="animate-spin text-indigo-500" size={22} />
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className={labelCls}>Sent when tracking is uploaded (shipped)</label>
+                <textarea
+                  value={shippedMessage}
+                  onChange={(e) => setShippedMessage(e.target.value)}
+                  rows={6}
+                  className={textareaCls}
+                />
+                <div className="flex items-center justify-between">
+                  <p className={hintCls}>Sent once per order, right after tracking is sent to eBay.</p>
+                  <button
+                    type="button"
+                    onClick={() => setShippedMessage(defaults.shipped)}
+                    className="text-xs font-medium text-indigo-500 hover:text-indigo-400 whitespace-nowrap ml-2"
+                  >
+                    Reset to default
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className={labelCls}>Sent when Amazon reports delivered</label>
+                <textarea
+                  value={deliveredMessage}
+                  onChange={(e) => setDeliveredMessage(e.target.value)}
+                  rows={6}
+                  className={textareaCls}
+                />
+                <div className="flex items-center justify-between">
+                  <p className={hintCls}>Sent once per order, detected automatically via "Update Labels".</p>
+                  <button
+                    type="button"
+                    onClick={() => setDeliveredMessage(defaults.delivered)}
+                    className="text-xs font-medium text-indigo-500 hover:text-indigo-400 whitespace-nowrap ml-2"
+                  >
+                    Reset to default
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {error && <p className="text-xs text-rose-500">{error}</p>}
+          {saved && <p className="text-xs text-emerald-500">Saved.</p>}
+        </div>
+
+        <div className={`px-5 py-4 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={loading || saving}
+            className="btn-primary w-full text-sm py-2"
+          >
+            {saving ? 'Saving…' : 'Save messages'}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function TrackingPage() {
   const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState('tracked');
@@ -369,6 +518,7 @@ export default function TrackingPage() {
   const [unmatchedLoading, setUnmatchedLoading] = useState(true);
   const [ebayAccounts, setEbayAccounts] = useState([]);
   const [ebayFilter, setEbayFilter] = useState('ALL');
+  const [messageSidebarOpen, setMessageSidebarOpen] = useState(false);
 
   const loadTracked = async () => {
     setLoading(true);
@@ -444,19 +594,33 @@ export default function TrackingPage() {
           <Truck size={18} />
           Tracking
         </h1>
-        {accountFilterOptions.length > 0 && (
-          <select
-            value={ebayFilter}
-            onChange={(e) => setEbayFilter(e.target.value)}
-            className={`rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-800 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+        <div className="flex items-center gap-2">
+          {accountFilterOptions.length > 0 && (
+            <select
+              value={ebayFilter}
+              onChange={(e) => setEbayFilter(e.target.value)}
+              className={`rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-800 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+            >
+              <option value="ALL">All eBay stores</option>
+              {accountFilterOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>{opt.label}</option>
+              ))}
+            </select>
+          )}
+          <button
+            type="button"
+            onClick={() => setMessageSidebarOpen(true)}
+            className="btn-secondary text-sm flex items-center gap-1.5"
           >
-            <option value="ALL">All eBay stores</option>
-            {accountFilterOptions.map((opt) => (
-              <option key={opt.id} value={opt.id}>{opt.label}</option>
-            ))}
-          </select>
-        )}
+            <MessageSquare size={15} />
+            Message
+          </button>
+        </div>
       </div>
+
+      {messageSidebarOpen && (
+        <MessageTemplatesSidebar isDark={isDark} onClose={() => setMessageSidebarOpen(false)} />
+      )}
 
       <div className={`mb-6 rounded-xl p-1 border inline-flex gap-1 ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
         <button
