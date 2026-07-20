@@ -50,6 +50,7 @@ function defaultEditForUser(u) {
     amazonLookupRequestLimitPerWeek: safeToString(u.amazonLookupRequestLimitPerWeek),
     productsLimit: safeToString(u.productsLimit),
     marketAnalysisCreditsLimit: safeToString(u.marketAnalysisCreditsLimit),
+    trackingCreditsLimit: safeToString(u.trackingCreditsLimit),
     ebayAccountsLimit: safeToString(u.ebayAccountsLimit),
     isIt6HourChecker: !!u.isIt6HourChecker,
     isUntouched: !!u.isUntouched,   // ✅ add this
@@ -86,6 +87,7 @@ function defaultPlanForm() {
     amazonLookupLimitPerWeek: '',
     productsLimit: '',
     marketAnalysisCreditsLimit: '',
+    trackingCreditsLimit: '',
     ebayAccountsLimit: '',
     isIt6HourChecker: false,
     featured: false,
@@ -118,6 +120,7 @@ export default function AdminPanelPage() {
     amazonLookupRequestLimitPerWeek: '',
     productsLimit: '',
     marketAnalysisCreditsLimit: '',
+    trackingCreditsLimit: '',
     ebayAccountsLimit: '',
   });
 
@@ -221,6 +224,8 @@ export default function AdminPanelPage() {
           createForm.marketAnalysisCreditsLimit === ''
             ? null
             : Number(createForm.marketAnalysisCreditsLimit),
+        trackingCreditsLimit:
+          createForm.trackingCreditsLimit === '' ? null : Number(createForm.trackingCreditsLimit),
         ebayAccountsLimit:
           createForm.ebayAccountsLimit === '' ? null : Number(createForm.ebayAccountsLimit),
       });
@@ -234,6 +239,7 @@ export default function AdminPanelPage() {
         amazonLookupRequestLimitPerWeek: '',
         productsLimit: '',
         marketAnalysisCreditsLimit: '',
+        trackingCreditsLimit: '',
         ebayAccountsLimit: '',
       });
 
@@ -263,10 +269,13 @@ export default function AdminPanelPage() {
         productsLimit: uEdits.productsLimit === '' ? null : Number(uEdits.productsLimit),
         marketAnalysisCreditsLimit:
           uEdits.marketAnalysisCreditsLimit === '' ? null : Number(uEdits.marketAnalysisCreditsLimit),
+        trackingCreditsLimit:
+          uEdits.trackingCreditsLimit === '' ? null : Number(uEdits.trackingCreditsLimit),
         ebayAccountsLimit:
           uEdits.ebayAccountsLimit === '' ? null : Number(uEdits.ebayAccountsLimit),
         resetAmazonUsage: !!resetUsage[userId],
         resetMarketAnalysisUsage: !!resetUsage[`${userId}__marketAnalysis`],
+        resetTrackingCreditsUsage: !!resetUsage[`${userId}__trackingCredits`],
         isUntouched: !!uEdits.isUntouched,
         isIt6HourChecker: !!uEdits.isIt6HourChecker,
       });
@@ -312,6 +321,8 @@ export default function AdminPanelPage() {
           planForm.marketAnalysisCreditsLimit === ''
             ? null
             : Number(planForm.marketAnalysisCreditsLimit),
+        trackingCreditsLimit:
+          planForm.trackingCreditsLimit === '' ? null : Number(planForm.trackingCreditsLimit),
         ebayAccountsLimit:
           planForm.ebayAccountsLimit === '' ? null : Number(planForm.ebayAccountsLimit),
         featured: !!planForm.featured,
@@ -359,6 +370,7 @@ export default function AdminPanelPage() {
         : [...USER_DEFAULT_ALLOWED_TABS.filter((key) => key !== TAB_KEYS.DASHBOARD)],
       productsLimit: safeToString(plan.productsLimit),
       marketAnalysisCreditsLimit: safeToString(plan.marketAnalysisCreditsLimit),
+      trackingCreditsLimit: safeToString(plan.trackingCreditsLimit),
       ebayAccountsLimit: safeToString(plan.ebayAccountsLimit),
       featured: !!plan.featured,
       isActive: plan.isActive !== false,
@@ -509,6 +521,8 @@ export default function AdminPanelPage() {
       'Products Limit': u.productsLimit ?? '',
       'Market Analysis Credits Limit': u.marketAnalysisCreditsLimit ?? '',
       'Market Analysis Credits Used': u.marketAnalysisCreditsUsed ?? '',
+      'Tracking Credits Limit': u.trackingCreditsLimit ?? '',
+      'Tracking Credits Used': u.trackingCreditsUsed ?? '',
       'eBay Accounts Limit': u.ebayAccountsLimit ?? '',
       'eBay Connected Accounts': u.ebayConnectedAccounts ?? '',
     }));
@@ -1128,6 +1142,7 @@ export default function AdminPanelPage() {
                     <input value={createForm.amazonLookupRequestLimitPerWeek} onChange={(e) => setCreateForm((p) => ({ ...p, amazonLookupRequestLimitPerWeek: e.target.value }))} className="input-base h-8 text-xs" placeholder={t('adminPanelPage.amazonPerWeek')} type="number" min="0" />
                     <input value={createForm.productsLimit} onChange={(e) => setCreateForm((p) => ({ ...p, productsLimit: e.target.value }))} className="input-base h-8 text-xs" placeholder={t('adminPanelPage.products')} type="number" min="0" />
                     <input value={createForm.marketAnalysisCreditsLimit} onChange={(e) => setCreateForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))} className="input-base h-8 text-xs" placeholder="Analysis credits" type="number" min="0" />
+                    <input value={createForm.trackingCreditsLimit} onChange={(e) => setCreateForm((p) => ({ ...p, trackingCreditsLimit: e.target.value }))} className="input-base h-8 text-xs" placeholder="Tracking credits" type="number" min="0" />
                     <input value={createForm.ebayAccountsLimit} onChange={(e) => setCreateForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))} className="input-base h-8 text-xs" placeholder="eBay accounts" type="number" min="0" />
                   </div>
                 </div>
@@ -1196,6 +1211,10 @@ export default function AdminPanelPage() {
                         <input value={rowEdits.marketAnalysisCreditsLimit} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], marketAnalysisCreditsLimit: e.target.value } }))} className="input-base h-8 text-sm" type="number" min="0" />
                       </div>
                       <div>
+                        <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tracking credits</label>
+                        <input value={rowEdits.trackingCreditsLimit} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], trackingCreditsLimit: e.target.value } }))} className="input-base h-8 text-sm" type="number" min="0" />
+                      </div>
+                      <div>
                         <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>eBay accounts</label>
                         <input value={rowEdits.ebayAccountsLimit} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], ebayAccountsLimit: e.target.value } }))} className="input-base h-8 text-sm" type="number" min="0" />
                       </div>
@@ -1210,6 +1229,10 @@ export default function AdminPanelPage() {
                     <label className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                       <input type="checkbox" checked={!!resetUsage[`${u.id}__marketAnalysis`]} onChange={(e) => setResetUsage((prev) => ({ ...prev, [`${u.id}__marketAnalysis`]: e.target.checked }))} className="rounded" />
                       {t('adminPanelPage.resetCheckilaAnalysisCreditsUsageNow')}
+                    </label>
+                    <label className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <input type="checkbox" checked={!!resetUsage[`${u.id}__trackingCredits`]} onChange={(e) => setResetUsage((prev) => ({ ...prev, [`${u.id}__trackingCredits`]: e.target.checked }))} className="rounded" />
+                      Reset tracking credits usage now
                     </label>
                     <label className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                       <input type="checkbox" checked={!!rowEdits.isUntouched} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], isUntouched: e.target.checked } }))} className="rounded" />
@@ -1432,6 +1455,10 @@ export default function AdminPanelPage() {
                           <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.marketAnalysisCreditsLimit ?? <span className="text-emerald-500">∞</span>}</span>
                         </div>
                         <div className="flex items-center justify-between">
+                          <span>Tracking credits</span>
+                          <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.trackingCreditsLimit ?? <span className="text-emerald-500">∞</span>}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
                           <span>eBay accounts</span>
                           <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.ebayAccountsLimit ?? <span className="text-emerald-500">∞</span>}</span>
                         </div>
@@ -1577,6 +1604,10 @@ export default function AdminPanelPage() {
                     <div>
                       <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Analysis credits</label>
                       <input value={planForm.marketAnalysisCreditsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
+                    </div>
+                    <div>
+                      <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tracking credits</label>
+                      <input value={planForm.trackingCreditsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, trackingCreditsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
                     </div>
                     <div>
                       <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>eBay accounts</label>

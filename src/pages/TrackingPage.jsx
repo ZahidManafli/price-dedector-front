@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { ebayAPI } from '../services/api';
+import { ebayAPI, settingsAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 
 function fmtDate(iso) {
@@ -582,6 +582,7 @@ export default function TrackingPage() {
   const [ebayAccounts, setEbayAccounts] = useState([]);
   const [ebayFilter, setEbayFilter] = useState('ALL');
   const [messageSidebarOpen, setMessageSidebarOpen] = useState(false);
+  const [trackingCredits, setTrackingCredits] = useState(null); // { limit, used, remaining } | null
 
   const loadTracked = async () => {
     setLoading(true);
@@ -622,10 +623,21 @@ export default function TrackingPage() {
     }
   };
 
+  const loadTrackingCredits = async () => {
+    try {
+      const res = await settingsAPI.getLimits();
+      const credits = res?.data?.trackingCredits;
+      setTrackingCredits(credits ? { limit: credits.limit, used: credits.used, remaining: credits.remaining } : null);
+    } catch {
+      setTrackingCredits(null);
+    }
+  };
+
   useEffect(() => {
     loadTracked();
     loadUnmatched();
     loadEbayAccounts();
+    loadTrackingCredits();
   }, []);
 
   const accountFilterOptions = ebayAccounts
@@ -648,6 +660,8 @@ export default function TrackingPage() {
   const handleRowUpdated = (updatedTracking) => {
     if (!updatedTracking) return;
     setRows((prev) => prev.map((r) => (r.id === updatedTracking.id ? updatedTracking : r)));
+    // A "Get Tracking" run that went through Aquiline may have just spent credits.
+    loadTrackingCredits();
   };
 
   return (
@@ -658,6 +672,22 @@ export default function TrackingPage() {
           Tracking
         </h1>
         <div className="flex items-center gap-2">
+          {trackingCredits && (
+            <span
+              className={`text-xs font-medium px-2.5 py-1.5 rounded-full border ${
+                trackingCredits.limit === null
+                  ? isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-600'
+                  : trackingCredits.remaining <= 0
+                    ? isDark ? 'bg-rose-900/40 border-rose-700 text-rose-300' : 'bg-rose-50 border-rose-300 text-rose-700'
+                    : trackingCredits.remaining <= 5
+                      ? isDark ? 'bg-amber-900/40 border-amber-700 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700'
+                      : isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-600'
+              }`}
+              title="Spent 3 at a time whenever a fresh Aquiline tracking code is obtained — tracking captured directly from a real carrier (USPS/UPS/...) is always free."
+            >
+              {trackingCredits.limit === null ? 'Tracking credits: Unlimited' : `Tracking credits: ${trackingCredits.remaining} left`}
+            </span>
+          )}
           {accountFilterOptions.length > 0 && (
             <select
               value={ebayFilter}
