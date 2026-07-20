@@ -238,11 +238,6 @@ function TrackedRow({ row, isDark, onUpdated }) {
       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{row.amazonOrderId || row.amazonTrackingNumber || '—'}</td>
       <td className="px-4 py-3">
         <FulfillmentStepper status={row.fulfillmentStatus} isDark={isDark} />
-        {row.aquilineStatus && (
-          <div className={`text-[11px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            Aquiline: {row.aquilineStatus}
-          </div>
-        )}
         {/* Aquiline number takes priority when both exist; otherwise show the real
             carrier tracking number "Get Tracking" captured directly (it only ever
             differs from the Amazon order id once that's actually happened). */}
