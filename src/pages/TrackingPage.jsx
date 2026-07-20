@@ -37,11 +37,11 @@ function StatusPill({ status, isDark }) {
   return <span className={`border text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>{s}</span>;
 }
 
-// Loading → success/error modal for the "Update Labels" flow. The underlying job
-// takes a while (extension opens the Amazon tracking page in a real tab, waits for
-// it to render, scrapes it, then the backend re-uploads that HTML to Aquiline), so
-// this stays open with a spinner the whole time rather than a quick inline spinner.
-function UpdateLabelsModal({ phase, message, isDark }) {
+// Loading → success/not-shipped/error modal shared by the "Get Tracking" and
+// "Update Labels" flows. Both are extension-driven jobs that take a while (opening
+// the Amazon tracking page in a real tab, waiting for it to render, scraping it),
+// so this stays open with a spinner the whole time rather than a quick inline one.
+function JobStatusModal({ phase, message, isDark }) {
   if (!phase) return null;
   // Rendered via a portal — this can be invoked from inside a <tr>, and a
   // fixed-position overlay div isn't valid HTML as a direct child of one (browsers
@@ -57,10 +57,7 @@ function UpdateLabelsModal({ phase, message, isDark }) {
           <>
             <span className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
             <p className={`text-sm font-medium text-center ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-              Updating labels…
-            </p>
-            <p className={`text-xs text-center ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Capturing the Amazon tracking page and syncing it to Aquiline. This can take up to a minute.
+              {message || 'Working…'}
             </p>
           </>
         )}
@@ -77,7 +74,17 @@ function UpdateLabelsModal({ phase, message, isDark }) {
                 strokeLinejoin="round"
               />
             </svg>
-            <p className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Labels updated</p>
+            <p className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{message || 'Done'}</p>
+          </>
+        )}
+        {phase === 'not_shipped' && (
+          <>
+            <svg width="48" height="48" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="26" cy="26" r="24" fill="#fffbeb" stroke="#f59e0b" strokeWidth="2" />
+              <line x1="26" y1="16" x2="26" y2="29" stroke="#f59e0b" strokeWidth="3.5" strokeLinecap="round" />
+              <circle cx="26" cy="36" r="1.8" fill="#f59e0b" />
+            </svg>
+            <p className="text-sm font-medium text-center text-amber-500">{message || 'Not shipped yet'}</p>
           </>
         )}
         {phase === 'error' && (
@@ -87,7 +94,7 @@ function UpdateLabelsModal({ phase, message, isDark }) {
               <line x1="17" y1="17" x2="35" y2="35" stroke="#ef4444" strokeWidth="3.5" strokeLinecap="round" />
               <line x1="35" y1="17" x2="17" y2="35" stroke="#ef4444" strokeWidth="3.5" strokeLinecap="round" />
             </svg>
-            <p className="text-sm font-medium text-center text-rose-500">{message || 'Failed to update labels'}</p>
+            <p className="text-sm font-medium text-center text-rose-500">{message || 'Something went wrong'}</p>
           </>
         )}
       </div>
@@ -96,35 +103,65 @@ function UpdateLabelsModal({ phase, message, isDark }) {
   );
 }
 
+// Polls an extension_scrape_jobs-backed job until it's done/error, same contract
+// every job type (fast-mode search, update-labels, get-tracking) already uses.
+async function pollExtensionJobUntilDone(jobId, { timeoutMs = 60_000, intervalMs = 1500 } = {}) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    await new Promise((r) => setTimeout(r, intervalMs));
+    const pollRes = await ebayAPI.pollExtensionJob(jobId);
+    if (pollRes?.data?.status === 'done') return { data: pollRes?.data?.data || null };
+    if (pollRes?.data?.status === 'error') return { error: String(pollRes?.data?.error || 'Job failed') };
+  }
+  return { error: 'Timed out waiting for the extension' };
+}
+
 function TrackedRow({ row, isDark, onUpdated }) {
-  const [gettingTracking, setGettingTracking] = useState(false);
   const [sendingToEbay, setSendingToEbay] = useState(false);
+  const [getTrackingModal, setGetTrackingModal] = useState(null); // { phase, message }
   const [updateLabelsModal, setUpdateLabelsModal] = useState(null); // { phase, message }
   const [error, setError] = useState('');
 
   const handleGetTracking = async () => {
-    setGettingTracking(true);
     setError('');
+    setGetTrackingModal({ phase: 'loading', message: 'Opening the Amazon tracking page…' });
     try {
-      const res = await ebayAPI.getTracking(row.ebayOrderId);
-      const tracking = res?.data?.tracking;
-      onUpdated(tracking);
-      if (tracking?.aquilineTrackingNumber) {
+      const startRes = await ebayAPI.getTracking(row.ebayOrderId);
+      const jobId = startRes?.data?.jobId;
+      if (!jobId) throw new Error('Failed to start get-tracking');
+
+      // Extension has to open a real Amazon tab and wait for it to render — give
+      // this much longer than the ~20s used for the fast-mode search jobs.
+      const { data: polled, error: pollFailure } = await pollExtensionJobUntilDone(jobId, { timeoutMs: 60_000 });
+      if (pollFailure) throw new Error(pollFailure);
+
+      if (polled?.status === 'not_shipped') {
+        setGetTrackingModal({ phase: 'not_shipped', message: 'Not shipped yet' });
+        setTimeout(() => setGetTrackingModal(null), 2000);
+        return;
+      }
+
+      // polled is the normalized tracking row (spread alongside status: 'shipped')
+      if (polled?.ebayOrderId) onUpdated(polled);
+      setGetTrackingModal({ phase: 'success', message: 'Tracking updated' });
+      setTimeout(() => setGetTrackingModal(null), 1400);
+
+      if (polled?.aquilineTrackingNumber) {
         Swal.fire({
           title: 'Aquiline code',
-          text: tracking.aquilineTrackingNumber,
+          text: polled.aquilineTrackingNumber,
           icon: 'success',
           confirmButtonText: 'Copy',
         }).then((result) => {
           if (result.isConfirmed) {
-            navigator.clipboard?.writeText(tracking.aquilineTrackingNumber);
+            navigator.clipboard?.writeText(polled.aquilineTrackingNumber);
           }
         });
       }
     } catch (err) {
-      setError(err?.response?.data?.error || err.message || 'Failed to get tracking');
-    } finally {
-      setGettingTracking(false);
+      const message = err?.response?.data?.error || err.message || 'Failed to get tracking';
+      setGetTrackingModal({ phase: 'error', message });
+      setTimeout(() => setGetTrackingModal(null), 3000);
     }
   };
 
@@ -143,7 +180,10 @@ function TrackedRow({ row, isDark, onUpdated }) {
 
   const handleUpdateLabels = async () => {
     setError('');
-    setUpdateLabelsModal({ phase: 'loading' });
+    setUpdateLabelsModal({
+      phase: 'loading',
+      message: 'Updating labels… capturing the Amazon tracking page and syncing it to Aquiline.',
+    });
     try {
       const startRes = await ebayAPI.updateLabels(row.ebayOrderId);
       const jobId = startRes?.data?.jobId;
@@ -151,30 +191,11 @@ function TrackedRow({ row, isDark, onUpdated }) {
 
       // Extension has to open a real Amazon tab, wait for it to render, and scrape it —
       // give this much longer than the ~20s used for the fast-mode search jobs.
-      const TIMEOUT_MS = 60_000;
-      const INTERVAL_MS = 1500;
-      const start = Date.now();
-      let polled = null;
-      let pollFailure = null;
-
-      while (Date.now() - start < TIMEOUT_MS) {
-        await new Promise((r) => setTimeout(r, INTERVAL_MS));
-        const pollRes = await ebayAPI.pollExtensionJob(jobId);
-        if (pollRes?.data?.status === 'done') {
-          polled = pollRes?.data?.data || null;
-          break;
-        }
-        if (pollRes?.data?.status === 'error') {
-          pollFailure = String(pollRes?.data?.error || 'Failed to update labels');
-          break;
-        }
-      }
-
+      const { data: polled, error: pollFailure } = await pollExtensionJobUntilDone(jobId, { timeoutMs: 60_000 });
       if (pollFailure) throw new Error(pollFailure);
-      if (!polled) throw new Error('Timed out waiting for the extension to update labels');
 
       if (polled?.ebayOrderId) onUpdated(polled);
-      setUpdateLabelsModal({ phase: 'success' });
+      setUpdateLabelsModal({ phase: 'success', message: 'Labels updated' });
       setTimeout(() => setUpdateLabelsModal(null), 1400);
     } catch (err) {
       const message = err?.response?.data?.error || err.message || 'Failed to update labels';
@@ -189,8 +210,13 @@ function TrackedRow({ row, isDark, onUpdated }) {
       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{row.amazonOrderId || row.amazonTrackingNumber || '—'}</td>
       <td className="px-4 py-3">
         <StatusPill status={row.aquilineStatus || row.tag} isDark={isDark} />
-        {row.aquilineTrackingNumber && (
-          <div className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{row.aquilineTrackingNumber}</div>
+        {/* Aquiline number takes priority when both exist; otherwise show the real
+            carrier tracking number "Get Tracking" captured directly (it only ever
+            differs from the Amazon order id once that's actually happened). */}
+        {(row.aquilineTrackingNumber || (row.trackingNumber && row.trackingNumber !== row.amazonOrderId)) && (
+          <div className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            {row.aquilineTrackingNumber || row.trackingNumber}
+          </div>
         )}
       </td>
       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
@@ -205,13 +231,22 @@ function TrackedRow({ row, isDark, onUpdated }) {
             <button
               type="button"
               onClick={handleGetTracking}
-              disabled={gettingTracking}
+              disabled={!!getTrackingModal}
               className="btn-primary text-xs px-3 py-1.5"
             >
-              {gettingTracking ? 'Getting…' : 'Get Tracking'}
+              {getTrackingModal ? 'Getting…' : 'Get Tracking'}
             </button>
           )}
-          {row.aquilineTrackingNumber && !row.ebayFulfillmentId && (
+          {/* A real carrier (USPS/UPS/...) captured directly off Amazon's delivery
+              card never gets an Aquiline number — it's usable for eBay on its own,
+              so this can't gate on aquilineTrackingNumber alone. trackingNumber
+              starts out as a placeholder equal to the Amazon order id right after
+              matching (before any real tracking exists), so only count it once
+              "Get Tracking" has actually replaced it with a real carrier number. */}
+          {(row.aquilineTrackingNumber ||
+            row.vdtrackNumber ||
+            (row.trackingNumber && row.trackingNumber !== row.amazonOrderId)) &&
+            !row.ebayFulfillmentId && (
             <button
               type="button"
               onClick={handleSendToEbay}
@@ -244,8 +279,11 @@ function TrackedRow({ row, isDark, onUpdated }) {
         </div>
         {error && <p className="text-xs text-rose-500 mt-1">{error}</p>}
       </td>
+      {getTrackingModal && (
+        <JobStatusModal phase={getTrackingModal.phase} message={getTrackingModal.message} isDark={isDark} />
+      )}
       {updateLabelsModal && (
-        <UpdateLabelsModal phase={updateLabelsModal.phase} message={updateLabelsModal.message} isDark={isDark} />
+        <JobStatusModal phase={updateLabelsModal.phase} message={updateLabelsModal.message} isDark={isDark} />
       )}
     </tr>
   );
