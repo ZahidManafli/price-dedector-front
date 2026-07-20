@@ -17,24 +17,52 @@ function fmtDate(iso) {
   }).format(new Date(iso));
 }
 
-function StatusPill({ status, isDark }) {
-  const s = String(status || '').trim();
-  if (!s) return <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>—</span>;
+// Three-stage stepper (Ordered -> Shipped -> Delivered) driven by fulfillmentStatus —
+// the one field that's always accurate (see upsertTrackingRecord's shipped/delivered
+// stamping), unlike Aquiline's own status string which reflects Aquiline's view of the
+// order, not necessarily what Amazon's tracking page has since reported. Completed
+// stages are solid green; the current stage pulses blue; stages not reached yet stay
+// gray — except once fully "delivered", every stage shows green.
+function FulfillmentStepper({ status, isDark }) {
+  const steps = [
+    { key: 'ordered', label: 'Ordered' },
+    { key: 'shipped', label: 'Shipped' },
+    { key: 'delivered', label: 'Delivered' },
+  ];
+  const normalized = status === 'delivered' || status === 'shipped' ? status : 'ordered';
+  const currentIndex = steps.findIndex((s) => s.key === normalized);
+  const allDelivered = normalized === 'delivered';
 
-  const lower = s.toLowerCase();
-  let cls;
-  if (lower === 'delivered') {
-    cls = isDark ? 'bg-emerald-900/40 text-emerald-300 border-emerald-700' : 'bg-emerald-50 text-emerald-700 border-emerald-300';
-  } else if (lower === 'error') {
-    cls = isDark ? 'bg-rose-900/40 text-rose-300 border-rose-700' : 'bg-rose-50 text-rose-700 border-rose-300';
-  } else if (lower === 'cancelled') {
-    cls = isDark ? 'bg-slate-700/40 text-slate-300 border-slate-600' : 'bg-slate-100 text-slate-600 border-slate-300';
-  } else if (lower === 'delayed') {
-    cls = isDark ? 'bg-amber-900/40 text-amber-300 border-amber-700' : 'bg-amber-50 text-amber-700 border-amber-300';
-  } else {
-    cls = isDark ? 'bg-blue-900/40 text-blue-300 border-blue-700' : 'bg-blue-50 text-blue-700 border-blue-300';
-  }
-  return <span className={`border text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>{s}</span>;
+  return (
+    <div className="flex items-center">
+      {steps.map((step, i) => {
+        const isCompleted = allDelivered || i < currentIndex;
+        const isCurrent = !allDelivered && i === currentIndex;
+        const connectorGreen = allDelivered || i <= currentIndex;
+        const dotCls = isCompleted
+          ? 'bg-emerald-500'
+          : isCurrent
+          ? 'bg-blue-500'
+          : isDark ? 'bg-slate-700' : 'bg-slate-300';
+        return (
+          <div key={step.key} className="flex items-center">
+            {i > 0 && (
+              <div className={`h-0.5 w-5 ${connectorGreen ? 'bg-emerald-500' : isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
+            )}
+            <div className="relative flex h-3 w-3 shrink-0 items-center justify-center" title={step.label}>
+              {isCurrent && (
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
+              )}
+              <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${dotCls}`} />
+            </div>
+          </div>
+        );
+      })}
+      <span className={`ml-2 text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+        {steps[allDelivered ? 2 : currentIndex].label}
+      </span>
+    </div>
+  );
 }
 
 // Loading → success/not-shipped/error modal shared by the "Get Tracking" and
@@ -209,14 +237,12 @@ function TrackedRow({ row, isDark, onUpdated }) {
       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{row.ebayOrderId}</td>
       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{row.amazonOrderId || row.amazonTrackingNumber || '—'}</td>
       <td className="px-4 py-3">
-        <StatusPill
-          status={
-            row.aquilineStatus ||
-            row.tag ||
-            (row.fulfillmentStatus ? row.fulfillmentStatus.charAt(0).toUpperCase() + row.fulfillmentStatus.slice(1) : null)
-          }
-          isDark={isDark}
-        />
+        <FulfillmentStepper status={row.fulfillmentStatus} isDark={isDark} />
+        {row.aquilineStatus && (
+          <div className={`text-[11px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            Aquiline: {row.aquilineStatus}
+          </div>
+        )}
         {/* Aquiline number takes priority when both exist; otherwise show the real
             carrier tracking number "Get Tracking" captured directly (it only ever
             differs from the Amazon order id once that's actually happened). */}
@@ -694,7 +720,7 @@ export default function TrackingPage() {
             <table className={`min-w-full ${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
               <thead className={isDark ? 'bg-slate-800/70' : 'bg-slate-50'}>
                 <tr>
-                  {['eBay Order', 'Amazon Order ID', 'Aquiline Status', 'Uploaded to eBay', 'Updated', ''].map((h, i) => (
+                  {['eBay Order', 'Amazon Order ID', 'Status', 'Uploaded to eBay', 'Updated', ''].map((h, i) => (
                     <th
                       key={i}
                       className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}
