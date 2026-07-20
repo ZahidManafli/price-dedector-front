@@ -234,7 +234,13 @@ function TrackedRow({ row, isDark, onUpdated }) {
       </td>
       <td className="px-4 py-3 text-right">
         <div className="flex items-center justify-end gap-2 flex-wrap">
-          {row.amazonOrderId && !row.aquilineTrackingNumber && (
+          {/* Once a tracking code has been obtained (fulfillmentStatus moves past
+              "ordered") this must not show again — re-running "Get Tracking" is what
+              caused a second, stale-slug row to get created for an order that already
+              shipped. aquilineTrackingNumber alone isn't enough to gate on: a real
+              carrier (USPS/UPS/...) captured directly off Amazon's delivery card never
+              gets one. */}
+          {row.amazonOrderId && row.fulfillmentStatus === 'ordered' && (
             <button
               type="button"
               onClick={handleGetTracking}
@@ -263,7 +269,12 @@ function TrackedRow({ row, isDark, onUpdated }) {
               {sendingToEbay ? 'Sending…' : 'Send to eBay'}
             </button>
           )}
-          {row.amazonOrderId && (
+          {/* Aquiline-only — "Update Labels" refreshes an order's HTML on Aquiline's
+              side, which only makes sense once the order actually exists there. Never
+              show it for a real-carrier-direct shipment (no Aquiline order to refresh)
+              to avoid ever calling this with a placeholder tracking number and
+              clobbering the real carrier number already on the row. */}
+          {row.aquilineTrackingNumber && (
             <button
               type="button"
               onClick={handleUpdateLabels}
