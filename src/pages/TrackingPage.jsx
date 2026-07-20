@@ -368,6 +368,7 @@ function MessageTemplatesSidebar({ isDark, onClose }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [activeMessageTab, setActiveMessageTab] = useState('shipped');
   const [defaults, setDefaults] = useState({ shipped: '', delivered: '' });
   const [shippedMessage, setShippedMessage] = useState('');
   const [deliveredMessage, setDeliveredMessage] = useState('');
@@ -433,59 +434,82 @@ function MessageTemplatesSidebar({ isDark, onClose }) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+        <div className={`flex gap-1 px-5 pt-3 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+          <button
+            type="button"
+            onClick={() => setActiveMessageTab('shipped')}
+            className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition ${
+              activeMessageTab === 'shipped'
+                ? 'border-indigo-500 text-indigo-500'
+                : `border-transparent ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'}`
+            }`}
+          >
+            Shipping message
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveMessageTab('delivered')}
+            className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition ${
+              activeMessageTab === 'delivered'
+                ? 'border-indigo-500 text-indigo-500'
+                : `border-transparent ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'}`
+            }`}
+          >
+            Delivery message
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Automatically message the buyer when tracking is uploaded to eBay, and again when
-            Amazon reports the package delivered. Use <code>{'{trackingNumber}'}</code> and{' '}
-            <code>{'{orderNumber}'}</code> as placeholders — they're filled in for each order.
+            Placeholders: <code>{'{buyerName}'}</code>, <code>{'{trackingNumber}'}</code>,{' '}
+            <code>{'{orderNumber}'}</code> and <code>{'{storeName}'}</code> (your active eBay store) —
+            all filled in automatically for each order.
           </p>
 
           {loading ? (
             <div className="py-10 flex justify-center">
               <Loader2 className="animate-spin text-indigo-500" size={22} />
             </div>
+          ) : activeMessageTab === 'shipped' ? (
+            <div>
+              <label className={labelCls}>Sent when tracking is uploaded (shipped)</label>
+              <textarea
+                value={shippedMessage}
+                onChange={(e) => setShippedMessage(e.target.value)}
+                rows={12}
+                className={textareaCls}
+              />
+              <div className="flex items-center justify-between">
+                <p className={hintCls}>Sent once per order, right after tracking is sent to eBay.</p>
+                <button
+                  type="button"
+                  onClick={() => setShippedMessage(defaults.shipped)}
+                  className="text-xs font-medium text-indigo-500 hover:text-indigo-400 whitespace-nowrap ml-2"
+                >
+                  Reset to default
+                </button>
+              </div>
+            </div>
           ) : (
-            <>
-              <div>
-                <label className={labelCls}>Sent when tracking is uploaded (shipped)</label>
-                <textarea
-                  value={shippedMessage}
-                  onChange={(e) => setShippedMessage(e.target.value)}
-                  rows={6}
-                  className={textareaCls}
-                />
-                <div className="flex items-center justify-between">
-                  <p className={hintCls}>Sent once per order, right after tracking is sent to eBay.</p>
-                  <button
-                    type="button"
-                    onClick={() => setShippedMessage(defaults.shipped)}
-                    className="text-xs font-medium text-indigo-500 hover:text-indigo-400 whitespace-nowrap ml-2"
-                  >
-                    Reset to default
-                  </button>
-                </div>
+            <div>
+              <label className={labelCls}>Sent when Amazon reports delivered</label>
+              <textarea
+                value={deliveredMessage}
+                onChange={(e) => setDeliveredMessage(e.target.value)}
+                rows={12}
+                className={textareaCls}
+              />
+              <div className="flex items-center justify-between">
+                <p className={hintCls}>Sent once per order, detected automatically via "Update Labels".</p>
+                <button
+                  type="button"
+                  onClick={() => setDeliveredMessage(defaults.delivered)}
+                  className="text-xs font-medium text-indigo-500 hover:text-indigo-400 whitespace-nowrap ml-2"
+                >
+                  Reset to default
+                </button>
               </div>
-
-              <div>
-                <label className={labelCls}>Sent when Amazon reports delivered</label>
-                <textarea
-                  value={deliveredMessage}
-                  onChange={(e) => setDeliveredMessage(e.target.value)}
-                  rows={6}
-                  className={textareaCls}
-                />
-                <div className="flex items-center justify-between">
-                  <p className={hintCls}>Sent once per order, detected automatically via "Update Labels".</p>
-                  <button
-                    type="button"
-                    onClick={() => setDeliveredMessage(defaults.delivered)}
-                    className="text-xs font-medium text-indigo-500 hover:text-indigo-400 whitespace-nowrap ml-2"
-                  >
-                    Reset to default
-                  </button>
-                </div>
-              </div>
-            </>
+            </div>
           )}
 
           {error && <p className="text-xs text-rose-500">{error}</p>}
