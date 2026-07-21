@@ -6,6 +6,39 @@ import Swal from 'sweetalert2';
 import { ebayAPI, settingsAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 
+// Same lookup as OrdersPage.jsx — eBay order line items never carry an image
+// themselves, so it has to be joined in from the separate (cached) listings snapshot
+// via the line item's legacyItemId.
+function resolveListingId(listing) {
+  return String(listing?.listingId || listing?.listing?.listingId || listing?.offerId || listing?.sku || '').trim();
+}
+
+function resolveListingImageUrl(listing) {
+  const directImage =
+    listing?.listing?.image?.imageUrl ||
+    listing?.listing?.thumbnailImages?.[0]?.imageUrl ||
+    listing?.imageUrl ||
+    listing?.thumbnailUrl ||
+    listing?.listing?.imageUrl ||
+    '';
+  if (directImage) return directImage;
+
+  const pictureUrls = Array.isArray(listing?.pictureUrls) ? listing.pictureUrls : [];
+  if (pictureUrls.length > 0 && pictureUrls[0]) return pictureUrls[0];
+
+  if (listing?.rawXml && typeof DOMParser !== 'undefined') {
+    try {
+      const doc = new DOMParser().parseFromString(listing.rawXml, 'text/xml');
+      const firstPicture = doc.querySelector('PictureDetails > PictureURL')?.textContent?.trim();
+      if (firstPicture) return firstPicture;
+    } catch {
+      return '';
+    }
+  }
+
+  return '';
+}
+
 function fmtDate(iso) {
   if (!iso) return '—';
   return new Intl.DateTimeFormat('en-US', {
@@ -144,7 +177,7 @@ async function pollExtensionJobUntilDone(jobId, { timeoutMs = 60_000, intervalMs
   return { error: 'Timed out waiting for the extension' };
 }
 
-function TrackedRow({ row, isDark, onUpdated }) {
+function TrackedRow({ row, isDark, onUpdated, imageUrl, title }) {
   const [sendingToEbay, setSendingToEbay] = useState(false);
   const [getTrackingModal, setGetTrackingModal] = useState(null); // { phase, message }
   const [updateLabelsModal, setUpdateLabelsModal] = useState(null); // { phase, message }
@@ -234,7 +267,31 @@ function TrackedRow({ row, isDark, onUpdated }) {
 
   return (
     <tr className={isDark ? 'bg-slate-900' : 'bg-white'}>
-      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{row.ebayOrderId}</td>
+      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+        <div className="flex items-center gap-3">
+          <div
+            className={`h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border ${
+              isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'
+            }`}
+          >
+            {imageUrl ? (
+              <img src={imageUrl} alt={title || row.ebayOrderId} className="h-full w-full object-cover" />
+            ) : (
+              <div className={`flex h-full w-full items-center justify-center text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                No image
+              </div>
+            )}
+          </div>
+          <div className="min-w-0">
+            <div className="font-medium truncate">{row.ebayOrderId}</div>
+            {title && (
+              <div className={`text-[10px] truncate max-w-[160px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {title}
+              </div>
+            )}
+          </div>
+        </div>
+      </td>
       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{row.amazonOrderId || row.amazonTrackingNumber || '—'}</td>
       <td className="px-4 py-3">
         <FulfillmentStepper status={row.fulfillmentStatus} isDark={isDark} />
@@ -583,6 +640,7 @@ export default function TrackingPage() {
   const [ebayFilter, setEbayFilter] = useState('ALL');
   const [messageSidebarOpen, setMessageSidebarOpen] = useState(false);
   const [trackingCredits, setTrackingCredits] = useState(null); // { limit, used, remaining } | null
+  const [orderMetaByEbayOrderId, setOrderMetaByEbayOrderId] = useState({}); // ebayOrderId -> { imageUrl, title }
 
   const loadTracked = async () => {
     setLoading(true);
@@ -633,11 +691,48 @@ export default function TrackingPage() {
     }
   };
 
+  // Same two-hop join OrdersPage uses: eBay order line items never carry an image, so
+  // pull the (cached, same as Orders/Listings pages) orders + listings snapshots and
+  // join order -> lineItem.legacyItemId -> listing image.
+  const loadOrderImages = async () => {
+    try {
+      const [ordersRes, listingsRes] = await Promise.all([
+        ebayAPI.getOrders(0, 200),
+        ebayAPI.getListings(0, 200),
+      ]);
+
+      const listingImageById = new Map();
+      const listings = Array.isArray(listingsRes?.data?.items) ? listingsRes.data.items : [];
+      listings.forEach((listing) => {
+        const listingId = resolveListingId(listing);
+        if (!listingId || listingImageById.has(listingId)) return;
+        const imageUrl = resolveListingImageUrl(listing);
+        if (imageUrl) listingImageById.set(listingId, imageUrl);
+      });
+
+      const orders = Array.isArray(ordersRes?.data?.orders) ? ordersRes.data.orders : [];
+      const meta = {};
+      orders.forEach((order) => {
+        const ebayOrderId = order?.orderId;
+        if (!ebayOrderId) return;
+        const legacyItemId = String(order?.lineItems?.[0]?.legacyItemId || '').trim();
+        meta[ebayOrderId] = {
+          imageUrl: legacyItemId ? listingImageById.get(legacyItemId) || '' : '',
+          title: order?.lineItems?.[0]?.title || '',
+        };
+      });
+      setOrderMetaByEbayOrderId(meta);
+    } catch {
+      setOrderMetaByEbayOrderId({});
+    }
+  };
+
   useEffect(() => {
     loadTracked();
     loadUnmatched();
     loadEbayAccounts();
     loadTrackingCredits();
+    loadOrderImages();
   }, []);
 
   const accountFilterOptions = ebayAccounts
@@ -769,9 +864,19 @@ export default function TrackingPage() {
                     </td>
                   </tr>
                 ) : (
-                  visibleRows.map((row) => (
-                    <TrackedRow key={row.id} row={row} isDark={isDark} onUpdated={handleRowUpdated} />
-                  ))
+                  visibleRows.map((row) => {
+                    const meta = orderMetaByEbayOrderId[row.ebayOrderId];
+                    return (
+                      <TrackedRow
+                        key={row.id}
+                        row={row}
+                        isDark={isDark}
+                        onUpdated={handleRowUpdated}
+                        imageUrl={meta?.imageUrl}
+                        title={meta?.title}
+                      />
+                    );
+                  })
                 )}
               </tbody>
             </table>
