@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X } from 'lucide-react';
+import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X, Trash2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { ebayAPI, settingsAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
@@ -436,9 +436,10 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title }) {
   );
 }
 
-function UnmatchedRow({ item, isDark, onResolved }) {
+function UnmatchedRow({ item, isDark, onResolved, onDeleted }) {
   const [ebayOrderId, setEbayOrderId] = useState(item.candidateEbayOrderIds?.[0] || '');
   const [resolving, setResolving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
 
   const resolve = async () => {
@@ -452,6 +453,19 @@ function UnmatchedRow({ item, isDark, onResolved }) {
       setError(err?.response?.data?.error || err.message || 'Failed to resolve');
     } finally {
       setResolving(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!window.confirm('Remove this Amazon order from your review queue?')) return;
+    setDeleting(true);
+    setError('');
+    try {
+      await ebayAPI.deleteUnmatchedAmazonOrder(item.id);
+      onDeleted(item.id);
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Failed to delete');
+      setDeleting(false);
     }
   };
 
@@ -498,6 +512,17 @@ function UnmatchedRow({ item, isDark, onResolved }) {
             className="btn-primary text-xs px-3 py-1.5"
           >
             {resolving ? 'Linking…' : 'Link'}
+          </button>
+          <button
+            type="button"
+            onClick={remove}
+            disabled={deleting}
+            title="Remove from review queue"
+            className={`p-1.5 rounded-lg border transition ${
+              isDark ? 'border-slate-700 text-rose-400 hover:bg-rose-900/30' : 'border-slate-300 text-rose-500 hover:bg-rose-50'
+            }`}
+          >
+            <Trash2 size={14} />
           </button>
         </div>
         {error && <p className="text-xs text-rose-500 mt-1">{error}</p>}
@@ -687,6 +712,7 @@ export default function TrackingPage() {
   const [error, setError] = useState('');
   const [unmatched, setUnmatched] = useState([]);
   const [unmatchedLoading, setUnmatchedLoading] = useState(true);
+  const [deletingAllUnmatched, setDeletingAllUnmatched] = useState(false);
   const [ebayAccounts, setEbayAccounts] = useState([]);
   const [ebayFilter, setEbayFilter] = useState('ALL');
   const [messageSidebarOpen, setMessageSidebarOpen] = useState(false);
@@ -801,6 +827,24 @@ export default function TrackingPage() {
   const handleResolved = (id) => {
     setUnmatched((prev) => prev.filter((u) => u.id !== id));
     loadTracked();
+  };
+
+  const handleUnmatchedDeleted = (id) => {
+    setUnmatched((prev) => prev.filter((u) => u.id !== id));
+  };
+
+  const handleDeleteAllUnmatched = async () => {
+    if (!unmatched.length) return;
+    if (!window.confirm(`Remove all ${unmatched.length} item(s) from your review queue?`)) return;
+    setDeletingAllUnmatched(true);
+    try {
+      await ebayAPI.deleteAllUnmatchedAmazonOrders();
+      setUnmatched([]);
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Failed to delete all unmatched orders');
+    } finally {
+      setDeletingAllUnmatched(false);
+    }
   };
 
   const handleRowUpdated = (updatedTracking) => {
@@ -937,6 +981,19 @@ export default function TrackingPage() {
 
       {activeTab === 'unmatched' && (
         <div className={`rounded-xl border overflow-hidden ${isDark ? 'bg-slate-900/30 border-slate-800' : 'bg-white border-slate-200'}`}>
+          {unmatched.length > 0 && (
+            <div className={`flex justify-end px-4 py-2.5 border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+              <button
+                type="button"
+                onClick={handleDeleteAllUnmatched}
+                disabled={deletingAllUnmatched}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-rose-500 hover:text-rose-400 disabled:opacity-60"
+              >
+                <Trash2 size={14} />
+                {deletingAllUnmatched ? 'Deleting…' : 'Delete all'}
+              </button>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className={`min-w-full ${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
               <thead className={isDark ? 'bg-slate-800/70' : 'bg-slate-50'}>
@@ -966,7 +1023,7 @@ export default function TrackingPage() {
                   </tr>
                 ) : (
                   unmatched.map((item) => (
-                    <UnmatchedRow key={item.id} item={item} isDark={isDark} onResolved={handleResolved} />
+                    <UnmatchedRow key={item.id} item={item} isDark={isDark} onResolved={handleResolved} onDeleted={handleUnmatchedDeleted} />
                   ))
                 )}
               </tbody>
