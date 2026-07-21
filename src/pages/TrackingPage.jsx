@@ -365,9 +365,10 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title }) {
           )}
           {/* Manual override — skips the "is it actually shipped yet" check against
               Amazon's live page entirely and just force-assigns an Aquiline code right
-              now. Always available (not gated on fulfillmentStatus) since it's an
-              explicit escape hatch for when the automatic flow isn't cooperating. */}
-          {row.amazonOrderId && (
+              now. Not gated on fulfillmentStatus otherwise (it's an explicit escape
+              hatch for when the automatic flow isn't cooperating), but once delivered
+              there's nothing left to obtain. */}
+          {row.amazonOrderId && row.fulfillmentStatus !== 'delivered' && (
             <button
               type="button"
               onClick={handleGetManualTracking}
@@ -400,8 +401,9 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title }) {
               side, which only makes sense once the order actually exists there. Never
               show it for a real-carrier-direct shipment (no Aquiline order to refresh)
               to avoid ever calling this with a placeholder tracking number and
-              clobbering the real carrier number already on the row. */}
-          {row.aquilineTrackingNumber && (
+              clobbering the real carrier number already on the row. Also pointless
+              once delivered — nothing left to refresh. */}
+          {row.aquilineTrackingNumber && row.fulfillmentStatus !== 'delivered' && (
             <button
               type="button"
               onClick={handleUpdateLabels}
