@@ -399,7 +399,7 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      {canSeeTracking && (
+      {/* {canSeeTracking && (
       <div className={`rounded-2xl border p-4 mt-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
         <h2 className={`font-semibold mb-3 flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
           <Truck size={16} />
@@ -594,7 +594,6 @@ export default function OrderDetailPage() {
           )}
         </div>
 
-        {/* ── Aquiline sync status ── */}
         <div className={`mt-6 pt-4 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
           <h3 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
             {t('orderDetailPage.tracking.aquilineTitle', { defaultValue: 'Aquiline' })}
@@ -690,7 +689,7 @@ export default function OrderDetailPage() {
           </details>
         </div>
       </div>
-      )}
+      )} */}
     </div>
   );
 }
