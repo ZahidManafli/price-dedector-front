@@ -181,6 +181,7 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title }) {
   const [sendingToEbay, setSendingToEbay] = useState(false);
   const [getTrackingModal, setGetTrackingModal] = useState(null); // { phase, message }
   const [updateLabelsModal, setUpdateLabelsModal] = useState(null); // { phase, message }
+  const [gettingManualTracking, setGettingManualTracking] = useState(false);
   const [error, setError] = useState('');
 
   const handleGetTracking = async () => {
@@ -223,6 +224,40 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title }) {
       const message = err?.response?.data?.error || err.message || 'Failed to get tracking';
       setGetTrackingModal({ phase: 'error', message });
       setTimeout(() => setGetTrackingModal(null), 3000);
+    }
+  };
+
+  // No extension round trip, no "is it actually shipped yet" check against Amazon's
+  // page — just force Aquiline to assign/refresh a code right now, using whatever
+  // ship-to/HTML is already on the tracking record. Synchronous (no job/poll needed).
+  const handleGetManualTracking = async () => {
+    setError('');
+    setGettingManualTracking(true);
+    try {
+      const res = await ebayAPI.getManualTracking(row.ebayOrderId);
+      const updated = res?.data?.tracking;
+      if (updated) onUpdated(updated);
+
+      if (updated?.aquilineTrackingNumber) {
+        Swal.fire({
+          title: 'Aquiline code',
+          text: updated.aquilineTrackingNumber,
+          icon: 'success',
+          confirmButtonText: 'Copy',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            navigator.clipboard?.writeText(updated.aquilineTrackingNumber);
+          }
+        });
+      } else {
+        Swal.fire({ title: 'No Aquiline code returned', icon: 'warning' });
+      }
+    } catch (err) {
+      const message = err?.response?.data?.error || err.message || 'Failed to get manual tracking';
+      setError(message);
+      Swal.fire({ title: 'Failed to get manual tracking', text: message, icon: 'error' });
+    } finally {
+      setGettingManualTracking(false);
     }
   };
 
@@ -326,6 +361,20 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title }) {
               className="btn-primary text-xs px-3 py-1.5"
             >
               {getTrackingModal ? 'Getting…' : 'Get Tracking'}
+            </button>
+          )}
+          {/* Manual override — skips the "is it actually shipped yet" check against
+              Amazon's live page entirely and just force-assigns an Aquiline code right
+              now. Always available (not gated on fulfillmentStatus) since it's an
+              explicit escape hatch for when the automatic flow isn't cooperating. */}
+          {row.amazonOrderId && (
+            <button
+              type="button"
+              onClick={handleGetManualTracking}
+              disabled={gettingManualTracking}
+              className="btn-secondary text-xs px-3 py-1.5"
+            >
+              {gettingManualTracking ? 'Getting…' : 'Get Manual Tracking'}
             </button>
           )}
           {/* A real carrier (USPS/UPS/...) captured directly off Amazon's delivery
