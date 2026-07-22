@@ -758,6 +758,25 @@ export default function TrackingPage() {
     }
   };
 
+  // Picking a store here doesn't just filter the list — it also switches the
+  // system's active eBay account, same action Settings page's account switcher
+  // performs (ebayAPI.setActiveAccount), so every other page's "active account"
+  // stays in sync with whatever store the user is looking at here. "All eBay
+  // stores" is just a view filter, not a real account, so it doesn't switch anything.
+  const handleEbayFilterChange = async (value) => {
+    setEbayFilter(value);
+    if (value === 'ALL') return;
+    try {
+      await ebayAPI.setActiveAccount(value);
+      window.dispatchEvent(new Event('ebay:updated'));
+      // Orders/listings (used for the product-image column) are fetched against
+      // whichever account is active — refresh them for the newly-active store.
+      loadOrderImages();
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Failed to switch active eBay account');
+    }
+  };
+
   const loadTrackingCredits = async () => {
     try {
       const res = await settingsAPI.getLimits();
@@ -881,7 +900,7 @@ export default function TrackingPage() {
           {accountFilterOptions.length > 0 && (
             <select
               value={ebayFilter}
-              onChange={(e) => setEbayFilter(e.target.value)}
+              onChange={(e) => handleEbayFilterChange(e.target.value)}
               className={`rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-800 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
             >
               <option value="ALL">All eBay stores</option>
