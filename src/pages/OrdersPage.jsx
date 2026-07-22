@@ -305,7 +305,7 @@ function AsinCell({ order, isDark, autoAsin, allOrders, isInProfit, isCancelled 
       )}
 
       {/* Order on Amazon button — disabled */}
-      {false && asin && !editing && !isCancelled && !isInProfit && (
+      {true && asin && !editing && !isCancelled && !isInProfit && (
         String(order?.orderFulfillmentStatus || '').toUpperCase() === 'NOT_STARTED' ? (
           <button
             type="button"
