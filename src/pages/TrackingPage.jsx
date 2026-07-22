@@ -365,10 +365,10 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title }) {
           )}
           {/* Manual override — skips the "is it actually shipped yet" check against
               Amazon's live page entirely and just force-assigns an Aquiline code right
-              now. Not gated on fulfillmentStatus otherwise (it's an explicit escape
-              hatch for when the automatic flow isn't cooperating), but once delivered
-              there's nothing left to obtain. */}
-          {row.amazonOrderId && row.fulfillmentStatus !== 'delivered' && (
+              now. Once any tracking number has already been assigned (Aquiline, USPS,
+              or otherwise — i.e. fulfillmentStatus moved past "ordered") there's
+              nothing left for this to do, same as "Get Tracking". */}
+          {row.amazonOrderId && row.fulfillmentStatus === 'ordered' && (
             <button
               type="button"
               onClick={handleGetManualTracking}
