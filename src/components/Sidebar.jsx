@@ -94,7 +94,15 @@ export default function Sidebar() {
       cancelled = true;
       window.removeEventListener('ebay:updated', handleEbayUpdated);
     };
-  }, [user?.uid]);
+    // Re-fetching only on [user?.uid] meant this ran once at login and then relied
+    // entirely on the same-tab 'ebay:updated' event to ever refresh again — any active-
+    // account change that happened without that event firing in this tab (a background
+    // cron token refresh, a switch made in another tab/device, etc.) left this label
+    // stale indefinitely, while every other page (Orders/Listings/Dashboard) fetches
+    // fresh eBay status on every mount. Re-running on route changes closes that gap:
+    // navigating anywhere re-syncs the sidebar with whatever the backend currently
+    // resolves as active, same as landing on any of those pages does.
+  }, [user?.uid, location.pathname]);
 
   return (
     <>
