@@ -177,7 +177,7 @@ async function pollExtensionJobUntilDone(jobId, { timeoutMs = 60_000, intervalMs
   return { error: 'Timed out waiting for the extension' };
 }
 
-function TrackedRow({ row, isDark, onUpdated, imageUrl, title }) {
+function TrackedRow({ row, isDark, onUpdated, imageUrl, title, buyerUsername, shipToFullName }) {
   const [sendingToEbay, setSendingToEbay] = useState(false);
   const [getTrackingModal, setGetTrackingModal] = useState(null); // { phase, message }
   const [updateLabelsModal, setUpdateLabelsModal] = useState(null); // { phase, message }
@@ -327,6 +327,24 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title }) {
           </div>
         </div>
       </td>
+      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+        {/* Delivery address's actual name/surname (bold) vs. the eBay buyer's
+            username (small, below) — these commonly differ, and both matter:
+            the address name is who it's really going to, the username is the
+            buyer's account identity. */}
+        {shipToFullName ? (
+          <>
+            <div className="font-medium truncate max-w-[160px]">{shipToFullName}</div>
+            {buyerUsername && (
+              <div className={`text-[10px] truncate max-w-[160px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {buyerUsername}
+              </div>
+            )}
+          </>
+        ) : (
+          buyerUsername || <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>—</span>
+        )}
+      </td>
       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{row.amazonOrderId || row.amazonTrackingNumber || '—'}</td>
       <td className="px-4 py-3">
         <FulfillmentStepper status={row.fulfillmentStatus} isDark={isDark} />
@@ -436,7 +454,7 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title }) {
   );
 }
 
-function UnmatchedRow({ item, isDark, onResolved, onDeleted }) {
+function UnmatchedRow({ item, isDark, onResolved, onDeleted, orderMetaByEbayOrderId }) {
   const [ebayOrderId, setEbayOrderId] = useState(item.candidateEbayOrderIds?.[0] || '');
   const [resolving, setResolving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -493,9 +511,19 @@ function UnmatchedRow({ item, isDark, onResolved, onDeleted }) {
               className={`rounded-lg border px-2 py-1.5 text-sm ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
             >
               <option value="">Select order…</option>
-              {item.candidateEbayOrderIds.map((id) => (
-                <option key={id} value={id}>{id}</option>
-              ))}
+              {/* Two candidates that share the same address (this row's whole reason
+                  for existing) used to be indistinguishable here — both just showed
+                  their raw order id. Label by customer instead; the option's value
+                  (what actually gets submitted) stays the order id either way. */}
+              {item.candidateEbayOrderIds.map((id) => {
+                const meta = orderMetaByEbayOrderId?.[id];
+                const customerLabel = meta?.shipToFullName || meta?.buyerUsername || '';
+                return (
+                  <option key={id} value={id}>
+                    {customerLabel ? `${customerLabel} — ${id}` : id}
+                  </option>
+                );
+              })}
             </select>
           ) : (
             <input
@@ -815,6 +843,12 @@ export default function TrackingPage() {
         meta[ebayOrderId] = {
           imageUrl: legacyItemId ? listingImageById.get(legacyItemId) || '' : '',
           title: order?.lineItems?.[0]?.title || '',
+          // Buyer identity (eBay username) vs. the delivery address's actual
+          // name/surname — these commonly differ, which is exactly what makes
+          // picking between two same-address candidates in "Needs Review" hard
+          // without both shown.
+          buyerUsername: String(order?.buyer?.username || '').trim(),
+          shipToFullName: String(order?.fulfillmentStartInstructions?.[0]?.shippingStep?.shipTo?.fullName || '').trim(),
         };
       });
       setOrderMetaByEbayOrderId(meta);
@@ -954,7 +988,7 @@ export default function TrackingPage() {
             <table className={`min-w-full ${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
               <thead className={isDark ? 'bg-slate-800/70' : 'bg-slate-50'}>
                 <tr>
-                  {['eBay Order', 'Amazon Order ID', 'Status', 'Uploaded to eBay', 'Updated', ''].map((h, i) => (
+                  {['eBay Order', 'Customer', 'Amazon Order ID', 'Status', 'Uploaded to eBay', 'Updated', ''].map((h, i) => (
                     <th
                       key={i}
                       className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}
@@ -967,13 +1001,13 @@ export default function TrackingPage() {
               <tbody className={isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center">
+                    <td colSpan={7} className="px-4 py-10 text-center">
                       <Loader2 className="animate-spin mx-auto text-indigo-500" size={24} />
                     </td>
                   </tr>
                 ) : visibleRows.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className={`px-4 py-8 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <td colSpan={7} className={`px-4 py-8 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       {rows.length === 0 ? 'No tracked orders yet.' : 'No tracked orders for this eBay store.'}
                     </td>
                   </tr>
@@ -988,6 +1022,8 @@ export default function TrackingPage() {
                         onUpdated={handleRowUpdated}
                         imageUrl={meta?.imageUrl}
                         title={meta?.title}
+                        buyerUsername={meta?.buyerUsername}
+                        shipToFullName={meta?.shipToFullName}
                       />
                     );
                   })
@@ -1042,7 +1078,14 @@ export default function TrackingPage() {
                   </tr>
                 ) : (
                   unmatched.map((item) => (
-                    <UnmatchedRow key={item.id} item={item} isDark={isDark} onResolved={handleResolved} onDeleted={handleUnmatchedDeleted} />
+                    <UnmatchedRow
+                      key={item.id}
+                      item={item}
+                      isDark={isDark}
+                      onResolved={handleResolved}
+                      onDeleted={handleUnmatchedDeleted}
+                      orderMetaByEbayOrderId={orderMetaByEbayOrderId}
+                    />
                   ))
                 )}
               </tbody>
