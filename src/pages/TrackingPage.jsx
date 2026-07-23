@@ -350,11 +350,23 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title, buyerUsername, sh
         <FulfillmentStepper status={row.fulfillmentStatus} isDark={isDark} />
         {/* Aquiline number takes priority when both exist; otherwise show the real
             carrier tracking number "Get Tracking" captured directly (it only ever
-            differs from the Amazon order id once that's actually happened). */}
-        {(row.aquilineTrackingNumber || (row.trackingNumber && row.trackingNumber !== row.amazonOrderId)) && (
-          <div className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            {row.aquilineTrackingNumber || row.trackingNumber}
-          </div>
+            differs from the Amazon order id once that's actually happened). The
+            Aquiline code links out to AfterShip's tracking page. */}
+        {row.aquilineTrackingNumber ? (
+          <a
+            href={`https://www.aftership.com/track/${encodeURIComponent(row.aquilineTrackingNumber)}`}
+            target="_blank"
+            rel="noreferrer"
+            className={`block text-xs mt-1 underline ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-500'}`}
+          >
+            {row.aquilineTrackingNumber}
+          </a>
+        ) : (
+          row.trackingNumber && row.trackingNumber !== row.amazonOrderId && (
+            <div className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              {row.trackingNumber}
+            </div>
+          )
         )}
       </td>
       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
