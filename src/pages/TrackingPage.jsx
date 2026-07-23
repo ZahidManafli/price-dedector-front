@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X, Trash2 } from 'lucide-react';
+import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X, Trash2, Search } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { ebayAPI, settingsAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
@@ -744,6 +744,7 @@ export default function TrackingPage() {
   const [ebayAccounts, setEbayAccounts] = useState([]);
   const [ebayFilter, setEbayFilter] = useState('ALL');
   const [messageSidebarOpen, setMessageSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [trackingCredits, setTrackingCredits] = useState(null); // { limit, used, remaining } | null
   const [orderMetaByEbayOrderId, setOrderMetaByEbayOrderId] = useState({}); // ebayOrderId -> { imageUrl, title }
 
@@ -874,8 +875,31 @@ export default function TrackingPage() {
 
   // Rows created before this store-scoping feature shipped have no ebayAccountId yet —
   // always show them regardless of the selected store filter rather than hiding them.
-  const visibleRows =
+  const storeFilteredRows =
     ebayFilter === 'ALL' ? rows : rows.filter((r) => !r.ebayAccountId || r.ebayAccountId === ebayFilter);
+
+  // Single search box across buyer name, eBay order id, tracking number, and Amazon
+  // order id — buyer name isn't on the tracking row itself, it comes from the same
+  // orderMetaByEbayOrderId lookup the "Customer" column uses.
+  const searchTerm = searchQuery.trim().toLowerCase();
+  const visibleRows = !searchTerm
+    ? storeFilteredRows
+    : storeFilteredRows.filter((row) => {
+        const meta = orderMetaByEbayOrderId[row.ebayOrderId];
+        const haystack = [
+          meta?.shipToFullName,
+          meta?.buyerUsername,
+          row.ebayOrderId,
+          row.orderNumber,
+          row.amazonOrderId,
+          row.aquilineTrackingNumber,
+          row.vdtrackNumber,
+          row.trackingNumber,
+        ]
+          .filter(Boolean)
+          .map((v) => String(v).toLowerCase());
+        return haystack.some((v) => v.includes(searchTerm));
+      });
 
   const handleResolved = (id) => {
     setUnmatched((prev) => prev.filter((u) => u.id !== id));
@@ -914,7 +938,26 @@ export default function TrackingPage() {
           <Truck size={18} />
           Tracking
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative">
+            <Search size={14} className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by buyer, order id, tracking #…"
+              className={`rounded-lg border pl-8 pr-3 py-2 text-sm w-64 ${isDark ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'}`}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className={`absolute right-2 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
           {trackingCredits && (
             <span
               className={`text-xs font-medium px-2.5 py-1.5 rounded-full border ${
@@ -926,7 +969,7 @@ export default function TrackingPage() {
                       ? isDark ? 'bg-amber-900/40 border-amber-700 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700'
                       : isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-600'
               }`}
-              title="Spent 3 at a time whenever a fresh Aquiline tracking code is obtained — tracking captured directly from a real carrier (USPS/UPS/...) is always free."
+              title="Spent 3 credits each time a fresh Aquiline tracking code is obtained."
             >
               {trackingCredits.limit === null ? 'Tracking credits: Unlimited' : `Tracking credits: ${trackingCredits.remaining} left`}
             </span>
@@ -1008,7 +1051,11 @@ export default function TrackingPage() {
                 ) : visibleRows.length === 0 ? (
                   <tr>
                     <td colSpan={7} className={`px-4 py-8 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {rows.length === 0 ? 'No tracked orders yet.' : 'No tracked orders for this eBay store.'}
+                      {rows.length === 0
+                        ? 'No tracked orders yet.'
+                        : searchTerm
+                          ? 'No tracked orders match your search.'
+                          : 'No tracked orders for this eBay store.'}
                     </td>
                   </tr>
                 ) : (
