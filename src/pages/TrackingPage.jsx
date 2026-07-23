@@ -354,7 +354,7 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title, buyerUsername, sh
             Aquiline code links out to AfterShip's tracking page. */}
         {row.aquilineTrackingNumber ? (
           <a
-            href={`https://www.aftership.com/track/${encodeURIComponent(row.aquilineTrackingNumber)}`}
+            href={`https://aquiline-tracking.com/app/track/${encodeURIComponent(row.aquilineTrackingNumber)}`}
             target="_blank"
             rel="noreferrer"
             className={`block text-xs mt-1 underline ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-500'}`}
