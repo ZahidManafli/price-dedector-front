@@ -15,7 +15,6 @@ import {
   MessageSquare,
   Truck,
   ExternalLink,
-  Code2,
   ShieldCheck,
 } from 'lucide-react';
 import { casesAPI } from '../services/api';
@@ -235,30 +234,35 @@ const RESOURCES = {
       { label: 'Closed', value: d.cancelCloseDate ? fmtDate(d.cancelCloseDate) : '—' },
       { label: 'Marketplace', value: d.marketplaceId || '—' },
     ],
-    actions: (id, d, { runAction }) => [
-      {
-        key: 'approve',
-        label: 'Approve',
-        icon: CheckCircle2,
-        tone: 'primary',
-        run: async () => {
-          const ok = await promptConfirm('Approve this cancellation?', 'This confirms the cancellation on eBay.', 'Approve');
-          if (!ok) return;
-          await runAction('Approve', () => casesAPI.approveCancellation(id));
-        },
-      },
-      {
-        key: 'reject',
-        label: 'Reject',
-        icon: XCircle,
-        tone: 'danger',
-        run: async () => {
-          const payload = await promptRejectCancellation();
-          if (!payload) return;
-          await runAction('Reject', () => casesAPI.rejectCancellation(id, payload));
-        },
-      },
-    ],
+    // Approve/Reject only make sense while the cancellation is still awaiting a
+    // decision — once cancelState is CLOSED, eBay has already resolved it.
+    actions: (id, d, { runAction }) =>
+      d.cancelState === 'CLOSED'
+        ? []
+        : [
+            {
+              key: 'approve',
+              label: 'Approve',
+              icon: CheckCircle2,
+              tone: 'primary',
+              run: async () => {
+                const ok = await promptConfirm('Approve this cancellation?', 'This confirms the cancellation on eBay.', 'Approve');
+                if (!ok) return;
+                await runAction('Approve', () => casesAPI.approveCancellation(id));
+              },
+            },
+            {
+              key: 'reject',
+              label: 'Reject',
+              icon: XCircle,
+              tone: 'danger',
+              run: async () => {
+                const payload = await promptRejectCancellation();
+                if (!payload) return;
+                await runAction('Reject', () => casesAPI.rejectCancellation(id, payload));
+              },
+            },
+          ],
   },
 
   cases: {
@@ -341,46 +345,51 @@ const RESOURCES = {
       { label: 'Creation reason', value: d.creationReason || '—' },
       { label: 'Seller make-it-right by', value: fmtDate(d.sellerMakeItRightByDate) },
     ],
-    actions: (id, d, { runAction }) => [
-      {
-        key: 'refund',
-        label: 'Issue refund',
-        icon: DollarSign,
-        tone: 'primary',
-        run: async () => {
-          const ok = await promptConfirm(
-            'Issue a full refund?',
-            'This issues a full refund for this inquiry — eBay does not accept a partial amount for this action.',
-            'Issue refund'
-          );
-          if (!ok) return;
-          const comment = await promptText('Refund comment (optional)', { label: 'Comment', required: false });
-          await runAction('Issue refund', () => casesAPI.issueInquiryRefund(id, comment ? { comments: comment } : {}));
-        },
-      },
-      {
-        key: 'shipment',
-        label: 'Provide shipment info',
-        icon: Truck,
-        tone: 'default',
-        run: async () => {
-          const payload = await promptShipmentInfo();
-          if (!payload) return;
-          await runAction('Provide shipment info', () => casesAPI.provideInquiryShipmentInfo(id, payload));
-        },
-      },
-      {
-        key: 'message',
-        label: 'Send message',
-        icon: MessageSquare,
-        tone: 'default',
-        run: async () => {
-          const content = await promptText('Send message to buyer', { required: true });
-          if (!content) return;
-          await runAction('Send message', () => casesAPI.sendInquiryMessage(id, { content }));
-        },
-      },
-    ],
+    // All three inquiry actions only make sense while the inquiry is still open —
+    // once it's CLOSED, eBay no longer accepts refunds/shipment info/messages on it.
+    actions: (id, d, { runAction }) =>
+      d.state === 'CLOSED'
+        ? []
+        : [
+            {
+              key: 'refund',
+              label: 'Issue refund',
+              icon: DollarSign,
+              tone: 'primary',
+              run: async () => {
+                const ok = await promptConfirm(
+                  'Issue a full refund?',
+                  'This issues a full refund for this inquiry — eBay does not accept a partial amount for this action.',
+                  'Issue refund'
+                );
+                if (!ok) return;
+                const comment = await promptText('Refund comment (optional)', { label: 'Comment', required: false });
+                await runAction('Issue refund', () => casesAPI.issueInquiryRefund(id, comment ? { comments: comment } : {}));
+              },
+            },
+            {
+              key: 'shipment',
+              label: 'Provide shipment info',
+              icon: Truck,
+              tone: 'default',
+              run: async () => {
+                const payload = await promptShipmentInfo();
+                if (!payload) return;
+                await runAction('Provide shipment info', () => casesAPI.provideInquiryShipmentInfo(id, payload));
+              },
+            },
+            {
+              key: 'message',
+              label: 'Send message',
+              icon: MessageSquare,
+              tone: 'default',
+              run: async () => {
+                const content = await promptText('Send message to buyer', { required: true });
+                if (!content) return;
+                await runAction('Send message', () => casesAPI.sendInquiryMessage(id, { content }));
+              },
+            },
+          ],
   },
 };
 const RESOURCE_ORDER = ['cancellations', 'cases', 'inquiries'];
@@ -404,7 +413,6 @@ function DetailDrawer({ resourceKey, id, isDark, onClose, onChanged }) {
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
   const [busyAction, setBusyAction] = useState('');
-  const [showRaw, setShowRaw] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -514,26 +522,6 @@ function DetailDrawer({ resourceKey, id, isDark, onClose, onChanged }) {
                   </div>
                 </div>
               )}
-
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setShowRaw((v) => !v)}
-                  className={`inline-flex items-center gap-1.5 text-xs font-medium ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'}`}
-                >
-                  <Code2 size={13} />
-                  {showRaw ? 'Hide raw response' : 'Show raw response'}
-                </button>
-                {showRaw && (
-                  <pre
-                    className={`mt-2 max-h-80 overflow-auto rounded-lg border p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-all ${
-                      isDark ? 'bg-slate-950 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
-                    }`}
-                  >
-                    {JSON.stringify(data, null, 2)}
-                  </pre>
-                )}
-              </div>
             </>
           )}
         </div>
