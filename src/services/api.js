@@ -205,6 +205,32 @@ export const ebayAPI = {
   saveMessageTemplates: (payload) => api.put('/ebay/message-templates', payload),
 };
 
+// eBay Post-Order API (cancellations, case management, inquiries) — gated behind the
+// "cases" plan tab, same pattern as ebayAPI above (mounted under /ebay so it shares
+// that router's auth + eBay-token resolution). Only exposes endpoints we have exact
+// field-level documentation for — no Returns, no Create Cancellation / Appeal Case /
+// Escalate Inquiry (their request/response shapes aren't fully verified).
+export const casesAPI = {
+  // Cancellations
+  searchCancellations: (params = {}) => api.get('/ebay/cancellations', { params }),
+  checkCancellationEligibility: (legacyOrderId) => api.post('/ebay/cancellations/check-eligibility', { legacyOrderId }),
+  getCancellation: (cancelId, fieldgroups) =>
+    api.get(`/ebay/cancellations/${encodeURIComponent(cancelId)}`, { params: fieldgroups ? { fieldgroups } : undefined }),
+  approveCancellation: (cancelId) => api.post(`/ebay/cancellations/${encodeURIComponent(cancelId)}/approve`),
+  rejectCancellation: (cancelId, payload = {}) => api.post(`/ebay/cancellations/${encodeURIComponent(cancelId)}/reject`, payload),
+
+  // Case management
+  searchCases: (params = {}) => api.get('/ebay/cases', { params }),
+  getCase: (caseId) => api.get(`/ebay/cases/${encodeURIComponent(caseId)}`),
+
+  // Inquiries
+  searchInquiries: (params = {}) => api.get('/ebay/inquiries', { params }),
+  getInquiry: (inquiryId) => api.get(`/ebay/inquiries/${encodeURIComponent(inquiryId)}`),
+  issueInquiryRefund: (inquiryId, payload = {}) => api.post(`/ebay/inquiries/${encodeURIComponent(inquiryId)}/issue-refund`, payload),
+  provideInquiryShipmentInfo: (inquiryId, payload) => api.post(`/ebay/inquiries/${encodeURIComponent(inquiryId)}/provide-shipment-info`, payload),
+  sendInquiryMessage: (inquiryId, payload) => api.post(`/ebay/inquiries/${encodeURIComponent(inquiryId)}/send-message`, payload),
+};
+
 export const browseAPI = {
   search: (params = {}) => api.get('/ebay/browse/search', { params }),
   getSoldQuantity: (payload) => api.post('/ebay/browse/sold-quantity', payload),

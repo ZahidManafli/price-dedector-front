@@ -44,6 +44,7 @@ import ReferralDashboardPage from './pages/ReferralDashboardPage';
 import LearningVideosPage from './pages/LearningVideosPage';
 import ProfitTablePage from './pages/ProfitTablePage';
 import TrackingPage from './pages/TrackingPage';
+import CasesPage from './pages/CasesPage';
 import UpgradePlanPage from './pages/UpgradePlanPage';
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
@@ -298,6 +299,14 @@ function AppContent() {
               element={
                 <ProtectedRoute requiredTab={TAB_KEYS.TRACKING}>
                   <TrackingPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cases"
+              element={
+                <ProtectedRoute requiredTab={TAB_KEYS.CASES}>
+                  <CasesPage />
                 </ProtectedRoute>
               }
             />

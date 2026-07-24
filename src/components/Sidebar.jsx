@@ -25,6 +25,7 @@ import {
   Users,
   Sparkles,
   Truck,
+  Gavel,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -54,6 +55,7 @@ export default function Sidebar() {
     { label: t('nav.listings'), path: '/listings', icon: Package, tab: TAB_KEYS.LISTINGS },
     { label: t('nav.orders'), path: '/orders', icon: Package, tab: TAB_KEYS.ORDERS },
     { label: t('nav.tracking'), path: '/tracking', icon: Truck, tab: TAB_KEYS.TRACKING },
+    { label: t('nav.cases'), path: '/cases', icon: Gavel, tab: TAB_KEYS.CASES },
     { label: 'Alıcı CRM', path: '/buyers', icon: Users, tab: TAB_KEYS.BUYER_CRM },
     { label: t('nav.amazonLookup'), path: '/amazon-lookup', icon: Search, tab: TAB_KEYS.AMAZON_LOOKUP, tour: 'sidebar-amazon-lookup' },
     { label: t('nav.ebayCalculator'), path: '/ebay-calculator', icon: Calculator, tab: TAB_KEYS.EBAY_CALCULATOR },

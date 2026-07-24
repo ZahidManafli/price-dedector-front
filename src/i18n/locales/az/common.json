@@ -13,7 +13,8 @@
     "adminPanel": "Admin Paneli",
     "learning": "Dərslik Videoları",
     "profitTable": "Mənfəət Cədvəli",
-    "tracking": "İzləmə"
+    "tracking": "İzləmə",
+    "cases": "İddialar"
   },
   "sidebar": {
     "selectLanguage": "Dil seç",
@@ -1079,7 +1080,8 @@
       "settings": "Settings",
       "profit_table": "Mənfəət Cədvəli",
       "buyer_crm": "Alıcı CRM",
-      "tracking": "İzləmə"
+      "tracking": "İzləmə",
+      "cases": "İddialar"
     }
   },
   "back": "Geri"

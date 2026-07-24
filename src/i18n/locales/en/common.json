@@ -13,7 +13,8 @@
     "adminPanel": "Admin Panel",
     "learning": "Learning",
     "profitTable": "Profit Table",
-    "tracking": "Tracking"
+    "tracking": "Tracking",
+    "cases": "Cases"
   },
   "sidebar": {
     "selectLanguage": "Select Language",
@@ -1143,7 +1144,8 @@
       "settings": "Settings",
       "profit_table": "Profit Table",
       "buyer_crm": "Buyer CRM",
-      "tracking": "Tracking"
+      "tracking": "Tracking",
+      "cases": "Cases"
     }
   },
   "back": "Back"

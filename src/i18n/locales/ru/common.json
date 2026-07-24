@@ -13,7 +13,8 @@
     "adminPanel": "Админ панель",
     "learning": "Обучение",
     "profitTable": "Таблица прибыли",
-    "tracking": "Отслеживание"
+    "tracking": "Отслеживание",
+    "cases": "Дела"
   },
   "sidebar": {
     "selectLanguage": "Выбрать язык",
@@ -1079,7 +1080,8 @@
       "settings": "Настройки",
       "profit_table": "Таблица прибыли",
       "buyer_crm": "CRM покупателей",
-      "tracking": "Отслеживание"
+      "tracking": "Отслеживание",
+      "cases": "Дела"
     }
   },
   "back": "Назад"

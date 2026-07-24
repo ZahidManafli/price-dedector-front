@@ -70,6 +70,7 @@ const PLAN_TAB_KEYS = [
   TAB_KEYS.PROFIT_TABLE,
   TAB_KEYS.BUYER_CRM,
   TAB_KEYS.TRACKING,
+  TAB_KEYS.CASES,
 ];
 
 function defaultPlanForm() {
