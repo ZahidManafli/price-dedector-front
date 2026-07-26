@@ -498,6 +498,8 @@ export default function DashboardPage() {
   const trackingEmpty = trackingCreditsLeft != null && trackingCreditsLeft <= 0;
 
   const userPlan = limits?.plan || null;
+  const userPlanCategory = String(userPlan?.category || '').toLowerCase();
+  const canRequestTrackingCredits = userPlanCategory !== 'analytics' && userPlanCategory !== 'amazon_monitoring';
 
   const onOpenUpgradeRequest = () => {
     navigate('/upgrade-plan');
@@ -1495,19 +1497,25 @@ export default function DashboardPage() {
           <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
             Used {trackingCreditsUsed ?? 0}{trackingCreditsLimitValue != null ? ` / ${trackingCreditsLimitValue}` : ''}
           </p>
-          <button
-            type="button"
-            onClick={() => setTrackingCreditsModalOpen(true)}
-            className={`mt-3 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-              trackingEmpty
-                ? 'bg-rose-600 text-white hover:bg-rose-700'
-                : isDark
-                  ? 'bg-teal-500 text-slate-950 hover:bg-teal-400'
-                  : 'bg-teal-600 text-white hover:bg-teal-700'
-            }`}
-          >
-            Get more credit
-          </button>
+          {canRequestTrackingCredits ? (
+            <button
+              type="button"
+              onClick={() => setTrackingCreditsModalOpen(true)}
+              className={`mt-3 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                trackingEmpty
+                  ? 'bg-rose-600 text-white hover:bg-rose-700'
+                  : isDark
+                    ? 'bg-teal-500 text-slate-950 hover:bg-teal-400'
+                    : 'bg-teal-600 text-white hover:bg-teal-700'
+              }`}
+            >
+              Get more credit
+            </button>
+          ) : (
+            <p className={`mt-3 text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              Not available on Analytics or Amazon Monitoring plans.
+            </p>
+          )}
         </div>
       </div>
 
