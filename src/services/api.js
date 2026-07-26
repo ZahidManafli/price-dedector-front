@@ -23,6 +23,7 @@ api.interceptors.request.use((config) => {
     url === '/settings/subscription-requests/verify' ||
     url.startsWith('/settings/subscription-requests/update-credits') ||
     url.startsWith('/settings/subscription-requests/reset-credits') ||
+    url.startsWith('/settings/subscription-requests/tracking-credits') ||
     url.startsWith('/api/partners/public') ||
     url.includes('/privacy') ||
     url.includes('/about');
@@ -116,6 +117,7 @@ export const settingsAPI = {
   verifySubscriptionRequest: (data) => api.post('/settings/subscription-requests/verify', data),
   submitUpdateCreditRequest: (data) => api.post('/settings/subscription-requests/update-credits', data),
   submitResetCreditsRequest: (data) => api.post('/settings/subscription-requests/reset-credits', data),
+  submitTrackingCreditsRequest: (data) => api.post('/settings/subscription-requests/tracking-credits', data),
 };
 
 export const ebayAPI = {

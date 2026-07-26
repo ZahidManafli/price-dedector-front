@@ -43,6 +43,8 @@ function formatPlanCategory(category) {
 }
 
 function formatRequestTypeLabel(requestType) {
+  if (requestType === 'update_credits') return 'credit top-up';
+  if (requestType === 'tracking_credits_topup') return 'tracking credit top-up';
   return String(requestType || 'subscription').replace(/_/g, ' ');
 }
 
@@ -1359,6 +1361,11 @@ export default function AdminPanelPage() {
                         {req.requestType === 'update_credits' && req.requestedCredits != null ? (
                           <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200">
                             {t('adminPanelPage.credits')}: {req.requestedCredits}
+                          </span>
+                        ) : null}
+                        {req.requestType === 'tracking_credits_topup' && req.requestedCredits != null ? (
+                          <span className="rounded-full bg-teal-100 px-2.5 py-1 font-semibold text-teal-700 dark:bg-teal-900/30 dark:text-teal-200">
+                            {t('adminPanelPage.credits')}: {req.requestedCredits} · {Number(req.requestedLimits?.trackingTopUpPrice || 0).toFixed(2)} {req.requestedLimits?.trackingTopUpCurrency || 'AZN'}
                           </span>
                         ) : null}
                         {req.requestType === 'subscription' ? (

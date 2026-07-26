@@ -7,14 +7,135 @@ import { formatCurrency } from '../utils/helpers';
 import { ProductFormModal } from './ProductFormPage';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Download, Gauge, LineChart, Lock, ShieldCheck, TrendingUp, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import DailyFinanceFlowChart from '../components/DailyFinanceFlowChart';
 
+// Formula: (credits / 3) * 0.35 AZN — e.g. 6 credits -> (6/3)*0.35 = 0.70 AZN.
+// Mirrors computeTrackingCreditsTopUpPrice on the backend, which recomputes and
+// trusts only its own number — this is purely for the live preview.
+function computeTrackingCreditsPrice(credits) {
+  return (Number(credits) || 0) / 3 * 0.35;
+}
+
+function TrackingCreditsModal({ open, onClose, onSuccess }) {
+  const { formatPrice } = useLanguage();
+  const [credits, setCredits] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [customNote, setCustomNote] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      setCredits('');
+      setPhoneNumber('');
+      setCustomNote('');
+      setError('');
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  const creditsNum = Number(credits);
+  const hasValidCredits = credits !== '' && Number.isFinite(creditsNum) && creditsNum > 0;
+  const price = hasValidCredits ? computeTrackingCreditsPrice(creditsNum) : 0;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!hasValidCredits) {
+      setError('Enter a tracking credit amount greater than 0.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await settingsAPI.submitTrackingCreditsRequest({
+        requestedCredits: creditsNum,
+        phoneNumber: phoneNumber.trim(),
+        customNote: customNote.trim(),
+      });
+      onSuccess?.();
+      onClose?.();
+    } catch (err) {
+      setError(err?.response?.data?.error || err?.message || 'Failed to send request');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-white/15 bg-slate-900 p-5 shadow-2xl">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-white">Get more tracking credits</h3>
+            <p className="mt-1 text-sm text-slate-400">Send a request and the admin team will review it.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-white/15 p-1.5 text-slate-300 hover:bg-white/10"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs text-slate-400">How many tracking credits do you need?</label>
+            <input
+              type="number"
+              min="1"
+              value={credits}
+              onChange={(e) => setCredits(e.target.value)}
+              placeholder="e.g. 6"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs text-slate-400">Phone number</label>
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="e.g. 0501234567"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+              disabled={loading}
+            />
+          </div>
+
+          {hasValidCredits ? (
+            <div className="rounded-xl border border-teal-500/30 bg-teal-500/5 p-3 text-sm text-teal-100">
+              You will pay <span className="font-semibold">{formatPrice(price)}</span> for {creditsNum} tracking credits.
+            </div>
+          ) : null}
+
+          {error ? <p className="text-sm text-red-300">{error}</p> : null}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
+          >
+            {loading ? 'Sending...' : 'Send Request'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const [products, setProducts] = useState([]);
   const [limits, setLimits] = useState(null);
+  const [trackingCreditsModalOpen, setTrackingCreditsModalOpen] = useState(false);
   const [adminStats, setAdminStats] = useState(null);
   const [ebayRateLimits, setEbayRateLimits] = useState(null);
   const [ebayRateLimitsLoading, setEbayRateLimitsLoading] = useState(false);
@@ -349,6 +470,9 @@ export default function DashboardPage() {
   const marketCreditsLeft = limits?.marketAnalysis?.creditsRemaining;
   const marketCreditsUsed = limits?.marketAnalysis?.creditsUsed;
   const marketCreditsLimit = limits?.marketAnalysis?.creditsLimit;
+  const trackingCreditsLeft = limits?.trackingCredits?.remaining;
+  const trackingCreditsUsed = limits?.trackingCredits?.used;
+  const trackingCreditsLimitValue = limits?.trackingCredits?.limit;
   const isProductQuotaReached =
     productsLeft !== null && productsLeft !== undefined && productsLeft <= 0;
 
@@ -357,6 +481,8 @@ export default function DashboardPage() {
   const lookupEmpty = lookupLeft != null && lookupLeft <= 0;
   const marketLow = marketCreditsLeft != null && marketCreditsLeft > 0 && marketCreditsLeft <= 3;
   const marketEmpty = marketCreditsLeft != null && marketCreditsLeft <= 0;
+  const trackingLow = trackingCreditsLeft != null && trackingCreditsLeft > 0 && trackingCreditsLeft <= 3;
+  const trackingEmpty = trackingCreditsLeft != null && trackingCreditsLeft <= 0;
 
   const userPlan = limits?.plan || null;
 
@@ -993,6 +1119,14 @@ export default function DashboardPage() {
         />
       )}
 
+      <TrackingCreditsModal
+        open={trackingCreditsModalOpen}
+        onClose={() => setTrackingCreditsModalOpen(false)}
+        onSuccess={() => {
+          setAlert({ type: 'success', message: 'Your tracking credit request has been sent to the admin team.' });
+        }}
+      />
+
       {alert && (
         <div className="mb-6">
           <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
@@ -1172,7 +1306,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5" data-tour="dashboard-credit-cards">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5" data-tour="dashboard-credit-cards">
         {/* Product Credits */}
         <div className={`glass-card p-5 border transition-all ${
           isProductQuotaReached
@@ -1318,6 +1452,48 @@ export default function DashboardPage() {
               Planı Yüksəlt
             </button>
           )}
+        </div>
+
+        {/* Tracking Credits */}
+        <div className={`glass-card p-5 border transition-all ${
+          trackingEmpty
+            ? isDark ? 'bg-slate-950 text-white border-rose-700/60' : 'bg-rose-50 text-slate-900 border-rose-300'
+            : trackingLow
+              ? isDark ? 'bg-slate-950 text-white border-amber-700/60' : 'bg-amber-50 text-slate-900 border-amber-300'
+              : isDark ? 'bg-slate-950 text-white border-slate-800' : 'bg-slate-200 text-slate-900 border-slate-300'
+        }`}>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Tracking Credits</p>
+            {(trackingEmpty || trackingLow) && (
+              <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                trackingEmpty
+                  ? isDark ? 'bg-rose-900/50 text-rose-300' : 'bg-rose-100 text-rose-700'
+                  : isDark ? 'bg-amber-900/50 text-amber-300' : 'bg-amber-100 text-amber-700'
+              }`}>
+                <AlertCircle size={10} />
+                {trackingEmpty ? 'Limit doldu' : 'Az qalıb'}
+              </span>
+            )}
+          </div>
+          <p className={`mt-2 text-3xl font-bold ${trackingEmpty ? 'text-rose-500' : trackingLow ? 'text-amber-500' : ''}`}>
+            {trackingCreditsLeft === null || trackingCreditsLeft === undefined ? t('unlimited', { ns: 'common' }) : trackingCreditsLeft}
+          </p>
+          <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
+            Used {trackingCreditsUsed ?? 0}{trackingCreditsLimitValue != null ? ` / ${trackingCreditsLimitValue}` : ''}
+          </p>
+          <button
+            type="button"
+            onClick={() => setTrackingCreditsModalOpen(true)}
+            className={`mt-3 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+              trackingEmpty
+                ? 'bg-rose-600 text-white hover:bg-rose-700'
+                : isDark
+                  ? 'bg-teal-500 text-slate-950 hover:bg-teal-400'
+                  : 'bg-teal-600 text-white hover:bg-teal-700'
+            }`}
+          >
+            Get more credit
+          </button>
         </div>
       </div>
 
