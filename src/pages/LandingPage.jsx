@@ -221,7 +221,6 @@ export default function LandingPage() {
   const [plans, setPlans] = useState([]);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState('');
-  const [presetTrackingPlanId, setPresetTrackingPlanId] = useState('');
 
   const faqItems = useMemo(
     () => [
@@ -364,17 +363,11 @@ export default function LandingPage() {
     [planSource]
   );
 
-  // A tracking plan is never a standalone subscription — it's an add-on. Clicking
-  // "Subscribe" on one pre-checks it inside the modal, but the user still has to
-  // pick a real plan (subscription/analytics/amazon monitoring) there too.
+  // A tracking plan is directly selectable/requestable in the modal exactly like
+  // every other category — clicking "Subscribe" auto-selects and locks that same
+  // plan, same as Subscription/Analytics/Amazon Monitoring.
   const onSubscribePlan = (plan) => {
-    if (plan?.category === 'tracking_plans') {
-      setSelectedPlanId('');
-      setPresetTrackingPlanId(plan?.id || '');
-    } else {
-      setSelectedPlanId(plan?.id || '');
-      setPresetTrackingPlanId('');
-    }
+    setSelectedPlanId(plan?.id || '');
     setRequestModalOpen(true);
   };
 
@@ -904,8 +897,7 @@ export default function LandingPage() {
         onClose={() => setRequestModalOpen(false)}
         plans={planSource}
         selectedPlanId={selectedPlanId}
-        lockPlan={!presetTrackingPlanId}
-        presetTrackingPlanId={presetTrackingPlanId}
+        lockPlan={true}
         onSuccess={onRequestSuccess}
       />
     </div>

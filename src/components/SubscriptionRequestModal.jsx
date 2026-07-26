@@ -23,6 +23,7 @@ function formatPlanCategory(category = '', t) {
   if (normalized === 'amazon_monitoring' || normalized === 'amazonmonitoring') return t('subscriptionRequestModal.planCategoryAmazonMonitoring');
   if (normalized === 'analytics' || normalized === 'analysis' || normalized === 'data_analytics') return t('subscriptionRequestModal.planCategoryDataAnalytics');
   if (normalized === 'subscription') return t('subscriptionRequestModal.planCategorySubscription');
+  if (normalized === 'tracking_plans' || normalized === 'tracking_plan' || normalized === 'trackingplans') return t('subscriptionRequestModal.planCategoryTracking');
   if (normalized === 'custom') return t('subscriptionRequestModal.planCategoryCustom');
   return toHumanText(normalized || 'subscription');
 }
@@ -35,7 +36,7 @@ function formatPlanName(name = '', t) {
   return raw;
 }
 
-function initialForm(selectedPlanId = '', requestType = 'subscription', defaultValues = {}, presetTrackingPlanId = '') {
+function initialForm(selectedPlanId = '', requestType = 'subscription', defaultValues = {}) {
   return {
     name: defaultValues.name || '',
     surname: defaultValues.surname || '',
@@ -49,8 +50,8 @@ function initialForm(selectedPlanId = '', requestType = 'subscription', defaultV
     ebayAccountsLimit: '',
     customNote: defaultValues.customNote || '',
     requestType,
-    includeTracking: !!presetTrackingPlanId,
-    trackingPlanId: presetTrackingPlanId || '',
+    includeTracking: false,
+    trackingPlanId: '',
   };
 }
 
@@ -73,14 +74,13 @@ export default function SubscriptionRequestModal({
   onSuccess,
   requestType = 'subscription',
   defaultValues = {},
-  presetTrackingPlanId = '',
   title,
   description,
   submitLabel,
 }) {
   const { t } = useTranslation();
   const { formatPrice } = useLanguage();
-  const [form, setForm] = useState(initialForm(selectedPlanId, requestType, defaultValues, presetTrackingPlanId));
+  const [form, setForm] = useState(initialForm(selectedPlanId, requestType, defaultValues));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
@@ -112,7 +112,7 @@ export default function SubscriptionRequestModal({
   const availablePlans = useMemo(() => {
     const deduped = new Map();
     (plans || []).forEach((plan) => {
-      if (!plan || plan.isActive === false || plan.category === 'tracking_plans') return;
+      if (!plan || plan.isActive === false) return;
       const id = String(plan.id || '').trim();
       if (!id) return;
       if (!deduped.has(id)) deduped.set(id, plan);
@@ -168,14 +168,14 @@ export default function SubscriptionRequestModal({
   const hasPrefilledPhone = String(defaultValues?.phoneNumber || '').trim().length > 0;
 
   React.useEffect(() => {
-    setForm(initialForm(selectedPlanId, requestType, defaultValues, presetTrackingPlanId));
+    setForm(initialForm(selectedPlanId, requestType, defaultValues));
     setError('');
     setInfoMessage('');
     setVerificationStep(false);
     setVerificationRequestId('');
     setVerificationCode('');
     setVerificationExpiresAt('');
-  }, [selectedPlanId, open, requestType, defaultValuesSignature, presetTrackingPlanId]);
+  }, [selectedPlanId, open, requestType, defaultValuesSignature]);
 
   if (!open) return null;
 
