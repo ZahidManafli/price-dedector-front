@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import { settingsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 // ── normalizePlan — mirrors LandingPage exactly ───────────────
 function normalizePlan(raw = {}) {
@@ -45,6 +46,15 @@ function normalizePlan(raw = {}) {
         ? 'from-cyan-400/35 to-blue-500/20'
         : 'from-sky-400/25 to-indigo-500/15',
   };
+}
+
+// Plan prices are always entered in AZN — `formatPrice` converts to whatever
+// currency matches the user's selected language, same as everywhere else.
+function formatTrackingAddonAmount(plan, formatPrice) {
+  const amount =
+    plan?.discountedPrice ?? plan?.actualPrice ?? Number(String(plan?.price || '').replace(/[^0-9.]/g, '')) ?? null;
+  if (amount == null || !Number.isFinite(Number(amount))) return plan?.price || '';
+  return formatPrice(Number(amount));
 }
 
 // ── 6-box OTP input ───────────────────────────────────────────
@@ -109,7 +119,16 @@ function OtpInput({ value, onChange, isDark }) {
 }
 
 // ── Plan card — same structure as LandingPage ─────────────────
-function PlanCard({ plan, isCurrent, onUpgrade }) {
+function PlanCard({
+  plan,
+  isCurrent,
+  onUpgrade,
+  ownTrackingAddon,
+  trackingAddOnPlans,
+  trackingChoice,
+  onTrackingChoiceChange,
+  formatPrice,
+}) {
   const hasDiscount =
     Number.isFinite(Number(plan.actualPrice)) &&
     Number.isFinite(Number(plan.discountedPrice)) &&
@@ -195,6 +214,59 @@ function PlanCard({ plan, isCurrent, onUpgrade }) {
           ))}
         </ul>
 
+        {/* Tracking add-on opt-in — Subscription-category plans only */}
+        {plan.category === 'subscription' && (ownTrackingAddon || (trackingAddOnPlans && trackingAddOnPlans.length > 0)) ? (
+          <div className="mt-4 space-y-2 rounded-xl border border-teal-300/30 bg-teal-400/5 p-3">
+            <label className="flex items-center gap-2 text-sm font-medium text-teal-100">
+              <input
+                type="checkbox"
+                checked={!!trackingChoice?.includeTracking}
+                onChange={(e) => onTrackingChoiceChange(plan.id, {
+                  includeTracking: e.target.checked,
+                  trackingPlanId: ownTrackingAddon
+                    ? ownTrackingAddon.id
+                    : trackingChoice?.trackingPlanId || trackingAddOnPlans?.[0]?.id || '',
+                })}
+                className="h-4 w-4 rounded border-slate-600 accent-teal-400"
+              />
+              Include tracking add-on
+            </label>
+            {trackingChoice?.includeTracking ? (
+              ownTrackingAddon ? (
+                <p className="text-xs text-teal-200/90">
+                  +{formatPrice(ownTrackingAddon.price)} — grants {ownTrackingAddon.credits} tracking credits
+                </p>
+              ) : (
+                <>
+                  {trackingAddOnPlans.length > 1 ? (
+                    <select
+                      value={trackingChoice?.trackingPlanId || trackingAddOnPlans[0]?.id || ''}
+                      onChange={(e) => onTrackingChoiceChange(plan.id, { includeTracking: true, trackingPlanId: e.target.value })}
+                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-400"
+                    >
+                      {trackingAddOnPlans.map((tp) => (
+                        <option key={tp.id} value={tp.id}>
+                          {tp.name} — {formatTrackingAddonAmount(tp, formatPrice)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : null}
+                  {(() => {
+                    const selected =
+                      trackingAddOnPlans.find((tp) => tp.id === (trackingChoice?.trackingPlanId || trackingAddOnPlans[0]?.id)) ||
+                      trackingAddOnPlans[0];
+                    return selected ? (
+                      <p className="text-xs text-teal-200/90">
+                        +{formatTrackingAddonAmount(selected, formatPrice)} — grants {selected.trackingCreditsLimit ?? 0} tracking credits
+                      </p>
+                    ) : null;
+                  })()}
+                </>
+              )
+            ) : null}
+          </div>
+        ) : null}
+
         {/* upgrade button */}
         <button
           type="button"
@@ -229,11 +301,13 @@ export default function UpgradePlanPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isDark } = useTheme();
+  const { formatPrice } = useLanguage();
 
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('subscription');
+  const [trackingChoices, setTrackingChoices] = useState({});
 
   const [verifying, setVerifying] = useState(false);
   const [pendingRequest, setPendingRequest] = useState(null);
@@ -252,6 +326,23 @@ export default function UpgradePlanPage() {
   const visiblePlans = plans.filter((p) => p.category === activeTab);
   const currentPlanId = user?.selectedPlanId || null;
 
+  // Standalone tracking_plans plans double as a generic add-on source for any
+  // Subscription-category plan that doesn't have its own trackingAddonPrice set.
+  const trackingAddOnPlans = plans.filter((p) => p.category === 'tracking_plans');
+
+  const getOwnTrackingAddon = (plan) => {
+    if (plan.category !== 'subscription') return null;
+    const price = plan.trackingAddonPrice;
+    const credits = Number(plan.trackingCreditsLimit);
+    if (price === null || price === undefined || !Number.isFinite(Number(price))) return null;
+    if (!Number.isFinite(credits) || credits <= 0) return null;
+    return { id: plan.id, price: Number(price), credits };
+  };
+
+  const onTrackingChoiceChange = (planId, choice) => {
+    setTrackingChoices((prev) => ({ ...prev, [planId]: choice }));
+  };
+
   const handleUpgrade = async (plan) => {
     const result = await Swal.fire({
       title: `Switch to ${plan.name}?`,
@@ -267,9 +358,16 @@ export default function UpgradePlanPage() {
     });
     if (!result.isConfirmed) return;
 
+    const choice = trackingChoices[plan.id];
+    const ownTrackingAddon = getOwnTrackingAddon(plan);
+    const includeTracking = plan.category === 'subscription' && !!choice?.includeTracking;
+    const trackingPlanId = includeTracking
+      ? String((ownTrackingAddon ? ownTrackingAddon.id : choice?.trackingPlanId) || '')
+      : '';
+
     setSubmitting(true);
     try {
-      const res = await settingsAPI.submitSubscriptionRequest({ planId: plan.id });
+      const res = await settingsAPI.submitSubscriptionRequest({ planId: plan.id, includeTracking, trackingPlanId });
       const req = res?.data?.request;
       setPendingRequest({ id: req?.id, email: req?.email });
       setVerifying(true);
@@ -446,6 +544,11 @@ export default function UpgradePlanPage() {
                 plan={plan}
                 isCurrent={plan.id === currentPlanId}
                 onUpgrade={handleUpgrade}
+                ownTrackingAddon={getOwnTrackingAddon(plan)}
+                trackingAddOnPlans={trackingAddOnPlans}
+                trackingChoice={trackingChoices[plan.id]}
+                onTrackingChoiceChange={onTrackingChoiceChange}
+                formatPrice={formatPrice}
               />
             ))}
           </div>
