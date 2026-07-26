@@ -122,6 +122,38 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   };
 
+  // The cached authUser (and the sidebar's lock icons, which read it) only ever
+  // gets refreshed from the server on full page load (see verifySession above) —
+  // client-side navigation never re-checks it. So if an admin changes a plan's
+  // visible tabs while a user's tab stays open, the sidebar can keep showing the
+  // old, unlocked state even though every live API call already enforces the new
+  // one, which looks exactly like "sidebar says allowed, page load says denied".
+  // Call this with the response from GET /settings/limits (already fetched on
+  // every Dashboard load) to keep the cached permissions in sync without forcing
+  // a full re-login.
+  const syncPermissionsFromLimits = (limitsData) => {
+    if (!limitsData) return;
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = {
+        ...prev,
+        selectedPlanId: limitsData.plan?.id ?? prev.selectedPlanId,
+        planCategory: limitsData.plan?.category ?? prev.planCategory,
+        planExpiresAt: limitsData.plan?.expiresAt ?? prev.planExpiresAt,
+        permissions: {
+          ...prev.permissions,
+          allowedTabs: Array.isArray(limitsData.permissions?.allowedTabs)
+            ? limitsData.permissions.allowedTabs
+            : prev.permissions?.allowedTabs,
+        },
+      };
+      try {
+        localStorage.setItem('authUser', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const logout = async () => {
     setError(null);
     try {
@@ -149,6 +181,7 @@ export const AuthProvider = ({ children }) => {
     error,
     logout,
     setSession,
+    syncPermissionsFromLimits,
     maintenance,
     isAuthenticated: !!user,
     isPlanExpired,

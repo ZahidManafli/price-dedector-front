@@ -163,7 +163,7 @@ export default function DashboardPage() {
   const [alert, setAlert] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { isDark } = useTheme();
-  const { user } = useAuth();
+  const { user, syncPermissionsFromLimits } = useAuth();
   const { t } = useTranslation('system');
   const navigate = useNavigate();
   const [ebayStatus, setEbayStatus] = useState({ connected: false });
@@ -189,6 +189,7 @@ export default function DashboardPage() {
         ]);
         setProducts(productsRes?.data || []);
         setLimits(limitsRes?.data || null);
+        syncPermissionsFromLimits(limitsRes?.data || null);
         const ebayData = ebayRes?.data || {};
         setEbayStatus(ebayData);
         if (ebayData?.connected) {
@@ -1134,6 +1135,7 @@ export default function DashboardPage() {
             ]);
             setProducts(productsRes.data || []);
             setLimits(limitsRes.data || null);
+            syncPermissionsFromLimits(limitsRes.data || null);
           }}
         />
       )}
