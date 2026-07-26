@@ -20,6 +20,8 @@ function computeTrackingCreditsPrice(credits) {
   return (Number(credits) || 0) / 3 * 0.35;
 }
 
+const MIN_TRACKING_CREDITS_REQUEST = 15;
+
 function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber }) {
   const { formatPrice } = useLanguage();
   const [credits, setCredits] = useState('');
@@ -42,7 +44,7 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber })
   if (!open) return null;
 
   const creditsNum = Number(credits);
-  const hasValidCredits = credits !== '' && Number.isFinite(creditsNum) && creditsNum > 0;
+  const hasValidCredits = credits !== '' && Number.isFinite(creditsNum) && creditsNum >= MIN_TRACKING_CREDITS_REQUEST;
   const price = hasValidCredits ? computeTrackingCreditsPrice(creditsNum) : 0;
 
   const handleSubmit = async (e) => {
@@ -50,7 +52,7 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber })
     setError('');
 
     if (!hasValidCredits) {
-      setError('Enter a tracking credit amount greater than 0.');
+      setError(`Enter at least ${MIN_TRACKING_CREDITS_REQUEST} tracking credits.`);
       return;
     }
 
@@ -94,13 +96,15 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber })
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs text-slate-400">How many tracking credits do you need?</label>
+            <label className="mb-1 block text-xs text-slate-400">
+              How many tracking credits do you need? <span className="text-slate-500">(min: {MIN_TRACKING_CREDITS_REQUEST} credit)</span>
+            </label>
             <input
               type="number"
-              min="1"
+              min={MIN_TRACKING_CREDITS_REQUEST}
               value={credits}
               onChange={(e) => setCredits(e.target.value)}
-              placeholder="e.g. 6"
+              placeholder={`e.g. ${MIN_TRACKING_CREDITS_REQUEST}`}
               className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
               disabled={loading}
             />
