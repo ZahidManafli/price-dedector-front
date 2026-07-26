@@ -89,6 +89,7 @@ function defaultPlanForm() {
     productsLimit: '',
     marketAnalysisCreditsLimit: '',
     trackingCreditsLimit: '',
+    trackingAddonPrice: '',
     ebayAccountsLimit: '',
     isIt6HourChecker: false,
     featured: false,
@@ -324,6 +325,8 @@ export default function AdminPanelPage() {
             : Number(planForm.marketAnalysisCreditsLimit),
         trackingCreditsLimit:
           planForm.trackingCreditsLimit === '' ? null : Number(planForm.trackingCreditsLimit),
+        trackingAddonPrice:
+          planForm.trackingAddonPrice === '' ? null : Number(planForm.trackingAddonPrice),
         ebayAccountsLimit:
           planForm.ebayAccountsLimit === '' ? null : Number(planForm.ebayAccountsLimit),
         featured: !!planForm.featured,
@@ -357,7 +360,9 @@ export default function AdminPanelPage() {
           ? 'analytics'
           : plan.category === 'amazon_monitoring'
             ? 'amazon_monitoring'
-            : 'subscription',
+            : plan.category === 'tracking_plans'
+              ? 'tracking_plans'
+              : 'subscription',
       price: plan.price || '',
       actualPrice: safeToString(plan.actualPrice),
       discountedPrice: safeToString(plan.discountedPrice),
@@ -372,6 +377,7 @@ export default function AdminPanelPage() {
       productsLimit: safeToString(plan.productsLimit),
       marketAnalysisCreditsLimit: safeToString(plan.marketAnalysisCreditsLimit),
       trackingCreditsLimit: safeToString(plan.trackingCreditsLimit),
+      trackingAddonPrice: safeToString(plan.trackingAddonPrice),
       ebayAccountsLimit: safeToString(plan.ebayAccountsLimit),
       featured: !!plan.featured,
       isActive: plan.isActive !== false,
@@ -1480,9 +1486,15 @@ export default function AdminPanelPage() {
                               <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.marketAnalysisCreditsLimit ?? <span className="text-emerald-500">∞</span>}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span>Tracking credits (bundled)</span>
+                              <span>{plan.category === 'subscription' ? 'Tracking add-on credits' : 'Tracking credits (bundled)'}</span>
                               <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.trackingCreditsLimit ?? <span className="text-emerald-500">∞</span>}</span>
                             </div>
+                            {plan.category === 'subscription' && plan.trackingAddonPrice != null ? (
+                              <div className="flex items-center justify-between">
+                                <span>Tracking add-on price</span>
+                                <span className={`font-medium ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>{plan.trackingAddonPrice} {plan.currency || 'AZN'}</span>
+                              </div>
+                            ) : null}
                             <div className="flex items-center justify-between">
                               <span>eBay accounts</span>
                               <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.ebayAccountsLimit ?? <span className="text-emerald-500">∞</span>}</span>
@@ -1645,9 +1657,19 @@ export default function AdminPanelPage() {
                         <input value={planForm.marketAnalysisCreditsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
                       </div>
                       <div>
-                        <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tracking credits (bundled)</label>
+                        <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                          {planForm.category === 'subscription' ? 'Tracking add-on credits' : 'Tracking credits (bundled)'}
+                        </label>
                         <input value={planForm.trackingCreditsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, trackingCreditsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
                       </div>
+                      {planForm.category === 'subscription' ? (
+                        <div>
+                          <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                            Tracking add-on price <span className="opacity-60">(blank = no add-on for this plan)</span>
+                          </label>
+                          <input value={planForm.trackingAddonPrice} onChange={(e) => setPlanForm((p) => ({ ...p, trackingAddonPrice: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" step="0.01" placeholder="e.g. 7.99" />
+                        </div>
+                      ) : null}
                       <div>
                         <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>eBay accounts</label>
                         <input value={planForm.ebayAccountsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />

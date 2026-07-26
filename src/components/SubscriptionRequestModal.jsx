@@ -132,6 +132,20 @@ export default function SubscriptionRequestModal({
     [availablePlans, form.planId]
   );
 
+  // A subscription-category plan can carry its own individually-priced tracking
+  // add-on (trackingAddonPrice + trackingCreditsLimit set directly on the plan by
+  // admin). When that's configured, it takes priority over the generic
+  // tracking_plans list below — the checkbox always reflects THIS plan's own
+  // numbers instead of asking the user to pick from a shared list.
+  const ownPlanTrackingAddon = useMemo(() => {
+    if (!selectedPlan || selectedPlan.category !== 'subscription') return null;
+    const price = selectedPlan.trackingAddonPrice;
+    const credits = Number(selectedPlan.trackingCreditsLimit);
+    if (price === null || price === undefined || !Number.isFinite(Number(price))) return null;
+    if (!Number.isFinite(credits) || credits <= 0) return null;
+    return { id: selectedPlan.id, price: Number(price), credits, currency: selectedPlan.currency };
+  }, [selectedPlan]);
+
   const isSubscriptionRequest = requestType === 'subscription';
   const isCreditTopUpRequest = requestType === 'update_credits';
   const isResetRequest = requestType === 'reset_credits';
@@ -217,7 +231,9 @@ export default function SubscriptionRequestModal({
           phoneNumber: form.phoneNumber,
           planId: form.planId,
           includeTracking: !!form.includeTracking,
-          trackingPlanId: form.includeTracking ? String(selectedTrackingAddon?.id || '') : '',
+          trackingPlanId: form.includeTracking
+            ? String((ownPlanTrackingAddon || selectedTrackingAddon)?.id || '')
+            : '',
         };
 
         if (isCustomPlan) {
@@ -395,7 +411,7 @@ export default function SubscriptionRequestModal({
                 </p>
               ) : null}
 
-              {trackingAddOnPlans.length > 0 && !verificationStep ? (
+              {(ownPlanTrackingAddon || trackingAddOnPlans.length > 0) && !verificationStep ? (
                 <div className="space-y-2 rounded-xl border border-teal-500/30 bg-teal-500/5 p-3">
                   <label className="flex items-center gap-2 text-sm font-medium text-teal-100">
                     <input
@@ -404,36 +420,47 @@ export default function SubscriptionRequestModal({
                       onChange={(e) => setForm((p) => ({
                         ...p,
                         includeTracking: e.target.checked,
-                        trackingPlanId: p.trackingPlanId || trackingAddOnPlans[0]?.id || '',
+                        trackingPlanId: ownPlanTrackingAddon
+                          ? ownPlanTrackingAddon.id
+                          : p.trackingPlanId || trackingAddOnPlans[0]?.id || '',
                       }))}
                       className="h-4 w-4 rounded border-slate-600 bg-slate-950 accent-teal-400"
                     />
                     {t('subscriptionRequestModal.includeTrackingAddon')}
                   </label>
                   {form.includeTracking ? (
-                    <>
-                      {trackingAddOnPlans.length > 1 ? (
-                        <select
-                          value={form.trackingPlanId || trackingAddOnPlans[0]?.id || ''}
-                          onChange={(e) => setForm((p) => ({ ...p, trackingPlanId: e.target.value }))}
-                          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-400"
-                        >
-                          {trackingAddOnPlans.map((plan) => (
-                            <option key={plan.id} value={plan.id}>
-                              {plan.name} — {formatTrackingAddonAmount(plan)}
-                            </option>
-                          ))}
-                        </select>
-                      ) : null}
-                      {selectedTrackingAddon ? (
-                        <p className="text-xs text-teal-200/90">
-                          {t('subscriptionRequestModal.trackingAddonSummary', {
-                            amount: formatTrackingAddonAmount(selectedTrackingAddon),
-                            credits: selectedTrackingAddon.trackingCreditsLimit ?? 0,
-                          })}
-                        </p>
-                      ) : null}
-                    </>
+                    ownPlanTrackingAddon ? (
+                      <p className="text-xs text-teal-200/90">
+                        {t('subscriptionRequestModal.trackingAddonSummary', {
+                          amount: `${ownPlanTrackingAddon.price.toFixed(2)} ${ownPlanTrackingAddon.currency || 'AZN'}`,
+                          credits: ownPlanTrackingAddon.credits,
+                        })}
+                      </p>
+                    ) : (
+                      <>
+                        {trackingAddOnPlans.length > 1 ? (
+                          <select
+                            value={form.trackingPlanId || trackingAddOnPlans[0]?.id || ''}
+                            onChange={(e) => setForm((p) => ({ ...p, trackingPlanId: e.target.value }))}
+                            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-400"
+                          >
+                            {trackingAddOnPlans.map((plan) => (
+                              <option key={plan.id} value={plan.id}>
+                                {plan.name} — {formatTrackingAddonAmount(plan)}
+                              </option>
+                            ))}
+                          </select>
+                        ) : null}
+                        {selectedTrackingAddon ? (
+                          <p className="text-xs text-teal-200/90">
+                            {t('subscriptionRequestModal.trackingAddonSummary', {
+                              amount: formatTrackingAddonAmount(selectedTrackingAddon),
+                              credits: selectedTrackingAddon.trackingCreditsLimit ?? 0,
+                            })}
+                          </p>
+                        ) : null}
+                      </>
+                    )
                   ) : null}
                 </div>
               ) : null}

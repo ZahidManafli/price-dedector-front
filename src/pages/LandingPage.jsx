@@ -191,6 +191,7 @@ function normalizePlan(raw = {}) {
     summary: raw.description || '',
     features: Array.isArray(raw.features) ? raw.features : [],
     trackingCreditsLimit: raw.trackingCreditsLimit ?? null,
+    trackingAddonPrice: raw.trackingAddonPrice ?? null,
     category:
       normalizedCategory === 'analytics' || normalizedCategory === 'analysis' || normalizedCategory === 'data_analytics'
         ? 'analytics'

@@ -33,6 +33,7 @@ function normalizePlan(raw = {}) {
     summary: raw.description || raw.summary || '',
     features: Array.isArray(raw.features) ? raw.features : [],
     trackingCreditsLimit: raw.trackingCreditsLimit ?? null,
+    trackingAddonPrice: raw.trackingAddonPrice ?? null,
     category,
     featured: !!raw.featured,
     accent:

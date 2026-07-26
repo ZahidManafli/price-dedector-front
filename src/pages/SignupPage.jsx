@@ -38,6 +38,7 @@ function normalizePlan(raw = {}) {
     actualPrice: raw.actualPrice ?? raw.actual_price ?? null,
     discountedPrice: raw.discountedPrice ?? raw.discounted_price ?? null,
     trackingCreditsLimit: raw.trackingCreditsLimit ?? raw.tracking_credits_limit ?? null,
+    trackingAddonPrice: raw.trackingAddonPrice ?? raw.tracking_addon_price ?? null,
     currency: raw.currency || 'AZN',
     description: raw.description || '',
     features: Array.isArray(raw.features) ? raw.features : [],
@@ -237,6 +238,19 @@ export default function SignupPage() {
     [trackingAddOnPlans, formData.trackingPlanId]
   );
 
+  // A subscription-category plan can carry its own individually-priced tracking
+  // add-on (trackingAddonPrice + trackingCreditsLimit set directly on the plan by
+  // admin). When configured, it takes priority over the generic tracking_plans
+  // list — the checkbox reflects THIS plan's own numbers, not a shared list.
+  const ownPlanTrackingAddon = useMemo(() => {
+    if (!selectedPlan || selectedPlan.category !== 'subscription') return null;
+    const price = selectedPlan.trackingAddonPrice;
+    const credits = Number(selectedPlan.trackingCreditsLimit);
+    if (price === null || price === undefined || !Number.isFinite(Number(price))) return null;
+    if (!Number.isFinite(credits) || credits <= 0) return null;
+    return { id: selectedPlan.id, price: Number(price), credits, currency: selectedPlan.currency };
+  }, [selectedPlan]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -278,7 +292,9 @@ export default function SignupPage() {
         email: formData.email.trim(), phoneNumber: formData.phoneNumber.trim(),
         planId: formData.planId, ...(referralSlug ? { referralSlug } : {}),
         includeTracking: !!formData.includeTracking,
-        trackingPlanId: formData.includeTracking ? String(selectedTrackingAddon?.id || '') : '',
+        trackingPlanId: formData.includeTracking
+          ? String((ownPlanTrackingAddon || selectedTrackingAddon)?.id || '')
+          : '',
       };
       if (formData.planId === 'custom') {
         payload.requestedLimits = {
@@ -485,7 +501,7 @@ export default function SignupPage() {
                 )}
 
                 {/* Tracking add-on opt-in — attaches to whichever plan is selected above */}
-                {trackingAddOnPlans.length > 0 && selectedPlanId && selectedPlanId !== 'custom' && (
+                {(ownPlanTrackingAddon || trackingAddOnPlans.length > 0) && selectedPlanId && selectedPlanId !== 'custom' && (
                   <div className={`mt-4 space-y-2 rounded-xl border p-3 ${isDark ? 'border-teal-800 bg-teal-950/20' : 'border-teal-200 bg-teal-50'}`}>
                     <label className={`flex items-center gap-2 text-sm font-medium ${isDark ? 'text-teal-200' : 'text-teal-800'}`}>
                       <input
@@ -494,7 +510,9 @@ export default function SignupPage() {
                         onChange={(e) => setFormData((p) => ({
                           ...p,
                           includeTracking: e.target.checked,
-                          trackingPlanId: p.trackingPlanId || trackingAddOnPlans[0]?.id || '',
+                          trackingPlanId: ownPlanTrackingAddon
+                            ? ownPlanTrackingAddon.id
+                            : p.trackingPlanId || trackingAddOnPlans[0]?.id || '',
                         }))}
                         disabled={loading}
                         className="h-4 w-4 rounded border-slate-600 accent-teal-500"
@@ -502,6 +520,14 @@ export default function SignupPage() {
                       {t('subscriptionRequestModal.includeTrackingAddon')}
                     </label>
                     {formData.includeTracking ? (
+                      ownPlanTrackingAddon ? (
+                        <p className={`text-xs ${isDark ? 'text-teal-300/90' : 'text-teal-700'}`}>
+                          {t('subscriptionRequestModal.trackingAddonSummary', {
+                            amount: `${ownPlanTrackingAddon.price.toFixed(2)} ${ownPlanTrackingAddon.currency || 'AZN'}`,
+                            credits: ownPlanTrackingAddon.credits,
+                          })}
+                        </p>
+                      ) : (
                       <>
                         {trackingAddOnPlans.length > 1 ? (
                           <select
@@ -526,6 +552,7 @@ export default function SignupPage() {
                           </p>
                         ) : null}
                       </>
+                      )
                     ) : null}
                   </div>
                 )}
