@@ -364,12 +364,16 @@ export default function LandingPage() {
     [planSource]
   );
 
-  // A tracking plan is never a standalone subscription — it's an add-on. Clicking
-  // "Subscribe" on one pre-checks it inside the modal, but the user still has to
-  // pick a real plan (subscription/analytics/amazon monitoring) there too.
+  // A tracking plan is never a standalone subscription — it's an add-on that only
+  // ever attaches to a Subscription-category plan. Clicking "Subscribe" on one
+  // pre-checks the add-on AND auto-selects a real plan for it, exactly like every
+  // other category's "Subscribe" click does — the user can still change the plan
+  // in the modal's dropdown, it's just no longer left blank by default.
   const onSubscribePlan = (plan) => {
     if (plan?.category === 'tracking_plans') {
-      setSelectedPlanId('');
+      const defaultSubscriptionPlan =
+        subscriptionVisiblePlans.find((p) => p.featured) || subscriptionVisiblePlans[0] || null;
+      setSelectedPlanId(defaultSubscriptionPlan?.id || '');
       setPresetTrackingPlanId(plan?.id || '');
     } else {
       setSelectedPlanId(plan?.id || '');
@@ -904,7 +908,7 @@ export default function LandingPage() {
         onClose={() => setRequestModalOpen(false)}
         plans={planSource}
         selectedPlanId={selectedPlanId}
-        lockPlan={!presetTrackingPlanId}
+        lockPlan={true}
         presetTrackingPlanId={presetTrackingPlanId}
         onSuccess={onRequestSuccess}
       />
