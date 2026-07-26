@@ -20,13 +20,15 @@ function computeTrackingCreditsPrice(credits) {
   return (Number(credits) || 0) / 3 * 0.35;
 }
 
-function TrackingCreditsModal({ open, onClose, onSuccess }) {
+function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber }) {
   const { formatPrice } = useLanguage();
   const [credits, setCredits] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [customNote, setCustomNote] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const hasPhoneOnFile = !!String(existingPhoneNumber || '').trim();
 
   useEffect(() => {
     if (open) {
@@ -52,11 +54,16 @@ function TrackingCreditsModal({ open, onClose, onSuccess }) {
       return;
     }
 
+    if (!hasPhoneOnFile && !phoneNumber.trim()) {
+      setError('Enter a phone number.');
+      return;
+    }
+
     try {
       setLoading(true);
       await settingsAPI.submitTrackingCreditsRequest({
         requestedCredits: creditsNum,
-        phoneNumber: phoneNumber.trim(),
+        phoneNumber: hasPhoneOnFile ? existingPhoneNumber : phoneNumber.trim(),
         customNote: customNote.trim(),
       });
       onSuccess?.();
@@ -99,17 +106,23 @@ function TrackingCreditsModal({ open, onClose, onSuccess }) {
             />
           </div>
 
-          <div>
-            <label className="mb-1 block text-xs text-slate-400">Phone number</label>
-            <input
-              type="tel"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="e.g. 0501234567"
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-              disabled={loading}
-            />
-          </div>
+          {hasPhoneOnFile ? (
+            <p className="text-xs text-slate-500">
+              We'll contact you at <span className="font-semibold text-slate-300">{existingPhoneNumber}</span> (on file).
+            </p>
+          ) : (
+            <div>
+              <label className="mb-1 block text-xs text-slate-400">Phone number</label>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="e.g. 0501234567"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+                disabled={loading}
+              />
+            </div>
+          )}
 
           {hasValidCredits ? (
             <div className="rounded-xl border border-teal-500/30 bg-teal-500/5 p-3 text-sm text-teal-100">
@@ -1122,6 +1135,7 @@ export default function DashboardPage() {
       <TrackingCreditsModal
         open={trackingCreditsModalOpen}
         onClose={() => setTrackingCreditsModalOpen(false)}
+        existingPhoneNumber={limits?.phoneNumber}
         onSuccess={() => {
           setAlert({ type: 'success', message: 'Your tracking credit request has been sent to the admin team.' });
         }}
