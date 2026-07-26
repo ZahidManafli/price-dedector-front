@@ -407,6 +407,7 @@ export default function UpgradePlanPage() {
               { key: 'subscription', label: 'Subscription Plans' },
               { key: 'analytics', label: 'Analytics Plans' },
               { key: 'amazon_monitoring', label: 'Amazon Monitoring' },
+              { key: 'tracking_plans', label: 'Tracking Plans' },
             ].map(({ key, label }) => (
               <button
                 key={key}
