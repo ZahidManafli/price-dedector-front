@@ -34,7 +34,7 @@ function formatPlanName(name = '', t) {
   return raw;
 }
 
-function initialForm(selectedPlanId = '', requestType = 'subscription', defaultValues = {}) {
+function initialForm(selectedPlanId = '', requestType = 'subscription', defaultValues = {}, presetTrackingPlanId = '') {
   return {
     name: defaultValues.name || '',
     surname: defaultValues.surname || '',
@@ -48,8 +48,8 @@ function initialForm(selectedPlanId = '', requestType = 'subscription', defaultV
     ebayAccountsLimit: '',
     customNote: defaultValues.customNote || '',
     requestType,
-    includeTracking: false,
-    trackingPlanId: '',
+    includeTracking: !!presetTrackingPlanId,
+    trackingPlanId: presetTrackingPlanId || '',
   };
 }
 
@@ -69,12 +69,13 @@ export default function SubscriptionRequestModal({
   onSuccess,
   requestType = 'subscription',
   defaultValues = {},
+  presetTrackingPlanId = '',
   title,
   description,
   submitLabel,
 }) {
   const { t } = useTranslation();
-  const [form, setForm] = useState(initialForm(selectedPlanId, requestType, defaultValues));
+  const [form, setForm] = useState(initialForm(selectedPlanId, requestType, defaultValues, presetTrackingPlanId));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
@@ -141,14 +142,14 @@ export default function SubscriptionRequestModal({
   const hasPrefilledPhone = String(defaultValues?.phoneNumber || '').trim().length > 0;
 
   React.useEffect(() => {
-    setForm(initialForm(selectedPlanId, requestType, defaultValues));
+    setForm(initialForm(selectedPlanId, requestType, defaultValues, presetTrackingPlanId));
     setError('');
     setInfoMessage('');
     setVerificationStep(false);
     setVerificationRequestId('');
     setVerificationCode('');
     setVerificationExpiresAt('');
-  }, [selectedPlanId, open, requestType, defaultValuesSignature]);
+  }, [selectedPlanId, open, requestType, defaultValuesSignature, presetTrackingPlanId]);
 
   if (!open) return null;
 

@@ -72,6 +72,8 @@
     "subscriptionDescription": "Ürün sayısı, günlük sorgu limiti ve ihtiyaçlarınıza göre plan seçin.",
     "analyticsDescription": "Checkila kredileri ve analiz odaklı kullanım için planlar.",
     "amazonMonitoringDescription": "Amazon ürünlerini takip etmek için özel planlar.",
+    "trackingPlans": "Takip Kredileri",
+    "trackingDescription": "Abone olurken herhangi bir abonelik, analiz veya Amazon takip planına ekleyebileceğiniz takip kredileri.",
     "noPlans": "Henüz plan eklenmedi. Lütfen yöneticiye başvurun.",
     "monthlyDuration": "Aylık"
   },

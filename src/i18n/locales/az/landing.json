@@ -72,6 +72,8 @@
     "subscriptionDescription": "Məhsul sayı, gündəlik sorğu limiti və imkanlara uyğun plan seçin.",
     "analyticsDescription": "Checkila Analitik kreditləri və fokuslanmış analiz üçün planlar.",
     "amazonMonitoringDescription": "Amazon məhsullarını izləmək və idarə etmək üçün xüsusi planlar.",
+    "trackingPlans": "İzləmə Kreditləri",
+    "trackingDescription": "Abunə olarkən istənilən abunə, analitika və ya Amazon izləmə planına əlavə edə biləcəyiniz izləmə kreditləri.",
     "noPlans": "Hələ plan əlavə olunmayıb. Admin paneldən əlavə edin.",
     "monthlyDuration": "Aylıq"
   },

@@ -68,10 +68,12 @@
     "subscriptionPlans": "Subscription Plans",
     "analyticsPlans": "Data Analytics Plans",
     "amazonMonitoringPlans": "Amazon Monitoring Plans",
+    "trackingPlans": "Tracking Credits",
     "requestCustom": "Request Custom Plan",
     "subscriptionDescription": "Choose the plan that matches your product count, daily lookup needs, and access level.",
     "analyticsDescription": "For users who want Checkila Analysis credits and a focused analytics workflow.",
     "amazonMonitoringDescription": "Dedicated Amazon monitoring tiers for users who need product tracking and lookup controls.",
+    "trackingDescription": "Add-on tracking credits you attach to a subscription, analytics, or Amazon monitoring plan when you subscribe.",
     "noPlans": "No plans configured yet. Ask admin to add plans in Admin Panel.",
     "monthlyDuration": "Monthly"
   },

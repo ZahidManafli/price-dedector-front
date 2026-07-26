@@ -220,6 +220,7 @@ export default function LandingPage() {
   const [plans, setPlans] = useState([]);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState('');
+  const [presetTrackingPlanId, setPresetTrackingPlanId] = useState('');
 
   const faqItems = useMemo(
     () => [
@@ -357,8 +358,22 @@ export default function LandingPage() {
     [planSource]
   );
 
+  const trackingVisiblePlans = useMemo(
+    () => planSource.filter((p) => p.category === 'tracking_plans' && p.isActive !== false),
+    [planSource]
+  );
+
+  // A tracking plan is never a standalone subscription — it's an add-on. Clicking
+  // "Subscribe" on one pre-checks it inside the modal, but the user still has to
+  // pick a real plan (subscription/analytics/amazon monitoring) there too.
   const onSubscribePlan = (plan) => {
-    setSelectedPlanId(plan?.id || '');
+    if (plan?.category === 'tracking_plans') {
+      setSelectedPlanId('');
+      setPresetTrackingPlanId(plan?.id || '');
+    } else {
+      setSelectedPlanId(plan?.id || '');
+      setPresetTrackingPlanId('');
+    }
     setRequestModalOpen(true);
   };
 
@@ -684,6 +699,16 @@ export default function LandingPage() {
               >
                 {t('landing:pricing.amazonMonitoringPlans')}
               </button>
+              <button
+                onClick={() => setActiveTab('tracking_plans')}
+                className={`rounded-full px-6 py-2 text-sm font-semibold transition ${
+                  activeTab === 'tracking_plans'
+                    ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20'
+                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                }`}
+              >
+                {t('landing:pricing.trackingPlans')}
+              </button>
             </div>
           </div>
 
@@ -798,6 +823,33 @@ export default function LandingPage() {
                 </div>
               </div>
             )}
+
+            {activeTab === 'tracking_plans' && (
+              <div>
+                <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-100">
+                      {t('landing:pricing.trackingPlans')}
+                    </p>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+                      {t('landing:pricing.trackingDescription')}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
+                  {trackingVisiblePlans.length === 0 ? (
+                    <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
+                      {t('landing:pricing.noPlans')}
+                    </div>
+                  ) : (
+                    trackingVisiblePlans.map((plan) => (
+                      <PlanCard key={plan.id || plan.name} plan={plan} onSubscribe={onSubscribePlan} />
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
@@ -851,7 +903,8 @@ export default function LandingPage() {
         onClose={() => setRequestModalOpen(false)}
         plans={planSource}
         selectedPlanId={selectedPlanId}
-        lockPlan={true}
+        lockPlan={!presetTrackingPlanId}
+        presetTrackingPlanId={presetTrackingPlanId}
         onSuccess={onRequestSuccess}
       />
     </div>
