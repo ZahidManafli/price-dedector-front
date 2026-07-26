@@ -1045,9 +1045,14 @@ export default function AdminPanelPage() {
                                   </span>
                                 );
                               })()}
-                              {u.planPrice != null && u.planPrice > 0 && (
+                              {u.totalPlanPrice != null && u.totalPlanPrice > 0 && (
                                 <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-emerald-400">
-                                  +{Number(u.planPrice).toFixed(2)} ₼
+                                  +{Number(u.totalPlanPrice).toFixed(2)} ₼
+                                </span>
+                              )}
+                              {u.includesTrackingAddon && u.trackingAddonPrice > 0 && (
+                                <span className={`block text-[10px] ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
+                                  ({Number(u.planPrice || 0).toFixed(2)} plan + {Number(u.trackingAddonPrice).toFixed(2)} tracking)
                                 </span>
                               )}
                             </div>
