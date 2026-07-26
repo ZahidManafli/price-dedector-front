@@ -19,6 +19,8 @@ function normalizePlan(raw = {}) {
       ? 'analytics'
       : normalizedCategory === 'amazon_monitoring' || normalizedCategory === 'amazonmonitoring'
       ? 'amazon_monitoring'
+      : normalizedCategory === 'tracking_plans' || normalizedCategory === 'tracking_plan' || normalizedCategory === 'trackingplans'
+      ? 'tracking_plans'
       : 'subscription';
 
   return {
@@ -30,6 +32,7 @@ function normalizePlan(raw = {}) {
     discountedPrice: raw.discountedPrice ?? null,
     summary: raw.description || raw.summary || '',
     features: Array.isArray(raw.features) ? raw.features : [],
+    trackingCreditsLimit: raw.trackingCreditsLimit ?? null,
     category,
     featured: !!raw.featured,
     accent:

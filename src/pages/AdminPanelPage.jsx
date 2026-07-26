@@ -1347,9 +1347,25 @@ export default function AdminPanelPage() {
                             {t('adminPanelPage.credits')}: {req.requestedCredits}
                           </span>
                         ) : null}
+                        {req.requestType === 'subscription' ? (
+                          req.requestedLimits?.includeTracking ? (
+                            <span className="rounded-full bg-teal-100 px-2.5 py-1 font-semibold text-teal-700 dark:bg-teal-900/30 dark:text-teal-200">
+                              {t('adminPanelPage.includesTrackingAddon')} (+{req.requestedLimits.trackingAddonCreditsLimit || 0})
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                              {t('adminPanelPage.noTrackingAddon')}
+                            </span>
+                          )
+                        ) : null}
                       </div>
 
                       <p className="mt-2 text-xs text-slate-500">{t('adminPanelPage.plan')}: {req.planName || t('adminPanelPage.na')}{req.requestType === 'subscription' ? ` (${planCategoryLabel})` : ''}</p>
+                      {req.requestType === 'subscription' && req.requestedLimits?.includeTracking ? (
+                        <p className="mt-1 text-xs text-teal-600 dark:text-teal-300">
+                          {req.requestedLimits.trackingAddonPlanName || t('adminPanelPage.trackingPlans')}: {req.requestedLimits.trackingAddonPrice || 0} {req.requestedLimits.trackingAddonCurrency || 'AZN'} → +{req.requestedLimits.trackingAddonCreditsLimit || 0} {t('adminPanelPage.trackingCreditsGranted').toLowerCase()}
+                        </p>
+                      ) : null}
                       {(req.planId === 'custom' || req.planCategory === 'custom') ? (
                         <div className="mt-2 rounded-lg border border-cyan-200 bg-cyan-50/70 p-2 text-xs text-slate-700 dark:border-cyan-900/40 dark:bg-cyan-900/20 dark:text-cyan-100">
                           <p className="font-semibold">{t('adminPanelPage.customRequestedLimits')}</p>
@@ -1410,6 +1426,7 @@ export default function AdminPanelPage() {
                   subscription: isDark ? 'bg-blue-900/30 text-blue-300 border-blue-800/40' : 'bg-blue-50 text-blue-700 border-blue-200',
                   analytics: isDark ? 'bg-violet-900/30 text-violet-300 border-violet-800/40' : 'bg-violet-50 text-violet-700 border-violet-200',
                   amazon_monitoring: isDark ? 'bg-amber-900/30 text-amber-300 border-amber-800/40' : 'bg-amber-50 text-amber-700 border-amber-200',
+                  tracking_plans: isDark ? 'bg-teal-900/30 text-teal-300 border-teal-800/40' : 'bg-teal-50 text-teal-700 border-teal-200',
                 };
                 const catColor = categoryColors[plan.category] || (isDark ? 'bg-slate-700/40 text-slate-300 border-slate-600/40' : 'bg-slate-100 text-slate-600 border-slate-200');
                 const hasDiscount = plan.discountedPrice != null && plan.actualPrice != null && plan.discountedPrice < plan.actualPrice;
@@ -1443,26 +1460,35 @@ export default function AdminPanelPage() {
                       </div>
 
                       <div className={`space-y-1.5 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        <div className="flex items-center justify-between">
-                          <span>Amazon / week</span>
-                          <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.amazonLookupLimitPerWeek ?? <span className="text-emerald-500">∞</span>}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>Products</span>
-                          <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.productsLimit ?? <span className="text-emerald-500">∞</span>}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>Analysis credits</span>
-                          <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.marketAnalysisCreditsLimit ?? <span className="text-emerald-500">∞</span>}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>Tracking credits</span>
-                          <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.trackingCreditsLimit ?? <span className="text-emerald-500">∞</span>}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>eBay accounts</span>
-                          <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.ebayAccountsLimit ?? <span className="text-emerald-500">∞</span>}</span>
-                        </div>
+                        {plan.category === 'tracking_plans' ? (
+                          <div className="flex items-center justify-between">
+                            <span>{t('adminPanelPage.trackingCreditsGranted')}</span>
+                            <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.trackingCreditsLimit ?? <span className="text-emerald-500">∞</span>}</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between">
+                              <span>Amazon / week</span>
+                              <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.amazonLookupLimitPerWeek ?? <span className="text-emerald-500">∞</span>}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span>Products</span>
+                              <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.productsLimit ?? <span className="text-emerald-500">∞</span>}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span>Analysis credits</span>
+                              <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.marketAnalysisCreditsLimit ?? <span className="text-emerald-500">∞</span>}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span>Tracking credits (bundled)</span>
+                              <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.trackingCreditsLimit ?? <span className="text-emerald-500">∞</span>}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span>eBay accounts</span>
+                              <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.ebayAccountsLimit ?? <span className="text-emerald-500">∞</span>}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       {Array.isArray(plan.allowedTabs) && plan.allowedTabs.length > 0 && (
@@ -1518,6 +1544,7 @@ export default function AdminPanelPage() {
                       <option value="subscription">{t('adminPanelPage.subscription')}</option>
                       <option value="analytics">{t('adminPanelPage.analytics')}</option>
                       <option value="amazon_monitoring">{t('adminPanelPage.amazonMonitoring')}</option>
+                      <option value="tracking_plans">{t('adminPanelPage.trackingPlans')}</option>
                     </select>
                   </div>
                 </div>
@@ -1573,49 +1600,61 @@ export default function AdminPanelPage() {
                   <textarea value={planForm.featuresText} onChange={(e) => setPlanForm((p) => ({ ...p, featuresText: e.target.value }))} className="input-base min-h-[88px] text-sm" placeholder={t('adminPanelPage.featuresOnePerLine')} />
                 </div>
 
-                {/* Tabs */}
-                <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'}`}>
-                  <p className={`text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('adminPanelPage.visibleTabsForThisPlan')}</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-1.5 gap-x-3">
-                    {PLAN_TAB_KEYS.map((tabKey) => {
-                      const checked = planForm.allowedTabs.includes(tabKey);
-                      return (
-                        <label key={tabKey} className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                          <input type="checkbox" checked={checked} onChange={(e) => setPlanForm((prev) => ({ ...prev, allowedTabs: e.target.checked ? Array.from(new Set([...prev.allowedTabs, tabKey])) : prev.allowedTabs.filter((item) => item !== tabKey) }))} className="rounded" />
-                          {t(`adminPanelPage.planTabs.${tabKey}`)}
-                        </label>
-                      );
-                    })}
+                {/* Tabs — meaningless for a tracking add-on (it's never subscribed to on its
+                    own, just attached to a real plan's request), so hide it entirely. */}
+                {planForm.category !== 'tracking_plans' && (
+                  <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'}`}>
+                    <p className={`text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('adminPanelPage.visibleTabsForThisPlan')}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-1.5 gap-x-3">
+                      {PLAN_TAB_KEYS.map((tabKey) => {
+                        const checked = planForm.allowedTabs.includes(tabKey);
+                        return (
+                          <label key={tabKey} className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                            <input type="checkbox" checked={checked} onChange={(e) => setPlanForm((prev) => ({ ...prev, allowedTabs: e.target.checked ? Array.from(new Set([...prev.allowedTabs, tabKey])) : prev.allowedTabs.filter((item) => item !== tabKey) }))} className="rounded" />
+                            {t(`adminPanelPage.planTabs.${tabKey}`)}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <p className={`mt-2 text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('adminPanelPage.dashboardAlwaysVisible')}</p>
                   </div>
-                  <p className={`mt-2 text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('adminPanelPage.dashboardAlwaysVisible')}</p>
-                </div>
+                )}
 
-                {/* Limits */}
-                <div>
-                  <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Usage Limits <span className="font-normal opacity-60">(blank = unlimited)</span></label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Amazon / week</label>
-                      <input value={planForm.amazonLookupLimitPerWeek} onChange={(e) => setPlanForm((p) => ({ ...p, amazonLookupLimitPerWeek: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
-                    </div>
-                    <div>
-                      <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Products</label>
-                      <input value={planForm.productsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, productsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
-                    </div>
-                    <div>
-                      <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Analysis credits</label>
-                      <input value={planForm.marketAnalysisCreditsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
-                    </div>
-                    <div>
-                      <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tracking credits</label>
-                      <input value={planForm.trackingCreditsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, trackingCreditsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
-                    </div>
-                    <div>
-                      <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>eBay accounts</label>
-                      <input value={planForm.ebayAccountsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
+                {/* Limits — a tracking add-on only ever grants tracking credits, so it
+                    gets a single focused field instead of the full usage-limits grid. */}
+                {planForm.category === 'tracking_plans' ? (
+                  <div>
+                    <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('adminPanelPage.trackingCreditsGranted')}</label>
+                    <input value={planForm.trackingCreditsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, trackingCreditsLimit: e.target.value }))} className="input-base h-9 text-sm max-w-[200px]" type="number" min="0" placeholder="e.g. 50" />
+                    <p className={`mt-1 text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('adminPanelPage.trackingPlansHint')}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Usage Limits <span className="font-normal opacity-60">(blank = unlimited)</span></label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Amazon / week</label>
+                        <input value={planForm.amazonLookupLimitPerWeek} onChange={(e) => setPlanForm((p) => ({ ...p, amazonLookupLimitPerWeek: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
+                      </div>
+                      <div>
+                        <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Products</label>
+                        <input value={planForm.productsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, productsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
+                      </div>
+                      <div>
+                        <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Analysis credits</label>
+                        <input value={planForm.marketAnalysisCreditsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
+                      </div>
+                      <div>
+                        <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tracking credits (bundled)</label>
+                        <input value={planForm.trackingCreditsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, trackingCreditsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
+                      </div>
+                      <div>
+                        <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>eBay accounts</label>
+                        <input value={planForm.ebayAccountsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))} className="input-base h-8 text-sm" type="number" min="0" />
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div className="flex gap-3 pt-1">
                   <button type="button" onClick={() => { setShowPlanModal(false); setPlanForm(defaultPlanForm()); }} className="btn-secondary flex-1 h-10">Cancel</button>

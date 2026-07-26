@@ -190,11 +190,14 @@ function normalizePlan(raw = {}) {
     currency: raw.currency || 'AZN',
     summary: raw.description || '',
     features: Array.isArray(raw.features) ? raw.features : [],
+    trackingCreditsLimit: raw.trackingCreditsLimit ?? null,
     category:
       normalizedCategory === 'analytics' || normalizedCategory === 'analysis' || normalizedCategory === 'data_analytics'
         ? 'analytics'
         : normalizedCategory === 'amazon_monitoring' || normalizedCategory === 'amazonmonitoring'
         ? 'amazon_monitoring'
+        : normalizedCategory === 'tracking_plans' || normalizedCategory === 'tracking_plan' || normalizedCategory === 'trackingplans'
+        ? 'tracking_plans'
         : 'subscription',
     featured: !!raw.featured,
     isActive: raw.isActive !== false,

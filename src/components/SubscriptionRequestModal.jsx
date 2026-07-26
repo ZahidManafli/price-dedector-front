@@ -48,7 +48,16 @@ function initialForm(selectedPlanId = '', requestType = 'subscription', defaultV
     ebayAccountsLimit: '',
     customNote: defaultValues.customNote || '',
     requestType,
+    includeTracking: false,
+    trackingPlanId: '',
   };
+}
+
+function formatTrackingAddonAmount(plan) {
+  const amount =
+    plan?.discountedPrice ?? plan?.actualPrice ?? Number(String(plan?.price || '').replace(/[^0-9.]/g, '')) ?? null;
+  if (amount == null || !Number.isFinite(Number(amount))) return plan?.price || '';
+  return `${Number(amount).toFixed(2)} ${plan?.currency || 'AZN'}`;
 }
 
 export default function SubscriptionRequestModal({
@@ -97,13 +106,25 @@ export default function SubscriptionRequestModal({
   const availablePlans = useMemo(() => {
     const deduped = new Map();
     (plans || []).forEach((plan) => {
-      if (!plan || plan.isActive === false) return;
+      if (!plan || plan.isActive === false || plan.category === 'tracking_plans') return;
       const id = String(plan.id || '').trim();
       if (!id) return;
       if (!deduped.has(id)) deduped.set(id, plan);
     });
     return [...deduped.values()];
   }, [plans]);
+
+  // Tracking add-on plans are never subscribable on their own — they're an opt-in
+  // extra attached to whichever real plan the user picks above.
+  const trackingAddOnPlans = useMemo(
+    () => (plans || []).filter((plan) => plan && plan.isActive !== false && plan.category === 'tracking_plans'),
+    [plans]
+  );
+
+  const selectedTrackingAddon = useMemo(
+    () => trackingAddOnPlans.find((plan) => String(plan?.id || '') === String(form.trackingPlanId || '')) || trackingAddOnPlans[0] || null,
+    [trackingAddOnPlans, form.trackingPlanId]
+  );
 
   const selectedPlan = useMemo(
     () => availablePlans.find((plan) => String(plan?.id || '') === String(form.planId || '')) || null,
@@ -194,6 +215,8 @@ export default function SubscriptionRequestModal({
           email: form.email,
           phoneNumber: form.phoneNumber,
           planId: form.planId,
+          includeTracking: !!form.includeTracking,
+          trackingPlanId: form.includeTracking ? String(selectedTrackingAddon?.id || '') : '',
         };
 
         if (isCustomPlan) {
@@ -369,6 +392,49 @@ export default function SubscriptionRequestModal({
                 <p className="text-xs text-slate-300">
                   {t('subscriptionRequestModal.selectedCategory')} <span className="font-semibold">{formatPlanCategory(selectedPlan.category, t)}</span>
                 </p>
+              ) : null}
+
+              {trackingAddOnPlans.length > 0 && !verificationStep ? (
+                <div className="space-y-2 rounded-xl border border-teal-500/30 bg-teal-500/5 p-3">
+                  <label className="flex items-center gap-2 text-sm font-medium text-teal-100">
+                    <input
+                      type="checkbox"
+                      checked={form.includeTracking}
+                      onChange={(e) => setForm((p) => ({
+                        ...p,
+                        includeTracking: e.target.checked,
+                        trackingPlanId: p.trackingPlanId || trackingAddOnPlans[0]?.id || '',
+                      }))}
+                      className="h-4 w-4 rounded border-slate-600 bg-slate-950 accent-teal-400"
+                    />
+                    {t('subscriptionRequestModal.includeTrackingAddon')}
+                  </label>
+                  {form.includeTracking ? (
+                    <>
+                      {trackingAddOnPlans.length > 1 ? (
+                        <select
+                          value={form.trackingPlanId || trackingAddOnPlans[0]?.id || ''}
+                          onChange={(e) => setForm((p) => ({ ...p, trackingPlanId: e.target.value }))}
+                          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-400"
+                        >
+                          {trackingAddOnPlans.map((plan) => (
+                            <option key={plan.id} value={plan.id}>
+                              {plan.name} — {formatTrackingAddonAmount(plan)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : null}
+                      {selectedTrackingAddon ? (
+                        <p className="text-xs text-teal-200/90">
+                          {t('subscriptionRequestModal.trackingAddonSummary', {
+                            amount: formatTrackingAddonAmount(selectedTrackingAddon),
+                            credits: selectedTrackingAddon.trackingCreditsLimit ?? 0,
+                          })}
+                        </p>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
               ) : null}
 
               {form.planId === 'custom' ? (
