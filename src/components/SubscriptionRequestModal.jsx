@@ -151,6 +151,13 @@ export default function SubscriptionRequestModal({
     return { id: selectedPlan.id, price: Number(price), credits, currency: selectedPlan.currency };
   }, [selectedPlan]);
 
+  // The tracking add-on only ever applies to Subscription-category plans — never
+  // Analytics, Amazon Monitoring, a tracking_plans plan itself (can't be selected
+  // as the main plan anyway), or no plan selected yet. Gate the whole checkbox on
+  // this so it can't be pre-checked/visible before the user has actually chosen a
+  // qualifying plan.
+  const canOfferTrackingAddon = selectedPlan?.category === 'subscription';
+
   const isSubscriptionRequest = requestType === 'subscription';
   const isCreditTopUpRequest = requestType === 'update_credits';
   const isResetRequest = requestType === 'reset_credits';
@@ -235,8 +242,8 @@ export default function SubscriptionRequestModal({
           email: form.email,
           phoneNumber: form.phoneNumber,
           planId: form.planId,
-          includeTracking: !!form.includeTracking,
-          trackingPlanId: form.includeTracking
+          includeTracking: !!(canOfferTrackingAddon && form.includeTracking),
+          trackingPlanId: canOfferTrackingAddon && form.includeTracking
             ? String((ownPlanTrackingAddon || selectedTrackingAddon)?.id || '')
             : '',
         };
@@ -416,7 +423,7 @@ export default function SubscriptionRequestModal({
                 </p>
               ) : null}
 
-              {(ownPlanTrackingAddon || trackingAddOnPlans.length > 0) && !verificationStep ? (
+              {canOfferTrackingAddon && (ownPlanTrackingAddon || trackingAddOnPlans.length > 0) && !verificationStep ? (
                 <div className="space-y-2 rounded-xl border border-teal-500/30 bg-teal-500/5 p-3">
                   <label className="flex items-center gap-2 text-sm font-medium text-teal-100">
                     <input

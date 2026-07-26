@@ -256,6 +256,10 @@ export default function SignupPage() {
     return { id: selectedPlan.id, price: Number(price), credits, currency: selectedPlan.currency };
   }, [selectedPlan]);
 
+  // The tracking add-on only ever applies to Subscription-category plans — never
+  // Analytics, Amazon Monitoring, or no plan selected yet.
+  const canOfferTrackingAddon = selectedPlan?.category === 'subscription';
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -296,8 +300,8 @@ export default function SignupPage() {
         name: formData.name.trim(), surname: formData.surname.trim(),
         email: formData.email.trim(), phoneNumber: formData.phoneNumber.trim(),
         planId: formData.planId, ...(referralSlug ? { referralSlug } : {}),
-        includeTracking: !!formData.includeTracking,
-        trackingPlanId: formData.includeTracking
+        includeTracking: !!(canOfferTrackingAddon && formData.includeTracking),
+        trackingPlanId: canOfferTrackingAddon && formData.includeTracking
           ? String((ownPlanTrackingAddon || selectedTrackingAddon)?.id || '')
           : '',
       };
@@ -506,7 +510,7 @@ export default function SignupPage() {
                 )}
 
                 {/* Tracking add-on opt-in — attaches to whichever plan is selected above */}
-                {(ownPlanTrackingAddon || trackingAddOnPlans.length > 0) && selectedPlanId && selectedPlanId !== 'custom' && (
+                {canOfferTrackingAddon && (ownPlanTrackingAddon || trackingAddOnPlans.length > 0) && (
                   <div className={`mt-4 space-y-2 rounded-xl border p-3 ${isDark ? 'border-teal-800 bg-teal-950/20' : 'border-teal-200 bg-teal-50'}`}>
                     <label className={`flex items-center gap-2 text-sm font-medium ${isDark ? 'text-teal-200' : 'text-teal-800'}`}>
                       <input
