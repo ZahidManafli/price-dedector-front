@@ -163,7 +163,7 @@ export default function DashboardPage() {
   const [alert, setAlert] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { isDark } = useTheme();
-  const { user, syncPermissionsFromLimits } = useAuth();
+  const { user, syncPermissionsFromLimits, hasTabAccess } = useAuth();
   const { t } = useTranslation('system');
   const navigate = useNavigate();
   const [ebayStatus, setEbayStatus] = useState({ connected: false });
@@ -225,7 +225,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const loadAnalytics = async () => {
-      if (!ebayStatus?.connected) return;
+      // Plans that don't grant Checkila Analysis (e.g. tracking_plans) shouldn't
+      // even attempt this — it always 403s for them, and that's expected, not an
+      // error worth showing on a dashboard everyone lands on regardless of plan.
+      if (!ebayStatus?.connected || !hasTabAccess('market_analysis')) return;
       setAnalyticsLoading(true);
       setAnalyticsError(null);
       setHideAnalyticsAccessAlert(false);
@@ -233,16 +236,26 @@ export default function DashboardPage() {
         const res = await ebayAPI.getDashboardAnalytics();
         setAnalytics(res?.data || null);
       } catch (err) {
-        setAnalyticsError(
-          err?.response?.data?.error || err?.message || t('dashboard.failedToLoadAnalytics')
-        );
-        setAnalytics(null);
+        // Belt-and-suspenders for the case above going stale (cached allowedTabs
+        // lagging the live plan): a plan-access denial here just means this
+        // section isn't available for this plan — hide it quietly instead of
+        // surfacing "Your subscription plan does not allow access to this page."
+        // as a scary top-level error on a page every plan is supposed to load.
+        if (err?.response?.data?.code === 'PLAN_TAB_ACCESS_DENIED') {
+          setAnalyticsError(null);
+          setAnalytics(null);
+        } else {
+          setAnalyticsError(
+            err?.response?.data?.error || err?.message || t('dashboard.failedToLoadAnalytics')
+          );
+          setAnalytics(null);
+        }
       } finally {
         setAnalyticsLoading(false);
       }
     };
     loadAnalytics();
-  }, [ebayStatus?.connected]);
+  }, [ebayStatus?.connected, hasTabAccess]);
 
   const trafficChartData = useMemo(() => {
     const points = analytics?.traffic?.points || [];

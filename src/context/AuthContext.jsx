@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { authAPI, maintenanceAPI } from '../services/api';
 import { getAllowedTabs, hasTabAccess as checkTabAccess } from '../utils/planAccess';
 
@@ -175,6 +175,11 @@ export const AuthProvider = ({ children }) => {
     new Date(user.planExpiresAt).getTime() <= Date.now()
   );
 
+  // Stable reference so effects that depend on it (e.g. "only fetch analytics if
+  // this tab is allowed") don't re-run on every unrelated provider re-render —
+  // only when the user it actually reads from changes.
+  const hasTabAccess = useCallback((tabKey) => checkTabAccess(user, tabKey), [user]);
+
   const value = {
     user,
     loading,
@@ -186,7 +191,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     isPlanExpired,
     allowedTabs: getAllowedTabs(user),
-    hasTabAccess: (tabKey) => checkTabAccess(user, tabKey),
+    hasTabAccess,
   };
 
   return (
