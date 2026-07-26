@@ -199,7 +199,7 @@ function PlanCard({ plan, onSubscribe }) {
 
         <button
           type="button"
-          onClick={() => onSubscribe?.(plan)}
+          onClick={() => onSubscribe?.(plan, includeTracking && !!ownTrackingAddon)}
           className="mt-5 w-full rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
         >
           {t('planCard.subscribe')}
@@ -262,6 +262,7 @@ export default function LandingPage() {
   const [plans, setPlans] = useState([]);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState('');
+  const [presetIncludeTracking, setPresetIncludeTracking] = useState(false);
 
   const faqItems = useMemo(
     () => [
@@ -407,8 +408,9 @@ export default function LandingPage() {
   // A tracking plan is directly selectable/requestable in the modal exactly like
   // every other category — clicking "Subscribe" auto-selects and locks that same
   // plan, same as Subscription/Analytics/Amazon Monitoring.
-  const onSubscribePlan = (plan) => {
+  const onSubscribePlan = (plan, includeTracking = false) => {
     setSelectedPlanId(plan?.id || '');
+    setPresetIncludeTracking(!!includeTracking);
     setRequestModalOpen(true);
   };
 
@@ -939,6 +941,7 @@ export default function LandingPage() {
         plans={planSource}
         selectedPlanId={selectedPlanId}
         lockPlan={true}
+        presetIncludeTracking={presetIncludeTracking}
         onSuccess={onRequestSuccess}
       />
     </div>

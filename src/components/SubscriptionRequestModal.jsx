@@ -36,7 +36,7 @@ function formatPlanName(name = '', t) {
   return raw;
 }
 
-function initialForm(selectedPlanId = '', requestType = 'subscription', defaultValues = {}) {
+function initialForm(selectedPlanId = '', requestType = 'subscription', defaultValues = {}, presetIncludeTracking = false) {
   return {
     name: defaultValues.name || '',
     surname: defaultValues.surname || '',
@@ -50,7 +50,10 @@ function initialForm(selectedPlanId = '', requestType = 'subscription', defaultV
     ebayAccountsLimit: '',
     customNote: defaultValues.customNote || '',
     requestType,
-    includeTracking: false,
+    // Carried over from a checkbox the user already ticked on the plan card before
+    // clicking Subscribe. Harmless if the selected plan turns out not to qualify —
+    // the checkbox stays hidden and the submit payload re-gates on canOfferTrackingAddon.
+    includeTracking: !!presetIncludeTracking,
     trackingPlanId: '',
   };
 }
@@ -74,13 +77,14 @@ export default function SubscriptionRequestModal({
   onSuccess,
   requestType = 'subscription',
   defaultValues = {},
+  presetIncludeTracking = false,
   title,
   description,
   submitLabel,
 }) {
   const { t } = useTranslation();
   const { formatPrice } = useLanguage();
-  const [form, setForm] = useState(initialForm(selectedPlanId, requestType, defaultValues));
+  const [form, setForm] = useState(initialForm(selectedPlanId, requestType, defaultValues, presetIncludeTracking));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
@@ -168,14 +172,14 @@ export default function SubscriptionRequestModal({
   const hasPrefilledPhone = String(defaultValues?.phoneNumber || '').trim().length > 0;
 
   React.useEffect(() => {
-    setForm(initialForm(selectedPlanId, requestType, defaultValues));
+    setForm(initialForm(selectedPlanId, requestType, defaultValues, presetIncludeTracking));
     setError('');
     setInfoMessage('');
     setVerificationStep(false);
     setVerificationRequestId('');
     setVerificationCode('');
     setVerificationExpiresAt('');
-  }, [selectedPlanId, open, requestType, defaultValuesSignature]);
+  }, [selectedPlanId, open, requestType, defaultValuesSignature, presetIncludeTracking]);
 
   if (!open) return null;
 
