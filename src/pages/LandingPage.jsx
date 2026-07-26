@@ -85,6 +85,7 @@ function LanguageSelector() {
 function PlanCard({ plan, onSubscribe }) {
   const { formatPrice } = useLanguage();
   const { t } = useTranslation('pricing');
+  const [includeTracking, setIncludeTracking] = useState(false);
 
   const featuredClasses = plan.featured
     ? 'border-cyan-500/40 bg-white shadow-[0_16px_60px_rgba(8,145,178,0.14)] dark:border-cyan-300/50 dark:bg-slate-900/95 dark:shadow-[0_20px_80px_rgba(34,211,238,0.14)]'
@@ -104,6 +105,29 @@ function PlanCard({ plan, onSubscribe }) {
     ? formatPrice(plan.actualPrice)
     : formatPrice(plan.price?.match(/[\d.]+/)?.[0] || 0);
   const discountedDisplay = plan.discountedPrice ? formatPrice(plan.discountedPrice) : null;
+
+  // A Subscription-category plan can carry its own individually-priced tracking
+  // add-on (trackingAddonPrice + trackingCreditsLimit set directly on the plan by
+  // admin) — same eligibility rule used in the request modal and Upgrade Plan page.
+  const ownTrackingAddon = (() => {
+    if (plan.category !== 'subscription') return null;
+    const price = plan.trackingAddonPrice;
+    const credits = Number(plan.trackingCreditsLimit);
+    if (price === null || price === undefined || !Number.isFinite(Number(price))) return null;
+    if (!Number.isFinite(credits) || credits <= 0) return null;
+    return { price: Number(price), credits };
+  })();
+
+  // Combine in AZN first, then convert once — never convert the plan price and the
+  // add-on price separately and add the converted numbers, which would compound
+  // rounding and break the currency logic.
+  const baseAzn = hasDiscount
+    ? Number(plan.discountedPrice)
+    : plan.actualPrice != null
+      ? Number(plan.actualPrice)
+      : Number(plan.price?.match(/[\d.]+/)?.[0] || 0);
+  const addonAzn = includeTracking && ownTrackingAddon ? ownTrackingAddon.price : 0;
+  const totalDisplay = formatPrice(baseAzn + addonAzn);
 
   return (
     <article
@@ -134,16 +158,33 @@ function PlanCard({ plan, onSubscribe }) {
                 </span>
               </div>
               <div className="mt-1 flex items-end gap-2">
-                <span className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">{discountedDisplay}</span>
+                <span className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">{totalDisplay}</span>
                 <span className="text-xs text-slate-500 dark:text-slate-400">{t('pricing:planCard.specialOffer')}</span>
               </div>
             </>
           ) : (
             <div className="flex items-end gap-2">
-              <span className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">{displayPrice}</span>
+              <span className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">{totalDisplay}</span>
             </div>
           )}
+          {includeTracking && ownTrackingAddon ? (
+            <p className="mt-1 text-xs text-teal-700 dark:text-teal-300">
+              Includes +{formatPrice(ownTrackingAddon.price)} tracking add-on — {ownTrackingAddon.credits} tracking credits
+            </p>
+          ) : null}
         </div>
+
+        {ownTrackingAddon ? (
+          <label className="mt-3 flex cursor-pointer items-center gap-2 rounded-xl border border-teal-500/30 bg-teal-500/5 px-3 py-2 text-sm font-medium text-teal-700 dark:text-teal-200">
+            <input
+              type="checkbox"
+              checked={includeTracking}
+              onChange={(e) => setIncludeTracking(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-400 accent-teal-500"
+            />
+            Include tracking add-on
+          </label>
+        ) : null}
 
         <p className="mt-3 min-h-[3rem] text-sm leading-6 text-slate-600 dark:text-slate-300">{plan.summary}</p>
 
