@@ -37,6 +37,7 @@ function normalizePlan(raw = {}) {
     price: raw.price || '',
     actualPrice: raw.actualPrice ?? raw.actual_price ?? null,
     discountedPrice: raw.discountedPrice ?? raw.discounted_price ?? null,
+    trackingCreditsLimit: raw.trackingCreditsLimit ?? raw.tracking_credits_limit ?? null,
     currency: raw.currency || 'AZN',
     description: raw.description || '',
     features: Array.isArray(raw.features) ? raw.features : [],
@@ -44,12 +45,20 @@ function normalizePlan(raw = {}) {
     featured: !!raw.featured,
   };
 }
+function formatTrackingAddonAmount(plan) {
+  const amount =
+    plan?.discountedPrice ?? plan?.actualPrice ?? Number(String(plan?.price || '').replace(/[^0-9.]/g, '')) ?? null;
+  if (amount == null || !Number.isFinite(Number(amount))) return plan?.price || '';
+  return `${Number(amount).toFixed(2)} ${plan?.currency || 'AZN'}`;
+}
 function initialForm(referralSlug = '') {
   return {
     name: '', surname: '', email: '', phoneNumber: '', planId: '',
     requestedCredits: '', amazonLookupLimitPerWeek: '', productsLimit: '',
     marketAnalysisCreditsLimit: '', ebayAccountsLimit: '',
     customNote: referralSlug ? `Referral: ${referralSlug}` : '',
+    includeTracking: false,
+    trackingPlanId: '',
   };
 }
 const CATEGORY_ORDER = ['subscription', 'analytics', 'amazon_monitoring'];
@@ -154,6 +163,7 @@ export default function SignupPage() {
   const [referral, setReferral] = useState(null);
   const [referralLoading, setReferralLoading] = useState(Boolean(referralSlug));
   const [plans, setPlans] = useState([]);
+  const [trackingAddOnPlans, setTrackingAddOnPlans] = useState([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('subscription');
   const [selectedPlanId, setSelectedPlanId] = useState('');
@@ -189,8 +199,12 @@ export default function SignupPage() {
         setPlansLoading(true);
         const res = await settingsAPI.getPublicPlans();
         if (cancelled) return;
-        const next = (res?.data?.plans || []).map(normalizePlan).filter((p) => p.isActive !== false);
+        const allActive = (res?.data?.plans || []).map(normalizePlan).filter((p) => p.isActive !== false);
+        // Tracking add-on plans are never subscribable on their own — they're an
+        // opt-in extra attached to whichever real plan the user picks below.
+        const next = allActive.filter((p) => p.category !== 'tracking_plans');
         setPlans(next);
+        setTrackingAddOnPlans(allActive.filter((p) => p.category === 'tracking_plans'));
         const firstSub = next.find((p) => p.category === 'subscription') || next[0];
         if (!selectedPlanId && firstSub?.id) {
           setSelectedPlanId(firstSub.id);
@@ -214,6 +228,14 @@ export default function SignupPage() {
 
   const visiblePlans = useMemo(() => plans.filter((p) => p.category === activeCategory), [plans, activeCategory]);
   const selectedPlan = useMemo(() => plans.find((p) => p.id === selectedPlanId) || null, [plans, selectedPlanId]);
+
+  const selectedTrackingAddon = useMemo(
+    () =>
+      trackingAddOnPlans.find((plan) => String(plan?.id || '') === String(formData.trackingPlanId || '')) ||
+      trackingAddOnPlans[0] ||
+      null,
+    [trackingAddOnPlans, formData.trackingPlanId]
+  );
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -255,6 +277,8 @@ export default function SignupPage() {
         name: formData.name.trim(), surname: formData.surname.trim(),
         email: formData.email.trim(), phoneNumber: formData.phoneNumber.trim(),
         planId: formData.planId, ...(referralSlug ? { referralSlug } : {}),
+        includeTracking: !!formData.includeTracking,
+        trackingPlanId: formData.includeTracking ? String(selectedTrackingAddon?.id || '') : '',
       };
       if (formData.planId === 'custom') {
         payload.requestedLimits = {
@@ -457,6 +481,52 @@ export default function SignupPage() {
                       <input type="number" min="0" name="ebayAccountsLimit" value={formData.ebayAccountsLimit} onChange={handleChange} placeholder="eBay accounts" className={inputCls} disabled={loading} />
                     </div>
                     <textarea name="customNote" value={formData.customNote} onChange={handleChange} placeholder="Optional note for admin" rows={3} className={inputCls} disabled={loading} style={{ resize: 'vertical' }} />
+                  </div>
+                )}
+
+                {/* Tracking add-on opt-in — attaches to whichever plan is selected above */}
+                {trackingAddOnPlans.length > 0 && selectedPlanId && selectedPlanId !== 'custom' && (
+                  <div className={`mt-4 space-y-2 rounded-xl border p-3 ${isDark ? 'border-teal-800 bg-teal-950/20' : 'border-teal-200 bg-teal-50'}`}>
+                    <label className={`flex items-center gap-2 text-sm font-medium ${isDark ? 'text-teal-200' : 'text-teal-800'}`}>
+                      <input
+                        type="checkbox"
+                        checked={formData.includeTracking}
+                        onChange={(e) => setFormData((p) => ({
+                          ...p,
+                          includeTracking: e.target.checked,
+                          trackingPlanId: p.trackingPlanId || trackingAddOnPlans[0]?.id || '',
+                        }))}
+                        disabled={loading}
+                        className="h-4 w-4 rounded border-slate-600 accent-teal-500"
+                      />
+                      {t('subscriptionRequestModal.includeTrackingAddon')}
+                    </label>
+                    {formData.includeTracking ? (
+                      <>
+                        {trackingAddOnPlans.length > 1 ? (
+                          <select
+                            value={formData.trackingPlanId || trackingAddOnPlans[0]?.id || ''}
+                            onChange={(e) => setFormData((p) => ({ ...p, trackingPlanId: e.target.value }))}
+                            className={inputCls}
+                            disabled={loading}
+                          >
+                            {trackingAddOnPlans.map((plan) => (
+                              <option key={plan.id} value={plan.id}>
+                                {plan.name} — {formatTrackingAddonAmount(plan)}
+                              </option>
+                            ))}
+                          </select>
+                        ) : null}
+                        {selectedTrackingAddon ? (
+                          <p className={`text-xs ${isDark ? 'text-teal-300/90' : 'text-teal-700'}`}>
+                            {t('subscriptionRequestModal.trackingAddonSummary', {
+                              amount: formatTrackingAddonAmount(selectedTrackingAddon),
+                              credits: selectedTrackingAddon.trackingCreditsLimit ?? 0,
+                            })}
+                          </p>
+                        ) : null}
+                      </>
+                    ) : null}
                   </div>
                 )}
               </div>

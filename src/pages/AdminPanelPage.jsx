@@ -1197,7 +1197,7 @@ export default function AdminPanelPage() {
                     </div>
                   </div>
                   <div>
-                    <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Usage Limits <span className="font-normal opacity-60">(blank = unlimited)</span></label>
+                    <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Usage Limits <span className="font-normal opacity-60">(blank = 0)</span></label>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Amazon / week</label>
@@ -1630,7 +1630,7 @@ export default function AdminPanelPage() {
                   </div>
                 ) : (
                   <div>
-                    <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Usage Limits <span className="font-normal opacity-60">(blank = unlimited)</span></label>
+                    <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Usage Limits <span className="font-normal opacity-60">(blank = 0)</span></label>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className={`block text-[11px] mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Amazon / week</label>
