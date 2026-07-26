@@ -755,6 +755,7 @@ export default function TrackingPage() {
   const [deletingAllUnmatched, setDeletingAllUnmatched] = useState(false);
   const [ebayAccounts, setEbayAccounts] = useState([]);
   const [ebayFilter, setEbayFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [messageSidebarOpen, setMessageSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [trackingCredits, setTrackingCredits] = useState(null); // { limit, used, remaining } | null
@@ -890,13 +891,24 @@ export default function TrackingPage() {
   const storeFilteredRows =
     ebayFilter === 'ALL' ? rows : rows.filter((r) => !r.ebayAccountId || r.ebayAccountId === ebayFilter);
 
+  const statusFilteredRows =
+    statusFilter === 'ALL'
+      ? storeFilteredRows
+      : storeFilteredRows.filter((r) => (r.fulfillmentStatus || 'ordered') === statusFilter);
+
+  // Backend already returns rows ordered by created_at DESC — re-sort defensively here
+  // too so the newest-first order holds even after row updates get merged in locally.
+  const sortedRows = [...statusFilteredRows].sort(
+    (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+  );
+
   // Single search box across buyer name, eBay order id, tracking number, and Amazon
   // order id — buyer name isn't on the tracking row itself, it comes from the same
   // orderMetaByEbayOrderId lookup the "Customer" column uses.
   const searchTerm = searchQuery.trim().toLowerCase();
   const visibleRows = !searchTerm
-    ? storeFilteredRows
-    : storeFilteredRows.filter((row) => {
+    ? sortedRows
+    : sortedRows.filter((row) => {
         const meta = orderMetaByEbayOrderId[row.ebayOrderId];
         const haystack = [
           meta?.shipToFullName,
@@ -986,6 +998,16 @@ export default function TrackingPage() {
               {trackingCredits.limit === null ? 'Tracking credits: Unlimited' : `Tracking credits: ${trackingCredits.remaining} left`}
             </span>
           )}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className={`rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-800 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+          >
+            <option value="ALL">All statuses</option>
+            <option value="ordered">Ordered</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+          </select>
           {accountFilterOptions.length > 0 && (
             <select
               value={ebayFilter}
