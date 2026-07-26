@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { settingsAPI } from '../services/api';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 
 function toHumanText(value = '') {
   const raw = String(value || '').trim();
@@ -53,11 +54,14 @@ function initialForm(selectedPlanId = '', requestType = 'subscription', defaultV
   };
 }
 
-function formatTrackingAddonAmount(plan) {
+// Plan prices are always entered in AZN — `formatPrice` (from LanguageContext)
+// converts to whatever currency matches the user's selected language, the same
+// way every other plan price on the landing page is displayed.
+function formatTrackingAddonAmount(plan, formatPrice) {
   const amount =
     plan?.discountedPrice ?? plan?.actualPrice ?? Number(String(plan?.price || '').replace(/[^0-9.]/g, '')) ?? null;
   if (amount == null || !Number.isFinite(Number(amount))) return plan?.price || '';
-  return `${Number(amount).toFixed(2)} ${plan?.currency || 'AZN'}`;
+  return formatPrice(Number(amount));
 }
 
 export default function SubscriptionRequestModal({
@@ -75,6 +79,7 @@ export default function SubscriptionRequestModal({
   submitLabel,
 }) {
   const { t } = useTranslation();
+  const { formatPrice } = useLanguage();
   const [form, setForm] = useState(initialForm(selectedPlanId, requestType, defaultValues, presetTrackingPlanId));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -432,7 +437,7 @@ export default function SubscriptionRequestModal({
                     ownPlanTrackingAddon ? (
                       <p className="text-xs text-teal-200/90">
                         {t('subscriptionRequestModal.trackingAddonSummary', {
-                          amount: `${ownPlanTrackingAddon.price.toFixed(2)} ${ownPlanTrackingAddon.currency || 'AZN'}`,
+                          amount: formatPrice(ownPlanTrackingAddon.price),
                           credits: ownPlanTrackingAddon.credits,
                         })}
                       </p>
@@ -446,7 +451,7 @@ export default function SubscriptionRequestModal({
                           >
                             {trackingAddOnPlans.map((plan) => (
                               <option key={plan.id} value={plan.id}>
-                                {plan.name} — {formatTrackingAddonAmount(plan)}
+                                {plan.name} — {formatTrackingAddonAmount(plan, formatPrice)}
                               </option>
                             ))}
                           </select>
@@ -454,7 +459,7 @@ export default function SubscriptionRequestModal({
                         {selectedTrackingAddon ? (
                           <p className="text-xs text-teal-200/90">
                             {t('subscriptionRequestModal.trackingAddonSummary', {
-                              amount: formatTrackingAddonAmount(selectedTrackingAddon),
+                              amount: formatTrackingAddonAmount(selectedTrackingAddon, formatPrice),
                               credits: selectedTrackingAddon.trackingCreditsLimit ?? 0,
                             })}
                           </p>

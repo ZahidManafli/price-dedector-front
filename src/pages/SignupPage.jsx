@@ -6,6 +6,7 @@ import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 // ─── Helpers (unchanged) ──────────────────────────────────────────────────────
 function toHumanText(value = '') {
@@ -46,11 +47,14 @@ function normalizePlan(raw = {}) {
     featured: !!raw.featured,
   };
 }
-function formatTrackingAddonAmount(plan) {
+// Plan prices are always entered in AZN — `formatPrice` (from LanguageContext)
+// converts to whatever currency matches the user's selected language, the same
+// way every other plan price on this page is displayed.
+function formatTrackingAddonAmount(plan, formatPrice) {
   const amount =
     plan?.discountedPrice ?? plan?.actualPrice ?? Number(String(plan?.price || '').replace(/[^0-9.]/g, '')) ?? null;
   if (amount == null || !Number.isFinite(Number(amount))) return plan?.price || '';
-  return `${Number(amount).toFixed(2)} ${plan?.currency || 'AZN'}`;
+  return formatPrice(Number(amount));
 }
 function initialForm(referralSlug = '') {
   return {
@@ -159,6 +163,7 @@ export default function SignupPage() {
   const location = useLocation();
   const { t } = useTranslation();
   const { isDark } = useTheme();
+  const { formatPrice } = useLanguage();
   const referralSlug = new URLSearchParams(location.search).get('ref') || '';
 
   const [referral, setReferral] = useState(null);
@@ -523,7 +528,7 @@ export default function SignupPage() {
                       ownPlanTrackingAddon ? (
                         <p className={`text-xs ${isDark ? 'text-teal-300/90' : 'text-teal-700'}`}>
                           {t('subscriptionRequestModal.trackingAddonSummary', {
-                            amount: `${ownPlanTrackingAddon.price.toFixed(2)} ${ownPlanTrackingAddon.currency || 'AZN'}`,
+                            amount: formatPrice(ownPlanTrackingAddon.price),
                             credits: ownPlanTrackingAddon.credits,
                           })}
                         </p>
@@ -538,7 +543,7 @@ export default function SignupPage() {
                           >
                             {trackingAddOnPlans.map((plan) => (
                               <option key={plan.id} value={plan.id}>
-                                {plan.name} — {formatTrackingAddonAmount(plan)}
+                                {plan.name} — {formatTrackingAddonAmount(plan, formatPrice)}
                               </option>
                             ))}
                           </select>
@@ -546,7 +551,7 @@ export default function SignupPage() {
                         {selectedTrackingAddon ? (
                           <p className={`text-xs ${isDark ? 'text-teal-300/90' : 'text-teal-700'}`}>
                             {t('subscriptionRequestModal.trackingAddonSummary', {
-                              amount: formatTrackingAddonAmount(selectedTrackingAddon),
+                              amount: formatTrackingAddonAmount(selectedTrackingAddon, formatPrice),
                               credits: selectedTrackingAddon.trackingCreditsLimit ?? 0,
                             })}
                           </p>
