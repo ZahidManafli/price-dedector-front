@@ -1467,10 +1467,16 @@ export default function AdminPanelPage() {
 
                       <div className={`space-y-1.5 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                         {plan.category === 'tracking_plans' ? (
-                          <div className="flex items-center justify-between">
-                            <span>{t('adminPanelPage.trackingCreditsGranted')}</span>
-                            <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.trackingCreditsLimit ?? <span className="text-emerald-500">∞</span>}</span>
-                          </div>
+                          <>
+                            <div className="flex items-center justify-between">
+                              <span>{t('adminPanelPage.trackingCreditsGranted')}</span>
+                              <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.trackingCreditsLimit ?? <span className="text-emerald-500">∞</span>}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span>eBay accounts</span>
+                              <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{plan.ebayAccountsLimit ?? <span className="text-emerald-500">∞</span>}</span>
+                            </div>
+                          </>
                         ) : (
                           <>
                             <div className="flex items-center justify-between">
@@ -1612,33 +1618,39 @@ export default function AdminPanelPage() {
                   <textarea value={planForm.featuresText} onChange={(e) => setPlanForm((p) => ({ ...p, featuresText: e.target.value }))} className="input-base min-h-[88px] text-sm" placeholder={t('adminPanelPage.featuresOnePerLine')} />
                 </div>
 
-                {/* Tabs — meaningless for a tracking add-on (it's never subscribed to on its
-                    own, just attached to a real plan's request), so hide it entirely. */}
-                {planForm.category !== 'tracking_plans' && (
-                  <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'}`}>
-                    <p className={`text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('adminPanelPage.visibleTabsForThisPlan')}</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-1.5 gap-x-3">
-                      {PLAN_TAB_KEYS.map((tabKey) => {
-                        const checked = planForm.allowedTabs.includes(tabKey);
-                        return (
-                          <label key={tabKey} className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                            <input type="checkbox" checked={checked} onChange={(e) => setPlanForm((prev) => ({ ...prev, allowedTabs: e.target.checked ? Array.from(new Set([...prev.allowedTabs, tabKey])) : prev.allowedTabs.filter((item) => item !== tabKey) }))} className="rounded" />
-                            {t(`adminPanelPage.planTabs.${tabKey}`)}
-                          </label>
-                        );
-                      })}
-                    </div>
-                    <p className={`mt-2 text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('adminPanelPage.dashboardAlwaysVisible')}</p>
+                {/* Visible tabs applies to every plan category, including tracking add-ons —
+                    a user whose only access came via a tracking add-on still needs the
+                    Tracking tab (and whatever else the admin grants) to actually see it. */}
+                <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'}`}>
+                  <p className={`text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('adminPanelPage.visibleTabsForThisPlan')}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-1.5 gap-x-3">
+                    {PLAN_TAB_KEYS.map((tabKey) => {
+                      const checked = planForm.allowedTabs.includes(tabKey);
+                      return (
+                        <label key={tabKey} className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          <input type="checkbox" checked={checked} onChange={(e) => setPlanForm((prev) => ({ ...prev, allowedTabs: e.target.checked ? Array.from(new Set([...prev.allowedTabs, tabKey])) : prev.allowedTabs.filter((item) => item !== tabKey) }))} className="rounded" />
+                          {t(`adminPanelPage.planTabs.${tabKey}`)}
+                        </label>
+                      );
+                    })}
                   </div>
-                )}
+                  <p className={`mt-2 text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('adminPanelPage.dashboardAlwaysVisible')}</p>
+                </div>
 
-                {/* Limits — a tracking add-on only ever grants tracking credits, so it
-                    gets a single focused field instead of the full usage-limits grid. */}
+                {/* Limits — a tracking add-on grants tracking credits plus, optionally,
+                    eBay account slots, so it gets a focused pair of fields instead of the
+                    full usage-limits grid. */}
                 {planForm.category === 'tracking_plans' ? (
-                  <div>
-                    <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('adminPanelPage.trackingCreditsGranted')}</label>
-                    <input value={planForm.trackingCreditsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, trackingCreditsLimit: e.target.value }))} className="input-base h-9 text-sm max-w-[200px]" type="number" min="0" placeholder="e.g. 50" />
-                    <p className={`mt-1 text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('adminPanelPage.trackingPlansHint')}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('adminPanelPage.trackingCreditsGranted')}</label>
+                      <input value={planForm.trackingCreditsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, trackingCreditsLimit: e.target.value }))} className="input-base h-9 text-sm" type="number" min="0" placeholder="e.g. 50" />
+                      <p className={`mt-1 text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('adminPanelPage.trackingPlansHint')}</p>
+                    </div>
+                    <div>
+                      <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>eBay accounts</label>
+                      <input value={planForm.ebayAccountsLimit} onChange={(e) => setPlanForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))} className="input-base h-9 text-sm" type="number" min="0" placeholder="e.g. 1" />
+                    </div>
                   </div>
                 ) : (
                   <div>
