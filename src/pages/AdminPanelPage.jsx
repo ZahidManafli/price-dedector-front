@@ -33,6 +33,9 @@ function formatPlanCategory(category) {
   if (normalized === 'amazon_monitoring' || normalized === 'amazonmonitoring') {
     return 'amazon monitoring';
   }
+  if (normalized === 'tracking_plans' || normalized === 'tracking_plan' || normalized === 'trackingplans') {
+    return 'tracking';
+  }
   if (normalized === 'custom') {
     return 'custom';
   }
