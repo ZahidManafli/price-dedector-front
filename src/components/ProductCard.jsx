@@ -20,9 +20,12 @@ import { formatCurrency, calculateProfit, getProfitColor } from '../utils/helper
 import { useTheme } from '../context/ThemeContext';
 
 // Mirrors normalizeAmazonAvailabilityStatus on the backend, just for deciding
-// which manual button (Restock / Mark out of stock) to show.
+// which manual button (Restock / Mark out of stock) to show. Some automated
+// paths (page-not-found, title-changed, "High price") persist the raw
+// normalized value itself — e.g. the literal string "out_of_stock" — instead of
+// a human-readable phrase, so underscores are folded to spaces before matching.
 function normalizeAmazonAvailability(raw) {
-  const lower = String(raw || '').trim().toLowerCase();
+  const lower = String(raw || '').trim().toLowerCase().replace(/_/g, ' ');
   if (!lower) return 'unknown';
   if (lower.includes('out of stock') || lower.includes('unavailable') || lower.includes('title changed')) {
     return 'out_of_stock';
