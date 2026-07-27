@@ -5,6 +5,8 @@ import {
   ArrowRight,
   ArrowUpRight,
   EllipsisVertical,
+  PackageCheck,
+  PackageX,
   Pencil,
   RefreshCw,
   Trash2,
@@ -17,7 +19,27 @@ import {
 import { formatCurrency, calculateProfit, getProfitColor } from '../utils/helpers';
 import { useTheme } from '../context/ThemeContext';
 
-export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
+// Mirrors normalizeAmazonAvailabilityStatus on the backend, just for deciding
+// which manual button (Restock / Mark out of stock) to show.
+function normalizeAmazonAvailability(raw) {
+  const lower = String(raw || '').trim().toLowerCase();
+  if (!lower) return 'unknown';
+  if (lower.includes('out of stock') || lower.includes('unavailable') || lower.includes('title changed')) {
+    return 'out_of_stock';
+  }
+  if (lower.includes('in stock')) return 'in_stock';
+  return 'unknown';
+}
+
+export default function ProductCard({
+  product,
+  onEdit,
+  onDelete,
+  onCompare,
+  onRestock,
+  onMarkOutOfStock,
+  availabilityActionLoading,
+}) {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const profit = calculateProfit(product.currentEbayPrice, product.currentAmazonPrice, {
@@ -27,6 +49,7 @@ export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
     fixedFee: 0.3,
   });
   const profitColor = getProfitColor(profit);
+  const amazonAvailability = normalizeAmazonAvailability(product.amazonAvailabilityStatus);
   const images = (product.productImages && product.productImages.length > 0)
     ? product.productImages
     : product.productImage
@@ -172,9 +195,25 @@ export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
       {/* Content */}
       <div className="p-4">
         {/* Title */}
-        <h3 className={`font-medium mb-2 line-clamp-2 min-h-[40px] text-[15px] ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+        <h3 className={`font-medium mb-1 line-clamp-2 min-h-[40px] text-[15px] ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
           {product.productName}
         </h3>
+
+        {/* Amazon availability */}
+        {amazonAvailability !== 'unknown' && (
+          <div className="mb-2">
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                amazonAvailability === 'out_of_stock'
+                  ? isDark ? 'bg-rose-900/40 text-rose-300' : 'bg-rose-100 text-rose-700'
+                  : isDark ? 'bg-emerald-900/40 text-emerald-300' : 'bg-emerald-100 text-emerald-700'
+              }`}
+              title={product.amazonAvailabilityStatus || ''}
+            >
+              {amazonAvailability === 'out_of_stock' ? 'Amazon: Out of stock' : 'Amazon: In stock'}
+            </span>
+          </div>
+        )}
 
         {/* Price summary row */}
         <div className="grid grid-cols-2 gap-2 mb-3">
@@ -243,6 +282,29 @@ export default function ProductCard({ product, onEdit, onDelete, onCompare }) {
             {t('productCard.open')}
           </button>
 
+          {amazonAvailability === 'out_of_stock' && onRestock && (
+            <button
+              onClick={onRestock}
+              disabled={availabilityActionLoading}
+              title="Restock — sets eBay quantity to 1 and marks Amazon availability as In Stock"
+              className="flex-1 bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 transition text-sm flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              <PackageCheck size={14} />
+              Restock
+            </button>
+          )}
+
+          {amazonAvailability === 'in_stock' && onMarkOutOfStock && (
+            <button
+              onClick={onMarkOutOfStock}
+              disabled={availabilityActionLoading}
+              title="Mark out of stock — sets eBay quantity to 0 and marks Amazon availability as Out of Stock"
+              className="flex-1 bg-rose-600 text-white py-2 rounded-lg hover:bg-rose-700 transition text-sm flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              <PackageX size={14} />
+              Out of stock
+            </button>
+          )}
         </div>
       </div>
     </div>

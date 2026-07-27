@@ -103,6 +103,8 @@ export const productAPI = {
   delete: (id) => api.delete(`/products/${id}`),
   getPriceHistory: (id) => api.get(`/products/${id}/history`),
   comparePrice: (id) => api.get(`/products/${id}/compare`),
+  restock: (id) => api.post(`/products/${id}/restock`),
+  markOutOfStock: (id) => api.post(`/products/${id}/mark-out-of-stock`),
 };
 
 // Settings APIs

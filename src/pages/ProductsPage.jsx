@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowDown, ArrowUp, ArrowUpDown, Check, ExternalLink,
-  Grid3X3, List, Pencil, Plus, RefreshCw, Search, Trash2,
+  Grid3X3, List, PackageCheck, PackageX, Pencil, Plus, RefreshCw, Search, Trash2,
   TrendingDown, TrendingUp, X,
 } from 'lucide-react';
 import { ebayAPI, productAPI, settingsAPI } from '../services/api';
@@ -32,6 +32,18 @@ function priceTrendPct(current, old) {
   const o = Number(old || 0);
   if (!o || !c || o === c) return null;
   return ((c - o) / o) * 100;
+}
+
+// Mirrors normalizeAmazonAvailabilityStatus on the backend, just for deciding
+// which manual button (Restock / Mark out of stock) to show.
+function normalizeAmazonAvailability(raw) {
+  const lower = String(raw || '').trim().toLowerCase();
+  if (!lower) return 'unknown';
+  if (lower.includes('out of stock') || lower.includes('unavailable') || lower.includes('title changed')) {
+    return 'out_of_stock';
+  }
+  if (lower.includes('in stock')) return 'in_stock';
+  return 'unknown';
 }
 
 const STATUS_CONFIG = {
@@ -177,6 +189,33 @@ export default function ProductsPage() {
       fetchLimits();
     } catch {
       setAlert({ type: 'error', message: t('productsPage.failedDelete') });
+    }
+  };
+
+  const [availabilityActionId, setAvailabilityActionId] = useState(null);
+  const handleAvailabilityAction = async (product, action) => {
+    setAvailabilityActionId(product.id);
+    try {
+      const res = action === 'restock'
+        ? await productAPI.restock(product.id)
+        : await productAPI.markOutOfStock(product.id);
+      const { amazonAvailabilityStatus } = res?.data || {};
+      setProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, amazonAvailabilityStatus } : p))
+      );
+      setAlert({
+        type: 'success',
+        message: action === 'restock'
+          ? 'Product restocked — eBay quantity set to 1 and user notified by email.'
+          : 'Product marked out of stock — eBay quantity set to 0 and user notified by email.',
+      });
+    } catch (err) {
+      setAlert({
+        type: 'error',
+        message: err?.response?.data?.error || (action === 'restock' ? 'Failed to restock product' : 'Failed to mark product out of stock'),
+      });
+    } finally {
+      setAvailabilityActionId(null);
     }
   };
 
@@ -549,6 +588,9 @@ export default function ProductsPage() {
                   onEdit={(id) => { setEditingProductId(id); setIsFormOpen(true); }}
                   onDelete={handleDelete}
                   onCompare={(id) => navigate(`/product/${id}`)}
+                  onRestock={() => handleAvailabilityAction(product, 'restock')}
+                  onMarkOutOfStock={() => handleAvailabilityAction(product, 'out_of_stock')}
+                  availabilityActionLoading={availabilityActionId === product.id}
                 />
               </div>
             );
@@ -708,7 +750,25 @@ export default function ProductsPage() {
 
                       {/* Status */}
                       <td className={tdCls}>
-                        <StatusBadge status={status} />
+                        <div className="flex flex-col items-start gap-1">
+                          <StatusBadge status={status} />
+                          {(() => {
+                            const amazonAvailability = normalizeAmazonAvailability(product.amazonAvailabilityStatus);
+                            if (amazonAvailability === 'unknown') return null;
+                            return (
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                  amazonAvailability === 'out_of_stock'
+                                    ? isDark ? 'bg-rose-900/40 text-rose-300' : 'bg-rose-100 text-rose-700'
+                                    : isDark ? 'bg-emerald-900/40 text-emerald-300' : 'bg-emerald-100 text-emerald-700'
+                                }`}
+                                title={product.amazonAvailabilityStatus || ''}
+                              >
+                                {amazonAvailability === 'out_of_stock' ? 'Amazon: OOS' : 'Amazon: In stock'}
+                              </span>
+                            );
+                          })()}
+                        </div>
                       </td>
 
                       {/* Amazon price + trend */}
@@ -850,6 +910,26 @@ export default function ProductsPage() {
                               >
                                 <RefreshCw size={13} />
                               </button>
+                              {normalizeAmazonAvailability(product.amazonAvailabilityStatus) === 'out_of_stock' && (
+                                <button
+                                  onClick={() => handleAvailabilityAction(product, 'restock')}
+                                  disabled={availabilityActionId === product.id}
+                                  title="Restock — sets eBay quantity to 1 and marks Amazon availability as In Stock"
+                                  className="h-8 w-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 transition disabled:opacity-50"
+                                >
+                                  <PackageCheck size={13} />
+                                </button>
+                              )}
+                              {normalizeAmazonAvailability(product.amazonAvailabilityStatus) === 'in_stock' && (
+                                <button
+                                  onClick={() => handleAvailabilityAction(product, 'out_of_stock')}
+                                  disabled={availabilityActionId === product.id}
+                                  title="Mark out of stock — sets eBay quantity to 0 and marks Amazon availability as Out of Stock"
+                                  className="h-8 w-8 rounded-lg bg-rose-600 text-white flex items-center justify-center hover:bg-rose-700 transition disabled:opacity-50"
+                                >
+                                  <PackageX size={13} />
+                                </button>
+                              )}
                               <button
                                 onClick={() => handleDelete(product.id)}
                                 title="Delete"
