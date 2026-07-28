@@ -433,7 +433,7 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title, buyerUsername, sh
               to avoid ever calling this with a placeholder tracking number and
               clobbering the real carrier number already on the row. Also pointless
               once delivered — nothing left to refresh. */}
-          {row.aquilineTrackingNumber && row.fulfillmentStatus !== 'delivered' && (
+          {row.aquilineTrackingNumber && (
             <button
               type="button"
               onClick={handleUpdateLabels}
