@@ -431,8 +431,8 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title, buyerUsername, sh
               side, which only makes sense once the order actually exists there. Never
               show it for a real-carrier-direct shipment (no Aquiline order to refresh)
               to avoid ever calling this with a placeholder tracking number and
-              clobbering the real carrier number already on the row. Also pointless
-              once delivered — nothing left to refresh. */}
+              clobbering the real carrier number already on the row. Stays visible
+              (and sendable) even after delivery. */}
           {row.aquilineTrackingNumber && (
             <button
               type="button"
