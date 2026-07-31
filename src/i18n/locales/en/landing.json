@@ -2,7 +2,9 @@
   "navigation": {
     "features": "Features",
     "plans": "Plans",
-    "contact": "Contact"
+    "contact": "Contact",
+    "chromeExtension": "Checkila Chrome Extension",
+    "telegramBot": "Checkila Telegram Bot"
   },
   "hero": {
     "eyebrow": "Automated Reseller Platform",
@@ -132,6 +134,21 @@
     "sideDescription": "The page content is written to match the way sellers actually search for dropshipping tools, eBay research help, and pricing analysis.",
     "sideHighlightTitle": "What matters most",
     "sideHighlightDescription": "Fast comparison, clear seller signals, and a workflow that supports better listing decisions."
+  },
+  "companion": {
+    "eyebrow": "Available Everywhere",
+    "title": "Take Checkila with you — browser and Telegram",
+    "description": "Install the Chrome extension to see Checkila insights while you browse eBay, and connect the Telegram bot to get alerts and manage products on the go.",
+    "chrome": {
+      "title": "Chrome Extension",
+      "description": "See Amazon pricing, profit, and seller signals directly on eBay listing pages as you browse.",
+      "cta": "Add to Chrome"
+    },
+    "telegram": {
+      "title": "Telegram Bot",
+      "description": "Get instant price, stock, and new-order alerts, check your credits, and add products to track — right from Telegram.",
+      "cta": "Open in Telegram"
+    }
   },
   "faq": {
     "eyebrow": "SEO questions",

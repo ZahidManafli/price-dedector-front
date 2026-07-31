@@ -2,7 +2,9 @@
   "navigation": {
     "features": "Xüsusiyyətlər",
     "plans": "Planlar",
-    "contact": "Əlaqə"
+    "contact": "Əlaqə",
+    "chromeExtension": "Checkila Chrome Uzantısı",
+    "telegramBot": "Checkila Telegram Botu"
   },
   "hero": {
     "eyebrow": "Avtomatlaşdırılmış Reseller Platforması",
@@ -132,6 +134,21 @@
     "sideDescription": "Səhifə məzmunu satıcıların dropshipping alətləri, eBay araşdırma dəstəyi və qiymət analitikası üçün axtardığı formaya uyğun yazılıb.",
     "sideHighlightTitle": "Ən vacib məqamlar",
     "sideHighlightDescription": "Sürətli müqayisə, aydın satıcı siqnalları və daha yaxşı siyahı qərarlarını dəstəkləyən iş axını."
+  },
+  "companion": {
+    "eyebrow": "Hər Yerdə Əlçatan",
+    "title": "Checkila-nı özünüzlə aparın — brauzer və Telegram-da",
+    "description": "eBay-də gəzərkən Checkila məlumatlarını görmək üçün Chrome uzantısını quraşdırın, bildirişləri almaq və məhsulları idarə etmək üçün Telegram botunu qoşun.",
+    "chrome": {
+      "title": "Chrome Uzantısı",
+      "description": "eBay elan səhifələrində gəzərkən Amazon qiymətini, mənfəəti və satıcı siqnallarını birbaşa görün.",
+      "cta": "Chrome-a əlavə et"
+    },
+    "telegram": {
+      "title": "Telegram Botu",
+      "description": "Ani qiymət, stok və yeni sifariş bildirişləri alın, kreditlərinizi yoxlayın və məhsulları izləmək üçün birbaşa Telegramdan əlavə edin.",
+      "cta": "Telegram-da aç"
+    }
   },
   "faq": {
     "eyebrow": "SEO sualları",

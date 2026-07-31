@@ -7,7 +7,9 @@ import {
   BarChart3,
   CheckCircle2,
   Globe2,
+  Puzzle,
   Radar,
+  Send,
   ShieldCheck,
   Sparkles,
   ChevronDown,
@@ -19,6 +21,10 @@ import { useTheme } from '../context/ThemeContext';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import PartnersSection from '../components/PartnersSection';
 import { applySeo } from '../utils/seo';
+
+const CHROME_EXTENSION_URL =
+  'https://chromewebstore.google.com/detail/checkila-extension/mokpdmidbgchibehajdblfkjcgcibcbb';
+const TELEGRAM_BOT_URL = 'https://t.me/Checkila_bot';
 
 function SectionHeader({ eyebrow, title, description, align = 'left' }) {
   const alignClasses = align === 'center' ? 'items-center text-center' : 'items-start text-left';
@@ -506,6 +512,29 @@ export default function LandingPage() {
               </a>
             </nav>
             <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <a
+                  href={CHROME_EXTENSION_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={t('landing:navigation.chromeExtension')}
+                  aria-label={t('landing:navigation.chromeExtension')}
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-100 p-2.5 text-slate-600 transition hover:border-slate-300 hover:bg-slate-200 hover:text-slate-900 dark:border-white/15 dark:bg-white/10 dark:text-slate-300 dark:hover:border-white/25 dark:hover:bg-white/15 dark:hover:text-white"
+                >
+                  <Puzzle size={16} />
+                </a>
+                <a
+                  href={TELEGRAM_BOT_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={t('landing:navigation.telegramBot')}
+                  aria-label={t('landing:navigation.telegramBot')}
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-100 p-2.5 text-slate-600 transition hover:border-slate-300 hover:bg-slate-200 hover:text-slate-900 dark:border-white/15 dark:bg-white/10 dark:text-slate-300 dark:hover:border-white/25 dark:hover:bg-white/15 dark:hover:text-white"
+                >
+                  <Send size={16} />
+                </a>
+              </div>
+              <div className="hidden h-6 w-px bg-slate-200 dark:bg-white/15 sm:block" />
               <LanguageSelector />
               <Link
                 to="/login"
@@ -693,6 +722,51 @@ export default function LandingPage() {
                 </li>
               </ul>
             </div>
+          </div>
+        </section>
+
+        <section id="companion" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
+          <SectionHeader
+            eyebrow={t('landing:companion.eyebrow')}
+            title={t('landing:companion.title')}
+            description={t('landing:companion.description')}
+            align="center"
+          />
+
+          <div className="mt-10 grid gap-5 md:grid-cols-2">
+            <article className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60 backdrop-blur transition hover:-translate-y-1 hover:border-cyan-300/60 dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none dark:hover:border-cyan-300/30">
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/20 dark:border-cyan-300/20 bg-cyan-400/10">
+                <Puzzle className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
+              </div>
+              <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-white">{t('landing:companion.chrome.title')}</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('landing:companion.chrome.description')}</p>
+              <a
+                href={CHROME_EXTENSION_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-5 inline-flex w-fit items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:scale-[1.01] hover:from-cyan-300 hover:to-blue-400"
+              >
+                {t('landing:companion.chrome.cta')}
+                <ArrowRight size={14} />
+              </a>
+            </article>
+
+            <article className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60 backdrop-blur transition hover:-translate-y-1 hover:border-cyan-300/60 dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none dark:hover:border-cyan-300/30">
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/20 dark:border-cyan-300/20 bg-cyan-400/10">
+                <Send className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
+              </div>
+              <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-white">{t('landing:companion.telegram.title')}</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('landing:companion.telegram.description')}</p>
+              <a
+                href={TELEGRAM_BOT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-5 inline-flex w-fit items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:scale-[1.01] hover:from-cyan-300 hover:to-blue-400"
+              >
+                {t('landing:companion.telegram.cta')}
+                <ArrowRight size={14} />
+              </a>
+            </article>
           </div>
         </section>
 
