@@ -225,9 +225,18 @@ export default function OrderMessageSidebar({ order, onClose }) {
     setLoadingConvos(true);
     setError(null);
     try {
+      // Filter by buyer only. eBay conversations aren't reliably tagged with a listing
+      // reference — e.g. our own auto "order shipped"/"delivered" notifier (sendTrackingMessageToBuyer,
+      // routes/ebay.js) sends without one — so combining a reference_id filter with
+      // other_party_username silently hides those conversations even though they exist
+      // (eBay's own Messages page still shows them, grouped by buyer, not by listing).
+      // buyerUsername alone is what actually finds every conversation with this buyer.
       const params = { conversationType: CONV_TYPE };
-      if (itemId) { params.itemId = itemId; }
-      if (buyerUsername) params.buyerUsername = buyerUsername;
+      if (buyerUsername) {
+        params.buyerUsername = buyerUsername;
+      } else if (itemId) {
+        params.itemId = itemId;
+      }
       const resp = await ebayAPI.getOrderConversations(params);
       const convos = resp?.data?.conversations || [];
       setConversations(convos);
