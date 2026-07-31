@@ -345,7 +345,20 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title, buyerUsername, sh
           buyerUsername || <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>—</span>
         )}
       </td>
-      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{row.amazonOrderId || row.amazonTrackingNumber || '—'}</td>
+      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+        {row.amazonOrderId ? (
+          <a
+            href={row.amazonTrackingUrl || `https://www.amazon.com/gp/your-account/ship-track?orderId=${encodeURIComponent(row.amazonOrderId)}`}
+            target="_blank"
+            rel="noreferrer"
+            className={`underline ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-500'}`}
+          >
+            {row.amazonOrderId}
+          </a>
+        ) : (
+          row.amazonTrackingNumber || <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>—</span>
+        )}
+      </td>
       <td className="px-4 py-3">
         <FulfillmentStepper status={row.fulfillmentStatus} isDark={isDark} />
         {/* Aquiline number takes priority when both exist; otherwise show the real
