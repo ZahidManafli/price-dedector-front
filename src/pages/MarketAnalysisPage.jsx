@@ -13,6 +13,7 @@ import useBrowseSearch from '../hooks/useBrowseSearch';
 import { calculateProfit, formatCurrency } from '../utils/helpers';
 import { browseAPI, ebayAPI, settingsAPI } from '../services/api';
 import ListOnEbayModal from '../components/ListOnEbayModal';
+import ListOnInventoryModal from '../components/ListOnInventoryModal';
 import PurchaseHistoryModal from '../components/PurchaseHistoryModal';
 import { useTheme } from '../context/ThemeContext';
 import { calculateLast7DaysSoldCount, calculateLast15DaysSoldCount, fetchPurchaseHistoryRows, normalizeNumericItemId } from '../utils/purchaseHistory';
@@ -340,6 +341,7 @@ export default function MarketAnalysisPage() {
   const [soldQuantity15dByKey, setSoldQuantity15dByKey] = useState({});
   const [soldLoadingByKey, setSoldLoadingByKey] = useState({});
   const [ebayListModal, setEbayListModal] = useState(null);
+  const [inventoryListModal, setInventoryListModal] = useState(null);
   const [historyModal, setHistoryModal] = useState(null);
   const purchaseHistoryQueueRef = useRef(false);
   const { isDark } = useTheme();
@@ -353,6 +355,11 @@ export default function MarketAnalysisPage() {
   // handleListOnEbay is called when user clicks "List on eBay" button for a specific item.
   const handleListOnEbay = (item) => {
     setEbayListModal(item);
+  };
+
+  // handleListOnInventory is called when user clicks "List on Inventory" button for a specific item.
+  const handleListOnInventory = (item) => {
+    setInventoryListModal(item);
   };
 
   // ── Add to bucket: scrape then store ────────────────────────────────────────
@@ -1615,8 +1622,13 @@ export default function MarketAnalysisPage() {
                                   {false && (<button type="button" className="btn-primary" onClick={() => handleInspect(item)}>
                                     {t('marketAnalysisPage.details')}
                                   </button>)}
-                                  <button type="button" className="btn-secondary" onClick={() => handleSelect(item)}>
-                                    {selectedIds.includes(item.id) ? 'Selected' : 'Compare'}
+                                  <button
+                                    type="button"
+                                    className="btn-secondary"
+                                    onClick={() => handleListOnInventory(item)}
+                                    title="List on Inventory"
+                                  >
+                                    List on Inventory
                                   </button>
                                   <button
                                     type="button"
@@ -1672,6 +1684,15 @@ export default function MarketAnalysisPage() {
           item={ebayListModal}
           isDark={isDark}
           onClose={() => setEbayListModal(null)}
+        />
+      )}
+
+      {/* ── Single-item ListOnInventoryModal (Inventory API flow, SKU-based) ── */}
+      {inventoryListModal && (
+        <ListOnInventoryModal
+          item={inventoryListModal}
+          isDark={isDark}
+          onClose={() => setInventoryListModal(null)}
         />
       )}
 

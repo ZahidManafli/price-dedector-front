@@ -203,6 +203,7 @@ export const ebayAPI = {
   pollExtensionJob: (jobId) => api.get(`/ebay/extension-scrape/${encodeURIComponent(jobId)}`),
   scrapeItemDetails: (url) => api.post('/ebay/scrape-item-details', { url }),
   quickList: (payload) => api.post('/ebay/quick-list', payload),
+  inventoryList: (payload) => api.post('/ebay/inventory-list', payload),
   listSavedSellers: () => api.get('/ebay/saved-sellers'),
   toggleSavedSeller: (sellerName) => api.post('/ebay/saved-sellers/toggle', { sellerName }),
   getMessageTemplates: () => api.get('/ebay/message-templates'),
