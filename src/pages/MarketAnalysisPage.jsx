@@ -1622,14 +1622,14 @@ export default function MarketAnalysisPage() {
                                   {false && (<button type="button" className="btn-primary" onClick={() => handleInspect(item)}>
                                     {t('marketAnalysisPage.details')}
                                   </button>)}
-                                  <button
+                                  {false && (<button
                                     type="button"
                                     className="btn-secondary"
                                     onClick={() => handleListOnInventory(item)}
                                     title="List on Inventory"
                                   >
                                     List on Inventory
-                                  </button>
+                                  </button>)}
                                   <button
                                     type="button"
                                     className="btn-primary"
