@@ -516,7 +516,7 @@ export default function ListOnInventoryModal({ item, onClose, isDark, onSuccess 
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div className={`rounded-2xl border shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto ${base}`}>
+        <div className={`rounded-2xl border shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto ${base}`}>
 
           {/* Header */}
           <div className={`flex items-center justify-between p-5 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
@@ -743,38 +743,48 @@ export default function ListOnInventoryModal({ item, onClose, isDark, onSuccess 
                       No item specifics yet — click "+ Add specific" to add one.
                     </div>
                   ) : (
-                    <div className="space-y-1.5 max-h-60 overflow-y-auto pr-0.5">
-                      {itemSpecifics.map((spec, i) => (
-                        <div key={i} className="flex items-center gap-1.5">
-                          <input
-                            type="text"
-                            value={spec.name || ''}
-                            onChange={(e) => handleSpecificFieldChange(i, 'name', e.target.value)}
-                            placeholder="Name (e.g. Brand)"
-                            disabled={submitting}
-                            className={`${inputClass} w-2/5`}
-                          />
-                          <input
-                            type="text"
-                            value={spec.value || ''}
-                            onChange={(e) => handleSpecificFieldChange(i, 'value', e.target.value)}
-                            placeholder="Value"
-                            disabled={submitting}
-                            className={`${inputClass} flex-1`}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveSpecific(i)}
-                            disabled={submitting}
-                            title="Remove"
-                            className={`shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-sm font-bold transition ${
-                              isDark ? 'text-slate-400 hover:bg-red-950/40 hover:text-red-400' : 'text-slate-400 hover:bg-red-50 hover:text-red-600'
-                            }`}
+                    <div className={`rounded-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                      <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500 border-b border-slate-700' : 'text-slate-400 border-b border-slate-200'}`}>
+                        <span className="w-40 shrink-0">Name</span>
+                        <span className="flex-1">Value</span>
+                        <span className="w-7 shrink-0" />
+                      </div>
+                      <div className={`max-h-72 overflow-y-auto divide-y ${isDark ? 'divide-slate-700' : 'divide-slate-100'}`}>
+                        {itemSpecifics.map((spec, i) => (
+                          <div
+                            key={i}
+                            className={`flex items-center gap-2 px-2 py-1.5 ${isDark ? (i % 2 === 0 ? 'bg-slate-800/20' : '') : (i % 2 === 0 ? 'bg-slate-50/60' : '')}`}
                           >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
+                            <input
+                              type="text"
+                              value={spec.name || ''}
+                              onChange={(e) => handleSpecificFieldChange(i, 'name', e.target.value)}
+                              placeholder="Name (e.g. Brand)"
+                              disabled={submitting}
+                              className={`${inputClass} w-40 shrink-0`}
+                            />
+                            <input
+                              type="text"
+                              value={spec.value || ''}
+                              onChange={(e) => handleSpecificFieldChange(i, 'value', e.target.value)}
+                              placeholder="Value"
+                              disabled={submitting}
+                              className={`${inputClass} flex-1 min-w-0`}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSpecific(i)}
+                              disabled={submitting}
+                              title="Remove"
+                              className={`shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-sm font-bold transition ${
+                                isDark ? 'text-slate-400 hover:bg-red-950/40 hover:text-red-400' : 'text-slate-400 hover:bg-red-50 hover:text-red-600'
+                              }`}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
