@@ -19,6 +19,16 @@ function normalizeEbayListingUrl(url) {
   return `https://${value.replace(/^\/+/, '')}`;
 }
 
+// Item specifics can arrive as { name, value } or { label, value } depending on
+// the source (scrape vs. saved bucket data) — normalize to a single editable shape.
+function normalizeSpecifics(list) {
+  if (!Array.isArray(list)) return [];
+  return list.map((spec) => ({
+    name: String(spec?.name || spec?.label || ''),
+    value: String(spec?.value ?? ''),
+  }));
+}
+
 /**
  * ListOnInventoryModal.jsx
  *
@@ -301,7 +311,7 @@ export default function ListOnInventoryModal({ item, onClose, isDark, onSuccess 
     }));
 
     if (Array.isArray(item.itemSpecifics) && item.itemSpecifics.length > 0) {
-      setItemSpecifics(item.itemSpecifics);
+      setItemSpecifics(normalizeSpecifics(item.itemSpecifics));
     }
 
     const itemUrl =
@@ -332,7 +342,7 @@ export default function ListOnInventoryModal({ item, onClose, isDark, onSuccess 
         if (cancelled) return;
         const data = res?.data || {};
         if (data.categoryId) setForm((prev) => ({ ...prev, categoryId: String(data.categoryId) }));
-        if (Array.isArray(data.itemSpecifics) && data.itemSpecifics.length > 0) setItemSpecifics(data.itemSpecifics);
+        if (Array.isArray(data.itemSpecifics) && data.itemSpecifics.length > 0) setItemSpecifics(normalizeSpecifics(data.itemSpecifics));
         if (Array.isArray(data.pictureUrls) && data.pictureUrls.length > 0) {
           setDisplayUrls(data.pictureUrls);
           setmaxDimensionImageUrls(data.pictureUrls);
@@ -417,6 +427,22 @@ export default function ListOnInventoryModal({ item, onClose, isDark, onSuccess 
     });
     setEditingImageIdx(null);
     setSelectedImageIdx(idx);
+  };
+
+  const handleSpecificFieldChange = (idx, field, value) => {
+    setItemSpecifics((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [field]: value };
+      return next;
+    });
+  };
+
+  const handleAddSpecific = () => {
+    setItemSpecifics((prev) => [...prev, { name: '', value: '' }]);
+  };
+
+  const handleRemoveSpecific = (idx) => {
+    setItemSpecifics((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleChange = (e) => {
@@ -690,36 +716,69 @@ export default function ListOnInventoryModal({ item, onClose, isDark, onSuccess 
                 })}
               </div>
 
-              {/* Item Specifics */}
-              {(loadingSpecifics || itemSpecifics.length > 0) && (
-                <>
-                  <div className={divider} />
-                  <div>
-                    <p className={`text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+              {/* Item Specifics (editable) */}
+              <>
+                <div className={divider} />
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                       Item Specifics
                       {loadingSpecifics && <span className="ml-1.5 font-normal text-blue-400 animate-pulse">fetching…</span>}
                     </p>
-                    {loadingSpecifics && itemSpecifics.length === 0 ? (
-                      <div className={`rounded-lg border px-3 py-2.5 text-xs ${isDark ? 'border-slate-700 bg-slate-800/40 text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
-                        Loading item specifics from listing…
-                      </div>
-                    ) : (
-                      <div className={`rounded-lg border overflow-hidden text-xs divide-y max-h-52 overflow-y-auto ${isDark ? 'border-slate-700 divide-slate-700' : 'border-slate-200 divide-slate-100'}`}>
-                        {itemSpecifics.map((spec, i) => {
-                          const specLabel = spec.name || spec.label || '';
-                          const specValue = spec.value || '';
-                          return (
-                            <div key={`${specLabel}-${i}`} className={`grid grid-cols-2 gap-3 px-3 py-1.5 ${isDark ? 'bg-slate-800/50' : i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
-                              <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{specLabel}</span>
-                              <span className={isDark ? 'text-slate-200' : 'text-slate-700'}>{specValue}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                    <button
+                      type="button"
+                      onClick={handleAddSpecific}
+                      disabled={submitting}
+                      className={`text-xs font-semibold px-2 py-1 rounded-lg transition ${isDark ? 'text-blue-400 hover:bg-slate-800' : 'text-blue-600 hover:bg-blue-50'}`}
+                    >
+                      + Add specific
+                    </button>
                   </div>
-                </>
-              )}
+                  {loadingSpecifics && itemSpecifics.length === 0 ? (
+                    <div className={`rounded-lg border px-3 py-2.5 text-xs ${isDark ? 'border-slate-700 bg-slate-800/40 text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
+                      Loading item specifics from listing…
+                    </div>
+                  ) : itemSpecifics.length === 0 ? (
+                    <div className={`rounded-lg border px-3 py-2.5 text-xs ${isDark ? 'border-slate-700 bg-slate-800/40 text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
+                      No item specifics yet — click "+ Add specific" to add one.
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 max-h-60 overflow-y-auto pr-0.5">
+                      {itemSpecifics.map((spec, i) => (
+                        <div key={i} className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            value={spec.name || ''}
+                            onChange={(e) => handleSpecificFieldChange(i, 'name', e.target.value)}
+                            placeholder="Name (e.g. Brand)"
+                            disabled={submitting}
+                            className={`${inputClass} w-2/5`}
+                          />
+                          <input
+                            type="text"
+                            value={spec.value || ''}
+                            onChange={(e) => handleSpecificFieldChange(i, 'value', e.target.value)}
+                            placeholder="Value"
+                            disabled={submitting}
+                            className={`${inputClass} flex-1`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSpecific(i)}
+                            disabled={submitting}
+                            title="Remove"
+                            className={`shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-sm font-bold transition ${
+                              isDark ? 'text-slate-400 hover:bg-red-950/40 hover:text-red-400' : 'text-slate-400 hover:bg-red-50 hover:text-red-600'
+                            }`}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
 
               {/* Warning */}
               <div className={`rounded-xl border p-3 text-xs ${isDark ? 'border-amber-800 bg-amber-950/20 text-amber-200' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
