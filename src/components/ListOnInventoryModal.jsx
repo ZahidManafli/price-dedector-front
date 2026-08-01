@@ -504,11 +504,14 @@ export default function ListOnInventoryModal({ item, onClose, isDark, onSuccess 
 
   // ── Style helpers ─────────────────────────────────────────────────────────
   const base = isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-900';
-  const inputClass = `w-full rounded-lg border px-3 py-2 text-sm outline-none transition ${
+  // Width-free base so callers that need a custom width (e.g. the item
+  // specifics name/value pair) don't end up fighting `w-full` for specificity.
+  const inputBase = `rounded-lg border px-3 py-2 text-sm outline-none transition ${
     isDark
       ? 'bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-400 focus:border-blue-500'
       : 'bg-white border-slate-300 text-slate-800 placeholder:text-slate-400 focus:border-blue-500'
   }`;
+  const inputClass = `w-full ${inputBase}`;
   const labelClass = `block text-xs font-semibold mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`;
   const divider = `border-t my-1 ${isDark ? 'border-slate-700/60' : 'border-slate-100'}`;
   const sectionBox = `rounded-xl border p-4 space-y-3 ${isDark ? 'border-slate-700 bg-slate-800/30' : 'border-slate-200 bg-slate-50'}`;
@@ -745,7 +748,7 @@ export default function ListOnInventoryModal({ item, onClose, isDark, onSuccess 
                   ) : (
                     <div className={`rounded-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                       <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500 border-b border-slate-700' : 'text-slate-400 border-b border-slate-200'}`}>
-                        <span className="w-40 shrink-0">Name</span>
+                        <span className="w-36 shrink-0">Name</span>
                         <span className="flex-1">Value</span>
                         <span className="w-7 shrink-0" />
                       </div>
@@ -761,7 +764,7 @@ export default function ListOnInventoryModal({ item, onClose, isDark, onSuccess 
                               onChange={(e) => handleSpecificFieldChange(i, 'name', e.target.value)}
                               placeholder="Name (e.g. Brand)"
                               disabled={submitting}
-                              className={`${inputClass} w-40 shrink-0`}
+                              className={`${inputBase} w-36 shrink-0`}
                             />
                             <input
                               type="text"
@@ -769,7 +772,7 @@ export default function ListOnInventoryModal({ item, onClose, isDark, onSuccess 
                               onChange={(e) => handleSpecificFieldChange(i, 'value', e.target.value)}
                               placeholder="Value"
                               disabled={submitting}
-                              className={`${inputClass} flex-1 min-w-0`}
+                              className={`${inputBase} flex-1 min-w-0`}
                             />
                             <button
                               type="button"
