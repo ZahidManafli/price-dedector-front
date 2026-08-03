@@ -110,12 +110,15 @@ function formatStatPercent(value) {
 }
 
 // Zik's uploadDate is always midnight (date-only, no real time component) —
-// format as a plain date so we don't display a misleading "12:00 AM".
+// format as a plain DD/MM/YYYY date so we don't display a misleading "12:00 AM".
 function formatUploadDate(value) {
   if (!value) return null;
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return null;
-  return new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(parsed);
+  const day = String(parsed.getDate()).padStart(2, '0');
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const year = parsed.getFullYear();
+  return `${day}/${month}/${year}`;
 }
 
 function getSearchSiteLabel(rawStats) {
