@@ -109,6 +109,15 @@ function formatStatPercent(value) {
   return `${Math.round(toNumber(value))}%`;
 }
 
+// Zik's uploadDate is always midnight (date-only, no real time component) —
+// format as a plain date so we don't display a misleading "12:00 AM".
+function formatUploadDate(value) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(parsed);
+}
+
 function getSearchSiteLabel(rawStats) {
   const site = String(rawStats?.site || '.com').trim();
   return `ebay${site.startsWith('.') ? site : `.${site}`}`;
@@ -1443,6 +1452,7 @@ export default function MarketAnalysisPage() {
                               <>
                                 <th className="text-left p-3">Last 14d</th>
                                 <th className="text-left p-3">Last 30d</th>
+                                <th className="text-left p-3">Upload Date</th>
                               </>
                             )}
                           </>
@@ -1551,6 +1561,9 @@ export default function MarketAnalysisPage() {
                                     ) : (
                                       Number(item.soldQuantity30d || 0)
                                     )}
+                                  </td>
+                                  <td className="p-3">
+                                    {formatUploadDate(item.uploadDate) || '—'}
                                   </td>
                                 </>
                               )}

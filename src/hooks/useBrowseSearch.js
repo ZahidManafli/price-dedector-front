@@ -294,6 +294,9 @@ function normalizeItem(summary, { shouldRefetchSoldOnZero = false, fallbackSelle
       '',
     itemWebUrl: summary?.itemWebUrl || summary?.itemAffiliateWebUrl || summary?.productUrl || '',
     shouldRefetchSoldOnZero: Boolean(shouldRefetchSoldOnZero),
+    // Only present on Zik's fast seller-search rows (store-search API) — used
+    // for the "Upload Date" column shown only for that search flavor.
+    uploadDate: summary?.uploadDate || summary?.raw?.uploadDate || null,
     raw: summary,
   };
 }
