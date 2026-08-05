@@ -204,6 +204,22 @@
     "adding": "Ürün ekleniyor...",
     "updating": "Ürün güncelleniyor..."
   },
+  "productChecks": {
+    "menuTitle": "Kontrol ayarları",
+    "popoverTitle": "Hangi kontroller çalışsın?",
+    "priceLabel": "Fiyat kontrolü",
+    "priceHint": "Amazon fiyat değişikliğini algılar ve eBay fiyatını günceller.",
+    "stockLabel": "Stok kontrolü",
+    "stockHint": "Amazon stok durumunu algılar ve eBay adedini günceller.",
+    "titleLabel": "Başlık kontrolü",
+    "titleHint": "Amazon başlığı değiştiğinde ürünü stokta yok olarak işaretler.",
+    "highPriceLabel": "\"High price\" kontrolü",
+    "highPriceHint": "Amazon'un belirsiz \"High price\" (buy box yok) uyarısını stokta yok olarak kabul eder.",
+    "save": "Kaydet",
+    "saving": "Kaydediliyor...",
+    "saved": "Kontrol ayarları güncellendi",
+    "failedSave": "Kontrol ayarları güncellenemedi"
+  },
   "marketCompare": {
     "title": "Karşılaştırma Paneli",
     "clear": "Temizle",

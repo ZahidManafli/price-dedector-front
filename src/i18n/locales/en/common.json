@@ -402,6 +402,22 @@
     "adding": "Adding Product...",
     "updating": "Updating Product..."
   },
+  "productChecks": {
+    "menuTitle": "Check settings",
+    "popoverTitle": "Which checks should run?",
+    "priceLabel": "Price check",
+    "priceHint": "Detects Amazon price changes and syncs your eBay price.",
+    "stockLabel": "Stock check",
+    "stockHint": "Detects Amazon in/out-of-stock changes and syncs eBay quantity.",
+    "titleLabel": "Title check",
+    "titleHint": "Treats an Amazon title change as out of stock.",
+    "highPriceLabel": "\"High price\" check",
+    "highPriceHint": "Treats Amazon's ambiguous \"High price\" (no buy box) notice as out of stock.",
+    "save": "Save",
+    "saving": "Saving...",
+    "saved": "Check settings updated",
+    "failedSave": "Failed to update check settings"
+  },
   "settingsPage": {
     "title": "Settings",
     "fetched": "Fetched",

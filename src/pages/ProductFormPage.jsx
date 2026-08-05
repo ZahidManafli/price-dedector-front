@@ -67,6 +67,12 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
     currentEbayPrice: '',
     adRate: '',
     userEmail: '',
+    // New products start with every check unselected (false) until the user opts in
+    // here or later from the Products page's per-row check-settings popover.
+    checkPriceEnabled: false,
+    checkStockEnabled: false,
+    checkTitleEnabled: false,
+    checkHighPriceEnabled: false,
   });
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(isEditMode);
@@ -115,6 +121,12 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
           currentEbayPrice: product.currentEbayPrice ?? '',
           adRate: product.adRate ?? '',
           userEmail: product.userEmail || '',
+          // The API already resolves NULL (legacy, pre-feature) to enabled — default
+          // to true here only as a further fallback if a field is ever missing.
+          checkPriceEnabled: product.checkPriceEnabled !== false,
+          checkStockEnabled: product.checkStockEnabled !== false,
+          checkTitleEnabled: product.checkTitleEnabled !== false,
+          checkHighPriceEnabled: product.checkHighPriceEnabled !== false,
         };
 
         setFormData(nextData);
@@ -196,6 +208,10 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       formDataObj.append('currentEbayPrice', formData.currentEbayPrice);
       formDataObj.append('adRate', formData.adRate || '0');
       formDataObj.append('userEmail', formData.userEmail);
+      formDataObj.append('checkPriceEnabled', String(!!formData.checkPriceEnabled));
+      formDataObj.append('checkStockEnabled', String(!!formData.checkStockEnabled));
+      formDataObj.append('checkTitleEnabled', String(!!formData.checkTitleEnabled));
+      formDataObj.append('checkHighPriceEnabled', String(!!formData.checkHighPriceEnabled));
       if (selectedEbayAccountId) {
         const selectedAcc = findMatchingAccount(ebayAccounts, [selectedEbayAccountId]);
         const selectedAccountValue = getPreferredAccountValue(selectedAcc || {});
@@ -430,6 +446,43 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
             <p className="text-xs text-slate-500 mt-1">
               {t('productFormPage.emailHint')}
             </p>
+          </div>
+
+          {/* Check settings — which checks the cron job and manual Compare run for
+              this product. Unselected here means disabled (false), not "use default";
+              this only ever matters going forward, since existing products fetched
+              from the API already resolve a legacy NULL to enabled. */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              {t('productChecks.popoverTitle')}
+            </label>
+            <div className="space-y-2 rounded-lg border border-slate-200 p-3">
+              {[
+                { key: 'checkPriceEnabled', labelKey: 'priceLabel', hintKey: 'priceHint' },
+                { key: 'checkStockEnabled', labelKey: 'stockLabel', hintKey: 'stockHint' },
+                { key: 'checkTitleEnabled', labelKey: 'titleLabel', hintKey: 'titleHint' },
+                { key: 'checkHighPriceEnabled', labelKey: 'highPriceLabel', hintKey: 'highPriceHint' },
+              ].map(({ key, labelKey, hintKey }) => (
+                <label key={key} className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name={key}
+                    checked={formData[key]}
+                    onChange={handleChange}
+                    disabled={loading}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-400 text-blue-600 focus:ring-blue-500/40"
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-gray-700">
+                      {t(`productChecks.${labelKey}`)}
+                    </span>
+                    <span className="block text-[11px] text-slate-500">
+                      {t(`productChecks.${hintKey}`)}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* Buttons */}

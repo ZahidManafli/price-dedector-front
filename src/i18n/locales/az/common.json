@@ -204,6 +204,22 @@
     "adding": "Məhsul əlavə edilir...",
     "updating": "Məhsul yenilənir..."
   },
+  "productChecks": {
+    "menuTitle": "Yoxlama tənzimləmələri",
+    "popoverTitle": "Hansı yoxlamalar aparılsın?",
+    "priceLabel": "Qiymət yoxlansın",
+    "priceHint": "Amazon qiymət dəyişikliyini aşkarlayır və eBay qiymətini uyğunlaşdırır.",
+    "stockLabel": "Stok yoxlansın",
+    "stockHint": "Amazon stok vəziyyətindəki dəyişikliyi aşkarlayır və eBay miqdarını uyğunlaşdırır.",
+    "titleLabel": "Başlıq yoxlansın",
+    "titleHint": "Amazon başlığı dəyişəndə məhsulu stokda yoxdur kimi qeyd edir.",
+    "highPriceLabel": "\"High price\" yoxlansın",
+    "highPriceHint": "Amazonun qeyri-müəyyən \"High price\" (buy box yoxdur) bildirişini stokda yoxdur kimi qəbul edir.",
+    "save": "Yadda saxla",
+    "saving": "Yadda saxlanılır...",
+    "saved": "Yoxlama tənzimləmələri yeniləndi",
+    "failedSave": "Yoxlama tənzimləmələrini yeniləmək alınmadı"
+  },
   "marketCompare": {
     "title": "Müqayisə paneli",
     "clear": "Təmizlə",

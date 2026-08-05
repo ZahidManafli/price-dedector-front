@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowDown, ArrowUp, ArrowUpDown, Check, ExternalLink,
-  Grid3X3, List, PackageCheck, PackageX, Pencil, Plus, RefreshCw, Search, Trash2,
+  Grid3X3, List, MoreVertical, PackageCheck, PackageX, Pencil, Plus, RefreshCw, Search, Trash2,
   TrendingDown, TrendingUp, X,
 } from 'lucide-react';
 import { ebayAPI, productAPI, settingsAPI } from '../services/api';
@@ -112,6 +112,100 @@ function SortIcon({ active, dir }) {
   return dir === 'asc' ? <ArrowUp size={13} className="text-blue-500" /> : <ArrowDown size={13} className="text-blue-500" />;
 }
 
+// Which product fields feed each toggle, and the i18n keys for its label/hint.
+// checkXEnabled defaults to true client-side too (mirrors the backend's "NULL/legacy
+// row = enabled" rule) so a product fetched before its first check-settings save
+// still renders every box checked.
+const CHECK_TOGGLES = [
+  { key: 'checkPriceEnabled', labelKey: 'priceLabel', hintKey: 'priceHint' },
+  { key: 'checkStockEnabled', labelKey: 'stockLabel', hintKey: 'stockHint' },
+  { key: 'checkTitleEnabled', labelKey: 'titleLabel', hintKey: 'titleHint' },
+  { key: 'checkHighPriceEnabled', labelKey: 'highPriceLabel', hintKey: 'highPriceHint' },
+];
+
+// Per-row "⋮" popover on the Products page table — lets the user pick which of the
+// four checks (price / stock / title / "High price") the cron job and manual
+// Compare should perform for THIS product, then persists them on Save via the
+// dedicated check-settings endpoint (not the full product-edit form).
+function CheckSettingsPopover({ product, isDark, t, onClose, onSave }) {
+  const [draft, setDraft] = useState(() =>
+    CHECK_TOGGLES.reduce((acc, { key }) => {
+      acc[key] = product[key] !== false;
+      return acc;
+    }, {})
+  );
+  const [saving, setSaving] = useState(false);
+  const popoverRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target)) onClose();
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const ok = await onSave(product, draft);
+    setSaving(false);
+    if (ok) onClose();
+  };
+
+  return (
+    <div
+      ref={popoverRef}
+      className={`absolute right-0 top-full mt-1 w-72 rounded-xl border shadow-xl z-30 p-3 text-left ${
+        isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
+      }`}
+    >
+      <p className={`text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+        {t('productChecks.popoverTitle')}
+      </p>
+      <div className="space-y-2.5">
+        {CHECK_TOGGLES.map(({ key, labelKey, hintKey }) => (
+          <label key={key} className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={draft[key]}
+              onChange={(e) => setDraft((prev) => ({ ...prev, [key]: e.target.checked }))}
+              className="mt-0.5 h-4 w-4 rounded border-slate-400 text-blue-600 focus:ring-blue-500/40"
+            />
+            <span>
+              <span className={`block text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+                {t(`productChecks.${labelKey}`)}
+              </span>
+              <span className={`block text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {t(`productChecks.${hintKey}`)}
+              </span>
+            </span>
+          </label>
+        ))}
+      </div>
+      <div className="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-700/20">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={saving}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+            isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          {t('common.cancel')}
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
+        >
+          {saving ? t('productChecks.saving') : t('productChecks.save')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ProductsPage() {
@@ -137,6 +231,7 @@ export default function ProductsPage() {
   const [inlineEditId, setInlineEditId] = useState(null);
   const [inlineValues, setInlineValues] = useState({});
   const [savingInline, setSavingInline] = useState(false);
+  const [checkSettingsOpenId, setCheckSettingsOpenId] = useState(null);
   const sortDropRef = useRef(null);
 
   useEffect(() => {
@@ -256,6 +351,31 @@ export default function ProductsPage() {
       setAlert({ type: 'error', message: 'Failed to update product' });
     } finally {
       setSavingInline(false);
+    }
+  };
+
+  const handleSaveCheckSettings = async (product, draft) => {
+    try {
+      const res = await productAPI.updateCheckSettings(product.id, draft);
+      const saved = res?.data || {};
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === product.id
+            ? {
+                ...p,
+                checkPriceEnabled: saved.checkPriceEnabled ?? draft.checkPriceEnabled,
+                checkStockEnabled: saved.checkStockEnabled ?? draft.checkStockEnabled,
+                checkTitleEnabled: saved.checkTitleEnabled ?? draft.checkTitleEnabled,
+                checkHighPriceEnabled: saved.checkHighPriceEnabled ?? draft.checkHighPriceEnabled,
+              }
+            : p
+        )
+      );
+      setAlert({ type: 'success', message: t('productChecks.saved') });
+      return true;
+    } catch {
+      setAlert({ type: 'error', message: t('productChecks.failedSave') });
+      return false;
     }
   };
 
@@ -942,6 +1062,26 @@ export default function ProductsPage() {
                               >
                                 <Trash2 size={13} />
                               </button>
+                              <div className="relative">
+                                <button
+                                  onClick={() => setCheckSettingsOpenId((cur) => (cur === product.id ? null : product.id))}
+                                  title={t('productChecks.menuTitle')}
+                                  className={`h-8 w-8 rounded-lg border flex items-center justify-center transition ${
+                                    isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                                  }`}
+                                >
+                                  <MoreVertical size={13} />
+                                </button>
+                                {checkSettingsOpenId === product.id && (
+                                  <CheckSettingsPopover
+                                    product={product}
+                                    isDark={isDark}
+                                    t={t}
+                                    onClose={() => setCheckSettingsOpenId(null)}
+                                    onSave={handleSaveCheckSettings}
+                                  />
+                                )}
+                              </div>
                             </>
                           )}
                         </div>

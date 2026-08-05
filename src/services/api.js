@@ -100,6 +100,7 @@ export const productAPI = {
   update: (id, data) => api.put(`/products/${id}`, data, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+  updateCheckSettings: (id, data) => api.patch(`/products/${id}/check-settings`, data),
   delete: (id) => api.delete(`/products/${id}`),
   getPriceHistory: (id) => api.get(`/products/${id}/history`),
   comparePrice: (id) => api.get(`/products/${id}/compare`),
