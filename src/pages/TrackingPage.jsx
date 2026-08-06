@@ -584,6 +584,34 @@ function UnmatchedRow({ item, isDark, onResolved, onDeleted, orderMetaByEbayOrde
   );
 }
 
+// Small on/off pill switch — used per message tab so the seller can turn any one of
+// the three automatic buyer messages (ordered/shipped/delivered) off for this specific
+// eBay store without losing the drafted template text underneath it.
+function ToggleSwitch({ checked, onChange, isDark, label }) {
+  return (
+    <label className="flex items-center gap-2 cursor-pointer select-none">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+          checked ? 'bg-blue-600' : isDark ? 'bg-slate-700' : 'bg-slate-300'
+        }`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+            checked ? 'translate-x-4' : 'translate-x-0.5'
+          }`}
+        />
+      </button>
+      {label && (
+        <span className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{label}</span>
+      )}
+    </label>
+  );
+}
+
 // Sidebar for configuring the buyer-facing messages auto-sent when tracking is
 // uploaded to eBay ("shipped") and when Amazon's own tracking page reports the
 // package as delivered. Each connected eBay account (store) has its own pair of
@@ -601,6 +629,9 @@ function MessageTemplatesSidebar({ isDark, onClose, ebayAccountId, accountLabel 
   const [orderedMessage, setOrderedMessage] = useState('');
   const [shippedMessage, setShippedMessage] = useState('');
   const [deliveredMessage, setDeliveredMessage] = useState('');
+  const [orderedEnabled, setOrderedEnabled] = useState(true);
+  const [shippedEnabled, setShippedEnabled] = useState(true);
+  const [deliveredEnabled, setDeliveredEnabled] = useState(true);
   const [resolvedAccountId, setResolvedAccountId] = useState(ebayAccountId || null);
 
   useEffect(() => {
@@ -612,6 +643,9 @@ function MessageTemplatesSidebar({ isDark, onClose, ebayAccountId, accountLabel 
         setOrderedMessage(res?.data?.orderedMessage || '');
         setShippedMessage(res?.data?.shippedMessage || '');
         setDeliveredMessage(res?.data?.deliveredMessage || '');
+        setOrderedEnabled(res?.data?.orderedEnabled !== false);
+        setShippedEnabled(res?.data?.shippedEnabled !== false);
+        setDeliveredEnabled(res?.data?.deliveredEnabled !== false);
         setDefaults({
           ordered: res?.data?.defaultOrderedMessage || '',
           shipped: res?.data?.defaultShippedMessage || '',
@@ -638,11 +672,17 @@ function MessageTemplatesSidebar({ isDark, onClose, ebayAccountId, accountLabel 
         orderedMessage,
         shippedMessage,
         deliveredMessage,
+        orderedEnabled,
+        shippedEnabled,
+        deliveredEnabled,
         ebayAccountId: resolvedAccountId,
       });
       setOrderedMessage(res?.data?.orderedMessage || orderedMessage);
       setShippedMessage(res?.data?.shippedMessage || shippedMessage);
       setDeliveredMessage(res?.data?.deliveredMessage || deliveredMessage);
+      setOrderedEnabled(res?.data?.orderedEnabled !== false);
+      setShippedEnabled(res?.data?.shippedEnabled !== false);
+      setDeliveredEnabled(res?.data?.deliveredEnabled !== false);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
@@ -732,7 +772,15 @@ function MessageTemplatesSidebar({ isDark, onClose, ebayAccountId, accountLabel 
             </div>
           ) : activeMessageTab === 'ordered' ? (
             <div>
-              <label className={labelCls}>Sent when the order is matched to tracking</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className={labelCls.replace('mb-1.5', '')}>Sent when the order is matched to tracking</label>
+                <ToggleSwitch
+                  checked={orderedEnabled}
+                  onChange={setOrderedEnabled}
+                  isDark={isDark}
+                  label={orderedEnabled ? 'Enabled' : 'Disabled'}
+                />
+              </div>
               <textarea
                 value={orderedMessage}
                 onChange={(e) => setOrderedMessage(e.target.value)}
@@ -754,7 +802,15 @@ function MessageTemplatesSidebar({ isDark, onClose, ebayAccountId, accountLabel 
             </div>
           ) : activeMessageTab === 'shipped' ? (
             <div>
-              <label className={labelCls}>Sent when tracking is uploaded (shipped)</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className={labelCls.replace('mb-1.5', '')}>Sent when tracking is uploaded (shipped)</label>
+                <ToggleSwitch
+                  checked={shippedEnabled}
+                  onChange={setShippedEnabled}
+                  isDark={isDark}
+                  label={shippedEnabled ? 'Enabled' : 'Disabled'}
+                />
+              </div>
               <textarea
                 value={shippedMessage}
                 onChange={(e) => setShippedMessage(e.target.value)}
@@ -774,7 +830,15 @@ function MessageTemplatesSidebar({ isDark, onClose, ebayAccountId, accountLabel 
             </div>
           ) : (
             <div>
-              <label className={labelCls}>Sent when Amazon reports delivered</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className={labelCls.replace('mb-1.5', '')}>Sent when Amazon reports delivered</label>
+                <ToggleSwitch
+                  checked={deliveredEnabled}
+                  onChange={setDeliveredEnabled}
+                  isDark={isDark}
+                  label={deliveredEnabled ? 'Enabled' : 'Disabled'}
+                />
+              </div>
               <textarea
                 value={deliveredMessage}
                 onChange={(e) => setDeliveredMessage(e.target.value)}
