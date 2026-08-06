@@ -207,7 +207,8 @@ export const ebayAPI = {
   inventoryList: (payload) => api.post('/ebay/inventory-list', payload),
   listSavedSellers: () => api.get('/ebay/saved-sellers'),
   toggleSavedSeller: (sellerName) => api.post('/ebay/saved-sellers/toggle', { sellerName }),
-  getMessageTemplates: () => api.get('/ebay/message-templates'),
+  getMessageTemplates: (ebayAccountId) =>
+    api.get('/ebay/message-templates', { params: ebayAccountId ? { ebayAccountId } : {} }),
   saveMessageTemplates: (payload) => api.put('/ebay/message-templates', payload),
 };
 

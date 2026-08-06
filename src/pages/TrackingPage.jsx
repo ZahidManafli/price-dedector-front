@@ -586,44 +586,61 @@ function UnmatchedRow({ item, isDark, onResolved, onDeleted, orderMetaByEbayOrde
 
 // Sidebar for configuring the buyer-facing messages auto-sent when tracking is
 // uploaded to eBay ("shipped") and when Amazon's own tracking page reports the
-// package as delivered. Loads the user's saved templates (or the crafted defaults
-// if they haven't customized one yet) and lets them edit + save either.
-function MessageTemplatesSidebar({ isDark, onClose }) {
+// package as delivered. Each connected eBay account (store) has its own pair of
+// messages — this always edits whichever store is currently active (ebayAccountId),
+// and reloads automatically when the user switches stores on the page (or while this
+// sidebar is open). Loads that store's saved templates (or the crafted defaults if
+// it hasn't customized one yet) and lets them edit + save either.
+function MessageTemplatesSidebar({ isDark, onClose, ebayAccountId, accountLabel }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
-  const [activeMessageTab, setActiveMessageTab] = useState('shipped');
-  const [defaults, setDefaults] = useState({ shipped: '', delivered: '' });
+  const [activeMessageTab, setActiveMessageTab] = useState('ordered');
+  const [defaults, setDefaults] = useState({ ordered: '', shipped: '', delivered: '' });
+  const [orderedMessage, setOrderedMessage] = useState('');
   const [shippedMessage, setShippedMessage] = useState('');
   const [deliveredMessage, setDeliveredMessage] = useState('');
+  const [resolvedAccountId, setResolvedAccountId] = useState(ebayAccountId || null);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
       setError('');
       try {
-        const res = await ebayAPI.getMessageTemplates();
+        const res = await ebayAPI.getMessageTemplates(ebayAccountId);
+        setOrderedMessage(res?.data?.orderedMessage || '');
         setShippedMessage(res?.data?.shippedMessage || '');
         setDeliveredMessage(res?.data?.deliveredMessage || '');
         setDefaults({
+          ordered: res?.data?.defaultOrderedMessage || '',
           shipped: res?.data?.defaultShippedMessage || '',
           delivered: res?.data?.defaultDeliveredMessage || '',
         });
+        // The backend resolves its own active account when none is passed (e.g. the
+        // page's store filter is "All eBay stores") — keep whatever it settled on so
+        // Save writes back to that same account instead of guessing again.
+        setResolvedAccountId(res?.data?.ebayAccountId || ebayAccountId || null);
       } catch (err) {
         setError(err?.response?.data?.error || err.message || 'Failed to load message templates');
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [ebayAccountId]);
 
   const handleSave = async () => {
     setSaving(true);
     setError('');
     setSaved(false);
     try {
-      const res = await ebayAPI.saveMessageTemplates({ shippedMessage, deliveredMessage });
+      const res = await ebayAPI.saveMessageTemplates({
+        orderedMessage,
+        shippedMessage,
+        deliveredMessage,
+        ebayAccountId: resolvedAccountId,
+      });
+      setOrderedMessage(res?.data?.orderedMessage || orderedMessage);
       setShippedMessage(res?.data?.shippedMessage || shippedMessage);
       setDeliveredMessage(res?.data?.deliveredMessage || deliveredMessage);
       setSaved(true);
@@ -649,17 +666,35 @@ function MessageTemplatesSidebar({ isDark, onClose }) {
           isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
         }`}
       >
-        <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-          <h2 className={`font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-            <MessageSquare size={16} />
-            Buyer messages
-          </h2>
-          <button type="button" onClick={onClose} className={isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'}>
-            <X size={18} />
-          </button>
+        <div className={`px-5 py-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+          <div className="flex items-center justify-between">
+            <h2 className={`font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+              <MessageSquare size={16} />
+              Buyer messages
+            </h2>
+            <button type="button" onClick={onClose} className={isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'}>
+              <X size={18} />
+            </button>
+          </div>
+          {accountLabel && (
+            <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Editing messages for <span className="font-medium">{accountLabel}</span>
+            </p>
+          )}
         </div>
 
         <div className={`flex gap-1 px-5 pt-3 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+          <button
+            type="button"
+            onClick={() => setActiveMessageTab('ordered')}
+            className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition ${
+              activeMessageTab === 'ordered'
+                ? 'border-indigo-500 text-indigo-500'
+                : `border-transparent ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'}`
+            }`}
+          >
+            Thank-you message
+          </button>
           <button
             type="button"
             onClick={() => setActiveMessageTab('shipped')}
@@ -694,6 +729,28 @@ function MessageTemplatesSidebar({ isDark, onClose }) {
           {loading ? (
             <div className="py-10 flex justify-center">
               <Loader2 className="animate-spin text-indigo-500" size={22} />
+            </div>
+          ) : activeMessageTab === 'ordered' ? (
+            <div>
+              <label className={labelCls}>Sent when the order is matched to tracking</label>
+              <textarea
+                value={orderedMessage}
+                onChange={(e) => setOrderedMessage(e.target.value)}
+                rows={12}
+                className={textareaCls}
+              />
+              <div className="flex items-center justify-between">
+                <p className={hintCls}>
+                  Sent once per order, right when the Amazon purchase is matched to this eBay order.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setOrderedMessage(defaults.ordered)}
+                  className="text-xs font-medium text-indigo-500 hover:text-indigo-400 whitespace-nowrap ml-2"
+                >
+                  Reset to default
+                </button>
+              </div>
             </div>
           ) : activeMessageTab === 'shipped' ? (
             <div>
@@ -1045,7 +1102,16 @@ export default function TrackingPage() {
       </div>
 
       {messageSidebarOpen && (
-        <MessageTemplatesSidebar isDark={isDark} onClose={() => setMessageSidebarOpen(false)} />
+        <MessageTemplatesSidebar
+          isDark={isDark}
+          onClose={() => setMessageSidebarOpen(false)}
+          ebayAccountId={ebayFilter !== 'ALL' ? ebayFilter : null}
+          accountLabel={
+            ebayFilter !== 'ALL'
+              ? accountFilterOptions.find((o) => o.id === ebayFilter)?.label || null
+              : null
+          }
+        />
       )}
 
       <div className={`mb-6 rounded-xl p-1 border inline-flex gap-1 ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
