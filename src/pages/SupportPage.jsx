@@ -67,7 +67,7 @@ function StatusPill({ status, isDark }) {
   );
 }
 
-function TicketTable({ tickets, isDark, showRequester, onAssign }) {
+function TicketTable({ tickets, isDark, showRequester, onAssign, onRowClick }) {
   if (!tickets.length) {
     return (
       <div className={`rounded-xl border p-8 text-center text-sm ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
@@ -92,7 +92,11 @@ function TicketTable({ tickets, isDark, showRequester, onAssign }) {
         </thead>
         <tbody className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>
           {tickets.map((t) => (
-            <tr key={t.id} className={isDark ? 'text-slate-200' : 'text-slate-700'}>
+            <tr
+              key={t.id}
+              onClick={() => onRowClick?.(t)}
+              className={`${isDark ? 'text-slate-200' : 'text-slate-700'} ${onRowClick ? `cursor-pointer ${isDark ? 'hover:bg-slate-800/60' : 'hover:bg-slate-50'}` : ''}`}
+            >
               <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{t.ticketNumber}</td>
               <td className="px-3 py-2">
                 <div className="font-medium">{t.title}</div>
@@ -111,7 +115,14 @@ function TicketTable({ tickets, isDark, showRequester, onAssign }) {
               </td>
               {onAssign ? (
                 <td className="px-3 py-2 whitespace-nowrap">
-                  <button type="button" onClick={() => onAssign(t)} className="btn-secondary text-xs px-2 py-1">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAssign(t);
+                    }}
+                    className="btn-secondary text-xs px-2 py-1"
+                  >
                     {t.status === 'scheduled' ? 'Yenidən təyin et' : 'Təyin et'}
                   </button>
                 </td>
@@ -197,6 +208,77 @@ function MentorCalendar({ ticketsByDate, selectedDate, onSelectDate, isDark }) {
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, isDark }) {
+  return (
+    <div>
+      <div className={`text-xs font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{label}</div>
+      <div className={`text-sm mt-0.5 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{value ?? '—'}</div>
+    </div>
+  );
+}
+
+function TicketDetailModal({ ticket, isDark, onClose, onAssign }) {
+  const cardCls = `w-full max-w-lg rounded-2xl border p-5 shadow-2xl ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`;
+
+  return (
+    <div className={`fixed inset-0 z-[80] flex items-center justify-center p-4 ${isDark ? 'bg-slate-950/75' : 'bg-slate-900/40'}`}>
+      <div className={cardCls}>
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{ticket.ticketNumber}</h3>
+            <p className={`mt-1 text-sm ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{ticket.title}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className={`rounded-lg border px-3 py-1.5 text-sm ${isDark ? 'border-white/15 text-slate-300 hover:bg-white/10' : 'border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+          >
+            Bağla
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <DetailRow label="Təsvir" value={<span className="whitespace-pre-wrap">{ticket.description}</span>} isDark={isDark} />
+
+          <div className="grid grid-cols-2 gap-4">
+            <DetailRow label="Prioritet" value={<PriorityPill priority={ticket.priority} isDark={isDark} />} isDark={isDark} />
+            <DetailRow label="Status" value={<StatusPill status={ticket.status} isDark={isDark} />} isDark={isDark} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <DetailRow label="İstifadəçi" value={ticket.userName} isDark={isDark} />
+            <DetailRow label="E-poçt" value={ticket.userEmail} isDark={isDark} />
+          </div>
+
+          {ticket.status === 'scheduled' ? (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <DetailRow label="Mentor" value={ticket.mentorName} isDark={isDark} />
+                <DetailRow label="Tarix və vaxt" value={`${fmtDateTime(ticket.scheduledStart)} — ${fmtDateTime(ticket.scheduledEnd)}`} isDark={isDark} />
+              </div>
+              {ticket.mentorNote ? (
+                <DetailRow label="Mentor qeydi" value={<span className="whitespace-pre-wrap">{ticket.mentorNote}</span>} isDark={isDark} />
+              ) : null}
+            </>
+          ) : null}
+
+          <DetailRow label="Yaradılma tarixi" value={fmtDateTime(ticket.createdAt)} isDark={isDark} />
+        </div>
+
+        {onAssign ? (
+          <button
+            type="button"
+            onClick={() => onAssign(ticket)}
+            className="mt-5 w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
+          >
+            {ticket.status === 'scheduled' ? 'Yenidən təyin et' : 'Təyin et'}
+          </button>
+        ) : null}
       </div>
     </div>
   );
@@ -366,6 +448,7 @@ export default function SupportPage() {
   const [error, setError] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [assigningTicket, setAssigningTicket] = useState(null);
+  const [viewingTicket, setViewingTicket] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [view, setView] = useState('mine');
 
@@ -459,7 +542,7 @@ export default function SupportPage() {
           <Loader2 size={24} className="animate-spin text-slate-400" />
         </div>
       ) : !isMentor || view === 'mine' ? (
-        <TicketTable tickets={myTickets} isDark={isDark} showRequester={false} />
+        <TicketTable tickets={myTickets} isDark={isDark} showRequester={false} onRowClick={setViewingTicket} />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
           <MentorCalendar
@@ -479,10 +562,10 @@ export default function SupportPage() {
                     Hamısına bax
                   </button>
                 </div>
-                <TicketTable tickets={ticketsOnSelectedDate} isDark={isDark} showRequester onAssign={setAssigningTicket} />
+                <TicketTable tickets={ticketsOnSelectedDate} isDark={isDark} showRequester onAssign={setAssigningTicket} onRowClick={setViewingTicket} />
               </div>
             ) : (
-              <TicketTable tickets={allTickets} isDark={isDark} showRequester onAssign={setAssigningTicket} />
+              <TicketTable tickets={allTickets} isDark={isDark} showRequester onAssign={setAssigningTicket} onRowClick={setViewingTicket} />
             )}
           </div>
         </div>
@@ -508,6 +591,22 @@ export default function SupportPage() {
             setAssigningTicket(null);
             loadAllData();
           }}
+        />
+      ) : null}
+
+      {viewingTicket ? (
+        <TicketDetailModal
+          isDark={isDark}
+          ticket={viewingTicket}
+          onClose={() => setViewingTicket(null)}
+          onAssign={
+            isMentor
+              ? (t) => {
+                  setViewingTicket(null);
+                  setAssigningTicket(t);
+                }
+              : undefined
+          }
         />
       ) : null}
     </div>
