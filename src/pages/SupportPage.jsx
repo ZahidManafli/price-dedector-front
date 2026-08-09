@@ -202,7 +202,7 @@ function MentorCalendar({ ticketsByDate, selectedDate, onSelectDate, isDark }) {
   );
 }
 
-function CreateTicketModal({ onClose, onCreated }) {
+function CreateTicketModal({ onClose, onCreated, isDark }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('medium');
@@ -227,12 +227,20 @@ function CreateTicketModal({ onClose, onCreated }) {
     }
   };
 
+  const inputCls = `w-full rounded-lg border px-3 py-2 outline-none focus:border-indigo-500 ${
+    isDark ? 'border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400'
+  }`;
+
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-slate-900 p-5 shadow-2xl">
+    <div className={`fixed inset-0 z-[80] flex items-center justify-center p-4 ${isDark ? 'bg-slate-950/75' : 'bg-slate-900/40'}`}>
+      <div className={`w-full max-w-lg rounded-2xl border p-5 shadow-2xl ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}>
         <div className="mb-4 flex items-start justify-between gap-3">
-          <h3 className="text-xl font-semibold text-white">Yeni dəstək müraciəti</h3>
-          <button type="button" onClick={onClose} className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/10">
+          <h3 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Yeni dəstək müraciəti</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className={`rounded-lg border px-3 py-1.5 text-sm ${isDark ? 'border-white/15 text-slate-300 hover:bg-white/10' : 'border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+          >
             Bağla
           </button>
         </div>
@@ -242,28 +250,24 @@ function CreateTicketModal({ onClose, onCreated }) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Başlıq"
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+            className={inputCls}
           />
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Təsvir"
-            className="min-h-[112px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+            className={`min-h-[112px] ${inputCls}`}
           />
-          <select
-            value={priority}
-            onChange={(e) => setPriority(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-          >
+          <select value={priority} onChange={(e) => setPriority(e.target.value)} className={inputCls}>
             {PRIORITY_OPTIONS.map((p) => (
               <option key={p.value} value={p.value}>{p.label}</option>
             ))}
           </select>
-          {error ? <p className="text-sm text-red-300">{error}</p> : null}
+          {error ? <p className={`text-sm ${isDark ? 'text-red-300' : 'text-red-600'}`}>{error}</p> : null}
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
+            className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
           >
             {loading ? 'Göndərilir...' : 'Göndər'}
           </button>
@@ -273,7 +277,7 @@ function CreateTicketModal({ onClose, onCreated }) {
   );
 }
 
-function AssignScheduleModal({ ticket, onClose, onAssigned }) {
+function AssignScheduleModal({ ticket, onClose, onAssigned, isDark }) {
   const [start, setStart] = useState(isoToDatetimeLocal(ticket.scheduledStart));
   const [end, setEnd] = useState(isoToDatetimeLocal(ticket.scheduledEnd));
   const [note, setNote] = useState(ticket.mentorNote || '');
@@ -302,48 +306,46 @@ function AssignScheduleModal({ ticket, onClose, onAssigned }) {
     }
   };
 
+  const inputCls = `w-full rounded-lg border px-3 py-2 outline-none focus:border-indigo-500 ${
+    isDark ? 'border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400'
+  }`;
+
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-slate-900 p-5 shadow-2xl">
+    <div className={`fixed inset-0 z-[80] flex items-center justify-center p-4 ${isDark ? 'bg-slate-950/75' : 'bg-slate-900/40'}`}>
+      <div className={`w-full max-w-lg rounded-2xl border p-5 shadow-2xl ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}>
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-xl font-semibold text-white">Tarix təyin et</h3>
-            <p className="mt-1 text-sm text-slate-300">{ticket.ticketNumber} — {ticket.title}</p>
+            <h3 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Tarix təyin et</h3>
+            <p className={`mt-1 text-sm ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{ticket.ticketNumber} — {ticket.title}</p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/10">
+          <button
+            type="button"
+            onClick={onClose}
+            className={`rounded-lg border px-3 py-1.5 text-sm ${isDark ? 'border-white/15 text-slate-300 hover:bg-white/10' : 'border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+          >
             Bağla
           </button>
         </div>
         <form onSubmit={submit} className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs text-slate-400">Başlanğıc</label>
-            <input
-              type="datetime-local"
-              value={start}
-              onChange={(e) => setStart(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-            />
+            <label className={`mb-1 block text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Başlanğıc</label>
+            <input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} className={inputCls} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-slate-400">Son</label>
-            <input
-              type="datetime-local"
-              value={end}
-              onChange={(e) => setEnd(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-            />
+            <label className={`mb-1 block text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Son</label>
+            <input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} className={inputCls} />
           </div>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Əlavə qeyd (istəyə görə)"
-            className="min-h-[84px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+            className={`min-h-[84px] ${inputCls}`}
           />
-          {error ? <p className="text-sm text-red-300">{error}</p> : null}
+          {error ? <p className={`text-sm ${isDark ? 'text-red-300' : 'text-red-600'}`}>{error}</p> : null}
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
+            className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
           >
             {loading ? 'Göndərilir...' : 'Təyin et'}
           </button>
@@ -488,6 +490,7 @@ export default function SupportPage() {
 
       {showCreateModal ? (
         <CreateTicketModal
+          isDark={isDark}
           onClose={() => setShowCreateModal(false)}
           onCreated={() => {
             setShowCreateModal(false);
@@ -498,6 +501,7 @@ export default function SupportPage() {
 
       {assigningTicket ? (
         <AssignScheduleModal
+          isDark={isDark}
           ticket={assigningTicket}
           onClose={() => setAssigningTicket(null)}
           onAssigned={() => {
