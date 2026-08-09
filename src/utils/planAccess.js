@@ -17,6 +17,7 @@ export const TAB_KEYS = {
   BUYER_CRM: 'buyer_crm',
   TRACKING: 'tracking',
   CASES: 'cases',
+  SUPPORT: 'support',
 };
 
 export const USER_DEFAULT_ALLOWED_TABS = [
@@ -32,6 +33,7 @@ export const USER_DEFAULT_ALLOWED_TABS = [
   TAB_KEYS.SETTINGS,
   TAB_KEYS.LEARNING,
   TAB_KEYS.PROFIT_TABLE,
+  TAB_KEYS.SUPPORT,
 ];
 
 const TAB_ALIASES = {
@@ -67,6 +69,7 @@ const TAB_ALIASES = {
   'buyer-crm': TAB_KEYS.BUYER_CRM,
   tracking: TAB_KEYS.TRACKING,
   cases: TAB_KEYS.CASES,
+  support: TAB_KEYS.SUPPORT,
 };
 
 export function normalizeTabKey(value) {

@@ -1,0 +1,511 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { LifeBuoy, Plus, Loader2, RefreshCw, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { supportAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+
+const PRIORITY_OPTIONS = [
+  { value: 'low', label: 'Aşağı' },
+  { value: 'medium', label: 'Orta' },
+  { value: 'high', label: 'Yüksək' },
+];
+
+// Ticket times are stored in UTC on the backend; mentors/users always enter and
+// read them as Baku wall-clock time, matching the rest of the app's Baku-offset
+// conventions (see BAKU_OFFSET_MS in cron.js).
+const BAKU_OFFSET_MINUTES = 4 * 60;
+
+function datetimeLocalToUtcIso(value) {
+  if (!value) return null;
+  const [datePart, timePart] = value.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+  const utcMs = Date.UTC(year, month - 1, day, hour, minute) - BAKU_OFFSET_MINUTES * 60 * 1000;
+  return new Date(utcMs).toISOString();
+}
+
+function isoToDatetimeLocal(iso) {
+  if (!iso) return '';
+  const d = new Date(new Date(iso).getTime() + BAKU_OFFSET_MINUTES * 60 * 1000);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return new Intl.DateTimeFormat('az-AZ', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Baku',
+  }).format(d);
+}
+
+function PriorityPill({ priority, isDark }) {
+  const label = PRIORITY_OPTIONS.find((p) => p.value === priority)?.label || priority;
+  const cls = {
+    high: isDark ? 'bg-rose-900/40 text-rose-300 border-rose-700' : 'bg-rose-50 text-rose-700 border-rose-300',
+    medium: isDark ? 'bg-amber-900/40 text-amber-300 border-amber-700' : 'bg-amber-50 text-amber-700 border-amber-300',
+    low: isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-100 text-slate-600 border-slate-300',
+  }[priority] || '';
+  return <span className={`border text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${cls}`}>{label}</span>;
+}
+
+function StatusPill({ status, isDark }) {
+  const isScheduled = status === 'scheduled';
+  const cls = isScheduled
+    ? (isDark ? 'bg-emerald-900/40 text-emerald-300 border-emerald-700' : 'bg-emerald-50 text-emerald-700 border-emerald-300')
+    : (isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-100 text-slate-600 border-slate-300');
+  return (
+    <span className={`border text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${cls}`}>
+      {isScheduled ? 'Təyin edilib' : 'Gözləmədə'}
+    </span>
+  );
+}
+
+function TicketTable({ tickets, isDark, showRequester, onAssign }) {
+  if (!tickets.length) {
+    return (
+      <div className={`rounded-xl border p-8 text-center text-sm ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
+        Heç bir müraciət tapılmadı
+      </div>
+    );
+  }
+
+  return (
+    <div className={`overflow-x-auto rounded-xl border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+      <table className="w-full text-sm">
+        <thead className={isDark ? 'bg-slate-900/60' : 'bg-slate-50'}>
+          <tr className={`text-left ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <th className="px-3 py-2 font-medium">№</th>
+            <th className="px-3 py-2 font-medium">Başlıq</th>
+            {showRequester ? <th className="px-3 py-2 font-medium">İstifadəçi</th> : null}
+            <th className="px-3 py-2 font-medium">Prioritet</th>
+            <th className="px-3 py-2 font-medium">Status</th>
+            <th className="px-3 py-2 font-medium">Tarix</th>
+            {onAssign ? <th className="px-3 py-2 font-medium" /> : null}
+          </tr>
+        </thead>
+        <tbody className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>
+          {tickets.map((t) => (
+            <tr key={t.id} className={isDark ? 'text-slate-200' : 'text-slate-700'}>
+              <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{t.ticketNumber}</td>
+              <td className="px-3 py-2">
+                <div className="font-medium">{t.title}</div>
+                <div className={`text-xs mt-0.5 max-w-md truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t.description}</div>
+              </td>
+              {showRequester ? <td className="px-3 py-2 whitespace-nowrap">{t.userName}</td> : null}
+              <td className="px-3 py-2"><PriorityPill priority={t.priority} isDark={isDark} /></td>
+              <td className="px-3 py-2"><StatusPill status={t.status} isDark={isDark} /></td>
+              <td className="px-3 py-2 text-xs whitespace-nowrap">
+                {t.scheduledStart ? (
+                  <>
+                    <div>{fmtDateTime(t.scheduledStart)}</div>
+                    <div className={isDark ? 'text-slate-500' : 'text-slate-400'}>— {fmtDateTime(t.scheduledEnd)}</div>
+                  </>
+                ) : '—'}
+              </td>
+              {onAssign ? (
+                <td className="px-3 py-2 whitespace-nowrap">
+                  <button type="button" onClick={() => onAssign(t)} className="btn-secondary text-xs px-2 py-1">
+                    {t.status === 'scheduled' ? 'Yenidən təyin et' : 'Təyin et'}
+                  </button>
+                </td>
+              ) : null}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const MONTH_NAMES_AZ = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun', 'İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
+const WEEKDAYS_AZ = ['B', 'B.e', 'Ç.a', 'Ç', 'C.a', 'C', 'Ş'];
+
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+function toISODate(y, m, d) {
+  return `${y}-${pad2(m + 1)}-${pad2(d)}`;
+}
+
+function buildMonthGrid(year, month) {
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  return cells;
+}
+
+function MentorCalendar({ ticketsByDate, selectedDate, onSelectDate, isDark }) {
+  const today = useMemo(() => new Date(), []);
+  const [cursor, setCursor] = useState({ year: today.getFullYear(), month: today.getMonth() });
+  const cells = useMemo(() => buildMonthGrid(cursor.year, cursor.month), [cursor]);
+  const todayKey = toISODate(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const goPrev = () => setCursor((c) => (c.month === 0 ? { year: c.year - 1, month: 11 } : { year: c.year, month: c.month - 1 }));
+  const goNext = () => setCursor((c) => (c.month === 11 ? { year: c.year + 1, month: 0 } : { year: c.year, month: c.month + 1 }));
+
+  return (
+    <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-700 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
+      <div className="flex items-center justify-between mb-3">
+        <button type="button" onClick={goPrev} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <ChevronLeft size={16} />
+        </button>
+        <span className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+          {MONTH_NAMES_AZ[cursor.month]} {cursor.year}
+        </span>
+        <button type="button" onClick={goNext} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <ChevronRight size={16} />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center mb-1">
+        {WEEKDAYS_AZ.map((w) => (
+          <span key={w} className={`text-[10px] font-semibold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{w}</span>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((day, i) => {
+          if (!day) return <span key={i} />;
+          const dateKey = toISODate(cursor.year, cursor.month, day);
+          const count = ticketsByDate.get(dateKey)?.length || 0;
+          const isToday = dateKey === todayKey;
+          const isSelected = dateKey === selectedDate;
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => onSelectDate(isSelected ? null : dateKey)}
+              className={`relative aspect-square flex items-center justify-center rounded-lg text-xs transition ${
+                isSelected
+                  ? 'bg-indigo-600 text-white font-bold'
+                  : isToday
+                  ? `ring-2 ring-indigo-400 font-bold ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`
+                  : count > 0
+                  ? (isDark ? 'bg-indigo-900/30 text-indigo-300 ring-1 ring-indigo-800' : 'bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200')
+                  : (isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100')
+              }`}
+            >
+              {day}
+              {count > 0 && !isSelected ? <span className="absolute bottom-0.5 right-0.5 h-1.5 w-1.5 rounded-full bg-indigo-500" /> : null}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function CreateTicketModal({ onClose, onCreated }) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [priority, setPriority] = useState('medium');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!title.trim() || !description.trim()) {
+      setError('Başlıq və təsvir tələb olunur');
+      return;
+    }
+    try {
+      setLoading(true);
+      await supportAPI.createTicket({ title: title.trim(), description: description.trim(), priority });
+      onCreated?.();
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Müraciət göndərilmədi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4">
+      <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-slate-900 p-5 shadow-2xl">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <h3 className="text-xl font-semibold text-white">Yeni dəstək müraciəti</h3>
+          <button type="button" onClick={onClose} className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/10">
+            Bağla
+          </button>
+        </div>
+        <form onSubmit={submit} className="space-y-3">
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Başlıq"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+          />
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Təsvir"
+            className="min-h-[112px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+          />
+          <select
+            value={priority}
+            onChange={(e) => setPriority(e.target.value)}
+            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+          >
+            {PRIORITY_OPTIONS.map((p) => (
+              <option key={p.value} value={p.value}>{p.label}</option>
+            ))}
+          </select>
+          {error ? <p className="text-sm text-red-300">{error}</p> : null}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
+          >
+            {loading ? 'Göndərilir...' : 'Göndər'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AssignScheduleModal({ ticket, onClose, onAssigned }) {
+  const [start, setStart] = useState(isoToDatetimeLocal(ticket.scheduledStart));
+  const [end, setEnd] = useState(isoToDatetimeLocal(ticket.scheduledEnd));
+  const [note, setNote] = useState(ticket.mentorNote || '');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!start || !end) {
+      setError('Başlanğıc və son tarix tələb olunur');
+      return;
+    }
+    try {
+      setLoading(true);
+      await supportAPI.assignSchedule(ticket.id, {
+        scheduledStart: datetimeLocalToUtcIso(start),
+        scheduledEnd: datetimeLocalToUtcIso(end),
+        mentorNote: note.trim(),
+      });
+      onAssigned?.();
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Tarix təyin edilmədi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4">
+      <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-slate-900 p-5 shadow-2xl">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-semibold text-white">Tarix təyin et</h3>
+            <p className="mt-1 text-sm text-slate-300">{ticket.ticketNumber} — {ticket.title}</p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/10">
+            Bağla
+          </button>
+        </div>
+        <form onSubmit={submit} className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs text-slate-400">Başlanğıc</label>
+            <input
+              type="datetime-local"
+              value={start}
+              onChange={(e) => setStart(e.target.value)}
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-slate-400">Son</label>
+            <input
+              type="datetime-local"
+              value={end}
+              onChange={(e) => setEnd(e.target.value)}
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+            />
+          </div>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Əlavə qeyd (istəyə görə)"
+            className="min-h-[84px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+          />
+          {error ? <p className="text-sm text-red-300">{error}</p> : null}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
+          >
+            {loading ? 'Göndərilir...' : 'Təyin et'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default function SupportPage() {
+  const { user } = useAuth();
+  const { isDark } = useTheme();
+  const isMentor = !!user?.isMentor || user?.role === 'admin';
+
+  const [myTickets, setMyTickets] = useState([]);
+  const [allTickets, setAllTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [assigningTicket, setAssigningTicket] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [view, setView] = useState('mine');
+
+  const loadAllData = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const mineRes = await supportAPI.listMine();
+      setMyTickets(mineRes?.data?.tickets || []);
+      if (isMentor) {
+        const allRes = await supportAPI.listAll();
+        setAllTickets(allRes?.data?.tickets || []);
+      }
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Müraciətlər yüklənmədi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAllData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const ticketsByDate = useMemo(() => {
+    const map = new Map();
+    for (const t of allTickets) {
+      if (!t.scheduledStart) continue;
+      const bakuDate = isoToDatetimeLocal(t.scheduledStart).slice(0, 10);
+      if (!map.has(bakuDate)) map.set(bakuDate, []);
+      map.get(bakuDate).push(t);
+    }
+    return map;
+  }, [allTickets]);
+
+  const ticketsOnSelectedDate = selectedDate ? (ticketsByDate.get(selectedDate) || []) : [];
+
+  return (
+    <div className="page-shell">
+      <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
+        <h1 className="page-title flex items-center gap-2">
+          <LifeBuoy size={18} />
+          Support
+        </h1>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={loadAllData}
+            disabled={loading}
+            className="btn-secondary text-sm flex items-center gap-1.5 disabled:opacity-60"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            Yenilə
+          </button>
+          <button type="button" onClick={() => setShowCreateModal(true)} className="btn-primary text-sm flex items-center gap-1.5">
+            <Plus size={14} />
+            Yeni müraciət
+          </button>
+        </div>
+      </div>
+
+      {error ? (
+        <div className={`mb-4 rounded-lg border px-3 py-2 text-sm flex items-center gap-2 ${isDark ? 'border-rose-800 bg-rose-950/30 text-rose-300' : 'border-rose-200 bg-rose-50 text-rose-700'}`}>
+          <AlertCircle size={14} />
+          {error}
+        </div>
+      ) : null}
+
+      {isMentor ? (
+        <div className={`mb-6 rounded-xl p-1 border inline-flex gap-1 flex-wrap ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
+          <button
+            type="button"
+            onClick={() => setView('mine')}
+            className={`px-3 py-2 text-sm rounded-lg transition ${view === 'mine' ? 'bg-indigo-600 text-white shadow-sm' : isDark ? 'text-slate-300 hover:text-slate-100' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            Mənim müraciətlərim ({myTickets.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setView('all')}
+            className={`px-3 py-2 text-sm rounded-lg transition ${view === 'all' ? 'bg-indigo-600 text-white shadow-sm' : isDark ? 'text-slate-300 hover:text-slate-100' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            Bütün müraciətlər ({allTickets.length})
+          </button>
+        </div>
+      ) : null}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 size={24} className="animate-spin text-slate-400" />
+        </div>
+      ) : !isMentor || view === 'mine' ? (
+        <TicketTable tickets={myTickets} isDark={isDark} showRequester={false} />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
+          <MentorCalendar
+            ticketsByDate={ticketsByDate}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            isDark={isDark}
+          />
+          <div>
+            {selectedDate ? (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                    {selectedDate} tarixindəki müraciətlər ({ticketsOnSelectedDate.length})
+                  </h2>
+                  <button type="button" onClick={() => setSelectedDate(null)} className="text-xs text-indigo-500 hover:underline">
+                    Hamısına bax
+                  </button>
+                </div>
+                <TicketTable tickets={ticketsOnSelectedDate} isDark={isDark} showRequester onAssign={setAssigningTicket} />
+              </div>
+            ) : (
+              <TicketTable tickets={allTickets} isDark={isDark} showRequester onAssign={setAssigningTicket} />
+            )}
+          </div>
+        </div>
+      )}
+
+      {showCreateModal ? (
+        <CreateTicketModal
+          onClose={() => setShowCreateModal(false)}
+          onCreated={() => {
+            setShowCreateModal(false);
+            loadAllData();
+          }}
+        />
+      ) : null}
+
+      {assigningTicket ? (
+        <AssignScheduleModal
+          ticket={assigningTicket}
+          onClose={() => setAssigningTicket(null)}
+          onAssigned={() => {
+            setAssigningTicket(null);
+            loadAllData();
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}

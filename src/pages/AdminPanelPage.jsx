@@ -7,7 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import PartnersManagement from '../components/PartnersManagement';
 import ZikAccounts from '../components/ZikAccounts';
 import ReferralManagementTab from '../components/ReferralManagementTab';
-import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle, CalendarClock, Clock3, ShieldAlert, Plus, X, Eye, Star, Check, Shield, ChevronDown, Zap, Globe } from 'lucide-react';
+import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle, CalendarClock, Clock3, ShieldAlert, Plus, X, Eye, Star, Check, Shield, ChevronDown, Zap, Globe, LifeBuoy } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { TAB_KEYS, USER_DEFAULT_ALLOWED_TABS } from '../utils/planAccess';
 import * as XLSX from 'xlsx';
@@ -58,6 +58,7 @@ function defaultEditForUser(u) {
     trackingCreditsLimit: safeToString(u.trackingCreditsLimit),
     ebayAccountsLimit: safeToString(u.ebayAccountsLimit),
     isIt6HourChecker: !!u.isIt6HourChecker,
+    isMentor: !!u.isMentor,
     isUntouched: !!u.isUntouched,   // ✅ add this
   };
 }
@@ -285,6 +286,7 @@ export default function AdminPanelPage() {
         resetTrackingCreditsUsage: !!resetUsage[`${userId}__trackingCredits`],
         isUntouched: !!uEdits.isUntouched,
         isIt6HourChecker: !!uEdits.isIt6HourChecker,
+        isMentor: !!uEdits.isMentor,
       });
 
       await refreshData();
@@ -1080,7 +1082,8 @@ export default function AdminPanelPage() {
                             {u.isBlocked && <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700 dark:bg-red-950/50 dark:text-red-400">{t('adminPanelPage.blocked')}</span>}
                             {u.isUntouched && <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[11px] font-semibold text-purple-700 dark:bg-purple-950/50 dark:text-purple-300">{t('adminPanelPage.untouched')}</span>}
                             {u.isIt6HourChecker && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"><Clock3 size={9} />6h</span>}
-                            {!u.isBlocked && !u.isUntouched && !u.isIt6HourChecker && <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">Active</span>}
+                            {u.isMentor && <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"><LifeBuoy size={9} />Mentor</span>}
+                            {!u.isBlocked && !u.isUntouched && !u.isIt6HourChecker && !u.isMentor && <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">Active</span>}
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -1260,6 +1263,11 @@ export default function AdminPanelPage() {
                       <input type="checkbox" checked={!!rowEdits.isIt6HourChecker} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], isIt6HourChecker: e.target.checked } }))} className="rounded" />
                       <Clock3 size={11} className="text-amber-500" />
                       <span className="text-amber-500 font-semibold">6-hour Amazon checker</span>
+                    </label>
+                    <label className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <input type="checkbox" checked={!!rowEdits.isMentor} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], isMentor: e.target.checked } }))} className="rounded" />
+                      <LifeBuoy size={11} className="text-indigo-500" />
+                      <span className="text-indigo-500 font-semibold">Support mentor</span>
                     </label>
                   </div>
                   <div className="flex gap-3">

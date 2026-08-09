@@ -238,6 +238,13 @@ export const casesAPI = {
   sendInquiryMessage: (inquiryId, payload) => api.post(`/ebay/inquiries/${encodeURIComponent(inquiryId)}/send-message`, payload),
 };
 
+export const supportAPI = {
+  createTicket: (payload) => api.post('/support/tickets', payload),
+  listMine: () => api.get('/support/tickets/mine'),
+  listAll: () => api.get('/support/tickets'),
+  assignSchedule: (id, payload) => api.put(`/support/tickets/${id}/schedule`, payload),
+};
+
 export const browseAPI = {
   search: (params = {}) => api.get('/ebay/browse/search', { params }),
   getSoldQuantity: (payload) => api.post('/ebay/browse/sold-quantity', payload),

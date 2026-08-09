@@ -45,6 +45,7 @@ import LearningVideosPage from './pages/LearningVideosPage';
 import ProfitTablePage from './pages/ProfitTablePage';
 import TrackingPage from './pages/TrackingPage';
 import CasesPage from './pages/CasesPage';
+import SupportPage from './pages/SupportPage';
 import UpgradePlanPage from './pages/UpgradePlanPage';
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
@@ -307,6 +308,14 @@ function AppContent() {
               element={
                 <ProtectedRoute requiredTab={TAB_KEYS.CASES}>
                   <CasesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/support"
+              element={
+                <ProtectedRoute>
+                  <SupportPage />
                 </ProtectedRoute>
               }
             />
