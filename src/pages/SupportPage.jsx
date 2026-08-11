@@ -471,13 +471,19 @@ function AssignScheduleModal({ ticket, onClose, onAssigned, isDark }) {
   );
 }
 
+const TYPING_STOP_DELAY_MS = 1500;
+const TYPING_SAFETY_CLEAR_MS = 4000;
+
 function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [otherTyping, setOtherTyping] = useState(false);
   const bottomRef = useRef(null);
+  const typingStopTimerRef = useRef(null);
+  const otherTypingClearTimerRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -486,10 +492,20 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
     const handleMessage = (payload) => {
       if (Number(payload?.ticketId) !== Number(ticket.id)) return;
       setMessages((prev) => (prev.some((m) => m.id === payload.id) ? prev : [...prev, payload]));
+      setOtherTyping(false);
+    };
+    const handleTyping = (payload) => {
+      if (Number(payload?.ticketId) !== Number(ticket.id)) return;
+      setOtherTyping(!!payload?.isTyping);
+      clearTimeout(otherTypingClearTimerRef.current);
+      if (payload?.isTyping) {
+        otherTypingClearTimerRef.current = setTimeout(() => setOtherTyping(false), TYPING_SAFETY_CLEAR_MS);
+      }
     };
     const joinRoom = () => s.emit('ticket:join', { ticketId: ticket.id });
 
     s.on('ticket:message', handleMessage);
+    s.on('ticket:typing', handleTyping);
     s.on('connect', joinRoom);
     if (!s.connected) s.connect();
     else joinRoom();
@@ -507,15 +523,29 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
 
     return () => {
       cancelled = true;
+      clearTimeout(typingStopTimerRef.current);
+      clearTimeout(otherTypingClearTimerRef.current);
+      s.emit('ticket:typing', { ticketId: ticket.id, isTyping: false });
       s.emit('ticket:leave', { ticketId: ticket.id });
       s.off('ticket:message', handleMessage);
+      s.off('ticket:typing', handleTyping);
       s.off('connect', joinRoom);
     };
   }, [ticket.id]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, otherTyping]);
+
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+    const s = getSocket();
+    s.emit('ticket:typing', { ticketId: ticket.id, isTyping: true });
+    clearTimeout(typingStopTimerRef.current);
+    typingStopTimerRef.current = setTimeout(() => {
+      s.emit('ticket:typing', { ticketId: ticket.id, isTyping: false });
+    }, TYPING_STOP_DELAY_MS);
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -523,6 +553,8 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
     if (!text) return;
     setError('');
     setSending(true);
+    clearTimeout(typingStopTimerRef.current);
+    getSocket().emit('ticket:typing', { ticketId: ticket.id, isTyping: false });
     try {
       await supportAPI.sendMessage(ticket.id, { message: text });
       setInput('');
@@ -579,6 +611,19 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
               );
             })
           )}
+          {otherTyping ? (
+            <div className="flex justify-start">
+              <div className={`flex items-center gap-1 rounded-2xl px-3 py-2.5 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 w-1.5 rounded-full animate-bounce ${isDark ? 'bg-slate-400' : 'bg-slate-500'}`}
+                    style={{ animationDelay: `${i * 150}ms` }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
           <div ref={bottomRef} />
         </div>
 
@@ -588,7 +633,7 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
           <input
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInputChange}
             placeholder="Mesaj yazın..."
             className={`flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:border-indigo-500 ${
               isDark ? 'border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400'
