@@ -481,9 +481,12 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
+  const [otherOnline, setOtherOnline] = useState(false);
   const bottomRef = useRef(null);
   const typingStopTimerRef = useRef(null);
   const otherTypingClearTimerRef = useRef(null);
+
+  const otherPartyId = ticket.userId === currentUserId ? ticket.mentorId : ticket.userId;
 
   useEffect(() => {
     let cancelled = false;
@@ -502,10 +505,16 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
         otherTypingClearTimerRef.current = setTimeout(() => setOtherTyping(false), TYPING_SAFETY_CLEAR_MS);
       }
     };
+    const handlePresence = (payload) => {
+      if (Number(payload?.ticketId) !== Number(ticket.id)) return;
+      if (payload?.userId !== otherPartyId) return;
+      setOtherOnline(!!payload?.online);
+    };
     const joinRoom = () => s.emit('ticket:join', { ticketId: ticket.id });
 
     s.on('ticket:message', handleMessage);
     s.on('ticket:typing', handleTyping);
+    s.on('ticket:presence', handlePresence);
     s.on('connect', joinRoom);
     if (!s.connected) s.connect();
     else joinRoom();
@@ -529,9 +538,10 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
       s.emit('ticket:leave', { ticketId: ticket.id });
       s.off('ticket:message', handleMessage);
       s.off('ticket:typing', handleTyping);
+      s.off('ticket:presence', handlePresence);
       s.off('connect', joinRoom);
     };
-  }, [ticket.id]);
+  }, [ticket.id, otherPartyId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -572,6 +582,17 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
           <div>
             <h3 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{ticket.ticketNumber}</h3>
             <p className={`mt-0.5 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ticket.title}</p>
+            <div className="mt-1 flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                {otherOnline ? (
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                ) : null}
+                <span className={`relative inline-flex h-2 w-2 rounded-full ${otherOnline ? 'bg-emerald-500' : isDark ? 'bg-slate-600' : 'bg-slate-300'}`} />
+              </span>
+              <span className={`text-[11px] font-medium ${otherOnline ? 'text-emerald-500' : isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                {otherOnline ? 'Onlayn' : 'Oflayn'}
+              </span>
+            </div>
           </div>
           <button
             type="button"
