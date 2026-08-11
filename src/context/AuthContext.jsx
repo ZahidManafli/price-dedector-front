@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { authAPI, maintenanceAPI } from '../services/api';
 import { getAllowedTabs, hasTabAccess as checkTabAccess } from '../utils/planAccess';
+import { disconnectSocket } from '../services/socket';
 
 export const AuthContext = createContext();
 
@@ -25,6 +26,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('authToken');
       localStorage.removeItem('authUser');
     } catch {}
+    disconnectSocket();
   };
 
   const handleMaintenanceLockout = (maintenanceInfo = null) => {

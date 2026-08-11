@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { LifeBuoy, Plus, Loader2, RefreshCw, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { LifeBuoy, Plus, Loader2, RefreshCw, ChevronLeft, ChevronRight, AlertCircle, MessageSquare, Send } from 'lucide-react';
 import { supportAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { getSocket } from '../services/socket';
 
 const PRIORITY_OPTIONS = [
   { value: 'low', label: 'Aşağı' },
@@ -67,7 +68,7 @@ function StatusPill({ status, isDark }) {
   );
 }
 
-function TicketTable({ tickets, isDark, showRequester, onAssign, onRowClick }) {
+function TicketTable({ tickets, isDark, showRequester, onAssign, onRowClick, onOpenChat }) {
   if (!tickets.length) {
     return (
       <div className={`rounded-xl border p-8 text-center text-sm ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
@@ -87,6 +88,7 @@ function TicketTable({ tickets, isDark, showRequester, onAssign, onRowClick }) {
             <th className="px-3 py-2 font-medium">Prioritet</th>
             <th className="px-3 py-2 font-medium">Status</th>
             <th className="px-3 py-2 font-medium">Tarix</th>
+            <th className="px-3 py-2 font-medium" />
             {onAssign ? <th className="px-3 py-2 font-medium" /> : null}
           </tr>
         </thead>
@@ -112,6 +114,24 @@ function TicketTable({ tickets, isDark, showRequester, onAssign, onRowClick }) {
                     <div className={isDark ? 'text-slate-500' : 'text-slate-400'}>— {fmtDateTime(t.scheduledEnd)}</div>
                   </>
                 ) : '—'}
+              </td>
+              <td className="px-3 py-2 whitespace-nowrap">
+                <button
+                  type="button"
+                  disabled={t.status !== 'scheduled'}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenChat?.(t);
+                  }}
+                  title={t.status === 'scheduled' ? 'Söhbət' : 'Söhbət yalnız tarix təyin edildikdən sonra aktivdir'}
+                  className={`p-1.5 rounded-lg transition ${
+                    t.status === 'scheduled'
+                      ? isDark ? 'text-indigo-300 hover:bg-slate-800' : 'text-indigo-600 hover:bg-slate-100'
+                      : isDark ? 'text-slate-600 cursor-not-allowed' : 'text-slate-300 cursor-not-allowed'
+                  }`}
+                >
+                  <MessageSquare size={16} />
+                </button>
               </td>
               {onAssign ? (
                 <td className="px-3 py-2 whitespace-nowrap">
@@ -222,7 +242,7 @@ function DetailRow({ label, value, isDark }) {
   );
 }
 
-function TicketDetailModal({ ticket, isDark, onClose, onAssign }) {
+function TicketDetailModal({ ticket, isDark, onClose, onAssign, onOpenChat }) {
   const cardCls = `w-full max-w-lg rounded-2xl border p-5 shadow-2xl ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`;
 
   return (
@@ -270,15 +290,29 @@ function TicketDetailModal({ ticket, isDark, onClose, onAssign }) {
           <DetailRow label="Yaradılma tarixi" value={fmtDateTime(ticket.createdAt)} isDark={isDark} />
         </div>
 
-        {onAssign ? (
-          <button
-            type="button"
-            onClick={() => onAssign(ticket)}
-            className="mt-5 w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
-          >
-            {ticket.status === 'scheduled' ? 'Yenidən təyin et' : 'Təyin et'}
-          </button>
-        ) : null}
+        <div className="mt-5 flex gap-2">
+          {ticket.status === 'scheduled' ? (
+            <button
+              type="button"
+              onClick={() => onOpenChat?.(ticket)}
+              className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
+                isDark ? 'border border-slate-700 text-slate-100 hover:bg-slate-800' : 'border border-slate-200 text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              <MessageSquare size={14} />
+              Söhbət
+            </button>
+          ) : null}
+          {onAssign ? (
+            <button
+              type="button"
+              onClick={() => onAssign(ticket)}
+              className="flex-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
+            >
+              {ticket.status === 'scheduled' ? 'Yenidən təyin et' : 'Təyin et'}
+            </button>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -437,6 +471,142 @@ function AssignScheduleModal({ ticket, onClose, onAssigned, isDark }) {
   );
 }
 
+function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const s = getSocket();
+
+    const handleMessage = (payload) => {
+      if (Number(payload?.ticketId) !== Number(ticket.id)) return;
+      setMessages((prev) => (prev.some((m) => m.id === payload.id) ? prev : [...prev, payload]));
+    };
+    const joinRoom = () => s.emit('ticket:join', { ticketId: ticket.id });
+
+    s.on('ticket:message', handleMessage);
+    s.on('connect', joinRoom);
+    if (!s.connected) s.connect();
+    else joinRoom();
+
+    (async () => {
+      try {
+        const res = await supportAPI.listMessages(ticket.id);
+        if (!cancelled) setMessages(res?.data?.messages || []);
+      } catch (err) {
+        if (!cancelled) setError(err?.response?.data?.error || err.message || 'Mesajlar yüklənmədi');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      s.emit('ticket:leave', { ticketId: ticket.id });
+      s.off('ticket:message', handleMessage);
+      s.off('connect', joinRoom);
+    };
+  }, [ticket.id]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text) return;
+    setError('');
+    setSending(true);
+    try {
+      await supportAPI.sendMessage(ticket.id, { message: text });
+      setInput('');
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Mesaj göndərilmədi');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className={`fixed inset-0 z-[80] flex items-center justify-center p-4 ${isDark ? 'bg-slate-950/75' : 'bg-slate-900/40'}`}>
+      <div className={`w-full max-w-lg h-[70vh] flex flex-col rounded-2xl border shadow-2xl ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}>
+        <div className={`flex items-start justify-between gap-3 p-4 border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+          <div>
+            <h3 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{ticket.ticketNumber}</h3>
+            <p className={`mt-0.5 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ticket.title}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className={`rounded-lg border px-3 py-1.5 text-sm ${isDark ? 'border-white/15 text-slate-300 hover:bg-white/10' : 'border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+          >
+            Bağla
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {loading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 size={20} className="animate-spin text-slate-400" />
+            </div>
+          ) : !messages.length ? (
+            <p className={`text-sm text-center py-10 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Hələ mesaj yoxdur. Söhbətə başlayın.</p>
+          ) : (
+            messages.map((m) => {
+              const mine = m.senderId === currentUserId;
+              return (
+                <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
+                      mine ? 'bg-indigo-600 text-white' : isDark ? 'bg-slate-800 text-slate-100' : 'bg-slate-100 text-slate-900'
+                    }`}
+                  >
+                    {!mine ? (
+                      <div className={`text-[11px] font-semibold mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.senderName}</div>
+                    ) : null}
+                    <div className="whitespace-pre-wrap">{m.message}</div>
+                    <div className={`text-[10px] mt-1 text-right ${mine ? 'text-indigo-100/70' : isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {fmtDateTime(m.createdAt)}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        {error ? <p className={`px-4 pb-2 text-xs ${isDark ? 'text-red-300' : 'text-red-600'}`}>{error}</p> : null}
+
+        <form onSubmit={submit} className={`flex items-center gap-2 p-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Mesaj yazın..."
+            className={`flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:border-indigo-500 ${
+              isDark ? 'border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400'
+            }`}
+          />
+          <button
+            type="submit"
+            disabled={sending || !input.trim()}
+            className="rounded-lg bg-indigo-600 p-2.5 text-white transition hover:bg-indigo-500 disabled:opacity-60"
+          >
+            <Send size={16} />
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function SupportPage() {
   const { user } = useAuth();
   const { isDark } = useTheme();
@@ -449,6 +619,7 @@ export default function SupportPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [assigningTicket, setAssigningTicket] = useState(null);
   const [viewingTicket, setViewingTicket] = useState(null);
+  const [chatTicket, setChatTicket] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [view, setView] = useState('mine');
 
@@ -542,7 +713,7 @@ export default function SupportPage() {
           <Loader2 size={24} className="animate-spin text-slate-400" />
         </div>
       ) : !isMentor || view === 'mine' ? (
-        <TicketTable tickets={myTickets} isDark={isDark} showRequester={false} onRowClick={setViewingTicket} />
+        <TicketTable tickets={myTickets} isDark={isDark} showRequester={false} onRowClick={setViewingTicket} onOpenChat={setChatTicket} />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
           <MentorCalendar
@@ -562,10 +733,10 @@ export default function SupportPage() {
                     Hamısına bax
                   </button>
                 </div>
-                <TicketTable tickets={ticketsOnSelectedDate} isDark={isDark} showRequester onAssign={setAssigningTicket} onRowClick={setViewingTicket} />
+                <TicketTable tickets={ticketsOnSelectedDate} isDark={isDark} showRequester onAssign={setAssigningTicket} onRowClick={setViewingTicket} onOpenChat={setChatTicket} />
               </div>
             ) : (
-              <TicketTable tickets={allTickets} isDark={isDark} showRequester onAssign={setAssigningTicket} onRowClick={setViewingTicket} />
+              <TicketTable tickets={allTickets} isDark={isDark} showRequester onAssign={setAssigningTicket} onRowClick={setViewingTicket} onOpenChat={setChatTicket} />
             )}
           </div>
         </div>
@@ -599,6 +770,10 @@ export default function SupportPage() {
           isDark={isDark}
           ticket={viewingTicket}
           onClose={() => setViewingTicket(null)}
+          onOpenChat={(t) => {
+            setViewingTicket(null);
+            setChatTicket(t);
+          }}
           onAssign={
             isMentor
               ? (t) => {
@@ -607,6 +782,15 @@ export default function SupportPage() {
                 }
               : undefined
           }
+        />
+      ) : null}
+
+      {chatTicket ? (
+        <TicketChatModal
+          isDark={isDark}
+          ticket={chatTicket}
+          currentUserId={user?.uid}
+          onClose={() => setChatTicket(null)}
         />
       ) : null}
     </div>
