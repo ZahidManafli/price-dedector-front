@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { LifeBuoy, Plus, Loader2, RefreshCw, ChevronLeft, ChevronRight, AlertCircle, MessageSquare, Send } from 'lucide-react';
+import { LifeBuoy, Plus, Loader2, RefreshCw, ChevronLeft, ChevronRight, AlertCircle, MessageSquare, Send, MessageCircle, X, Users } from 'lucide-react';
 import { supportAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -673,6 +673,352 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
   );
 }
 
+function ConversationChatPane({ conversationId, isDark, currentUserId, onActivity }) {
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const [otherTyping, setOtherTyping] = useState(false);
+  const [otherOnline, setOtherOnline] = useState(false);
+  const bottomRef = useRef(null);
+  const typingStopTimerRef = useRef(null);
+  const otherTypingClearTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (!conversationId) return undefined;
+    let cancelled = false;
+    setMessages([]);
+    setLoading(true);
+    setError('');
+    setOtherTyping(false);
+    setOtherOnline(false);
+    const s = getSocket();
+
+    const handleMessage = (payload) => {
+      if (Number(payload?.conversationId) !== Number(conversationId)) return;
+      setMessages((prev) => (prev.some((m) => m.id === payload.id) ? prev : [...prev, payload]));
+      setOtherTyping(false);
+      onActivity?.(payload);
+    };
+    const handleTyping = (payload) => {
+      if (Number(payload?.conversationId) !== Number(conversationId)) return;
+      if (payload?.userId === currentUserId) return;
+      setOtherTyping(!!payload?.isTyping);
+      clearTimeout(otherTypingClearTimerRef.current);
+      if (payload?.isTyping) {
+        otherTypingClearTimerRef.current = setTimeout(() => setOtherTyping(false), TYPING_SAFETY_CLEAR_MS);
+      }
+    };
+    const handlePresence = (payload) => {
+      if (Number(payload?.conversationId) !== Number(conversationId)) return;
+      setOtherOnline(!!payload?.online);
+    };
+    const joinRoom = () => s.emit('conv:join', { conversationId });
+
+    s.on('conv:message', handleMessage);
+    s.on('conv:typing', handleTyping);
+    s.on('conv:presence', handlePresence);
+    s.on('connect', joinRoom);
+    if (!s.connected) s.connect();
+    else joinRoom();
+
+    (async () => {
+      try {
+        const res = await supportAPI.listConversationMessages(conversationId);
+        if (!cancelled) setMessages(res?.data?.messages || []);
+      } catch (err) {
+        if (!cancelled) setError(err?.response?.data?.error || err.message || 'Mesajlar yüklənmədi');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(typingStopTimerRef.current);
+      clearTimeout(otherTypingClearTimerRef.current);
+      s.emit('conv:typing', { conversationId, isTyping: false });
+      s.emit('conv:leave', { conversationId });
+      s.off('conv:message', handleMessage);
+      s.off('conv:typing', handleTyping);
+      s.off('conv:presence', handlePresence);
+      s.off('connect', joinRoom);
+    };
+  }, [conversationId]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, otherTyping]);
+
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+    const s = getSocket();
+    s.emit('conv:typing', { conversationId, isTyping: true });
+    clearTimeout(typingStopTimerRef.current);
+    typingStopTimerRef.current = setTimeout(() => {
+      s.emit('conv:typing', { conversationId, isTyping: false });
+    }, TYPING_STOP_DELAY_MS);
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text) return;
+    setError('');
+    setSending(true);
+    clearTimeout(typingStopTimerRef.current);
+    getSocket().emit('conv:typing', { conversationId, isTyping: false });
+    try {
+      await supportAPI.sendConversationMessage(conversationId, { message: text });
+      setInput('');
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Mesaj göndərilmədi');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full min-h-0">
+      <div className="flex items-center gap-1.5 px-4 pt-3">
+        <span className="relative flex h-2 w-2">
+          {otherOnline ? <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" /> : null}
+          <span className={`relative inline-flex h-2 w-2 rounded-full ${otherOnline ? 'bg-emerald-500' : isDark ? 'bg-slate-600' : 'bg-slate-300'}`} />
+        </span>
+        <span className={`text-[11px] font-medium ${otherOnline ? 'text-emerald-500' : isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+          {otherOnline ? 'Onlayn' : 'Oflayn'}
+        </span>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+        {loading ? (
+          <div className="flex items-center justify-center py-10">
+            <Loader2 size={20} className="animate-spin text-slate-400" />
+          </div>
+        ) : !messages.length ? (
+          <p className={`text-sm text-center py-10 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Hələ mesaj yoxdur. Söhbətə başlayın.</p>
+        ) : (
+          messages.map((m) => {
+            const mine = m.senderId === currentUserId;
+            return (
+              <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
+                    mine ? 'bg-indigo-600 text-white' : isDark ? 'bg-slate-800 text-slate-100' : 'bg-slate-100 text-slate-900'
+                  }`}
+                >
+                  {!mine ? (
+                    <div className={`text-[11px] font-semibold mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.senderName}</div>
+                  ) : null}
+                  <div className="whitespace-pre-wrap">{m.message}</div>
+                  <div className={`text-[10px] mt-1 text-right ${mine ? 'text-indigo-100/70' : isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {fmtDateTime(m.createdAt)}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+        {otherTyping ? (
+          <div className="flex justify-start">
+            <div className={`flex items-center gap-1 rounded-2xl px-3 py-2.5 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className={`h-1.5 w-1.5 rounded-full animate-bounce ${isDark ? 'bg-slate-400' : 'bg-slate-500'}`}
+                  style={{ animationDelay: `${i * 150}ms` }}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+        <div ref={bottomRef} />
+      </div>
+
+      {error ? <p className={`px-4 pb-2 text-xs ${isDark ? 'text-red-300' : 'text-red-600'}`}>{error}</p> : null}
+
+      <form onSubmit={submit} className={`flex items-center gap-2 p-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+        <input
+          type="text"
+          value={input}
+          onChange={handleInputChange}
+          placeholder="Mesaj yazın..."
+          className={`flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:border-indigo-500 ${
+            isDark ? 'border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400'
+          }`}
+        />
+        <button
+          type="submit"
+          disabled={sending || !input.trim()}
+          className="rounded-lg bg-indigo-600 p-2.5 text-white transition hover:bg-indigo-500 disabled:opacity-60"
+        >
+          <Send size={16} />
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function timeAgoShort(iso) {
+  if (!iso) return '';
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'indi';
+  if (mins < 60) return `${mins}d`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}s`;
+  return `${Math.floor(hours / 24)}g`;
+}
+
+function SupportInboxPanel({ isDark, isMentor, currentUserId, onClose }) {
+  const [conversations, setConversations] = useState([]);
+  const [loadingList, setLoadingList] = useState(isMentor);
+  const [listError, setListError] = useState('');
+  const [selectedId, setSelectedId] = useState(null);
+  const [myConversationId, setMyConversationId] = useState(null);
+  const [loadingMine, setLoadingMine] = useState(!isMentor);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (isMentor) {
+      (async () => {
+        setLoadingList(true);
+        setListError('');
+        try {
+          const res = await supportAPI.listConversations();
+          const list = res?.data?.conversations || [];
+          if (!cancelled) {
+            setConversations(list);
+            setSelectedId((prev) => prev ?? list[0]?.id ?? null);
+          }
+        } catch (err) {
+          if (!cancelled) setListError(err?.response?.data?.error || err.message || 'Söhbətlər yüklənmədi');
+        } finally {
+          if (!cancelled) setLoadingList(false);
+        }
+      })();
+    } else {
+      (async () => {
+        setLoadingMine(true);
+        try {
+          const res = await supportAPI.getMyConversation();
+          if (!cancelled) setMyConversationId(res?.data?.conversation?.id || null);
+        } catch (err) {
+          if (!cancelled) setListError(err?.response?.data?.error || err.message || 'Söhbət açılmadı');
+        } finally {
+          if (!cancelled) setLoadingMine(false);
+        }
+      })();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isMentor]);
+
+  const handleActivity = (conversationId) => (payload) => {
+    setConversations((prev) => {
+      const next = prev.map((c) =>
+        c.id === conversationId ? { ...c, lastMessage: payload.message, lastMessageAt: payload.createdAt } : c
+      );
+      next.sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
+      return next;
+    });
+  };
+
+  const activeConversation = conversations.find((c) => c.id === selectedId);
+
+  return (
+    <div className="fixed inset-0 z-[90] flex justify-end">
+      <div className="absolute inset-0 bg-slate-950/50" onClick={onClose} />
+      <div className={`relative w-full ${isMentor ? 'max-w-3xl' : 'max-w-md'} h-full flex shadow-2xl ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+        {isMentor ? (
+          <div className={`w-64 shrink-0 border-r flex flex-col ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+            <div className={`flex items-center gap-1.5 p-4 border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+              <Users size={14} className={isDark ? 'text-slate-300' : 'text-slate-500'} />
+              <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Söhbətlər</h3>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {loadingList ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 size={18} className="animate-spin text-slate-400" />
+                </div>
+              ) : listError ? (
+                <p className={`p-4 text-xs ${isDark ? 'text-red-300' : 'text-red-600'}`}>{listError}</p>
+              ) : !conversations.length ? (
+                <p className={`p-4 text-sm text-center ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Hələ söhbət yoxdur</p>
+              ) : (
+                conversations.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setSelectedId(c.id)}
+                    className={`w-full text-left px-4 py-3 border-b transition ${isDark ? 'border-slate-800/60' : 'border-slate-50'} ${
+                      selectedId === c.id
+                        ? isDark ? 'bg-slate-800' : 'bg-indigo-50'
+                        : isDark ? 'hover:bg-slate-800/60' : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`text-sm font-medium truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{c.userName}</span>
+                      <span className={`text-[10px] shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{timeAgoShort(c.lastMessageAt)}</span>
+                    </div>
+                    {c.userPhone ? <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{c.userPhone}</div> : null}
+                    {c.lastMessage ? (
+                      <div className={`text-xs truncate mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{c.lastMessage}</div>
+                    ) : null}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="flex-1 flex flex-col min-w-0">
+          <div className={`flex items-center justify-between gap-3 p-4 border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+            <h3 className={`text-base font-semibold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              {isMentor ? activeConversation?.userName || 'Söhbət' : 'Mentor'}
+            </h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className={`shrink-0 rounded-lg border p-1.5 ${isDark ? 'border-white/15 text-slate-300 hover:bg-white/10' : 'border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {isMentor ? (
+            selectedId ? (
+              <ConversationChatPane
+                key={selectedId}
+                conversationId={selectedId}
+                isDark={isDark}
+                currentUserId={currentUserId}
+                onActivity={handleActivity(selectedId)}
+              />
+            ) : (
+              <div className="flex-1 flex items-center justify-center">
+                <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Söhbət seçin</p>
+              </div>
+            )
+          ) : loadingMine ? (
+            <div className="flex-1 flex items-center justify-center">
+              <Loader2 size={20} className="animate-spin text-slate-400" />
+            </div>
+          ) : myConversationId ? (
+            <ConversationChatPane conversationId={myConversationId} isDark={isDark} currentUserId={currentUserId} />
+          ) : (
+            <p className={`p-4 text-sm ${isDark ? 'text-red-300' : 'text-red-600'}`}>{listError || 'Söhbət açılmadı'}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SupportPage() {
   const { user } = useAuth();
   const { isDark } = useTheme();
@@ -686,6 +1032,7 @@ export default function SupportPage() {
   const [assigningTicket, setAssigningTicket] = useState(null);
   const [viewingTicket, setViewingTicket] = useState(null);
   const [chatTicket, setChatTicket] = useState(null);
+  const [showInbox, setShowInbox] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [view, setView] = useState('mine');
 
@@ -744,6 +1091,10 @@ export default function SupportPage() {
           <button type="button" onClick={() => setShowCreateModal(true)} className="btn-primary text-sm flex items-center gap-1.5">
             <Plus size={14} />
             Yeni müraciət
+          </button>
+          <button type="button" onClick={() => setShowInbox(true)} className="btn-secondary text-sm flex items-center gap-1.5">
+            <MessageCircle size={14} />
+            {isMentor ? 'Söhbətlər' : 'Mentora yaz'}
           </button>
         </div>
       </div>
@@ -857,6 +1208,15 @@ export default function SupportPage() {
           ticket={chatTicket}
           currentUserId={user?.uid}
           onClose={() => setChatTicket(null)}
+        />
+      ) : null}
+
+      {showInbox ? (
+        <SupportInboxPanel
+          isDark={isDark}
+          isMentor={isMentor}
+          currentUserId={user?.uid}
+          onClose={() => setShowInbox(false)}
         />
       ) : null}
     </div>
