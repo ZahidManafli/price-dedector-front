@@ -21,12 +21,7 @@
     "theme": "Tema",
     "logout": "Çıkış",
     "ebayStatus": "eBay Durumu",
-    "replayTour": "Yönlendirme turunu tekrar oynat",
-    "groupOverview": "Genel Bakış ve Hesap",
-    "groupCatalog": "Katalog ve Listeler",
-    "groupAnalytics": "Analitik ve Araçlar",
-    "groupFulfillment": "Satış ve Sipariş Yönetimi",
-    "groupAdmin": "Yönetim"
+    "replayTour": "Yönlendirme turunu tekrar oynat"
   },
   "auth": {
     "login": "Giriş Yap",
