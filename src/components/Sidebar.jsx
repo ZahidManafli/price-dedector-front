@@ -50,32 +50,114 @@ export default function Sidebar() {
   const [activeEbayLabel, setActiveEbayLabel] = useState(null);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
 
-  const links = [
-    { label: t('nav.dashboard'), path: '/dashboard', icon: LayoutDashboard, tab: TAB_KEYS.DASHBOARD, tour: 'sidebar-dashboard' },
-    { label: t('nav.products'), path: '/products', icon: Package, tab: TAB_KEYS.PRODUCTS, tour: 'sidebar-products' },
-    { label: t('nav.listings'), path: '/listings', icon: Package, tab: TAB_KEYS.LISTINGS },
-    { label: t('nav.orders'), path: '/orders', icon: Package, tab: TAB_KEYS.ORDERS },
-    { label: t('nav.tracking'), path: '/tracking', icon: Truck, tab: TAB_KEYS.TRACKING },
-    { label: t('nav.cases'), path: '/cases', icon: Gavel, tab: TAB_KEYS.CASES },
-    // No `tab` gate — Support is a free feature open to every logged-in user
-    // regardless of their subscription plan's allowedTabs.
-    { label: 'Support', path: '/support', icon: LifeBuoy },
-    { label: 'Alıcı CRM', path: '/buyers', icon: Users, tab: TAB_KEYS.BUYER_CRM },
-    { label: t('nav.amazonLookup'), path: '/amazon-lookup', icon: Search, tab: TAB_KEYS.AMAZON_LOOKUP, tour: 'sidebar-amazon-lookup' },
-    { label: t('nav.ebayCalculator'), path: '/ebay-calculator', icon: Calculator, tab: TAB_KEYS.EBAY_CALCULATOR },
-    { label: t('nav.marketAnalysis'), path: '/market-analysis', icon: BarChart3, tab: TAB_KEYS.MARKET_ANALYSIS, tour: 'sidebar-market-analysis' },
-    { label: 'Market Insight', path: '/market-insight', icon: Sparkles, tab: TAB_KEYS.MARKET_INSIGHT },
-    { label: t('nav.dewiso'), path: '/dewiso', icon: Code2, tab: TAB_KEYS.DEWISO },
-    { label: t('nav.learning'), path: '/learning', icon: BookOpen, tab: TAB_KEYS.LEARNING },
-    { label: t('nav.profitTable'), path: '/profit-table', icon: TrendingUp, tab: TAB_KEYS.PROFIT_TABLE },
-    ...(user?.role === 'admin' || user?.permissions?.referralAdmin
-      ? [{ label: 'Referrals', path: '/referals', icon: Link2, tab: TAB_KEYS.REFERRALS }]
+  // Grouped so the sidebar reads as sections rather than one long flat list —
+  // each group mirrors a stage of the seller's workflow (account/home, catalog,
+  // analytics/tools, then sales & fulfillment), with Administration split out
+  // on its own since it's admin-only.
+  const linkGroups = [
+    {
+      key: 'overview',
+      label: t('sidebar.groupOverview'),
+      items: [
+        { label: t('nav.dashboard'), path: '/dashboard', icon: LayoutDashboard, tab: TAB_KEYS.DASHBOARD, tour: 'sidebar-dashboard' },
+        ...(user?.role === 'admin' || user?.permissions?.referralAdmin
+          ? [{ label: 'Referrals', path: '/referals', icon: Link2, tab: TAB_KEYS.REFERRALS }]
+          : []),
+        { label: t('nav.learning'), path: '/learning', icon: BookOpen, tab: TAB_KEYS.LEARNING },
+        // No `tab` gate — Support is a free feature open to every logged-in user
+        // regardless of their subscription plan's allowedTabs.
+        { label: 'Support', path: '/support', icon: LifeBuoy },
+        { label: t('nav.settings'), path: '/settings', icon: Settings, tab: TAB_KEYS.SETTINGS, tour: 'sidebar-settings' },
+      ],
+    },
+    {
+      key: 'catalog',
+      label: t('sidebar.groupCatalog'),
+      items: [
+        { label: t('nav.products'), path: '/products', icon: Package, tab: TAB_KEYS.PRODUCTS, tour: 'sidebar-products' },
+        { label: t('nav.listings'), path: '/listings', icon: Package, tab: TAB_KEYS.LISTINGS },
+        { label: t('nav.amazonLookup'), path: '/amazon-lookup', icon: Search, tab: TAB_KEYS.AMAZON_LOOKUP, tour: 'sidebar-amazon-lookup' },
+        { label: t('nav.dewiso'), path: '/dewiso', icon: Code2, tab: TAB_KEYS.DEWISO },
+      ],
+    },
+    {
+      key: 'analytics',
+      label: t('sidebar.groupAnalytics'),
+      items: [
+        { label: t('nav.marketAnalysis'), path: '/market-analysis', icon: BarChart3, tab: TAB_KEYS.MARKET_ANALYSIS, tour: 'sidebar-market-analysis' },
+        { label: 'Market Insight', path: '/market-insight', icon: Sparkles, tab: TAB_KEYS.MARKET_INSIGHT },
+        { label: t('nav.ebayCalculator'), path: '/ebay-calculator', icon: Calculator, tab: TAB_KEYS.EBAY_CALCULATOR },
+      ],
+    },
+    {
+      key: 'fulfillment',
+      label: t('sidebar.groupFulfillment'),
+      items: [
+        { label: t('nav.orders'), path: '/orders', icon: Package, tab: TAB_KEYS.ORDERS },
+        { label: t('nav.tracking'), path: '/tracking', icon: Truck, tab: TAB_KEYS.TRACKING },
+        { label: 'Alıcı CRM', path: '/buyers', icon: Users, tab: TAB_KEYS.BUYER_CRM },
+        { label: t('nav.profitTable'), path: '/profit-table', icon: TrendingUp, tab: TAB_KEYS.PROFIT_TABLE },
+        { label: t('nav.cases'), path: '/cases', icon: Gavel, tab: TAB_KEYS.CASES },
+      ],
+    },
+    ...(user?.role === 'admin'
+      ? [
+          {
+            key: 'admin',
+            label: t('sidebar.groupAdmin'),
+            items: [{ label: t('nav.adminPanel'), path: '/admin', icon: ShieldCheck, tab: TAB_KEYS.ADMIN }],
+          },
+        ]
       : []),
-    { label: t('nav.settings'), path: '/settings', icon: Settings, tab: TAB_KEYS.SETTINGS, tour: 'sidebar-settings' },
-    ...(user?.role === 'admin' ? [{ label: t('nav.adminPanel'), path: '/admin', icon: ShieldCheck, tab: TAB_KEYS.ADMIN }] : []),
   ];
 
   const isActive = (path) => location.pathname === path;
+
+  const renderLink = (link) => {
+    const canAccess = hasTabAccess(link.tab);
+    if (!canAccess) {
+      return (
+        <div
+          key={link.path}
+          data-tour={link.tour || undefined}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-not-allowed ${
+            isCollapsed ? 'justify-center' : ''
+          } text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800`}
+          title={isCollapsed ? `${link.label} (locked)` : ''}
+        >
+          <link.icon size={18} className="flex-shrink-0" />
+          {!isCollapsed && (
+            <>
+              <span className="text-sm">{link.label}</span>
+              <Lock size={12} className="ml-auto" />
+            </>
+          )}
+        </div>
+      );
+    }
+
+    const active = isActive(link.path);
+
+    return (
+      <Link
+        key={link.path}
+        data-tour={link.tour || undefined}
+        to={link.path}
+        onClick={() => setIsOpen(false)}
+        className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
+          isCollapsed ? 'justify-center' : ''
+        } ${
+          active
+            ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25'
+            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
+        }`}
+        title={isCollapsed ? link.label : ''}
+      >
+        <link.icon size={18} className={`flex-shrink-0 ${active ? '' : 'text-slate-400 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'}`} />
+        {!isCollapsed && <span className="text-sm">{link.label}</span>}
+      </Link>
+    );
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -164,52 +246,17 @@ export default function Sidebar() {
           data-tour="sidebar-nav"
           style={{ paddingLeft: isCollapsed ? '0.5rem' : '1rem', paddingRight: isCollapsed ? '0.5rem' : '1rem', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
         >
-          <div className="space-y-1">
-            {links.map((link) => {
-              const canAccess = hasTabAccess(link.tab);
-              if (!canAccess) {
-                return (
-                  <div
-                    key={link.path}
-                    data-tour={link.tour || undefined}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-not-allowed ${
-                      isCollapsed ? 'justify-center' : ''
-                    } text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800`}
-                    title={isCollapsed ? `${link.label} (locked)` : ''}
-                  >
-                    <link.icon size={18} className="flex-shrink-0" />
-                    {!isCollapsed && (
-                      <>
-                        <span className="text-sm">{link.label}</span>
-                        <Lock size={12} className="ml-auto" />
-                      </>
-                    )}
-                  </div>
-                );
-              }
-
-              const active = isActive(link.path);
-
-              return (
-                <Link
-                  key={link.path}
-                  data-tour={link.tour || undefined}
-                  to={link.path}
-                  onClick={() => setIsOpen(false)}
-                  className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
-                    isCollapsed ? 'justify-center' : ''
-                  } ${
-                    active
-                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
-                  }`}
-                  title={isCollapsed ? link.label : ''}
-                >
-                  <link.icon size={18} className={`flex-shrink-0 ${active ? '' : 'text-slate-400 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'}`} />
-                  {!isCollapsed && <span className="text-sm">{link.label}</span>}
-                </Link>
-              );
-            })}
+          <div className="space-y-4">
+            {linkGroups.map((group) => (
+              <div key={group.key}>
+                {!isCollapsed && (
+                  <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    {group.label}
+                  </p>
+                )}
+                <div className="space-y-1">{group.items.map((link) => renderLink(link))}</div>
+              </div>
+            ))}
           </div>
         </nav>
 

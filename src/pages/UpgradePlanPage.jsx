@@ -22,6 +22,8 @@ function normalizePlan(raw = {}) {
       ? 'amazon_monitoring'
       : normalizedCategory === 'tracking_plans' || normalizedCategory === 'tracking_plan' || normalizedCategory === 'trackingplans'
       ? 'tracking_plans'
+      : normalizedCategory === 'support'
+      ? 'support'
       : 'subscription';
 
   return {
@@ -506,6 +508,7 @@ export default function UpgradePlanPage() {
               { key: 'analytics', label: 'Analytics Plans' },
               { key: 'amazon_monitoring', label: 'Amazon Monitoring' },
               { key: 'tracking_plans', label: 'Tracking Plans' },
+              { key: 'support', label: 'Support Plans' },
             ].map(({ key, label }) => (
               <button
                 key={key}

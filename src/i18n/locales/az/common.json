@@ -21,7 +21,12 @@
     "theme": "Tema",
     "logout": "Çıxış",
     "ebayStatus": "eBay Statusu",
-    "replayTour": "Onboarding turunu yenidən oynat"
+    "replayTour": "Onboarding turunu yenidən oynat",
+    "groupOverview": "Ümumi Baxış və Hesab",
+    "groupCatalog": "Kataloq və Elanlar",
+    "groupAnalytics": "Analitika və Alətlər",
+    "groupFulfillment": "Satış və İcra",
+    "groupAdmin": "İdarəetmə"
   },
   "auth": {
     "login": "Daxil ol",

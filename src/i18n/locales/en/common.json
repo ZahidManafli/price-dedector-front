@@ -21,7 +21,12 @@
     "theme": "Theme",
     "logout": "Logout",
     "ebayStatus": "eBay Status",
-    "replayTour": "Replay onboarding tour"
+    "replayTour": "Replay onboarding tour",
+    "groupOverview": "Overview & Account",
+    "groupCatalog": "Catalog & Listings",
+    "groupAnalytics": "Analytics & Tools",
+    "groupFulfillment": "Sales & Fulfillment",
+    "groupAdmin": "Administration"
   },
   "auth": {
     "login": "Login",

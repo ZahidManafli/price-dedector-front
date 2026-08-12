@@ -21,7 +21,12 @@
     "theme": "Тема",
     "logout": "Выйти",
     "ebayStatus": "Статус eBay",
-    "replayTour": "Повторить обучение"
+    "replayTour": "Повторить обучение",
+    "groupOverview": "Обзор и аккаунт",
+    "groupCatalog": "Каталог и объявления",
+    "groupAnalytics": "Аналитика и инструменты",
+    "groupFulfillment": "Продажи и выполнение заказов",
+    "groupAdmin": "Администрирование"
   },
   "auth": {
     "login": "Вход",
