@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -37,6 +37,35 @@ import { ebayAPI } from '../services/api';
 import { TAB_KEYS } from '../utils/planAccess';
 import { useTour } from '../context/TourContext';
 
+// Collapsible category section — measures its own content height so the
+// open/close transition animates smoothly to the exact height instead of
+// jumping or relying on a guessed max-height.
+function SidebarGroupSection({ group, expanded, onToggle, renderLink }) {
+  const contentRef = useRef(null);
+  const [maxHeight, setMaxHeight] = useState(expanded ? 'none' : '0px');
+
+  useEffect(() => {
+    if (!contentRef.current) return;
+    setMaxHeight(expanded ? `${contentRef.current.scrollHeight}px` : '0px');
+  }, [expanded, group.items.length]);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+      >
+        <span>{group.label}</span>
+        <ChevronRight size={14} className={`flex-shrink-0 transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`} />
+      </button>
+      <div ref={contentRef} style={{ maxHeight }} className="overflow-hidden transition-[max-height] duration-300 ease-in-out">
+        <div className="space-y-1 pb-1">{group.items.map((link) => renderLink(link))}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
@@ -49,6 +78,10 @@ export default function Sidebar() {
   const { replayTour } = useTour();
   const [activeEbayLabel, setActiveEbayLabel] = useState(null);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
+  // Only "Overview & Account" is open by default — every other category
+  // starts collapsed until the user clicks its header.
+  const [expandedGroups, setExpandedGroups] = useState({ overview: true });
+  const toggleGroup = (key) => setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
 
   // Grouped so the sidebar reads as sections rather than one long flat list —
   // each group mirrors a stage of the seller's workflow (account/home, catalog,
@@ -246,17 +279,20 @@ export default function Sidebar() {
           data-tour="sidebar-nav"
           style={{ paddingLeft: isCollapsed ? '0.5rem' : '1rem', paddingRight: isCollapsed ? '0.5rem' : '1rem', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
         >
-          <div className="space-y-4">
-            {linkGroups.map((group) => (
-              <div key={group.key}>
-                {!isCollapsed && (
-                  <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    {group.label}
-                  </p>
-                )}
-                <div className="space-y-1">{group.items.map((link) => renderLink(link))}</div>
-              </div>
-            ))}
+          <div className={isCollapsed ? 'space-y-1' : 'space-y-1.5'}>
+            {isCollapsed
+              ? // Icon-only mode: no room for section headers, so just stack every
+                // item flat regardless of each group's expanded/collapsed state.
+                linkGroups.flatMap((group) => group.items.map((link) => renderLink(link)))
+              : linkGroups.map((group) => (
+                  <SidebarGroupSection
+                    key={group.key}
+                    group={group}
+                    expanded={!!expandedGroups[group.key]}
+                    onToggle={() => toggleGroup(group.key)}
+                    renderLink={renderLink}
+                  />
+                ))}
           </div>
         </nav>
 
