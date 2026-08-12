@@ -40,7 +40,7 @@ import { useTour } from '../context/TourContext';
 // Collapsible category section — measures its own content height so the
 // open/close transition animates smoothly to the exact height instead of
 // jumping or relying on a guessed max-height.
-function SidebarGroupSection({ group, expanded, onToggle, renderLink }) {
+function SidebarGroupSection({ group, expanded, onToggle, renderLink, isFirst }) {
   const contentRef = useRef(null);
   const [maxHeight, setMaxHeight] = useState(expanded ? 'none' : '0px');
 
@@ -50,17 +50,26 @@ function SidebarGroupSection({ group, expanded, onToggle, renderLink }) {
   }, [expanded, group.items.length]);
 
   return (
-    <div>
+    <div className={isFirst ? '' : 'mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/60'}>
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+        className={`group w-full flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide transition-colors ${
+          expanded
+            ? 'text-slate-700 dark:text-slate-100'
+            : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-700 dark:hover:text-slate-200'
+        }`}
       >
         <span>{group.label}</span>
-        <ChevronRight size={14} className={`flex-shrink-0 transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`} />
+        <ChevronRight
+          size={16}
+          className={`flex-shrink-0 transition-transform duration-200 ${
+            expanded ? 'rotate-90 text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300'
+          }`}
+        />
       </button>
       <div ref={contentRef} style={{ maxHeight }} className="overflow-hidden transition-[max-height] duration-300 ease-in-out">
-        <div className="space-y-1 pb-1">{group.items.map((link) => renderLink(link))}</div>
+        <div className="space-y-1 pt-1 pb-1">{group.items.map((link) => renderLink(link))}</div>
       </div>
     </div>
   );
@@ -279,15 +288,16 @@ export default function Sidebar() {
           data-tour="sidebar-nav"
           style={{ paddingLeft: isCollapsed ? '0.5rem' : '1rem', paddingRight: isCollapsed ? '0.5rem' : '1rem', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
         >
-          <div className={isCollapsed ? 'space-y-1' : 'space-y-1.5'}>
+          <div className={isCollapsed ? 'space-y-1' : ''}>
             {isCollapsed
               ? // Icon-only mode: no room for section headers, so just stack every
                 // item flat regardless of each group's expanded/collapsed state.
                 linkGroups.flatMap((group) => group.items.map((link) => renderLink(link)))
-              : linkGroups.map((group) => (
+              : linkGroups.map((group, index) => (
                   <SidebarGroupSection
                     key={group.key}
                     group={group}
+                    isFirst={index === 0}
                     expanded={!!expandedGroups[group.key]}
                     onToggle={() => toggleGroup(group.key)}
                     renderLink={renderLink}
