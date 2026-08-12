@@ -1011,6 +1011,7 @@
     "analytics": "analytics",
     "amazonMonitoring": "amazon_monitoring",
     "trackingPlans": "tracking_plans",
+    "support": "support",
     "trackingCreditsGranted": "Verilən izləmə krediti",
     "trackingPlansHint": "Abunəlik planı sorğusu zamanı istifadəçilərə əlavə seçim kimi göstərilir.",
     "includesTrackingAddon": "İzləmə əlavəsini daxildir",

@@ -369,7 +369,9 @@ export default function AdminPanelPage() {
             ? 'amazon_monitoring'
             : plan.category === 'tracking_plans'
               ? 'tracking_plans'
-              : 'subscription',
+              : plan.category === 'support'
+                ? 'support'
+                : 'subscription',
       price: plan.price || '',
       actualPrice: safeToString(plan.actualPrice),
       discountedPrice: safeToString(plan.discountedPrice),
@@ -1456,6 +1458,7 @@ export default function AdminPanelPage() {
                   analytics: isDark ? 'bg-violet-900/30 text-violet-300 border-violet-800/40' : 'bg-violet-50 text-violet-700 border-violet-200',
                   amazon_monitoring: isDark ? 'bg-amber-900/30 text-amber-300 border-amber-800/40' : 'bg-amber-50 text-amber-700 border-amber-200',
                   tracking_plans: isDark ? 'bg-teal-900/30 text-teal-300 border-teal-800/40' : 'bg-teal-50 text-teal-700 border-teal-200',
+                  support: isDark ? 'bg-indigo-900/30 text-indigo-300 border-indigo-800/40' : 'bg-indigo-50 text-indigo-700 border-indigo-200',
                 };
                 const catColor = categoryColors[plan.category] || (isDark ? 'bg-slate-700/40 text-slate-300 border-slate-600/40' : 'bg-slate-100 text-slate-600 border-slate-200');
                 const hasDiscount = plan.discountedPrice != null && plan.actualPrice != null && plan.discountedPrice < plan.actualPrice;
@@ -1586,6 +1589,7 @@ export default function AdminPanelPage() {
                       <option value="analytics">{t('adminPanelPage.analytics')}</option>
                       <option value="amazon_monitoring">{t('adminPanelPage.amazonMonitoring')}</option>
                       <option value="tracking_plans">{t('adminPanelPage.trackingPlans')}</option>
+                      <option value="support">{t('adminPanelPage.support')}</option>
                     </select>
                   </div>
                 </div>

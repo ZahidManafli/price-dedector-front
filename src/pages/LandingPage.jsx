@@ -411,6 +411,11 @@ export default function LandingPage() {
     [planSource]
   );
 
+  const supportVisiblePlans = useMemo(
+    () => planSource.filter((p) => p.category === 'support' && p.isActive !== false),
+    [planSource]
+  );
+
   // A tracking plan is directly selectable/requestable in the modal exactly like
   // every other category — clicking "Subscribe" auto-selects and locks that same
   // plan, same as Subscription/Analytics/Amazon Monitoring.
@@ -820,6 +825,16 @@ export default function LandingPage() {
               >
                 {t('landing:pricing.trackingPlans')}
               </button>
+              <button
+                onClick={() => setActiveTab('support')}
+                className={`rounded-full px-6 py-2 text-sm font-semibold transition ${
+                  activeTab === 'support'
+                    ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20'
+                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                }`}
+              >
+                {t('landing:pricing.supportPlans')}
+              </button>
             </div>
           </div>
 
@@ -955,6 +970,33 @@ export default function LandingPage() {
                     </div>
                   ) : (
                     trackingVisiblePlans.map((plan) => (
+                      <PlanCard key={plan.id || plan.name} plan={plan} onSubscribe={onSubscribePlan} />
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'support' && (
+              <div>
+                <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-100">
+                      {t('landing:pricing.supportPlans')}
+                    </p>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+                      {t('landing:pricing.supportDescription')}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
+                  {supportVisiblePlans.length === 0 ? (
+                    <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
+                      {t('landing:pricing.noPlans')}
+                    </div>
+                  ) : (
+                    supportVisiblePlans.map((plan) => (
                       <PlanCard key={plan.id || plan.name} plan={plan} onSubscribe={onSubscribePlan} />
                     ))
                   )}

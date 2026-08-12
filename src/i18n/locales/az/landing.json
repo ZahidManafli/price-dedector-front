@@ -76,6 +76,8 @@
     "amazonMonitoringDescription": "Amazon məhsullarını izləmək və idarə etmək üçün xüsusi planlar.",
     "trackingPlans": "İzləmə Kreditləri",
     "trackingDescription": "Abunə olarkən istənilən abunə, analitika və ya Amazon izləmə planına əlavə edə biləcəyiniz izləmə kreditləri.",
+    "supportPlans": "Dəstək Planları",
+    "supportDescription": "Mentorla birbaşa əlaqə və prioritet dəstək üçün planlar.",
     "noPlans": "Hələ plan əlavə olunmayıb. Admin paneldən əlavə edin.",
     "monthlyDuration": "Aylıq"
   },

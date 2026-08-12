@@ -1011,6 +1011,7 @@
     "analytics": "analytics",
     "amazonMonitoring": "amazon_monitoring",
     "trackingPlans": "tracking_plans",
+    "support": "support",
     "trackingCreditsGranted": "Начислено кредитов трекинга",
     "trackingPlansHint": "Показывается пользователям как дополнительная опция при запросе плана подписки.",
     "includesTrackingAddon": "Включает надстройку трекинга",

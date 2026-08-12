@@ -76,6 +76,8 @@
     "amazonMonitoringDescription": "Amazon ürünlerini takip etmek için özel planlar.",
     "trackingPlans": "Takip Kredileri",
     "trackingDescription": "Abone olurken herhangi bir abonelik, analiz veya Amazon takip planına ekleyebileceğiniz takip kredileri.",
+    "supportPlans": "Destek Planları",
+    "supportDescription": "Mentörle doğrudan iletişim ve öncelikli destek için planlar.",
     "noPlans": "Henüz plan eklenmedi. Lütfen yöneticiye başvurun.",
     "monthlyDuration": "Aylık"
   },

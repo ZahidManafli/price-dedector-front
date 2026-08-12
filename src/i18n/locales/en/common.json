@@ -1070,6 +1070,7 @@
     "analytics": "analytics",
     "amazonMonitoring": "amazon_monitoring",
     "trackingPlans": "tracking_plans",
+    "support": "support",
     "trackingCreditsGranted": "Tracking credits granted",
     "trackingPlansHint": "Shown to users as an optional add-on when requesting a subscription plan.",
     "includesTrackingAddon": "Includes tracking add-on",
