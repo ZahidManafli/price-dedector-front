@@ -246,6 +246,8 @@ function normalizePlan(raw = {}) {
         ? 'amazon_monitoring'
         : normalizedCategory === 'tracking_plans' || normalizedCategory === 'tracking_plan' || normalizedCategory === 'trackingplans'
         ? 'tracking_plans'
+        : normalizedCategory === 'support'
+        ? 'support'
         : 'subscription',
     featured: !!raw.featured,
     isActive: raw.isActive !== false,
