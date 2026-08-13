@@ -1248,18 +1248,26 @@ function ConversationChatPane({ conversationId, isDark, currentUserId, onActivit
             <button
               type="button"
               onClick={voiceRecorder.cancelRecording}
-              className={`p-2 rounded-full ${isDark ? 'text-rose-400 hover:bg-slate-800' : 'text-rose-500 hover:bg-slate-100'}`}
+              className={`shrink-0 p-2 rounded-full ${isDark ? 'text-rose-400 hover:bg-slate-800' : 'text-rose-500 hover:bg-slate-100'}`}
             >
               <Trash2 size={16} />
             </button>
-            <span className="flex-1 flex items-center gap-1.5 text-sm">
-              <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+            <span className="shrink-0 flex items-center gap-1.5 text-sm">
+              <span className={`h-2 w-2 rounded-full bg-rose-500 ${voiceRecorder.paused ? '' : 'animate-pulse'}`} />
               <span className={isDark ? 'text-slate-200' : 'text-slate-700'}>{fmtSeconds(voiceRecorder.recordSeconds)}</span>
             </span>
+            <RecordingWaveform isDark={isDark} paused={voiceRecorder.paused} />
+            <button
+              type="button"
+              onClick={voiceRecorder.paused ? voiceRecorder.resumeRecording : voiceRecorder.pauseRecording}
+              className={`shrink-0 p-2 rounded-full ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'}`}
+            >
+              {voiceRecorder.paused ? <Play size={16} /> : <Pause size={16} />}
+            </button>
             <button
               type="button"
               onClick={voiceRecorder.sendRecording}
-              className="rounded-lg bg-indigo-600 p-2.5 text-white transition hover:bg-indigo-500"
+              className="shrink-0 rounded-full bg-indigo-600 p-2.5 text-white transition hover:bg-indigo-500"
             >
               <Send size={16} />
             </button>
