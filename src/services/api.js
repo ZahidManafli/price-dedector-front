@@ -245,10 +245,14 @@ export const supportAPI = {
   assignSchedule: (id, payload) => api.put(`/support/tickets/${id}/schedule`, payload),
   listMessages: (id) => api.get(`/support/tickets/${id}/messages`),
   sendMessage: (id, payload) => api.post(`/support/tickets/${id}/messages`, payload),
+  sendVoiceMessage: (id, formData) =>
+    api.post(`/support/tickets/${id}/messages/voice`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getMyConversation: () => api.get('/support/conversations/mine'),
   listConversations: () => api.get('/support/conversations'),
   listConversationMessages: (id) => api.get(`/support/conversations/${id}/messages`),
   sendConversationMessage: (id, payload) => api.post(`/support/conversations/${id}/messages`, payload),
+  sendConversationVoiceMessage: (id, formData) =>
+    api.post(`/support/conversations/${id}/messages/voice`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
 };
 
 export const browseAPI = {

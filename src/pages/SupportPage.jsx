@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { LifeBuoy, Plus, Loader2, RefreshCw, ChevronLeft, ChevronRight, ChevronDown, AlertCircle, MessageSquare, Send, MessageCircle, X, Users, Reply } from 'lucide-react';
+import { LifeBuoy, Plus, Loader2, RefreshCw, ChevronLeft, ChevronRight, ChevronDown, AlertCircle, MessageSquare, Send, MessageCircle, X, Users, Reply, Mic, Play, Pause, Trash2 } from 'lucide-react';
 import { supportAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -73,6 +73,11 @@ function truncateQuote(text, max = 80) {
   return t.length > max ? `${t.slice(0, max)}…` : t;
 }
 
+function quotePreviewText(item) {
+  if (!item) return '';
+  return item.messageType === 'voice' ? '🎤 Səsli mesaj' : truncateQuote(item.message, 80);
+}
+
 // The small quoted block shown at the top of a bubble when that message is a reply.
 function QuotedMessagePreview({ quoted, isDark, mine }) {
   if (!quoted) return null;
@@ -85,7 +90,82 @@ function QuotedMessagePreview({ quoted, isDark, mine }) {
       }`}
     >
       <div className="font-semibold">{quoted.senderName}</div>
-      <div className="truncate">{truncateQuote(quoted.message, 80)}</div>
+      <div className="truncate">{quotePreviewText(quoted)}</div>
+    </div>
+  );
+}
+
+function fmtSeconds(s) {
+  const total = Math.max(0, Math.floor(s || 0));
+  const m = Math.floor(total / 60);
+  const sec = total % 60;
+  return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+// WhatsApp-style voice message bubble content: a play/pause circle, a thin
+// progress bar, and the elapsed/total duration.
+function VoiceMessagePlayer({ src, duration, mine, isDark }) {
+  const audioRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [totalDuration, setTotalDuration] = useState(duration || 0);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return undefined;
+    const onTime = () => setCurrentTime(audio.currentTime);
+    const onLoaded = () => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) setTotalDuration(audio.duration);
+    };
+    const onEnded = () => {
+      setPlaying(false);
+      setCurrentTime(0);
+    };
+    audio.addEventListener('timeupdate', onTime);
+    audio.addEventListener('loadedmetadata', onLoaded);
+    audio.addEventListener('ended', onEnded);
+    return () => {
+      audio.removeEventListener('timeupdate', onTime);
+      audio.removeEventListener('loadedmetadata', onLoaded);
+      audio.removeEventListener('ended', onEnded);
+    };
+  }, []);
+
+  const toggle = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+      setPlaying(false);
+    } else {
+      audio.play();
+      setPlaying(true);
+    }
+  };
+
+  const progressPct = totalDuration > 0 ? Math.min(100, (currentTime / totalDuration) * 100) : 0;
+  const displaySeconds = currentTime > 0 ? currentTime : totalDuration;
+
+  return (
+    <div className="flex items-center gap-2 min-w-[170px] py-0.5">
+      <audio ref={audioRef} src={src} preload="metadata" className="hidden" />
+      <button
+        type="button"
+        onClick={toggle}
+        className={`shrink-0 flex items-center justify-center h-8 w-8 rounded-full transition ${
+          mine ? 'bg-white/20 text-white hover:bg-white/30' : isDark ? 'bg-slate-700 text-slate-100 hover:bg-slate-600' : 'bg-white text-indigo-600 hover:bg-slate-50'
+        }`}
+      >
+        {playing ? <Pause size={14} /> : <Play size={14} />}
+      </button>
+      <div className="flex-1 flex flex-col gap-1 min-w-0">
+        <div className={`h-1 rounded-full overflow-hidden ${mine ? 'bg-white/25' : isDark ? 'bg-slate-600' : 'bg-slate-300'}`}>
+          <div className={`h-full ${mine ? 'bg-white' : 'bg-indigo-500'}`} style={{ width: `${progressPct}%` }} />
+        </div>
+        <span className={`text-[10px] ${mine ? 'text-indigo-100/80' : isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          {fmtSeconds(displaySeconds)}
+        </span>
+      </div>
     </div>
   );
 }
@@ -562,6 +642,84 @@ function AssignScheduleModal({ ticket, onClose, onAssigned, isDark }) {
 const TYPING_STOP_DELAY_MS = 1500;
 const TYPING_SAFETY_CLEAR_MS = 4000;
 
+// Encapsulates getUserMedia/MediaRecorder so both chat surfaces (ticket chat and
+// the "Mentora yaz" conversation) share the exact same recording behavior.
+function useVoiceRecorder({ onSend, onError }) {
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
+  const recordTimerRef = useRef(null);
+  const streamRef = useRef(null);
+
+  const stopTracks = () => {
+    clearInterval(recordTimerRef.current);
+    recordTimerRef.current = null;
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      recordedChunksRef.current = [];
+      const mimeType =
+        typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setRecordSeconds(0);
+      setRecording(true);
+      recordTimerRef.current = setInterval(() => setRecordSeconds((s) => s + 1), 1000);
+    } catch {
+      onError?.('Mikrofona giriş rədd edildi və ya mövcud deyil');
+    }
+  };
+
+  const cancelRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') {
+      recorder.onstop = null;
+      recorder.stop();
+    }
+    stopTracks();
+    recordedChunksRef.current = [];
+    setRecording(false);
+  };
+
+  const sendRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === 'inactive') return;
+    const durationAtStop = recordSeconds;
+    recorder.onstop = () => {
+      const blob = new Blob(recordedChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+      recordedChunksRef.current = [];
+      stopTracks();
+      setRecording(false);
+      onSend?.(blob, durationAtStop);
+    };
+    recorder.stop();
+  };
+
+  useEffect(
+    () => () => {
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== 'inactive') {
+        recorder.onstop = null;
+        recorder.stop();
+      }
+      stopTracks();
+    },
+    []
+  );
+
+  return { recording, recordSeconds, startRecording, cancelRecording, sendRecording };
+}
+
 function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -666,6 +824,25 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
     }
   };
 
+  const uploadVoiceMessage = async (blob, durationSeconds) => {
+    setError('');
+    setSending(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio', blob, 'voice-message.webm');
+      formData.append('durationSeconds', String(durationSeconds));
+      if (replyTarget?.id) formData.append('replyToMessageId', String(replyTarget.id));
+      await supportAPI.sendVoiceMessage(ticket.id, formData);
+      setReplyTarget(null);
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Səsli mesaj göndərilmədi');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const voiceRecorder = useVoiceRecorder({ onSend: uploadVoiceMessage, onError: setError });
+
   return (
     <div className={`fixed inset-0 z-[80] flex items-center justify-center p-4 ${isDark ? 'bg-slate-950/75' : 'bg-slate-900/40'}`}>
       <div className={`w-full max-w-lg h-[70vh] flex flex-col rounded-2xl border shadow-2xl ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}>
@@ -716,7 +893,11 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
                   {!mine ? (
                     <div className={`text-[11px] font-semibold mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.senderName}</div>
                   ) : null}
-                  <div className="whitespace-pre-wrap">{m.message}</div>
+                  {m.messageType === 'voice' ? (
+                    <VoiceMessagePlayer src={m.voiceUrl} duration={m.voiceDurationSeconds} mine={mine} isDark={isDark} />
+                  ) : (
+                    <div className="whitespace-pre-wrap">{m.message}</div>
+                  )}
                   <div className={`text-[10px] mt-1 text-right ${mine ? 'text-indigo-100/70' : isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                     {fmtDateTime(m.createdAt)}
                   </div>
@@ -752,22 +933,58 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
         {error ? <p className={`px-4 pb-2 text-xs ${isDark ? 'text-red-300' : 'text-red-600'}`}>{error}</p> : null}
 
         <form onSubmit={submit} className={`flex items-center gap-2 p-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-          <input
-            type="text"
-            value={input}
-            onChange={handleInputChange}
-            placeholder="Mesaj yazın..."
-            className={`flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:border-indigo-500 ${
-              isDark ? 'border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400'
-            }`}
-          />
-          <button
-            type="submit"
-            disabled={sending || !input.trim()}
-            className="rounded-lg bg-indigo-600 p-2.5 text-white transition hover:bg-indigo-500 disabled:opacity-60"
-          >
-            <Send size={16} />
-          </button>
+          {voiceRecorder.recording ? (
+            <div className="flex-1 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={voiceRecorder.cancelRecording}
+                className={`p-2 rounded-full ${isDark ? 'text-rose-400 hover:bg-slate-800' : 'text-rose-500 hover:bg-slate-100'}`}
+              >
+                <Trash2 size={16} />
+              </button>
+              <span className="flex-1 flex items-center gap-1.5 text-sm">
+                <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+                <span className={isDark ? 'text-slate-200' : 'text-slate-700'}>{fmtSeconds(voiceRecorder.recordSeconds)}</span>
+              </span>
+              <button
+                type="button"
+                onClick={voiceRecorder.sendRecording}
+                className="rounded-lg bg-indigo-600 p-2.5 text-white transition hover:bg-indigo-500"
+              >
+                <Send size={16} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <input
+                type="text"
+                value={input}
+                onChange={handleInputChange}
+                placeholder="Mesaj yazın..."
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:border-indigo-500 ${
+                  isDark ? 'border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400'
+                }`}
+              />
+              {input.trim() ? (
+                <button
+                  type="submit"
+                  disabled={sending}
+                  className="rounded-lg bg-indigo-600 p-2.5 text-white transition hover:bg-indigo-500 disabled:opacity-60"
+                >
+                  <Send size={16} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={voiceRecorder.startRecording}
+                  disabled={sending}
+                  className="rounded-lg bg-indigo-600 p-2.5 text-white transition hover:bg-indigo-500 disabled:opacity-60"
+                >
+                  <Mic size={16} />
+                </button>
+              )}
+            </>
+          )}
         </form>
       </div>
     </div>
@@ -883,6 +1100,25 @@ function ConversationChatPane({ conversationId, isDark, currentUserId, onActivit
     }
   };
 
+  const uploadVoiceMessage = async (blob, durationSeconds) => {
+    setError('');
+    setSending(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio', blob, 'voice-message.webm');
+      formData.append('durationSeconds', String(durationSeconds));
+      if (replyTarget?.id) formData.append('replyToMessageId', String(replyTarget.id));
+      await supportAPI.sendConversationVoiceMessage(conversationId, formData);
+      setReplyTarget(null);
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Səsli mesaj göndərilmədi');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const voiceRecorder = useVoiceRecorder({ onSend: uploadVoiceMessage, onError: setError });
+
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="flex items-center gap-1.5 px-4 pt-3">
@@ -917,7 +1153,11 @@ function ConversationChatPane({ conversationId, isDark, currentUserId, onActivit
                 {!mine ? (
                   <div className={`text-[11px] font-semibold mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.senderName}</div>
                 ) : null}
-                <div className="whitespace-pre-wrap">{m.message}</div>
+                {m.messageType === 'voice' ? (
+                  <VoiceMessagePlayer src={m.voiceUrl} duration={m.voiceDurationSeconds} mine={mine} isDark={isDark} />
+                ) : (
+                  <div className="whitespace-pre-wrap">{m.message}</div>
+                )}
                 <div className={`text-[10px] mt-1 text-right ${mine ? 'text-indigo-100/70' : isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   {fmtDateTime(m.createdAt)}
                 </div>
@@ -953,22 +1193,58 @@ function ConversationChatPane({ conversationId, isDark, currentUserId, onActivit
       {error ? <p className={`px-4 pb-2 text-xs ${isDark ? 'text-red-300' : 'text-red-600'}`}>{error}</p> : null}
 
       <form onSubmit={submit} className={`flex items-center gap-2 p-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-        <input
-          type="text"
-          value={input}
-          onChange={handleInputChange}
-          placeholder="Mesaj yazın..."
-          className={`flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:border-indigo-500 ${
-            isDark ? 'border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400'
-          }`}
-        />
-        <button
-          type="submit"
-          disabled={sending || !input.trim()}
-          className="rounded-lg bg-indigo-600 p-2.5 text-white transition hover:bg-indigo-500 disabled:opacity-60"
-        >
-          <Send size={16} />
-        </button>
+        {voiceRecorder.recording ? (
+          <div className="flex-1 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={voiceRecorder.cancelRecording}
+              className={`p-2 rounded-full ${isDark ? 'text-rose-400 hover:bg-slate-800' : 'text-rose-500 hover:bg-slate-100'}`}
+            >
+              <Trash2 size={16} />
+            </button>
+            <span className="flex-1 flex items-center gap-1.5 text-sm">
+              <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+              <span className={isDark ? 'text-slate-200' : 'text-slate-700'}>{fmtSeconds(voiceRecorder.recordSeconds)}</span>
+            </span>
+            <button
+              type="button"
+              onClick={voiceRecorder.sendRecording}
+              className="rounded-lg bg-indigo-600 p-2.5 text-white transition hover:bg-indigo-500"
+            >
+              <Send size={16} />
+            </button>
+          </div>
+        ) : (
+          <>
+            <input
+              type="text"
+              value={input}
+              onChange={handleInputChange}
+              placeholder="Mesaj yazın..."
+              className={`flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:border-indigo-500 ${
+                isDark ? 'border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400'
+              }`}
+            />
+            {input.trim() ? (
+              <button
+                type="submit"
+                disabled={sending}
+                className="rounded-lg bg-indigo-600 p-2.5 text-white transition hover:bg-indigo-500 disabled:opacity-60"
+              >
+                <Send size={16} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={voiceRecorder.startRecording}
+                disabled={sending}
+                className="rounded-lg bg-indigo-600 p-2.5 text-white transition hover:bg-indigo-500 disabled:opacity-60"
+              >
+                <Mic size={16} />
+              </button>
+            )}
+          </>
+        )}
       </form>
     </div>
   );
