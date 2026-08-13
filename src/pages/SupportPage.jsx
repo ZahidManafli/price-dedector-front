@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { LifeBuoy, Plus, Loader2, RefreshCw, ChevronLeft, ChevronRight, AlertCircle, MessageSquare, Send, MessageCircle, X, Users } from 'lucide-react';
+import { LifeBuoy, Plus, Loader2, RefreshCw, ChevronLeft, ChevronRight, ChevronDown, AlertCircle, MessageSquare, Send, MessageCircle, X, Users, Reply } from 'lucide-react';
 import { supportAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -65,6 +65,94 @@ function StatusPill({ status, isDark }) {
     <span className={`border text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${cls}`}>
       {isScheduled ? 'Təyin edilib' : 'Gözləmədə'}
     </span>
+  );
+}
+
+function truncateQuote(text, max = 80) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  return t.length > max ? `${t.slice(0, max)}…` : t;
+}
+
+// The small quoted block shown at the top of a bubble when that message is a reply.
+function QuotedMessagePreview({ quoted, isDark, mine }) {
+  if (!quoted) return null;
+  return (
+    <div
+      className={`mb-1.5 rounded-md border-l-4 px-2 py-1 text-xs ${
+        mine
+          ? 'border-white/50 bg-white/10 text-indigo-50'
+          : isDark ? 'border-indigo-500 bg-slate-900/40 text-slate-300' : 'border-indigo-400 bg-slate-50 text-slate-600'
+      }`}
+    >
+      <div className="font-semibold">{quoted.senderName}</div>
+      <div className="truncate">{truncateQuote(quoted.message, 80)}</div>
+    </div>
+  );
+}
+
+// WhatsApp-style reply-preview bar shown above the input while composing a reply.
+function ReplyPreviewBar({ isDark, replyTarget, onCancel }) {
+  if (!replyTarget) return null;
+  return (
+    <div className={`flex items-start gap-2 px-3 py-2 border-t ${isDark ? 'border-slate-800 bg-slate-800/60' : 'border-slate-100 bg-slate-50'}`}>
+      <div className="flex-1 min-w-0 border-l-4 border-indigo-500 pl-2">
+        <div className={`text-xs font-semibold ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}>{replyTarget.senderName}</div>
+        <div className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{truncateQuote(replyTarget.message, 100)}</div>
+      </div>
+      <button
+        type="button"
+        onClick={onCancel}
+        className={`shrink-0 p-1 rounded-full ${isDark ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}
+      >
+        <X size={14} />
+      </button>
+    </div>
+  );
+}
+
+// Hover-revealed chevron next to a message bubble — opens a tiny "Cavabla" menu,
+// same interaction as WhatsApp's per-message reply control.
+function ReplyMenuButton({ isDark, onReply, align = 'left' }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative shrink-0 self-start mt-1.5">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        className={`opacity-0 group-hover:opacity-100 transition-opacity rounded-full p-1 ${
+          isDark ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'
+        }`}
+        title="Cavabla"
+      >
+        <ChevronDown size={14} />
+      </button>
+      {open ? (
+        <div
+          onMouseLeave={() => setOpen(false)}
+          className={`absolute z-10 mt-1 rounded-lg border shadow-lg overflow-hidden ${align === 'right' ? 'right-0' : 'left-0'} ${
+            isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+          }`}
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onReply();
+              setOpen(false);
+            }}
+            className={`flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap w-full text-left ${
+              isDark ? 'text-slate-200 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <Reply size={14} />
+            Cavabla
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -482,11 +570,13 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
   const [sending, setSending] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
   const [otherOnline, setOtherOnline] = useState(false);
+  const [replyTarget, setReplyTarget] = useState(null);
   const bottomRef = useRef(null);
   const typingStopTimerRef = useRef(null);
   const otherTypingClearTimerRef = useRef(null);
 
   const otherPartyId = ticket.userId === currentUserId ? ticket.mentorId : ticket.userId;
+  const messagesById = useMemo(() => new Map(messages.map((m) => [m.id, m])), [messages]);
 
   useEffect(() => {
     let cancelled = false;
@@ -566,8 +656,9 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
     clearTimeout(typingStopTimerRef.current);
     getSocket().emit('ticket:typing', { ticketId: ticket.id, isTyping: false });
     try {
-      await supportAPI.sendMessage(ticket.id, { message: text });
+      await supportAPI.sendMessage(ticket.id, { message: text, replyToMessageId: replyTarget?.id || null });
       setInput('');
+      setReplyTarget(null);
     } catch (err) {
       setError(err?.response?.data?.error || err.message || 'Mesaj göndərilmədi');
     } finally {
@@ -613,21 +704,29 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
           ) : (
             messages.map((m) => {
               const mine = m.senderId === currentUserId;
-              return (
-                <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                  <div
-                    className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
-                      mine ? 'bg-indigo-600 text-white' : isDark ? 'bg-slate-800 text-slate-100' : 'bg-slate-100 text-slate-900'
-                    }`}
-                  >
-                    {!mine ? (
-                      <div className={`text-[11px] font-semibold mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.senderName}</div>
-                    ) : null}
-                    <div className="whitespace-pre-wrap">{m.message}</div>
-                    <div className={`text-[10px] mt-1 text-right ${mine ? 'text-indigo-100/70' : isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                      {fmtDateTime(m.createdAt)}
-                    </div>
+              const quoted = m.replyToMessageId ? messagesById.get(m.replyToMessageId) : null;
+              const bubble = (
+                <div
+                  onDoubleClick={() => setReplyTarget(m)}
+                  className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm cursor-pointer ${
+                    mine ? 'bg-indigo-600 text-white' : isDark ? 'bg-slate-800 text-slate-100' : 'bg-slate-100 text-slate-900'
+                  }`}
+                >
+                  <QuotedMessagePreview quoted={quoted} isDark={isDark} mine={mine} />
+                  {!mine ? (
+                    <div className={`text-[11px] font-semibold mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.senderName}</div>
+                  ) : null}
+                  <div className="whitespace-pre-wrap">{m.message}</div>
+                  <div className={`text-[10px] mt-1 text-right ${mine ? 'text-indigo-100/70' : isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {fmtDateTime(m.createdAt)}
                   </div>
+                </div>
+              );
+              return (
+                <div key={m.id} className={`group flex items-start gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
+                  {mine ? <ReplyMenuButton isDark={isDark} onReply={() => setReplyTarget(m)} align="right" /> : null}
+                  {bubble}
+                  {!mine ? <ReplyMenuButton isDark={isDark} onReply={() => setReplyTarget(m)} align="left" /> : null}
                 </div>
               );
             })
@@ -647,6 +746,8 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
           ) : null}
           <div ref={bottomRef} />
         </div>
+
+        <ReplyPreviewBar isDark={isDark} replyTarget={replyTarget} onCancel={() => setReplyTarget(null)} />
 
         {error ? <p className={`px-4 pb-2 text-xs ${isDark ? 'text-red-300' : 'text-red-600'}`}>{error}</p> : null}
 
@@ -681,9 +782,11 @@ function ConversationChatPane({ conversationId, isDark, currentUserId, onActivit
   const [sending, setSending] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
   const [otherOnline, setOtherOnline] = useState(false);
+  const [replyTarget, setReplyTarget] = useState(null);
   const bottomRef = useRef(null);
   const typingStopTimerRef = useRef(null);
   const otherTypingClearTimerRef = useRef(null);
+  const messagesById = useMemo(() => new Map(messages.map((m) => [m.id, m])), [messages]);
 
   useEffect(() => {
     if (!conversationId) return undefined;
@@ -770,8 +873,9 @@ function ConversationChatPane({ conversationId, isDark, currentUserId, onActivit
     clearTimeout(typingStopTimerRef.current);
     getSocket().emit('conv:typing', { conversationId, isTyping: false });
     try {
-      await supportAPI.sendConversationMessage(conversationId, { message: text });
+      await supportAPI.sendConversationMessage(conversationId, { message: text, replyToMessageId: replyTarget?.id || null });
       setInput('');
+      setReplyTarget(null);
     } catch (err) {
       setError(err?.response?.data?.error || err.message || 'Mesaj göndərilmədi');
     } finally {
@@ -801,21 +905,29 @@ function ConversationChatPane({ conversationId, isDark, currentUserId, onActivit
         ) : (
           messages.map((m) => {
             const mine = m.senderId === currentUserId;
-            return (
-              <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                <div
-                  className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
-                    mine ? 'bg-indigo-600 text-white' : isDark ? 'bg-slate-800 text-slate-100' : 'bg-slate-100 text-slate-900'
-                  }`}
-                >
-                  {!mine ? (
-                    <div className={`text-[11px] font-semibold mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.senderName}</div>
-                  ) : null}
-                  <div className="whitespace-pre-wrap">{m.message}</div>
-                  <div className={`text-[10px] mt-1 text-right ${mine ? 'text-indigo-100/70' : isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                    {fmtDateTime(m.createdAt)}
-                  </div>
+            const quoted = m.replyToMessageId ? messagesById.get(m.replyToMessageId) : null;
+            const bubble = (
+              <div
+                onDoubleClick={() => setReplyTarget(m)}
+                className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm cursor-pointer ${
+                  mine ? 'bg-indigo-600 text-white' : isDark ? 'bg-slate-800 text-slate-100' : 'bg-slate-100 text-slate-900'
+                }`}
+              >
+                <QuotedMessagePreview quoted={quoted} isDark={isDark} mine={mine} />
+                {!mine ? (
+                  <div className={`text-[11px] font-semibold mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.senderName}</div>
+                ) : null}
+                <div className="whitespace-pre-wrap">{m.message}</div>
+                <div className={`text-[10px] mt-1 text-right ${mine ? 'text-indigo-100/70' : isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  {fmtDateTime(m.createdAt)}
                 </div>
+              </div>
+            );
+            return (
+              <div key={m.id} className={`group flex items-start gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
+                {mine ? <ReplyMenuButton isDark={isDark} onReply={() => setReplyTarget(m)} align="right" /> : null}
+                {bubble}
+                {!mine ? <ReplyMenuButton isDark={isDark} onReply={() => setReplyTarget(m)} align="left" /> : null}
               </div>
             );
           })
@@ -835,6 +947,8 @@ function ConversationChatPane({ conversationId, isDark, currentUserId, onActivit
         ) : null}
         <div ref={bottomRef} />
       </div>
+
+      <ReplyPreviewBar isDark={isDark} replyTarget={replyTarget} onCancel={() => setReplyTarget(null)} />
 
       {error ? <p className={`px-4 pb-2 text-xs ${isDark ? 'text-red-300' : 'text-red-600'}`}>{error}</p> : null}
 
