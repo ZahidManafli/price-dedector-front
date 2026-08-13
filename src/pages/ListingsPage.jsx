@@ -38,6 +38,12 @@ export default function ListingsPage() {
   const [deadStockEmailSent, setDeadStockEmailSent] = useState(false);
   const listingsRequestRef = useRef(0);
 
+  // ── Relist frequency ──────────────────────────────────────────────────────
+  const [relistFrequencyInput, setRelistFrequencyInput] = useState('');
+  const [savingRelistFrequency, setSavingRelistFrequency] = useState(false);
+  const [relistFrequencySaved, setRelistFrequencySaved] = useState(false);
+  const relistFrequencySavedTimeoutRef = useRef(null);
+
   // ── Inline edit state ─────────────────────────────────────────────────────
   const [inlineEditId, setInlineEditId] = useState(null);
   const [inlineValues, setInlineValues] = useState({});
@@ -67,6 +73,13 @@ export default function ListingsPage() {
         setActiveEbayAccountId(status.activeEbayAccountId || null);
         if (!status.connected) { setShowConnectModal(true); setLoading(false); return; }
         await loadListings();
+        ebayAPI
+          .getRelistFrequency()
+          .then((res) => {
+            const days = res?.data?.relistFrequencyDays;
+            setRelistFrequencyInput(days ? String(days) : '');
+          })
+          .catch(() => {});
       } catch {
         setShowConnectModal(true);
       } finally {
@@ -74,6 +87,7 @@ export default function ListingsPage() {
       }
     };
     init();
+    return () => clearTimeout(relistFrequencySavedTimeoutRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -124,6 +138,24 @@ export default function ListingsPage() {
       setError(err?.response?.data?.error || err.message || 'Failed to switch active eBay account');
     } finally {
       setSwitchingEbayAccount(false);
+    }
+  };
+
+  const handleSaveRelistFrequency = async () => {
+    const trimmed = relistFrequencyInput.trim();
+    const days = trimmed ? Number.parseInt(trimmed, 10) : null;
+    if (trimmed && (!Number.isFinite(days) || days <= 0)) return;
+
+    setSavingRelistFrequency(true);
+    try {
+      await ebayAPI.saveRelistFrequency(days);
+      setRelistFrequencySaved(true);
+      clearTimeout(relistFrequencySavedTimeoutRef.current);
+      relistFrequencySavedTimeoutRef.current = setTimeout(() => setRelistFrequencySaved(false), 2000);
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Failed to save relist frequency');
+    } finally {
+      setSavingRelistFrequency(false);
     }
   };
 
@@ -461,6 +493,29 @@ export default function ListingsPage() {
               )
             )}
             {typeof total === 'number' ? `${t('listingsPage.total')}: ${total}` : null}
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-md border ${isDark ? 'border-slate-700 bg-slate-800/60 text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-700'}`}
+              title={t('listingsPage.relistFrequencyHint')}
+            >
+              {t('listingsPage.relistFrequencyEvery')}
+              <input
+                type="number"
+                min="1"
+                value={relistFrequencyInput}
+                onChange={(e) => setRelistFrequencyInput(e.target.value)}
+                onBlur={handleSaveRelistFrequency}
+                placeholder="-"
+                className={`w-12 text-center rounded-md border px-1 py-0.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/40 ${
+                  isDark ? 'bg-slate-900 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+                }`}
+              />
+              {t('listingsPage.relistFrequencyDaysSuffix')}
+              {savingRelistFrequency ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : relistFrequencySaved ? (
+                <Check size={13} className="text-emerald-500" />
+              ) : null}
+            </span>
           </div>
         ) : null}
       </div>

@@ -450,7 +450,12 @@
     "noListings": "Cari filtrlər üçün siyahı tapılmadı.",
     "page": "Səhifə",
     "previous": "Əvvəlki",
-    "next": "Sonrakı"
+    "next": "Sonrakı",
+    "relistFrequencyLabel": "Relist tezliyi",
+    "relistFrequencyEvery": "hər",
+    "relistFrequencyDaysSuffix": "gündən bir",
+    "relistFrequencySaved": "Yadda saxlanıldı",
+    "relistFrequencyHint": "Sonuncu listinginizdən bu qədər gün keçəndə e-poçt və Telegram vasitəsilə xatırlatma göndəriləcək."
   },
   "amazonLookupPage": {
     "title": "Amazon Axtarış",

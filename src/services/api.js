@@ -153,6 +153,9 @@ export const ebayAPI = {
     api.put(`/ebay/listings/${encodeURIComponent(listingId)}/auto-stock`, payload),
   deleteListingAutoStockRule: (listingId) =>
     api.delete(`/ebay/listings/${encodeURIComponent(listingId)}/auto-stock`),
+  getRelistFrequency: () => api.get('/ebay/relist-frequency'),
+  saveRelistFrequency: (relistFrequencyDays) =>
+    api.put('/ebay/relist-frequency', { relistFrequencyDays }),
   getListingFeedback: (listingId, params = {}) =>
     api.get(`/ebay/listings/${encodeURIComponent(listingId)}/feedback`, { params }),
   respondToListingFeedback: (listingId, payload) =>

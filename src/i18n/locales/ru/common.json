@@ -450,7 +450,12 @@
     "noListings": "Объявления не найдены для текущих фильтров.",
     "page": "Страница",
     "previous": "Предыдущая",
-    "next": "Следующая"
+    "next": "Следующая",
+    "relistFrequencyLabel": "Частота релиста",
+    "relistFrequencyEvery": "каждые",
+    "relistFrequencyDaysSuffix": "дней",
+    "relistFrequencySaved": "Сохранено",
+    "relistFrequencyHint": "Вы получите напоминание по email и в Telegram, когда с последнего объявления пройдёт столько дней."
   },
   "amazonLookupPage": {
     "title": "Поиск Amazon",

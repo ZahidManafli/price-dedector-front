@@ -648,7 +648,12 @@
     "noListings": "No listings found for current filters.",
     "page": "Page",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "relistFrequencyLabel": "Relist frequency",
+    "relistFrequencyEvery": "every",
+    "relistFrequencyDaysSuffix": "days",
+    "relistFrequencySaved": "Saved",
+    "relistFrequencyHint": "You'll get an email + Telegram reminder once this many days have passed since your last listing."
   },
   "amazonLookupPage": {
     "title": "Amazon Lookup",

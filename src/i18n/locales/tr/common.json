@@ -450,7 +450,12 @@
     "noListings": "Geçerli filtreler için ilan bulunamadı.",
     "page": "Sayfa",
     "previous": "Önceki",
-    "next": "Sonraki"
+    "next": "Sonraki",
+    "relistFrequencyLabel": "Yeniden listeleme sıklığı",
+    "relistFrequencyEvery": "her",
+    "relistFrequencyDaysSuffix": "günde bir",
+    "relistFrequencySaved": "Kaydedildi",
+    "relistFrequencyHint": "Son ilanınızdan bu kadar gün geçtiğinde e-posta ve Telegram ile hatırlatma alacaksınız."
   },
   "amazonLookupPage": {
     "title": "Amazon Arama",
