@@ -4,7 +4,7 @@ import { ebayAPI, productAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
-import { ArrowDownUp, Loader2, MessageSquare, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, TrendingUp } from 'lucide-react';
+import { ArrowDownUp, Loader2, MessageSquare, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, TrendingUp, Store } from 'lucide-react';
 import OrderMessageSidebar from '../components/OrderMessageSidebar';
 import { profitAPI } from '../services/api';
 
@@ -462,6 +462,9 @@ export default function OrdersPage() {
 
   const [loading, setLoading] = useState(true);
   const [ebayStatus, setEbayStatus] = useState({ connected: false });
+  const [ebayAccounts, setEbayAccounts] = useState([]);
+  const [activeEbayAccountId, setActiveEbayAccountId] = useState(null);
+  const [switchingEbayAccount, setSwitchingEbayAccount] = useState(false);
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [error, setError] = useState(null);
 
@@ -591,6 +594,8 @@ export default function OrdersPage() {
         const statusRes = await ebayAPI.getStatus();
         const status = statusRes?.data || { connected: false };
         setEbayStatus(status);
+        setEbayAccounts(Array.isArray(status.ebayAccounts) ? status.ebayAccounts : []);
+        setActiveEbayAccountId(status.activeEbayAccountId || null);
 
         if (!status.connected) {
           setShowConnectModal(true);
@@ -735,6 +740,26 @@ export default function OrdersPage() {
     }
   };
 
+  // Switching the store here also switches the system's active eBay account
+  // (same action Settings/Tracking pages' switcher performs), since orders are
+  // always fetched against whichever account is currently active. Page cursors
+  // are account-specific, so reset back to page 0 on switch.
+  const handleEbayAccountChange = async (accountId) => {
+    if (!accountId || accountId === activeEbayAccountId) return;
+    setActiveEbayAccountId(accountId);
+    setSwitchingEbayAccount(true);
+    try {
+      await ebayAPI.setActiveAccount(accountId);
+      window.dispatchEvent(new Event('ebay:updated'));
+      setPageCursors([null]);
+      await loadPage(0, { forceRefresh: true });
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Failed to switch active eBay account');
+    } finally {
+      setSwitchingEbayAccount(false);
+    }
+  };
+
   const handleConnect = async () => {
     try {
       const response = await ebayAPI.getConnectUrl();
@@ -846,7 +871,7 @@ export default function OrdersPage() {
           </div>
         </div>
         <div className={`mb-4 rounded-xl border p-3 ${isDark ? 'bg-slate-900/40 border-slate-700' : 'bg-white border-slate-200'}`}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className={`grid grid-cols-1 gap-3 ${ebayAccounts.length > 1 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
             <label className="relative md:col-span-1">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -887,6 +912,23 @@ export default function OrdersPage() {
                 <option value="FULFILLED">{t('ordersPage.filter.fulfilled')}</option>
               </select>
             </label>
+            {ebayAccounts.length > 1 && (
+              <label className="relative">
+                <Store size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <select
+                  value={activeEbayAccountId || ''}
+                  onChange={(e) => handleEbayAccountChange(e.target.value)}
+                  disabled={switchingEbayAccount}
+                  className={`w-full rounded-lg pl-9 pr-3 py-2 text-sm border disabled:opacity-60 ${
+                    isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+                  }`}
+                >
+                  {ebayAccounts.map((a) => (
+                    <option key={a.id} value={a.id}>{a.connectionName || a.username || a.profileUserId || 'eBay account'}</option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
         </div>
         <div
