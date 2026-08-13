@@ -646,15 +646,20 @@ const TYPING_SAFETY_CLEAR_MS = 4000;
 // the "Mentora yaz" conversation) share the exact same recording behavior.
 function useVoiceRecorder({ onSend, onError }) {
   const [recording, setRecording] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
   const recordTimerRef = useRef(null);
   const streamRef = useRef(null);
 
-  const stopTracks = () => {
+  const stopTimer = () => {
     clearInterval(recordTimerRef.current);
     recordTimerRef.current = null;
+  };
+
+  const stopTracks = () => {
+    stopTimer();
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
   };
@@ -673,11 +678,28 @@ function useVoiceRecorder({ onSend, onError }) {
       recorder.start();
       mediaRecorderRef.current = recorder;
       setRecordSeconds(0);
+      setPaused(false);
       setRecording(true);
       recordTimerRef.current = setInterval(() => setRecordSeconds((s) => s + 1), 1000);
     } catch {
       onError?.('Mikrofona giriş rədd edildi və ya mövcud deyil');
     }
+  };
+
+  const pauseRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state !== 'recording') return;
+    recorder.pause();
+    stopTimer();
+    setPaused(true);
+  };
+
+  const resumeRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state !== 'paused') return;
+    recorder.resume();
+    recordTimerRef.current = setInterval(() => setRecordSeconds((s) => s + 1), 1000);
+    setPaused(false);
   };
 
   const cancelRecording = () => {
@@ -689,6 +711,7 @@ function useVoiceRecorder({ onSend, onError }) {
     stopTracks();
     recordedChunksRef.current = [];
     setRecording(false);
+    setPaused(false);
   };
 
   const sendRecording = () => {
@@ -700,6 +723,7 @@ function useVoiceRecorder({ onSend, onError }) {
       recordedChunksRef.current = [];
       stopTracks();
       setRecording(false);
+      setPaused(false);
       onSend?.(blob, durationAtStop);
     };
     recorder.stop();
@@ -717,7 +741,25 @@ function useVoiceRecorder({ onSend, onError }) {
     []
   );
 
-  return { recording, recordSeconds, startRecording, cancelRecording, sendRecording };
+  return { recording, paused, recordSeconds, startRecording, pauseRecording, resumeRecording, cancelRecording, sendRecording };
+}
+
+// WhatsApp-style animated waveform shown while recording — a staggered opacity
+// pulse across bars of varying height (not a live amplitude readout).
+const WAVEFORM_BAR_HEIGHTS = [6, 11, 16, 9, 14, 18, 7, 12, 16, 9, 13, 8, 17, 10, 14, 6, 12, 15, 9, 11];
+
+function RecordingWaveform({ isDark, paused }) {
+  return (
+    <div className="flex-1 flex items-center gap-[3px] overflow-hidden">
+      {WAVEFORM_BAR_HEIGHTS.map((h, i) => (
+        <span
+          key={i}
+          className={`w-[3px] rounded-full ${paused ? '' : 'animate-pulse'} ${isDark ? 'bg-indigo-400' : 'bg-indigo-500'}`}
+          style={{ height: `${h}px`, animationDelay: `${i * 80}ms` }}
+        />
+      ))}
+    </div>
+  );
 }
 
 function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
@@ -938,18 +980,26 @@ function TicketChatModal({ ticket, isDark, currentUserId, onClose }) {
               <button
                 type="button"
                 onClick={voiceRecorder.cancelRecording}
-                className={`p-2 rounded-full ${isDark ? 'text-rose-400 hover:bg-slate-800' : 'text-rose-500 hover:bg-slate-100'}`}
+                className={`shrink-0 p-2 rounded-full ${isDark ? 'text-rose-400 hover:bg-slate-800' : 'text-rose-500 hover:bg-slate-100'}`}
               >
                 <Trash2 size={16} />
               </button>
-              <span className="flex-1 flex items-center gap-1.5 text-sm">
-                <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+              <span className="shrink-0 flex items-center gap-1.5 text-sm">
+                <span className={`h-2 w-2 rounded-full bg-rose-500 ${voiceRecorder.paused ? '' : 'animate-pulse'}`} />
                 <span className={isDark ? 'text-slate-200' : 'text-slate-700'}>{fmtSeconds(voiceRecorder.recordSeconds)}</span>
               </span>
+              <RecordingWaveform isDark={isDark} paused={voiceRecorder.paused} />
+              <button
+                type="button"
+                onClick={voiceRecorder.paused ? voiceRecorder.resumeRecording : voiceRecorder.pauseRecording}
+                className={`shrink-0 p-2 rounded-full ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'}`}
+              >
+                {voiceRecorder.paused ? <Play size={16} /> : <Pause size={16} />}
+              </button>
               <button
                 type="button"
                 onClick={voiceRecorder.sendRecording}
-                className="rounded-lg bg-indigo-600 p-2.5 text-white transition hover:bg-indigo-500"
+                className="shrink-0 rounded-full bg-indigo-600 p-2.5 text-white transition hover:bg-indigo-500"
               >
                 <Send size={16} />
               </button>
