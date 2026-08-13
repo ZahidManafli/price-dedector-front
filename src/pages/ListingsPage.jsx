@@ -5,7 +5,7 @@ import { ebayAPI } from '../services/api';
 import Alert from '../components/Alert';
 import {
   ArrowDownUp, Check, Loader2, Mail, MessageSquare, Package, Link2,
-  Pencil, Search, SlidersHorizontal, Trash2, AlertTriangle, X, Store,
+  Pencil, Search, SlidersHorizontal, Trash2, AlertTriangle, X, ChevronDown,
 } from 'lucide-react';
 import FeedbackSidebar from '../components/FeedbackSidebar';
 import { useTheme } from '../context/ThemeContext';
@@ -439,9 +439,26 @@ export default function ListingsPage() {
         {ebayStatus.connected ? (
           <div className={`text-sm flex items-center gap-3 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
             {(ebayStatus.activeAccountLabel || ebayStatus.accountId) && (
-              <span className={`inline-flex items-center rounded-full px-3 py-2 text-md border ${isDark ? 'border-emerald-700 bg-emerald-900/30 text-emerald-200' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
-                {t('listingsPage.active')}: <span className="ml-1 font-semibold">{ebayStatus.activeAccountLabel || ebayStatus.accountId}</span>
-              </span>
+              ebayAccounts.length > 1 ? (
+                <span className={`relative inline-flex items-center gap-1.5 rounded-full pl-3 pr-7 py-2 text-md border ${isDark ? 'border-emerald-700 bg-emerald-900/30 text-emerald-200' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
+                  {t('listingsPage.active')}:
+                  <select
+                    value={activeEbayAccountId || ''}
+                    onChange={(e) => handleEbayAccountChange(e.target.value)}
+                    disabled={switchingEbayAccount}
+                    className="appearance-none bg-transparent border-none outline-none font-semibold cursor-pointer disabled:opacity-60"
+                  >
+                    {ebayAccounts.map((a) => (
+                      <option key={a.id} value={a.id}>{a.connectionName || a.username || a.profileUserId || 'eBay account'}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={13} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" />
+                </span>
+              ) : (
+                <span className={`inline-flex items-center rounded-full px-3 py-2 text-md border ${isDark ? 'border-emerald-700 bg-emerald-900/30 text-emerald-200' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
+                  {t('listingsPage.active')}: <span className="ml-1 font-semibold">{ebayStatus.activeAccountLabel || ebayStatus.accountId}</span>
+                </span>
+              )
             )}
             {typeof total === 'number' ? `${t('listingsPage.total')}: ${total}` : null}
           </div>
@@ -543,7 +560,7 @@ export default function ListingsPage() {
 
           {/* ── Filters ── */}
           <div className={`mb-4 rounded-xl border p-3 ${isDark ? 'bg-slate-900/40 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <div className={`grid grid-cols-1 gap-3 ${ebayAccounts.length > 1 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <label className="relative md:col-span-2">
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
@@ -566,21 +583,6 @@ export default function ListingsPage() {
                   <option value="DEAD_STOCK">⚠ Donmuş Stok (30+ gün)</option>
                 </select>
               </label>
-              {ebayAccounts.length > 1 && (
-                <label className="relative">
-                  <Store size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <select
-                    value={activeEbayAccountId || ''}
-                    onChange={(e) => handleEbayAccountChange(e.target.value)}
-                    disabled={switchingEbayAccount}
-                    className={`w-full rounded-lg pl-9 pr-3 py-2 text-sm border disabled:opacity-60 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                  >
-                    {ebayAccounts.map((a) => (
-                      <option key={a.id} value={a.id}>{a.connectionName || a.username || a.profileUserId || 'eBay account'}</option>
-                    ))}
-                  </select>
-                </label>
-              )}
             </div>
           </div>
 

@@ -4,7 +4,7 @@ import { ebayAPI, productAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
-import { ArrowDownUp, Loader2, MessageSquare, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, TrendingUp, Store } from 'lucide-react';
+import { ArrowDownUp, Loader2, MessageSquare, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, TrendingUp, ChevronDown } from 'lucide-react';
 import OrderMessageSidebar from '../components/OrderMessageSidebar';
 import { profitAPI } from '../services/api';
 
@@ -789,9 +789,26 @@ export default function OrdersPage() {
         {ebayStatus.connected ? (
           <div className={`text-sm flex items-center gap-3 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
             {(ebayStatus.activeAccountLabel || ebayStatus.accountId) ? (
-              <span className={`inline-flex items-center rounded-full px-3 py-2 text-md border ${isDark ? 'border-emerald-700 bg-emerald-900/30 text-emerald-200' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
-                {t('ordersPage.activeAccount')}: <span className="ml-1 font-semibold">{ebayStatus.activeAccountLabel || ebayStatus.accountId}</span>
-              </span>
+              ebayAccounts.length > 1 ? (
+                <span className={`relative inline-flex items-center gap-1.5 rounded-full pl-3 pr-7 py-2 text-md border ${isDark ? 'border-emerald-700 bg-emerald-900/30 text-emerald-200' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
+                  {t('ordersPage.activeAccount')}:
+                  <select
+                    value={activeEbayAccountId || ''}
+                    onChange={(e) => handleEbayAccountChange(e.target.value)}
+                    disabled={switchingEbayAccount}
+                    className="appearance-none bg-transparent border-none outline-none font-semibold cursor-pointer disabled:opacity-60"
+                  >
+                    {ebayAccounts.map((a) => (
+                      <option key={a.id} value={a.id}>{a.connectionName || a.username || a.profileUserId || 'eBay account'}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={13} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" />
+                </span>
+              ) : (
+                <span className={`inline-flex items-center rounded-full px-3 py-2 text-md border ${isDark ? 'border-emerald-700 bg-emerald-900/30 text-emerald-200' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
+                  {t('ordersPage.activeAccount')}: <span className="ml-1 font-semibold">{ebayStatus.activeAccountLabel || ebayStatus.accountId}</span>
+                </span>
+              )
             ) : null}
             {typeof total === 'number' ? `${t('ordersPage.table.total')}: ${total}` : null}
           </div>
@@ -871,7 +888,7 @@ export default function OrdersPage() {
           </div>
         </div>
         <div className={`mb-4 rounded-xl border p-3 ${isDark ? 'bg-slate-900/40 border-slate-700' : 'bg-white border-slate-200'}`}>
-          <div className={`grid grid-cols-1 gap-3 ${ebayAccounts.length > 1 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <label className="relative md:col-span-1">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -912,23 +929,6 @@ export default function OrdersPage() {
                 <option value="FULFILLED">{t('ordersPage.filter.fulfilled')}</option>
               </select>
             </label>
-            {ebayAccounts.length > 1 && (
-              <label className="relative">
-                <Store size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <select
-                  value={activeEbayAccountId || ''}
-                  onChange={(e) => handleEbayAccountChange(e.target.value)}
-                  disabled={switchingEbayAccount}
-                  className={`w-full rounded-lg pl-9 pr-3 py-2 text-sm border disabled:opacity-60 ${
-                    isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
-                  }`}
-                >
-                  {ebayAccounts.map((a) => (
-                    <option key={a.id} value={a.id}>{a.connectionName || a.username || a.profileUserId || 'eBay account'}</option>
-                  ))}
-                </select>
-              </label>
-            )}
           </div>
         </div>
         <div
