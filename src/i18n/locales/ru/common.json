@@ -455,7 +455,7 @@
     "relistFrequencyEvery": "каждые",
     "relistFrequencyDaysSuffix": "дней",
     "relistFrequencySaved": "Сохранено",
-    "relistFrequencyHint": "Вы получите напоминание по email и в Telegram, когда с последнего объявления пройдёт столько дней."
+    "relistFrequencyHint": "Это относится к текущему активному магазину eBay. Вы получите напоминание по email и в Telegram, когда с последнего объявления этого магазина пройдёт столько дней. У каждого магазина своя частота — переключите магазин, чтобы увидеть или изменить его настройку."
   },
   "amazonLookupPage": {
     "title": "Поиск Amazon",

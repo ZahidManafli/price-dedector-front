@@ -455,7 +455,7 @@
     "relistFrequencyEvery": "her",
     "relistFrequencyDaysSuffix": "günde bir",
     "relistFrequencySaved": "Kaydedildi",
-    "relistFrequencyHint": "Son ilanınızdan bu kadar gün geçtiğinde e-posta ve Telegram ile hatırlatma alacaksınız."
+    "relistFrequencyHint": "Bu, şu anda aktif olan eBay mağazası içindir. O mağazanın son ilanından bu kadar gün geçtiğinde e-posta ve Telegram ile hatırlatma alacaksınız. Her mağazanın kendi sıklığı vardır — ayarını görmek veya değiştirmek için mağaza değiştirin."
   },
   "amazonLookupPage": {
     "title": "Amazon Arama",

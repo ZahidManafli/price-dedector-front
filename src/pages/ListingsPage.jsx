@@ -5,9 +5,10 @@ import { ebayAPI } from '../services/api';
 import Alert from '../components/Alert';
 import {
   ArrowDownUp, Check, Loader2, Mail, MessageSquare, Package, Link2,
-  Pencil, Search, SlidersHorizontal, Trash2, AlertTriangle, X, ChevronDown,
+  Pencil, Search, SlidersHorizontal, Trash2, AlertTriangle, X,
 } from 'lucide-react';
 import FeedbackSidebar from '../components/FeedbackSidebar';
+import EbayAccountSwitcher from '../components/EbayAccountSwitcher';
 import { useTheme } from '../context/ThemeContext';
 
 export default function ListingsPage() {
@@ -63,6 +64,16 @@ export default function ListingsPage() {
   const [removingAutoStock, setRemovingAutoStock] = useState('');
 
   // ── Init ──────────────────────────────────────────────────────────────────
+  const loadRelistFrequency = (ebayAccountId) => {
+    ebayAPI
+      .getRelistFrequency(ebayAccountId)
+      .then((res) => {
+        const days = res?.data?.relistFrequencyDays;
+        setRelistFrequencyInput(days ? String(days) : '');
+      })
+      .catch(() => {});
+  };
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -73,13 +84,7 @@ export default function ListingsPage() {
         setActiveEbayAccountId(status.activeEbayAccountId || null);
         if (!status.connected) { setShowConnectModal(true); setLoading(false); return; }
         await loadListings();
-        ebayAPI
-          .getRelistFrequency()
-          .then((res) => {
-            const days = res?.data?.relistFrequencyDays;
-            setRelistFrequencyInput(days ? String(days) : '');
-          })
-          .catch(() => {});
+        loadRelistFrequency(status.activeEbayAccountId || null);
       } catch {
         setShowConnectModal(true);
       } finally {
@@ -133,6 +138,8 @@ export default function ListingsPage() {
     try {
       await ebayAPI.setActiveAccount(accountId);
       window.dispatchEvent(new Event('ebay:updated'));
+      setRelistFrequencyInput('');
+      loadRelistFrequency(accountId);
       await loadListings({ forceRefresh: true });
     } catch (err) {
       setError(err?.response?.data?.error || err.message || 'Failed to switch active eBay account');
@@ -148,7 +155,7 @@ export default function ListingsPage() {
 
     setSavingRelistFrequency(true);
     try {
-      await ebayAPI.saveRelistFrequency(days);
+      await ebayAPI.saveRelistFrequency(days, activeEbayAccountId);
       setRelistFrequencySaved(true);
       clearTimeout(relistFrequencySavedTimeoutRef.current);
       relistFrequencySavedTimeoutRef.current = setTimeout(() => setRelistFrequencySaved(false), 2000);
@@ -471,26 +478,15 @@ export default function ListingsPage() {
         {ebayStatus.connected ? (
           <div className={`text-sm flex items-center gap-3 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
             {(ebayStatus.activeAccountLabel || ebayStatus.accountId) && (
-              ebayAccounts.length > 1 ? (
-                <span className={`relative inline-flex items-center gap-1.5 rounded-full pl-3 pr-7 py-2 text-md border ${isDark ? 'border-emerald-700 bg-emerald-900/30 text-emerald-200' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
-                  {t('listingsPage.active')}:
-                  <select
-                    value={activeEbayAccountId || ''}
-                    onChange={(e) => handleEbayAccountChange(e.target.value)}
-                    disabled={switchingEbayAccount}
-                    className="appearance-none bg-transparent border-none outline-none font-semibold cursor-pointer disabled:opacity-60"
-                  >
-                    {ebayAccounts.map((a) => (
-                      <option key={a.id} value={a.id}>{a.connectionName || a.username || a.profileUserId || 'eBay account'}</option>
-                    ))}
-                  </select>
-                  <ChevronDown size={13} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" />
-                </span>
-              ) : (
-                <span className={`inline-flex items-center rounded-full px-3 py-2 text-md border ${isDark ? 'border-emerald-700 bg-emerald-900/30 text-emerald-200' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
-                  {t('listingsPage.active')}: <span className="ml-1 font-semibold">{ebayStatus.activeAccountLabel || ebayStatus.accountId}</span>
-                </span>
-              )
+              <EbayAccountSwitcher
+                accounts={ebayAccounts}
+                activeAccountId={activeEbayAccountId}
+                activeAccountLabel={ebayStatus.activeAccountLabel || ebayStatus.accountId}
+                onChange={handleEbayAccountChange}
+                disabled={switchingEbayAccount}
+                label={t('listingsPage.active')}
+                isDark={isDark}
+              />
             )}
             {typeof total === 'number' ? `${t('listingsPage.total')}: ${total}` : null}
             <span

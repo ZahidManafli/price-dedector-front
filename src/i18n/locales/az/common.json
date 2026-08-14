@@ -455,7 +455,7 @@
     "relistFrequencyEvery": "hər",
     "relistFrequencyDaysSuffix": "gündən bir",
     "relistFrequencySaved": "Yadda saxlanıldı",
-    "relistFrequencyHint": "Sonuncu listinginizdən bu qədər gün keçəndə e-poçt və Telegram vasitəsilə xatırlatma göndəriləcək."
+    "relistFrequencyHint": "Bu, hazırda aktiv olan eBay mağazası üçündür. Sonuncu listinginizdən bu qədər gün keçəndə e-poçt və Telegram vasitəsilə xatırlatma göndəriləcək. Hər mağaza üçün ayrıca təyin edə bilərsiniz — mağazanı dəyişdikdə həmin mağazanın öz tezliyi göstərilir."
   },
   "amazonLookupPage": {
     "title": "Amazon Axtarış",

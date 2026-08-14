@@ -653,7 +653,7 @@
     "relistFrequencyEvery": "every",
     "relistFrequencyDaysSuffix": "days",
     "relistFrequencySaved": "Saved",
-    "relistFrequencyHint": "You'll get an email + Telegram reminder once this many days have passed since your last listing."
+    "relistFrequencyHint": "This applies to the currently active eBay store. You'll get an email + Telegram reminder once this many days have passed since that store's last listing. Each store has its own frequency — switch stores to view or edit its setting."
   },
   "amazonLookupPage": {
     "title": "Amazon Lookup",
