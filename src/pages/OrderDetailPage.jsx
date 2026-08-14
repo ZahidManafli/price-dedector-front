@@ -32,6 +32,7 @@ export default function OrderDetailPage() {
     shippedDate: new Date().toISOString(),
   });
   const [manualAmazonOrderId, setManualAmazonOrderId] = useState('');
+  const [copyAddressStatus, setCopyAddressStatus] = useState(null); // null | 'copying' | 'success' | 'error' | 'unavailable'
 
   const summary = useMemo(() => {
     if (!order) return {};
@@ -239,6 +240,55 @@ export default function OrderDetailPage() {
     }
   };
 
+  // Bridges the buyer's shipping address to the Checkila browser extension (see
+  // extension/bridge.js + extension/background.js's CHECKILA_COPY_ADDRESS handler),
+  // which stores it so the "Checkila Fill" button injected into Amazon's delivery
+  // address form (extension/amazon_checkila_fill_button.js) can fill it in later.
+  // bridge.js only runs on checkila.com/www.checkila.com, so this is a no-op (times
+  // out to 'unavailable') when the extension isn't installed.
+  const handleCopyAddress = () => {
+    if (!shipping.line1 && !shipping.name) return;
+
+    const requestId = `copy-address-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    setCopyAddressStatus('copying');
+
+    const timeoutId = setTimeout(() => {
+      window.removeEventListener('message', onResult);
+      setCopyAddressStatus('unavailable');
+    }, 3000);
+
+    function onResult(event) {
+      if (event.source !== window) return;
+      if (event.data?.type !== 'CHECKILA_COPY_ADDRESS_RESULT') return;
+      if (event.data?.requestId !== requestId) return;
+      clearTimeout(timeoutId);
+      window.removeEventListener('message', onResult);
+      setCopyAddressStatus(event.data?.success ? 'success' : 'error');
+    }
+    window.addEventListener('message', onResult);
+
+    window.postMessage(
+      {
+        type: 'CHECKILA_COPY_ADDRESS',
+        requestId,
+        payload: {
+          orderId: summary.id !== '-' ? summary.id : null,
+          shipTo: {
+            fullName: shipping.name,
+            phone: shipping.phone,
+            addressLine1: shipping.line1,
+            addressLine2: shipping.line2,
+            city: shipping.city,
+            postalCode: shipping.postalCode,
+            stateOrProvince: shipping.state,
+            country: shipping.country,
+          },
+        },
+      },
+      window.location.origin
+    );
+  };
+
   useEffect(() => {
     if (!order) return;
 
@@ -345,7 +395,19 @@ export default function OrderDetailPage() {
         <h2 className={`font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('orderDetailPage.shippingAndPayment')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
-            <p className={`text-xs mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('orderDetailPage.shipTo')}</p>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('orderDetailPage.shipTo')}</p>
+              {(shipping.line1 || shipping.name) && (
+                <button
+                  type="button"
+                  onClick={handleCopyAddress}
+                  disabled={copyAddressStatus === 'copying'}
+                  className="btn-secondary text-xs py-1 px-2"
+                >
+                  {copyAddressStatus === 'copying' ? t('orderDetailPage.copyingAddress') : t('orderDetailPage.copyAddress')}
+                </button>
+              )}
+            </div>
             <p className={`font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{shipping.name || '—'}</p>
             <p className={`${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
               {[shipping.line1, shipping.line2].filter(Boolean).join(' ')}
@@ -360,6 +422,19 @@ export default function OrderDetailPage() {
             {shipping.service && (
               <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 {t('orderDetailPage.serviceLabel')} {shipping.service}
+              </p>
+            )}
+            {copyAddressStatus && copyAddressStatus !== 'copying' && (
+              <p
+                className={`text-xs mt-2 ${
+                  copyAddressStatus === 'success'
+                    ? isDark ? 'text-emerald-300' : 'text-emerald-600'
+                    : isDark ? 'text-rose-300' : 'text-rose-600'
+                }`}
+              >
+                {copyAddressStatus === 'success' && t('orderDetailPage.copyAddressSuccess')}
+                {copyAddressStatus === 'error' && t('orderDetailPage.copyAddressError')}
+                {copyAddressStatus === 'unavailable' && t('orderDetailPage.copyAddressUnavailable')}
               </p>
             )}
           </div>
