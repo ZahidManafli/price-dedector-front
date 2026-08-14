@@ -20,6 +20,7 @@ function formatPlanCategory(category = '') {
   if (n === 'amazon_monitoring' || n === 'amazonmonitoring') return 'Amazon Monitoring';
   if (n === 'analytics' || n === 'analysis' || n === 'data_analytics') return 'Analytics';
   if (n === 'subscription') return 'Subscription';
+  if (n === 'tracking_plans' || n === 'tracking_plan' || n === 'trackingplans') return 'Tracking';
   if (n === 'custom') return 'Custom';
   return toHumanText(n || 'subscription');
 }
@@ -66,7 +67,7 @@ function initialForm(referralSlug = '') {
     trackingPlanId: '',
   };
 }
-const CATEGORY_ORDER = ['subscription', 'analytics', 'amazon_monitoring'];
+const CATEGORY_ORDER = ['subscription', 'analytics', 'amazon_monitoring', 'tracking_plans'];
 
 // ─── Plan tile ────────────────────────────────────────────────────────────────
 function PlanTile({ plan, selected, onSelect, isDark }) {
@@ -206,9 +207,11 @@ export default function SignupPage() {
         const res = await settingsAPI.getPublicPlans();
         if (cancelled) return;
         const allActive = (res?.data?.plans || []).map(normalizePlan).filter((p) => p.isActive !== false);
-        // Tracking add-on plans are never subscribable on their own — they're an
-        // opt-in extra attached to whichever real plan the user picks below.
-        const next = allActive.filter((p) => p.category !== 'tracking_plans');
+        // Tracking-category plans are shown as their own browsable category here too
+        // (matching the landing page), AND separately kept in trackingAddOnPlans so
+        // they can still be offered as an opt-in add-on attached to a Subscription
+        // plan (see canOfferTrackingAddon below) — the two uses aren't exclusive.
+        const next = allActive;
         setPlans(next);
         setTrackingAddOnPlans(allActive.filter((p) => p.category === 'tracking_plans'));
         const firstSub = next.find((p) => p.category === 'subscription') || next[0];
