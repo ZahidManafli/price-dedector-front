@@ -147,6 +147,8 @@
   "productDetailPage": {
     "failedLoad": "Ürün ayrıntıları yüklenemedi",
     "compareTriggered": "Fiyat karşılaştırması tetiklendi. Güncellemeler için e-postanızı kontrol edin!",
+    "compareEbaySyncFailed": "Amazon fiyatı değişti, ancak eBay ilanı güncellenemedi: {{error}}",
+    "compareEbayNotSynced": "Amazon fiyatı değişti, ancak eBay senkronizasyonu devre dışı veya bağlı bir ilan bulunamadı.",
     "failedCompare": "Fiyatlar karşılaştırılamadı",
     "notFound": "Ürün bulunamadı",
     "backToDashboard": "Panele dön",

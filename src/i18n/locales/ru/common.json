@@ -147,6 +147,8 @@
   "productDetailPage": {
     "failedLoad": "Не удалось загрузить детали товара",
     "compareTriggered": "Сравнение цен запущено. Проверьте свою почту для обновлений!",
+    "compareEbaySyncFailed": "Цена на Amazon изменилась, но обновить листинг eBay не удалось: {{error}}",
+    "compareEbayNotSynced": "Цена на Amazon изменилась, но синхронизация с eBay отключена или связанный листинг не найден.",
     "failedCompare": "Не удалось сравнить цены",
     "notFound": "Товар не найден",
     "backToDashboard": "Вернуться на панель",

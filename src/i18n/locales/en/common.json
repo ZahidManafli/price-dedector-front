@@ -345,6 +345,8 @@
   "productDetailPage": {
     "failedLoad": "Failed to load product details",
     "compareTriggered": "Price comparison triggered. Check your email for updates!",
+    "compareEbaySyncFailed": "Amazon price changed, but the eBay listing could not be updated: {{error}}",
+    "compareEbayNotSynced": "Amazon price changed, but eBay sync is disabled or no linked listing was found.",
     "failedCompare": "Failed to compare prices",
     "notFound": "Product not found",
     "backToDashboard": "Back to Dashboard",

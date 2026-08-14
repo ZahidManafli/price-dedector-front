@@ -49,11 +49,30 @@ export default function ProductDetailPage() {
     if (compareLoading) return;
     try {
       setCompareLoading(true);
-      await productAPI.comparePrice(productId);
-      setAlert({
-        type: 'success',
-        message: t('productDetailPage.compareTriggered'),
-      });
+      const response = await productAPI.comparePrice(productId);
+      const result = response?.data || {};
+
+      // The backend can detect an Amazon price change and still fail (or skip)
+      // pushing it to eBay — e.g. the eBay API call itself errored, or the
+      // product has no linked/sync-enabled listing. Surface that instead of
+      // always showing a blanket success message, which previously hid these
+      // failures from the user entirely.
+      if (result.hasDifference && result.autoUpdateError) {
+        setAlert({
+          type: 'error',
+          message: t('productDetailPage.compareEbaySyncFailed', { error: result.autoUpdateError }),
+        });
+      } else if (result.hasDifference && result.autoUpdatedEbayPrice == null) {
+        setAlert({
+          type: 'warning',
+          message: t('productDetailPage.compareEbayNotSynced'),
+        });
+      } else {
+        setAlert({
+          type: 'success',
+          message: t('productDetailPage.compareTriggered'),
+        });
+      }
       // Refresh product data
       await fetchProductDetails();
     } catch (error) {
