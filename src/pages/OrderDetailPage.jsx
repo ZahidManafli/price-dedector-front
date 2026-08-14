@@ -6,6 +6,7 @@ import { ArrowLeft, User, Receipt, Truck } from 'lucide-react';
 import { ebayAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { TAB_KEYS } from '../utils/planAccess';
+import { copyAddressToExtension } from '../utils/checkilaExtensionBridge';
 
 export default function OrderDetailPage() {
   const { isDark } = useTheme();
@@ -246,47 +247,24 @@ export default function OrderDetailPage() {
   // address form (extension/amazon_checkila_fill_button.js) can fill it in later.
   // bridge.js only runs on checkila.com/www.checkila.com, so this is a no-op (times
   // out to 'unavailable') when the extension isn't installed.
-  const handleCopyAddress = () => {
+  const handleCopyAddress = async () => {
     if (!shipping.line1 && !shipping.name) return;
 
-    const requestId = `copy-address-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     setCopyAddressStatus('copying');
-
-    const timeoutId = setTimeout(() => {
-      window.removeEventListener('message', onResult);
-      setCopyAddressStatus('unavailable');
-    }, 3000);
-
-    function onResult(event) {
-      if (event.source !== window) return;
-      if (event.data?.type !== 'CHECKILA_COPY_ADDRESS_RESULT') return;
-      if (event.data?.requestId !== requestId) return;
-      clearTimeout(timeoutId);
-      window.removeEventListener('message', onResult);
-      setCopyAddressStatus(event.data?.success ? 'success' : 'error');
-    }
-    window.addEventListener('message', onResult);
-
-    window.postMessage(
-      {
-        type: 'CHECKILA_COPY_ADDRESS',
-        requestId,
-        payload: {
-          orderId: summary.id !== '-' ? summary.id : null,
-          shipTo: {
-            fullName: shipping.name,
-            phone: shipping.phone,
-            addressLine1: shipping.line1,
-            addressLine2: shipping.line2,
-            city: shipping.city,
-            postalCode: shipping.postalCode,
-            stateOrProvince: shipping.state,
-            country: shipping.country,
-          },
-        },
+    const result = await copyAddressToExtension({
+      orderId: summary.id !== '-' ? summary.id : null,
+      shipTo: {
+        fullName: shipping.name,
+        phone: shipping.phone,
+        addressLine1: shipping.line1,
+        addressLine2: shipping.line2,
+        city: shipping.city,
+        postalCode: shipping.postalCode,
+        stateOrProvince: shipping.state,
+        country: shipping.country,
       },
-      window.location.origin
-    );
+    });
+    setCopyAddressStatus(result.unavailable ? 'unavailable' : result.success ? 'success' : 'error');
   };
 
   useEffect(() => {

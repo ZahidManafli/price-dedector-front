@@ -624,7 +624,12 @@
       "total": "Toplam",
       "ordered": "Sipariş edildi",
       "orderedSent": "Gönderildi",
-      "details": "Detaylar"
+      "details": "Detaylar",
+      "copyAddress": "Adresi kopyala",
+      "copyingAddress": "Kopyalanıyor...",
+      "copyAddressSuccess": "Kopyalandı! Amazon'da \"Checkila Fill\"e tıklayın.",
+      "copyAddressError": "Adres kopyalanamadı.",
+      "copyAddressUnavailable": "Checkila eklentisi bulunamadı."
     },
     "empty": "Mevcut filtreler için sipariş bulunamadı.",
     "pagination": {

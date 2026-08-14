@@ -4,10 +4,11 @@ import { ebayAPI, productAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
-import { ArrowDownUp, Loader2, MessageSquare, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, TrendingUp } from 'lucide-react';
+import { ArrowDownUp, Loader2, MessageSquare, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, TrendingUp, Copy } from 'lucide-react';
 import OrderMessageSidebar from '../components/OrderMessageSidebar';
 import EbayAccountSwitcher from '../components/EbayAccountSwitcher';
 import { profitAPI } from '../services/api';
+import { copyAddressToExtension } from '../utils/checkilaExtensionBridge';
 
 const ORDERS_FILTER_STORAGE_KEY = 'checkila.ordersPage.filters.v1';
 const ORDERS_LISTINGS_STORAGE_KEY = 'checkila.ordersPage.listings.v1';
@@ -124,6 +125,51 @@ function buildShipTo(order) {
     postalCode:      String(addr?.postalCode                         || '').trim(),
     phone:           String(step?.primaryPhone?.phoneNumber          || '').trim(),
   };
+}
+
+// "Copy address" button per order row — sends the same buyer shipTo shape
+// buildShipTo() already produces for the "Order on Amazon" auto-order flow to
+// the Checkila extension (via copyAddressToExtension), so the extension's
+// "Checkila Fill" button on Amazon's delivery address form can fill it in.
+// Mirrors OrderDetailPage's "Copy address" button — same shared helper, same
+// success/error/unavailable states — just triggered from the orders table
+// instead of requiring a trip into the order detail page first.
+function CopyAddressButton({ order, isDark, t }) {
+  const [status, setStatus] = useState(null); // null | 'copying' | 'success' | 'error' | 'unavailable'
+
+  const handleClick = async () => {
+    const shipTo = buildShipTo(order);
+    if (!shipTo.addressLine1 && !shipTo.fullName) return;
+
+    setStatus('copying');
+    const result = await copyAddressToExtension({ shipTo, orderId: order?.orderId });
+    setStatus(result.unavailable ? 'unavailable' : result.success ? 'success' : 'error');
+    setTimeout(() => setStatus(null), 4000);
+  };
+
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={status === 'copying'}
+        title={t('ordersPage.table.copyAddress')}
+        className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors ${
+          status === 'copying' ? 'opacity-50 cursor-not-allowed' : ''
+        } ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}
+      >
+        {status === 'copying' ? <Loader2 size={12} className="animate-spin" /> : <Copy size={12} />}
+        {status === 'copying' ? t('ordersPage.table.copyingAddress') : t('ordersPage.table.copyAddress')}
+      </button>
+      {status && status !== 'copying' && (
+        <span className={`text-[10px] leading-tight max-w-[160px] ${status === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
+          {status === 'success' && t('ordersPage.table.copyAddressSuccess')}
+          {status === 'error' && t('ordersPage.table.copyAddressError')}
+          {status === 'unavailable' && t('ordersPage.table.copyAddressUnavailable')}
+        </span>
+      )}
+    </div>
+  );
 }
 
 function AsinCell({ order, isDark, autoAsin, allOrders, isInProfit, isCancelled }) {
@@ -1037,6 +1083,7 @@ export default function OrdersPage() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="inline-flex items-center gap-2">
+                            <CopyAddressButton order={order} isDark={isDark} t={t} />
                             {true && listingId && (
                               <button
                                 type="button"

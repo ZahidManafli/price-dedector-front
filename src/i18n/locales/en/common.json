@@ -822,7 +822,12 @@
       "total": "Total",
       "ordered": "Ordered",
       "orderedSent": "Sent",
-      "details": "Details"
+      "details": "Details",
+      "copyAddress": "Copy address",
+      "copyingAddress": "Copying...",
+      "copyAddressSuccess": "Copied! Click \"Checkila Fill\" on Amazon.",
+      "copyAddressError": "Failed to copy address.",
+      "copyAddressUnavailable": "Checkila extension not detected."
     },
     "empty": "No orders found for current filters.",
     "pagination": {

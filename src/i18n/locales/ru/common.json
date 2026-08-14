@@ -624,7 +624,12 @@
       "total": "Итого",
       "ordered": "Заказано",
       "orderedSent": "Отправлено",
-      "details": "Подробности"
+      "details": "Подробности",
+      "copyAddress": "Скопировать адрес",
+      "copyingAddress": "Копирование...",
+      "copyAddressSuccess": "Скопировано! Нажмите «Checkila Fill» на Amazon.",
+      "copyAddressError": "Не удалось скопировать адрес.",
+      "copyAddressUnavailable": "Расширение Checkila не обнаружено."
     },
     "empty": "По текущим фильтрам заказы не найдены.",
     "pagination": {
