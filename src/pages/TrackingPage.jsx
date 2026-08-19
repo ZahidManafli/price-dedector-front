@@ -597,10 +597,10 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title, buyerUsername, sh
           {/* Manual escape hatch: the seller already has a real carrier tracking number
               (FedEx/UPS/USPS) in hand — from the retailer directly, or because Amazon's
               tracking page just won't scrape — and wants an Aquiline code for it without
-              any Amazon involvement at all. Available until this order's tracking has
-              actually been pushed to eBay; converting again after that would just
-              orphan the already-uploaded fulfillment. */}
-          {!row.ebayFulfillmentId && (
+              any Amazon involvement at all. Available for as long as the order hasn't
+              been marked delivered — including after it's already been pushed to eBay
+              once, so the seller can still correct/replace a wrong tracking code. */}
+          {row.fulfillmentStatus !== 'delivered' && (
             <button
               type="button"
               onClick={() => setShowConvertModal(true)}
