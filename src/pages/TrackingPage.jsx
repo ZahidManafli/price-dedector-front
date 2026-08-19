@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X, Trash2, Search } from 'lucide-react';
+import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X, Trash2, Search, Copy } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { ebayAPI, settingsAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
@@ -164,6 +164,134 @@ function JobStatusModal({ phase, message, isDark }) {
   );
 }
 
+const CONVERT_TRACKING_CARRIERS = ['FEDEX', 'UPS', 'USPS'];
+
+// "Convert tracking code" — the seller already has a real carrier tracking number in
+// hand (not scraped off Amazon) and wants it turned into an Aquiline code. Unlike
+// "Get Tracking"/"Update Labels" this is synchronous (no extension job/poll — the
+// backend calls Aquiline directly) and, once submitted, deliberately does NOT push
+// to eBay itself — the code is just shown here for the seller to review; "Send to
+// eBay" (already on the row) is the separate, explicit action that uploads it.
+function ConvertTrackingModal({ isDark, onClose, onSubmit }) {
+  const [carrier, setCarrier] = useState(CONVERT_TRACKING_CARRIERS[0]);
+  const [trackingCode, setTrackingCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!trackingCode.trim() || loading) return;
+    setLoading(true);
+    setError('');
+    try {
+      const updated = await onSubmit({ carrier, trackingCode: trackingCode.trim() });
+      setResult(updated);
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Failed to convert tracking code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div
+        className={`rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4 border ${
+          isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
+        }`}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className={`text-base font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+            Convert tracking code
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className={isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {!result ? (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <label className="block text-sm">
+              <span className={`block mb-1 font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Carrier</span>
+              <select
+                value={carrier}
+                onChange={(e) => setCarrier(e.target.value)}
+                className={`w-full rounded-lg border px-3 py-2 ${
+                  isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+                }`}
+              >
+                {CONVERT_TRACKING_CARRIERS.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm">
+              <span className={`block mb-1 font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Tracking code</span>
+              <input
+                autoFocus
+                value={trackingCode}
+                onChange={(e) => setTrackingCode(e.target.value)}
+                placeholder="e.g. 794612345678"
+                className={`w-full rounded-lg border px-3 py-2 ${
+                  isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+                }`}
+              />
+            </label>
+            {error && <p className="text-sm text-rose-500">{error}</p>}
+            <div className="flex justify-end gap-2 pt-1">
+              <button type="button" onClick={onClose} className="btn-secondary text-sm px-3 py-1.5">
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading || !trackingCode.trim()}
+                className="btn-primary text-sm px-3 py-1.5"
+              >
+                {loading ? 'Converting…' : 'Convert'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-4">
+            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Aquiline code obtained:</p>
+            <div
+              className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 font-mono text-sm ${
+                isDark ? 'bg-slate-800 border-slate-700 text-slate-100' : 'bg-slate-50 border-slate-200 text-slate-900'
+              }`}
+            >
+              <span>{result.aquilineTrackingNumber || '—'}</span>
+              {result.aquilineTrackingNumber && (
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard?.writeText(result.aquilineTrackingNumber)}
+                  className={isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-500'}
+                  title="Copy"
+                >
+                  <Copy size={14} />
+                </button>
+              )}
+            </div>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Not sent to eBay yet — use "Send to eBay" on this row when you're ready.
+            </p>
+            <div className="flex justify-end">
+              <button type="button" onClick={onClose} className="btn-secondary text-sm px-3 py-1.5">
+                Done
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 // Polls an extension_scrape_jobs-backed job until it's done/error, same contract
 // every job type (fast-mode search, update-labels, get-tracking) already uses.
 async function pollExtensionJobUntilDone(jobId, { timeoutMs = 60_000, intervalMs = 1500 } = {}) {
@@ -182,7 +310,15 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title, buyerUsername, sh
   const [getTrackingModal, setGetTrackingModal] = useState(null); // { phase, message }
   const [updateLabelsModal, setUpdateLabelsModal] = useState(null); // { phase, message }
   const [gettingManualTracking, setGettingManualTracking] = useState(false);
+  const [showConvertModal, setShowConvertModal] = useState(false);
   const [error, setError] = useState('');
+
+  const handleConvertTrackingCode = async ({ carrier, trackingCode }) => {
+    const res = await ebayAPI.convertTrackingCode(row.ebayOrderId, { carrier, trackingCode });
+    const updated = res?.data?.tracking;
+    if (updated) onUpdated(updated);
+    return updated;
+  };
 
   const handleGetTracking = async () => {
     setError('');
@@ -445,8 +581,10 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title, buyerUsername, sh
               show it for a real-carrier-direct shipment (no Aquiline order to refresh)
               to avoid ever calling this with a placeholder tracking number and
               clobbering the real carrier number already on the row. Stays visible
-              (and sendable) even after delivery. */}
-          {row.aquilineTrackingNumber && (
+              (and sendable) even after delivery. Never shown for a "Convert tracking
+              code" row either — skipAmazonTrackingCheck means there's no Amazon page
+              for this to (re-)scrape; the backend also rejects it defensively. */}
+          {row.aquilineTrackingNumber && !row.skipAmazonTrackingCheck && (
             <button
               type="button"
               onClick={handleUpdateLabels}
@@ -454,6 +592,21 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title, buyerUsername, sh
               className="btn-secondary text-xs px-3 py-1.5"
             >
               Update Labels
+            </button>
+          )}
+          {/* Manual escape hatch: the seller already has a real carrier tracking number
+              (FedEx/UPS/USPS) in hand — from the retailer directly, or because Amazon's
+              tracking page just won't scrape — and wants an Aquiline code for it without
+              any Amazon involvement at all. Available until this order's tracking has
+              actually been pushed to eBay; converting again after that would just
+              orphan the already-uploaded fulfillment. */}
+          {!row.ebayFulfillmentId && (
+            <button
+              type="button"
+              onClick={() => setShowConvertModal(true)}
+              className="btn-secondary text-xs px-3 py-1.5"
+            >
+              Convert tracking code
             </button>
           )}
           {/* OrderDetailPage only renders with the full eBay order passed via router
@@ -474,6 +627,13 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title, buyerUsername, sh
       )}
       {updateLabelsModal && (
         <JobStatusModal phase={updateLabelsModal.phase} message={updateLabelsModal.message} isDark={isDark} />
+      )}
+      {showConvertModal && (
+        <ConvertTrackingModal
+          isDark={isDark}
+          onClose={() => setShowConvertModal(false)}
+          onSubmit={handleConvertTrackingCode}
+        />
       )}
     </tr>
   );

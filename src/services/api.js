@@ -204,6 +204,8 @@ export const ebayAPI = {
   deleteAllUnmatchedAmazonOrders: () => api.delete('/ebay/tracking/unmatched'),
   getTracking: (orderId) => api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/get-tracking`),
   getManualTracking: (orderId) => api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/get-manual-tracking`),
+  convertTrackingCode: (orderId, payload) =>
+    api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/convert`, payload),
   updateLabels: (orderId) => api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/update-labels`),
   pollExtensionJob: (jobId) => api.get(`/ebay/extension-scrape/${encodeURIComponent(jobId)}`),
   scrapeItemDetails: (url) => api.post('/ebay/scrape-item-details', { url }),
