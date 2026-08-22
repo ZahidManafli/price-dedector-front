@@ -188,6 +188,7 @@ export const ebayAPI = {
     return api.get('/ebay/orders', { params });
   },
   getOrderTracking: (orderId) => api.get(`/ebay/orders/${encodeURIComponent(orderId)}/tracking`),
+  deleteOrderTracking: (orderId) => api.delete(`/ebay/orders/${encodeURIComponent(orderId)}/tracking`),
   registerOrderTracking: (orderId, payload) =>
     api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/register`, payload),
   refreshOrderTracking: (orderId) =>

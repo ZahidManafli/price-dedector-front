@@ -305,12 +305,13 @@ async function pollExtensionJobUntilDone(jobId, { timeoutMs = 60_000, intervalMs
   return { error: 'Timed out waiting for the extension' };
 }
 
-function TrackedRow({ row, isDark, onUpdated, imageUrl, title, buyerUsername, shipToFullName }) {
+function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerUsername, shipToFullName }) {
   const [sendingToEbay, setSendingToEbay] = useState(false);
   const [getTrackingModal, setGetTrackingModal] = useState(null); // { phase, message }
   const [updateLabelsModal, setUpdateLabelsModal] = useState(null); // { phase, message }
   const [gettingManualTracking, setGettingManualTracking] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
 
   const handleConvertTrackingCode = async ({ carrier, trackingCode }) => {
@@ -318,6 +319,23 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title, buyerUsername, sh
     const updated = res?.data?.tracking;
     if (updated) onUpdated(updated);
     return updated;
+  };
+
+  // Only ever offered while fulfillmentStatus === 'ordered' — the backend also
+  // enforces this (409s otherwise), so this can't be bypassed by a stale button
+  // still showing after the status has since moved on.
+  const handleDeleteTracking = async () => {
+    if (deleting) return;
+    if (!window.confirm(`Remove tracking for order ${row.ebayOrderId}? This can't be undone.`)) return;
+    setDeleting(true);
+    setError('');
+    try {
+      await ebayAPI.deleteOrderTracking(row.ebayOrderId);
+      onDeleted?.(row.id);
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Failed to delete tracking');
+      setDeleting(false);
+    }
   };
 
   const handleGetTracking = async () => {
@@ -607,6 +625,22 @@ function TrackedRow({ row, isDark, onUpdated, imageUrl, title, buyerUsername, sh
               className="btn-secondary text-xs px-3 py-1.5"
             >
               Convert tracking code
+            </button>
+          )}
+          {/* Delete — only while still 'ordered' (nothing shipped/tracked yet), so this
+              can never throw away real tracking/shipping history. The backend enforces
+              the same rule regardless of this button's visibility. */}
+          {row.fulfillmentStatus === 'ordered' && (
+            <button
+              type="button"
+              onClick={handleDeleteTracking}
+              disabled={deleting}
+              title="Delete tracking"
+              className={`inline-flex items-center gap-1 rounded-md p-1.5 transition-colors ${
+                isDark ? 'text-rose-400 hover:bg-rose-950/40' : 'text-rose-600 hover:bg-rose-50'
+              }`}
+            >
+              <Trash2 size={13} />
             </button>
           )}
           {/* OrderDetailPage only renders with the full eBay order passed via router
@@ -1249,6 +1283,10 @@ export default function TrackingPage() {
     loadTrackingCredits();
   };
 
+  const handleRowDeleted = (rowId) => {
+    setRows((prev) => prev.filter((r) => r.id !== rowId));
+  };
+
   return (
     <div className="page-shell">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
@@ -1404,6 +1442,7 @@ export default function TrackingPage() {
                         row={row}
                         isDark={isDark}
                         onUpdated={handleRowUpdated}
+                        onDeleted={handleRowDeleted}
                         imageUrl={meta?.imageUrl}
                         title={meta?.title}
                         buyerUsername={meta?.buyerUsername}
