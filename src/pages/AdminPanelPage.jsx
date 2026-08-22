@@ -60,6 +60,7 @@ function defaultEditForUser(u) {
     isIt6HourChecker: !!u.isIt6HourChecker,
     isMentor: !!u.isMentor,
     isUntouched: !!u.isUntouched,   // ✅ add this
+    trackingTabOverride: !!u.trackingTabOverride,
   };
 }
 
@@ -287,6 +288,7 @@ export default function AdminPanelPage() {
         isUntouched: !!uEdits.isUntouched,
         isIt6HourChecker: !!uEdits.isIt6HourChecker,
         isMentor: !!uEdits.isMentor,
+        trackingTabOverride: !!uEdits.trackingTabOverride,
       });
 
       await refreshData();
@@ -1085,7 +1087,8 @@ export default function AdminPanelPage() {
                             {u.isUntouched && <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[11px] font-semibold text-purple-700 dark:bg-purple-950/50 dark:text-purple-300">{t('adminPanelPage.untouched')}</span>}
                             {u.isIt6HourChecker && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"><Clock3 size={9} />6h</span>}
                             {u.isMentor && <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"><LifeBuoy size={9} />Mentor</span>}
-                            {!u.isBlocked && !u.isUntouched && !u.isIt6HourChecker && !u.isMentor && <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">Active</span>}
+                            {u.trackingTabOverride && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"><Zap size={9} />Tracking</span>}
+                            {!u.isBlocked && !u.isUntouched && !u.isIt6HourChecker && !u.isMentor && !u.trackingTabOverride && <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">Active</span>}
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -1270,6 +1273,11 @@ export default function AdminPanelPage() {
                       <input type="checkbox" checked={!!rowEdits.isMentor} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], isMentor: e.target.checked } }))} className="rounded" />
                       <LifeBuoy size={11} className="text-indigo-500" />
                       <span className="text-indigo-500 font-semibold">Support mentor</span>
+                    </label>
+                    <label className={`flex items-center gap-2 text-xs cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <input type="checkbox" checked={!!rowEdits.trackingTabOverride} onChange={(e) => setEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], trackingTabOverride: e.target.checked } }))} className="rounded" />
+                      <span className="text-emerald-500 font-semibold">Tracking access</span>
+                      <span className={`opacity-60 ${isDark ? 'text-slate-400' : ''}`}>(grants the Tracking tab regardless of plan)</span>
                     </label>
                   </div>
                   <div className="flex gap-3">
