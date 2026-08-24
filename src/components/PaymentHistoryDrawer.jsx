@@ -18,6 +18,16 @@ function describePayment(payment) {
   return payment.planName || 'Checkila ödənişi';
 }
 
+// 'az-AZ' toLocaleString renders as "2026 M08 24" in most browsers (limited
+// ICU data for that locale) — 'en-GB' with explicit fields gives a
+// consistent "24 Aug 2026, 13:29" regardless of the visitor's browser/OS.
+function formatHistoryDate(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
 export default function PaymentHistoryDrawer({ open, onClose }) {
   const { isDark } = useTheme();
   const { user } = useAuth();
@@ -93,9 +103,7 @@ export default function PaymentHistoryDrawer({ open, onClose }) {
                       {describePayment(payment)}
                     </p>
                     <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {payment.paidAt || payment.createdAt
-                        ? new Date(payment.paidAt || payment.createdAt).toLocaleString('az-AZ', { dateStyle: 'medium', timeStyle: 'short' })
-                        : ''}
+                      {formatHistoryDate(payment.paidAt || payment.createdAt)}
                     </p>
                   </div>
                   <span
