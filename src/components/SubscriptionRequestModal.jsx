@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { settingsAPI } from '../services/api';
+import { settingsAPI, paymentsAPI } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -207,6 +207,16 @@ export default function SubscriptionRequestModal({
           email: form.email,
           code,
         });
+
+        // Custom plans have no fixed price to charge online — those stay on
+        // the existing manual admin-review flow. Everything else moves on to
+        // Epoint's hosted checkout; the account is provisioned automatically
+        // once that payment succeeds (see payments.js /epoint/callback).
+        if (form.planId && form.planId !== 'custom') {
+          window.location.href = paymentsAPI.epointCheckoutUrl(verificationRequestId);
+          return;
+        }
+
         onSuccess?.();
         onClose?.();
       } catch (err) {

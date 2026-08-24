@@ -47,6 +47,8 @@ import TrackingPage from './pages/TrackingPage';
 import CasesPage from './pages/CasesPage';
 import SupportPage from './pages/SupportPage';
 import UpgradePlanPage from './pages/UpgradePlanPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import PaymentErrorPage from './pages/PaymentErrorPage';
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
 
@@ -140,6 +142,8 @@ function AppContent() {
             <Route path="/ref/:slug" element={<ReferralLandingPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/succeess" element={<PaymentSuccessPage />} />
+            <Route path="/error" element={<PaymentErrorPage />} />
 
             {/* Protected Routes */}
             <Route

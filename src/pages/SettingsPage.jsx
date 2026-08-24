@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCircle2, Link2, Mail, ShieldCheck, Users } from 'lucide-react';
-import { amazonOAuthAPI, aquilineAPI, authAPI, ebayAPI, settingsAPI } from '../services/api';
+import { Bell, CheckCircle2, CreditCard, Link2, Mail, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { amazonOAuthAPI, aquilineAPI, authAPI, ebayAPI, paymentsAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import { useAuth } from '../context/AuthContext';
@@ -78,6 +78,11 @@ export default function SettingsPage() {
   const [requestModal, setRequestModal] = useState(null);
   const [ebayTab, setEbayTab] = useState('overview');
   const [settingsTab, setSettingsTab] = useState('security');
+  const [cards, setCards] = useState([]);
+  const [cardsLoading, setCardsLoading] = useState(false);
+  const [addingCard, setAddingCard] = useState(false);
+  const [autoRenewEnabled, setAutoRenewEnabled] = useState(false);
+  const [autoRenewSaving, setAutoRenewSaving] = useState(false);
 
   const activeEbayAccount = Array.isArray(ebayStatus.ebayAccounts)
     ? ebayStatus.ebayAccounts.find((acc) => acc.id && ebayStatus.activeEbayAccountId === acc.id) || ebayStatus.ebayAccounts[0] || null
@@ -248,6 +253,73 @@ export default function SettingsPage() {
           ? t('settingsPage.requestMoreCredits')
           : t('settingsPage.refreshSubscription'),
     });
+  };
+
+  const loadCards = async () => {
+    try {
+      setCardsLoading(true);
+      const response = await paymentsAPI.listCards();
+      setCards(response?.data?.cards || []);
+      setAutoRenewEnabled(!!response?.data?.autoRenewEnabled);
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || 'Kartlar yüklənərkən xəta baş verdi' });
+    } finally {
+      setCardsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (settingsTab === 'billing') {
+      loadCards();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settingsTab]);
+
+  const handleAddCard = async () => {
+    try {
+      setAddingCard(true);
+      const response = await paymentsAPI.registerCard();
+      const win = window.open('', '_blank');
+      if (win) {
+        win.document.write(response.data);
+        win.document.close();
+      }
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || 'Kart əlavə etmə başladıla bilmədi' });
+    } finally {
+      setAddingCard(false);
+    }
+  };
+
+  const handleSetDefaultCard = async (cardId) => {
+    try {
+      await paymentsAPI.setDefaultCard(cardId);
+      await loadCards();
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || 'Əsas kart dəyişdirilə bilmədi' });
+    }
+  };
+
+  const handleDeleteCard = async (cardId) => {
+    try {
+      await paymentsAPI.deleteCard(cardId);
+      await loadCards();
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || 'Kart silinə bilmədi' });
+    }
+  };
+
+  const handleToggleAutoRenew = async () => {
+    const next = !autoRenewEnabled;
+    try {
+      setAutoRenewSaving(true);
+      await paymentsAPI.setAutoRenew(next);
+      setAutoRenewEnabled(next);
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || 'Avtomatik yeniləmə tənzimlənə bilmədi' });
+    } finally {
+      setAutoRenewSaving(false);
+    }
   };
 
   const handleConnectEbay = async () => {
@@ -459,10 +531,11 @@ export default function SettingsPage() {
         )}
 
         <div className={`mb-6 rounded-xl p-1 border ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-1">
             {[
               { id: 'security', label: t('settingsPage.security') },
               { id: 'plans', label: t('settingsPage.plans') },
+              { id: 'billing', label: 'Ödəniş' },
               { id: 'ebay', label: t('settingsPage.ebay') },
               { id: 'amazon', label: t('settingsPage.amazon') },
               { id: 'notifications', label: t('settingsPage.notifications') },
@@ -559,6 +632,100 @@ export default function SettingsPage() {
                 {t('settingsPage.requestSubscriptionReset')}
               </button>
             </div>
+          </div>
+        </div>
+        )}
+
+        {settingsTab === 'billing' && (
+        <div className="glass-card p-4 md:p-5 mb-6 space-y-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className={`text-lg font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                <CreditCard size={16} />
+                Ödəniş kartları
+              </h2>
+              <p className={`text-sm mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                Kart məlumatlarınız birbaşa Epoint tərəfindən saxlanılır, biz kart nömrənizi görmürük.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleAddCard}
+              disabled={addingCard}
+              className="rounded-xl bg-indigo-600 text-white px-4 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
+            >
+              {addingCard ? 'Açılır...' : 'Kart əlavə et'}
+            </button>
+          </div>
+
+          {cardsLoading ? (
+            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Yüklənir...</p>
+          ) : cards.length === 0 ? (
+            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Hələ heç bir kart əlavə edilməyib.</p>
+          ) : (
+            <div className="space-y-2">
+              {cards.map((card) => (
+                <div
+                  key={card.id}
+                  className={`flex items-center justify-between rounded-lg p-3 ${
+                    isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
+                  }`}
+                >
+                  <div>
+                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                      {card.cardMask || 'Kart'} {card.isDefault && <span className="ml-2 text-xs font-semibold text-indigo-500">Əsas</span>}
+                    </p>
+                    {card.cardName && (
+                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{card.cardName}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!card.isDefault && (
+                      <button
+                        type="button"
+                        onClick={() => handleSetDefaultCard(card.id)}
+                        className={`text-xs font-semibold ${isDark ? 'text-indigo-300 hover:text-indigo-200' : 'text-indigo-600 hover:text-indigo-700'}`}
+                      >
+                        Əsas et
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCard(card.id)}
+                      className={`p-1.5 rounded-lg ${isDark ? 'text-red-300 hover:bg-red-500/10' : 'text-red-600 hover:bg-red-50'}`}
+                      title="Kartı sil"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className={`rounded-lg p-3 md:p-4 flex items-center justify-between gap-4 ${
+            isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
+          }`}>
+            <div>
+              <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Avtomatik yeniləmə</p>
+              <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Aktiv edilərsə, planınızın bitmə tarixində əsas kartınızdan avtomatik ödəniş çıxarılacaq.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleToggleAutoRenew}
+              disabled={autoRenewSaving || (!autoRenewEnabled && cards.length === 0)}
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-40 ${
+                autoRenewEnabled ? 'bg-indigo-600' : isDark ? 'bg-slate-700' : 'bg-slate-300'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                  autoRenewEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
           </div>
         </div>
         )}

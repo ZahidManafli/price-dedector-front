@@ -123,6 +123,16 @@ export const settingsAPI = {
   submitTrackingCreditsRequest: (data) => api.post('/settings/subscription-requests/tracking-credits', data),
 };
 
+// Epoint online payment APIs
+export const paymentsAPI = {
+  epointCheckoutUrl: (requestId) => `${API_BASE_URL}/payments/epoint/checkout/${encodeURIComponent(requestId)}`,
+  registerCard: () => api.post('/payments/epoint/card/register'),
+  listCards: () => api.get('/payments/cards'),
+  setDefaultCard: (cardId) => api.patch(`/payments/cards/${encodeURIComponent(cardId)}/default`),
+  deleteCard: (cardId) => api.delete(`/payments/cards/${encodeURIComponent(cardId)}`),
+  setAutoRenew: (enabled) => api.patch('/payments/auto-renew', { enabled }),
+};
+
 export const ebayAPI = {
   get: (...args) => api.get(...args),
   post: (...args) => api.post(...args),
