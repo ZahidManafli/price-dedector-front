@@ -49,6 +49,7 @@ import SupportPage from './pages/SupportPage';
 import UpgradePlanPage from './pages/UpgradePlanPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentErrorPage from './pages/PaymentErrorPage';
+import EpointRedirectPage from './pages/EpointRedirectPage';
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
 
@@ -144,6 +145,8 @@ function AppContent() {
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/succeess" element={<PaymentSuccessPage />} />
             <Route path="/error" element={<PaymentErrorPage />} />
+            <Route path="/payments/epoint/checkout/:requestId" element={<EpointRedirectPage kind="checkout" />} />
+            <Route path="/payments/epoint/card/register/:attemptId" element={<EpointRedirectPage kind="card" />} />
 
             {/* Protected Routes */}
             <Route
