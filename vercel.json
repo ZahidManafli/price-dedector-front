@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/payments/:path*",
+      "destination": "https://back.checkila.com/payments/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

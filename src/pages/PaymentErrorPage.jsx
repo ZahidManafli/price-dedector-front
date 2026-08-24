@@ -51,10 +51,10 @@ export default function PaymentErrorPage() {
             </button>
           )}
           <Link
-            to="/"
+            to={isCard ? '/settings' : '/'}
             className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
           >
-            Ana səhifəyə qayıt
+            {isCard ? 'Ayarlara qayıt' : 'Ana səhifəyə qayıt'}
           </Link>
         </div>
       </div>

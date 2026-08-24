@@ -34,10 +34,10 @@ export default function PaymentSuccessPage() {
         )}
 
         <Link
-          to="/login"
+          to={isCard ? '/settings' : '/login'}
           className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
         >
-          Daxil olun
+          {isCard ? 'Ayarlara qayıt' : 'Daxil olun'}
         </Link>
       </div>
     </div>

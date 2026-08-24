@@ -123,10 +123,17 @@ export const settingsAPI = {
   submitTrackingCreditsRequest: (data) => api.post('/settings/subscription-requests/tracking-credits', data),
 };
 
-// Epoint online payment APIs
+// Epoint online payment APIs.
+// epointCheckoutUrl/cardRegistrationUrl are deliberately relative — the
+// browser must stay on this app's own origin (checkila.com, proxied to the
+// backend via vercel.json) because Epoint validates the request's origin
+// and the success/error redirect URLs against the domain registered as
+// "Veb saytın ünvanı". Building these against API_BASE_URL (back.checkila.com)
+// causes Epoint to reject the payment with a site-url mismatch.
 export const paymentsAPI = {
-  epointCheckoutUrl: (requestId) => `${API_BASE_URL}/payments/epoint/checkout/${encodeURIComponent(requestId)}`,
-  registerCard: () => api.post('/payments/epoint/card/register'),
+  epointCheckoutUrl: (requestId) => `/payments/epoint/checkout/${encodeURIComponent(requestId)}`,
+  cardRegistrationUrl: (attemptId) => `/payments/epoint/card/register/${encodeURIComponent(attemptId)}`,
+  startCardRegistration: () => api.post('/payments/epoint/card/register'),
   listCards: () => api.get('/payments/cards'),
   setDefaultCard: (cardId) => api.patch(`/payments/cards/${encodeURIComponent(cardId)}/default`),
   deleteCard: (cardId) => api.delete(`/payments/cards/${encodeURIComponent(cardId)}`),

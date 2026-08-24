@@ -278,15 +278,16 @@ export default function SettingsPage() {
   const handleAddCard = async () => {
     try {
       setAddingCard(true);
-      const response = await paymentsAPI.registerCard();
-      const win = window.open('', '_blank');
-      if (win) {
-        win.document.write(response.data);
-        win.document.close();
-      }
+      const response = await paymentsAPI.startCardRegistration();
+      const attemptId = response?.data?.attemptId;
+      if (!attemptId) throw new Error('Missing attemptId');
+      // Full-page navigation (not a popup + document.write) so the resulting
+      // page has a real checkila.com URL — Epoint validates the page's own
+      // origin against the registered site url, which a scripted about:blank
+      // document wouldn't reliably carry.
+      window.location.href = paymentsAPI.cardRegistrationUrl(attemptId);
     } catch (err) {
       setAlert({ type: 'error', message: err?.response?.data?.error || 'Kart əlavə etmə başladıla bilmədi' });
-    } finally {
       setAddingCard(false);
     }
   };
