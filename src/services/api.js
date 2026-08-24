@@ -138,6 +138,7 @@ export const paymentsAPI = {
   getCheckoutPayload: (requestId) => api.get(`/payments/epoint/checkout/${encodeURIComponent(requestId)}`),
   getCardRegistrationPayload: (attemptId) => api.get(`/payments/epoint/card/register/${encodeURIComponent(attemptId)}`),
   startCardRegistration: () => api.post('/payments/epoint/card/register'),
+  getHistory: () => api.get('/payments/history'),
   listCards: () => api.get('/payments/cards'),
   setDefaultCard: (cardId) => api.patch(`/payments/cards/${encodeURIComponent(cardId)}/default`),
   deleteCard: (cardId) => api.delete(`/payments/cards/${encodeURIComponent(cardId)}`),

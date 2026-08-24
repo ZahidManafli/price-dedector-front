@@ -4,6 +4,7 @@ import { Bell, CheckCircle2, CreditCard, Link2, Mail, ShieldCheck, Trash2, Users
 import { amazonOAuthAPI, aquilineAPI, authAPI, ebayAPI, paymentsAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
+import PaymentHistoryDrawer from '../components/PaymentHistoryDrawer';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -83,6 +84,7 @@ export default function SettingsPage() {
   const [addingCard, setAddingCard] = useState(false);
   const [autoRenewEnabled, setAutoRenewEnabled] = useState(false);
   const [autoRenewSaving, setAutoRenewSaving] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const activeEbayAccount = Array.isArray(ebayStatus.ebayAccounts)
     ? ebayStatus.ebayAccounts.find((acc) => acc.id && ebayStatus.activeEbayAccountId === acc.id) || ebayStatus.ebayAccounts[0] || null
@@ -649,14 +651,25 @@ export default function SettingsPage() {
                 Kart məlumatlarınız birbaşa Epoint tərəfindən saxlanılır, biz kart nömrənizi görmürük.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={handleAddCard}
-              disabled={addingCard}
-              className="rounded-xl bg-indigo-600 text-white px-4 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
-            >
-              {addingCard ? 'Açılır...' : 'Kart əlavə et'}
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(true)}
+                className={`rounded-xl px-4 py-2.5 border transition ${
+                  isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                Ödəniş tarixçəsi
+              </button>
+              <button
+                type="button"
+                onClick={handleAddCard}
+                disabled={addingCard}
+                className="rounded-xl bg-indigo-600 text-white px-4 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
+              >
+                {addingCard ? 'Açılır...' : 'Kart əlavə et'}
+              </button>
+            </div>
           </div>
 
           {cardsLoading ? (
@@ -1453,6 +1466,8 @@ export default function SettingsPage() {
           submitLabel={requestModal?.requestType === 'update_credits' ? t('settingsPage.sendCreditRequest') : t('settingsPage.sendResetRequest')}
           onSuccess={() => setAlert({ type: 'success', message: t('settingsPage.requestSentToAdmin') })}
         />
+
+        <PaymentHistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} />
       </div>
     </div>
   );
