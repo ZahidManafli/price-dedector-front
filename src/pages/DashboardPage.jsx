@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { adminAPI, productAPI, settingsAPI, ebayAPI } from '../services/api';
+import { adminAPI, productAPI, settingsAPI, ebayAPI, paymentsAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
 import { formatCurrency } from '../utils/helpers';
@@ -63,11 +63,19 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber })
 
     try {
       setLoading(true);
-      await settingsAPI.submitTrackingCreditsRequest({
+      const response = await settingsAPI.submitTrackingCreditsRequest({
         requestedCredits: creditsNum,
         phoneNumber: hasPhoneOnFile ? existingPhoneNumber : phoneNumber.trim(),
         customNote: customNote.trim(),
       });
+      const requestId = response?.data?.request?.id;
+      if (requestId) {
+        // No email-verification step for this (authenticated) request type —
+        // go straight to Epoint. Credits are added automatically once the
+        // payment succeeds (see payments.js /epoint/callback).
+        window.location.href = paymentsAPI.epointCheckoutUrl(requestId);
+        return;
+      }
       onSuccess?.();
       onClose?.();
     } catch (err) {

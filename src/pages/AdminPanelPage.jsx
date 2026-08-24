@@ -1400,25 +1400,27 @@ export default function AdminPanelPage() {
                       </div>
 
                       <p className="mt-2 text-xs text-slate-500">{t('adminPanelPage.plan')}: {req.planName || t('adminPanelPage.na')}{req.requestType === 'subscription' ? ` (${planCategoryLabel})` : ''}</p>
-                      {req.requestType === 'subscription' && req.paymentMethod === 'epoint' ? (
-                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                          <span className={`rounded-full px-2.5 py-1 font-semibold ${
-                            req.paymentStatus === 'success'
-                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200'
-                              : req.paymentStatus === 'failed'
-                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200'
-                                : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-                          }`}>
-                            Onlayn ödəniş (Epoint) — {req.paymentStatus}
-                          </span>
-                          {req.epointAmount != null ? (
-                            <span className="text-slate-500">{Number(req.epointAmount).toFixed(2)} AZN</span>
-                          ) : null}
-                          {req.epointCardMask ? <span className="text-slate-500">{req.epointCardMask}</span> : null}
-                          {req.epointTransaction ? <span className="text-slate-400">#{req.epointTransaction}</span> : null}
-                        </div>
-                      ) : req.requestType === 'subscription' ? (
-                        <div className="mt-1 text-xs text-slate-400">Manual (admin)</div>
+                      {(req.requestType === 'subscription' || req.requestType === 'tracking_credits_topup') ? (
+                        req.paymentMethod === 'epoint' ? (
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                            <span className={`rounded-full px-2.5 py-1 font-semibold ${
+                              req.paymentStatus === 'success'
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200'
+                                : req.paymentStatus === 'failed'
+                                  ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200'
+                                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                            }`}>
+                              Onlayn ödəniş (Epoint) — {req.paymentStatus}
+                            </span>
+                            {req.epointAmount != null ? (
+                              <span className="text-slate-500">{Number(req.epointAmount).toFixed(2)} AZN</span>
+                            ) : null}
+                            {req.epointCardMask ? <span className="text-slate-500">{req.epointCardMask}</span> : null}
+                            {req.epointTransaction ? <span className="text-slate-400">#{req.epointTransaction}</span> : null}
+                          </div>
+                        ) : (
+                          <div className="mt-1 text-xs text-slate-400">Manual (admin)</div>
+                        )
                       ) : null}
                       {req.requestType === 'subscription' && req.requestedLimits?.includeTracking ? (
                         <p className="mt-1 text-xs text-teal-600 dark:text-teal-300">
