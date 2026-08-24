@@ -55,7 +55,7 @@ import ActivityTracker from './components/ActivityTracker';
 
 // Routes that stay reachable even for a user whose plan has expired, so they can
 // still see the notice and renew instead of getting redirected in a loop.
-const PLAN_EXPIRY_EXEMPT_ROUTES = ['/plan-expired', '/upgrade-plan'];
+const PLAN_EXPIRY_EXEMPT_ROUTES = ['/plan-expired', '/upgrade-plan', '/settings'];
 
 // Protected Route Component
 const ProtectedRoute = ({ children, requiredTab = null }) => {

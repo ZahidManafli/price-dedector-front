@@ -84,7 +84,11 @@ export default function SettingsPage() {
   const [addingCard, setAddingCard] = useState(false);
   const [autoRenewEnabled, setAutoRenewEnabled] = useState(false);
   const [autoRenewSaving, setAutoRenewSaving] = useState(false);
+  const [payingNow, setPayingNow] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+
+  const isTrialPlan = String(limits?.plan?.name || '').toLowerCase().includes('trial');
+  const defaultCard = cards.find((c) => c.isDefault) || null;
 
   const activeEbayAccount = Array.isArray(ebayStatus.ebayAccounts)
     ? ebayStatus.ebayAccounts.find((acc) => acc.id && ebayStatus.activeEbayAccountId === acc.id) || ebayStatus.ebayAccounts[0] || null
@@ -98,7 +102,11 @@ export default function SettingsPage() {
       try {
         const [prefRes, ebayRes, amazonRes, aquilineRes] = await Promise.all([
           settingsAPI.getPreferences(),
-          ebayAPI.getStatus(),
+          // A plan-expired user can still reach Settings (e.g. to pay via
+          // "Ödəniş et"), but /ebay/status stays gated on expiry — without
+          // this catch, that 403 would reject the whole Promise.all and
+          // silently skip setLimits() below too, breaking the billing tab.
+          ebayAPI.getStatus().catch(() => ({ data: {} })),
           amazonOAuthAPI.getStatus().catch(() => ({ data: { connected: false } })),
           aquilineAPI.getProfile().catch(() => null), // null = fetch failed, keep cached profile as-is
         ]);
@@ -309,6 +317,22 @@ export default function SettingsPage() {
       await loadCards();
     } catch (err) {
       setAlert({ type: 'error', message: err?.response?.data?.error || 'Kart silinə bilmədi' });
+    }
+  };
+
+  const handlePayNow = async () => {
+    try {
+      setPayingNow(true);
+      const response = await paymentsAPI.payNow();
+      const nextExpiresAt = response?.data?.nextExpiresAt ? new Date(response.data.nextExpiresAt).toLocaleDateString() : '';
+      setAlert({
+        type: 'success',
+        message: nextExpiresAt ? `Ödəniş uğurla alındı. Planınız ${nextExpiresAt} tarixinədək uzadıldı.` : 'Ödəniş uğurla alındı.',
+      });
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || 'Ödəniş zamanı xəta baş verdi' });
+    } finally {
+      setPayingNow(false);
     }
   };
 
@@ -714,6 +738,37 @@ export default function SettingsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {defaultCard && isTrialPlan && (
+            <div>
+              <button
+                type="button"
+                onClick={() => navigate('/upgrade-plan')}
+                className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-4 py-2 hover:bg-blue-700 transition"
+              >
+                Planı yüksəlt
+              </button>
+              <p className={`text-xs mt-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Trial plan üçün onlayn ödəniş edilə bilməz — davam etmək üçün planınızı yüksəldin.
+              </p>
+            </div>
+          )}
+
+          {defaultCard && !isTrialPlan && limits?.plan?.isExpired && (
+            <div>
+              <button
+                type="button"
+                onClick={handlePayNow}
+                disabled={payingNow}
+                className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-4 py-2 hover:bg-blue-700 transition disabled:opacity-50"
+              >
+                {payingNow ? 'Ödəniş edilir...' : 'Ödəniş et'}
+              </button>
+              <p className={`text-xs mt-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Əsas kartınızdan planınızın qiymətini (tracking add-on varsa, onunla birlikdə) indi çıxarır və planınızı 1 ay uzadır.
+              </p>
             </div>
           )}
 

@@ -68,7 +68,11 @@ api.interceptors.response.use(
       }
     } else if (status === 403 && code === 'PLAN_EXPIRED') {
       const path = typeof window !== 'undefined' ? window.location.pathname : '';
-      if (path && path !== '/plan-expired' && path !== '/upgrade-plan') {
+      // /settings stays reachable while expired (e.g. so the user can add a
+      // card and pay via "Ödəniş et") — a stray 403 from an unrelated
+      // sub-call made from that page (eBay/Amazon status, still gated on
+      // expiry) must not bounce them straight back out to /plan-expired.
+      if (path && path !== '/plan-expired' && path !== '/upgrade-plan' && path !== '/settings') {
         window.location.href = '/plan-expired';
       }
     }
@@ -143,6 +147,7 @@ export const paymentsAPI = {
   setDefaultCard: (cardId) => api.patch(`/payments/cards/${encodeURIComponent(cardId)}/default`),
   deleteCard: (cardId) => api.delete(`/payments/cards/${encodeURIComponent(cardId)}`),
   setAutoRenew: (enabled) => api.patch('/payments/auto-renew', { enabled }),
+  payNow: () => api.post('/payments/pay-now'),
 };
 
 export const ebayAPI = {
