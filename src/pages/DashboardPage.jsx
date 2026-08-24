@@ -525,7 +525,9 @@ export default function DashboardPage() {
 
   const userPlan = limits?.plan || null;
   const userPlanCategory = String(userPlan?.category || '').toLowerCase();
-  const canRequestTrackingCredits = userPlanCategory !== 'analytics' && userPlanCategory !== 'amazon_monitoring';
+  const isTrialPlan = String(userPlan?.name || '').toLowerCase().includes('trial');
+  const canRequestTrackingCredits =
+    userPlanCategory !== 'analytics' && userPlanCategory !== 'amazon_monitoring' && !isTrialPlan;
 
   const onOpenUpgradeRequest = () => {
     navigate('/upgrade-plan');
