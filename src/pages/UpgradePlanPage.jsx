@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, ArrowLeft, Loader2, ShieldCheck } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { settingsAPI } from '../services/api';
+import { settingsAPI, paymentsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -316,7 +316,6 @@ export default function UpgradePlanPage() {
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     settingsAPI.getPublicPlans()
@@ -393,7 +392,10 @@ export default function UpgradePlanPage() {
     setSubmitting(true);
     try {
       await settingsAPI.verifySubscriptionRequest({ requestId: pendingRequest.id, email: pendingRequest.email, code });
-      setSuccess(true);
+      // Every plan on this page is a real, priced plan (no "custom" option
+      // here) — always go straight to Epoint. The account is upgraded
+      // automatically once payment succeeds (see payments.js /epoint/callback).
+      window.location.href = paymentsAPI.epointCheckoutUrl(pendingRequest.id);
     } catch (err) {
       setCodeError(err?.response?.data?.error || 'Invalid or expired code. Please try again.');
     } finally {
@@ -404,30 +406,6 @@ export default function UpgradePlanPage() {
   const pageBg = isDark ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-900';
   const headerBg = isDark ? 'bg-slate-950/90 border-white/[0.06]' : 'bg-white/90 border-slate-200';
   const cardBg = isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
-
-  // ── Success ────────────────────────────────────────────────
-  if (success) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center px-4 ${pageBg}`}>
-        <div className="text-center max-w-sm">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-emerald-300/20 bg-emerald-400/10">
-            <CheckCircle2 className="h-10 w-10 text-emerald-400" />
-          </div>
-          <h2 className="text-2xl font-bold">Request Sent</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-400">
-            Your plan change request is under review. The admin will approve it — you'll be notified when it's live.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            className="mt-8 rounded-xl bg-cyan-400 px-8 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // ── Verify ─────────────────────────────────────────────────
   if (verifying) {
