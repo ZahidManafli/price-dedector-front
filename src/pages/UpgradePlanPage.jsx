@@ -303,7 +303,7 @@ export default function UpgradePlanPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isDark } = useTheme();
-  const { formatPrice, getPaymentCurrency } = useLanguage();
+  const { formatPrice } = useLanguage();
 
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -368,14 +368,7 @@ export default function UpgradePlanPage() {
 
     setSubmitting(true);
     try {
-      const res = await settingsAPI.submitSubscriptionRequest({
-        planId: plan.id,
-        includeTracking,
-        trackingPlanId,
-        // Reuses the exact same lookup the price preview uses, so a
-        // browser-detected locale like "en-US" can't fall back to AZN here.
-        currency: getPaymentCurrency(),
-      });
+      const res = await settingsAPI.submitSubscriptionRequest({ planId: plan.id, includeTracking, trackingPlanId });
       const req = res?.data?.request;
       setPendingRequest({ id: req?.id, email: req?.email });
       setVerifying(true);

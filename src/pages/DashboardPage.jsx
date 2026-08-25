@@ -25,7 +25,7 @@ function computeTrackingCreditsPrice(credits, isPrivileged = false) {
 const MIN_TRACKING_CREDITS_REQUEST = 15;
 
 function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, isPrivilegedRate }) {
-  const { formatPrice, getPaymentCurrency } = useLanguage();
+  const { formatPrice } = useLanguage();
   const [credits, setCredits] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [customNote, setCustomNote] = useState('');
@@ -69,9 +69,6 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, i
         requestedCredits: creditsNum,
         phoneNumber: hasPhoneOnFile ? existingPhoneNumber : phoneNumber.trim(),
         customNote: customNote.trim(),
-        // Reuses the exact same lookup the price preview uses, so a
-        // browser-detected locale like "en-US" can't fall back to AZN here.
-        currency: getPaymentCurrency(),
       });
       const requestId = response?.data?.request?.id;
       if (requestId) {
@@ -174,7 +171,7 @@ function computeMarketAnalysisCreditsPrice(credits) {
 }
 
 function MarketAnalysisCreditsModal({ open, onClose, onSuccess, existingPhoneNumber }) {
-  const { formatPrice, getPaymentCurrency } = useLanguage();
+  const { formatPrice } = useLanguage();
   const [credits, setCredits] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [customNote, setCustomNote] = useState('');
@@ -223,9 +220,6 @@ function MarketAnalysisCreditsModal({ open, onClose, onSuccess, existingPhoneNum
         requestedCredits: creditsNum,
         phoneNumber: hasPhoneOnFile ? existingPhoneNumber : phoneNumber.trim(),
         customNote: customNote.trim(),
-        // Reuses the exact same lookup the price preview uses, so a
-        // browser-detected locale like "en-US" can't fall back to AZN here.
-        currency: getPaymentCurrency(),
       });
       const requestId = response?.data?.request?.id;
       if (requestId) {

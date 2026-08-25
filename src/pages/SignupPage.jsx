@@ -164,7 +164,7 @@ export default function SignupPage() {
   const location = useLocation();
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const { formatPrice, getPaymentCurrency } = useLanguage();
+  const { formatPrice } = useLanguage();
   const referralSlug = new URLSearchParams(location.search).get('ref') || '';
 
   const [referral, setReferral] = useState(null);
@@ -303,9 +303,6 @@ export default function SignupPage() {
         name: formData.name.trim(), surname: formData.surname.trim(),
         email: formData.email.trim(), phoneNumber: formData.phoneNumber.trim(),
         planId: formData.planId, ...(referralSlug ? { referralSlug } : {}),
-        // Reuses the exact same lookup the price preview uses, so a
-        // browser-detected locale like "en-US" can't fall back to AZN here.
-        currency: getPaymentCurrency(),
         includeTracking: !!(canOfferTrackingAddon && formData.includeTracking),
         trackingPlanId: canOfferTrackingAddon && formData.includeTracking
           ? String((ownPlanTrackingAddon || selectedTrackingAddon)?.id || '')

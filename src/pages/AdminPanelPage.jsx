@@ -1419,7 +1419,7 @@ export default function AdminPanelPage() {
                               Onlayn ödəniş (Epoint) — {req.paymentStatus}
                             </span>
                             {req.epointAmount != null ? (
-                              <span className="text-slate-500">{Number(req.epointAmount).toFixed(2)} {req.epointCurrency || 'AZN'}</span>
+                              <span className="text-slate-500">{Number(req.epointAmount).toFixed(2)} AZN</span>
                             ) : null}
                             {req.epointCardMask ? <span className="text-slate-500">{req.epointCardMask}</span> : null}
                             {req.epointTransaction ? <span className="text-slate-400">#{req.epointTransaction}</span> : null}

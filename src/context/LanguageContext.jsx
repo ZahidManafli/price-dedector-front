@@ -84,19 +84,6 @@ export const LanguageProvider = ({ children }) => {
     return `${amount.toFixed(2)} ${displayCurrency}`;
   };
 
-  // What currency an actual Epoint payment should be charged in — reuses the
-  // exact same languageToCurrency lookup (and its "anything unrecognized
-  // falls back to English/USD" behavior) that the price preview above uses,
-  // so a browser-detected locale like "en-US" or "en-GB" (which convertPrice
-  // already treats as English via that fallback) can't show a USD preview
-  // but then silently charge AZN because some other check only matched the
-  // bare string 'en'. Only ever returns 'AZN' or 'USD' — Epoint doesn't take
-  // RUB/TL, so ru/tr stay AZN here even though they preview in RUB/TL.
-  const getPaymentCurrency = (language = i18n.language) => {
-    const currencyInfo = languageToCurrency[language] || languageToCurrency['en'];
-    return currencyInfo.code === 'USD' ? 'USD' : 'AZN';
-  };
-
   // Change language
   const changeLanguage = async (lang) => {
     try {
@@ -117,7 +104,6 @@ export const LanguageProvider = ({ children }) => {
         changeLanguage,
         convertPrice,
         formatPrice,
-        getPaymentCurrency,
         currencyRates,
         loading,
         error,

@@ -83,7 +83,7 @@ export default function SubscriptionRequestModal({
   submitLabel,
 }) {
   const { t } = useTranslation();
-  const { formatPrice, getPaymentCurrency } = useLanguage();
+  const { formatPrice } = useLanguage();
   const [form, setForm] = useState(initialForm(selectedPlanId, requestType, defaultValues, presetIncludeTracking));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -256,10 +256,6 @@ export default function SubscriptionRequestModal({
           email: form.email,
           phoneNumber: form.phoneNumber,
           planId: form.planId,
-          // Reuses the exact same lookup the price preview uses, so a
-          // browser-detected locale like "en-US" (which already previews as
-          // USD) can't fall back to AZN here from a stricter string check.
-          currency: getPaymentCurrency(),
           includeTracking: !!(canOfferTrackingAddon && form.includeTracking),
           trackingPlanId: canOfferTrackingAddon && form.includeTracking
             ? String((ownPlanTrackingAddon || selectedTrackingAddon)?.id || '')

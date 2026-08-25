@@ -6,9 +6,9 @@ const MUTED = '#64748b';
 const LINE = '#e2e8f0';
 const LOGO_URL = '/checkila-receipt-logo.png';
 
-function formatAmount(amount, currency = 'AZN') {
+function formatAmount(amount) {
   const n = Number(amount || 0);
-  return `${n.toFixed(2)} ${currency}`;
+  return `${n.toFixed(2)} AZN`;
 }
 
 function formatDate(value) {
@@ -122,7 +122,7 @@ export async function downloadPaymentReceiptPdf(payment, { customerName, custome
   doc.setTextColor(INK);
   doc.text(describePayment(payment), marginX, y, { maxWidth: pageWidth - marginX * 2 - 120 });
   doc.setFont('helvetica', 'bold');
-  doc.text(formatAmount(payment.amount, payment.currency), pageWidth - marginX, y, { align: 'right' });
+  doc.text(formatAmount(payment.amount), pageWidth - marginX, y, { align: 'right' });
 
   y += 26;
   doc.setDrawColor(LINE);
@@ -133,7 +133,7 @@ export async function downloadPaymentReceiptPdf(payment, { customerName, custome
   doc.setFontSize(13);
   doc.setTextColor(INK);
   doc.text('Total', marginX, y);
-  doc.text(formatAmount(payment.amount, payment.currency), pageWidth - marginX, y, { align: 'right' });
+  doc.text(formatAmount(payment.amount), pageWidth - marginX, y, { align: 'right' });
 
   y += 36;
   doc.setFont('helvetica', 'normal');
