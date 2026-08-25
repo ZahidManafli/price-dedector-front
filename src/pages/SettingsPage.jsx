@@ -7,6 +7,7 @@ import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import PaymentHistoryDrawer from '../components/PaymentHistoryDrawer';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useTranslation } from 'react-i18next';
 import { readStoredAquilineProfile, writeStoredAquilineProfile } from '../utils/aquilineProfileStorage';
 
@@ -42,7 +43,8 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
   const { user } = useAuth();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const { getPaymentCurrency } = useLanguage();
   const [preferences, setPreferences] = useState({
     emailOnPriceChange: true,
     emailNotificationFrequency: 'instant',
@@ -323,8 +325,9 @@ export default function SettingsPage() {
   const handlePayNow = async () => {
     try {
       setPayingNow(true);
-      // Only English selects USD — everything else stays AZN.
-      const response = await paymentsAPI.payNow(i18n.language === 'en' ? 'USD' : 'AZN');
+      // Reuses the exact same lookup the price preview uses, so a
+      // browser-detected locale like "en-US" can't fall back to AZN here.
+      const response = await paymentsAPI.payNow(getPaymentCurrency());
       const nextExpiresAt = response?.data?.nextExpiresAt ? new Date(response.data.nextExpiresAt).toLocaleDateString() : '';
       setAlert({
         type: 'success',

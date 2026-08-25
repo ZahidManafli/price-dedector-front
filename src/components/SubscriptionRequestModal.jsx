@@ -82,8 +82,8 @@ export default function SubscriptionRequestModal({
   description,
   submitLabel,
 }) {
-  const { t, i18n } = useTranslation();
-  const { formatPrice } = useLanguage();
+  const { t } = useTranslation();
+  const { formatPrice, getPaymentCurrency } = useLanguage();
   const [form, setForm] = useState(initialForm(selectedPlanId, requestType, defaultValues, presetIncludeTracking));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -256,10 +256,10 @@ export default function SubscriptionRequestModal({
           email: form.email,
           phoneNumber: form.phoneNumber,
           planId: form.planId,
-          // Only English selects USD — every other site language stays AZN
-          // (see LanguageContext.jsx, whose exact conversion the backend
-          // mirrors when actually charging via Epoint).
-          currency: i18n.language === 'en' ? 'USD' : 'AZN',
+          // Reuses the exact same lookup the price preview uses, so a
+          // browser-detected locale like "en-US" (which already previews as
+          // USD) can't fall back to AZN here from a stricter string check.
+          currency: getPaymentCurrency(),
           includeTracking: !!(canOfferTrackingAddon && form.includeTracking),
           trackingPlanId: canOfferTrackingAddon && form.includeTracking
             ? String((ownPlanTrackingAddon || selectedTrackingAddon)?.id || '')

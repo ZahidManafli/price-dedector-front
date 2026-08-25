@@ -303,7 +303,7 @@ export default function UpgradePlanPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isDark } = useTheme();
-  const { formatPrice, currentLanguage } = useLanguage();
+  const { formatPrice, getPaymentCurrency } = useLanguage();
 
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -372,9 +372,9 @@ export default function UpgradePlanPage() {
         planId: plan.id,
         includeTracking,
         trackingPlanId,
-        // Only English selects USD — everything else stays AZN (see
-        // LanguageContext.jsx, mirrored server-side when actually charging).
-        currency: currentLanguage === 'en' ? 'USD' : 'AZN',
+        // Reuses the exact same lookup the price preview uses, so a
+        // browser-detected locale like "en-US" can't fall back to AZN here.
+        currency: getPaymentCurrency(),
       });
       const req = res?.data?.request;
       setPendingRequest({ id: req?.id, email: req?.email });
