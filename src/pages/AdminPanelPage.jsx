@@ -45,6 +45,7 @@ function formatPlanCategory(category) {
 function formatRequestTypeLabel(requestType) {
   if (requestType === 'update_credits') return 'credit top-up';
   if (requestType === 'tracking_credits_topup') return 'tracking credit top-up';
+  if (requestType === 'market_analysis_credits_topup') return 'Market Analysis credit top-up';
   return String(requestType || 'subscription').replace(/_/g, ' ');
 }
 
@@ -1386,6 +1387,11 @@ export default function AdminPanelPage() {
                             {t('adminPanelPage.credits')}: {req.requestedCredits} · {Number(req.requestedLimits?.trackingTopUpPrice || 0).toFixed(2)} {req.requestedLimits?.trackingTopUpCurrency || 'AZN'}
                           </span>
                         ) : null}
+                        {req.requestType === 'market_analysis_credits_topup' && req.requestedCredits != null ? (
+                          <span className="rounded-full bg-violet-100 px-2.5 py-1 font-semibold text-violet-700 dark:bg-violet-900/30 dark:text-violet-200">
+                            {t('adminPanelPage.credits')}: {req.requestedCredits} · {Number(req.requestedLimits?.marketAnalysisTopUpPrice || 0).toFixed(2)} {req.requestedLimits?.marketAnalysisTopUpCurrency || 'AZN'}
+                          </span>
+                        ) : null}
                         {req.requestType === 'subscription' ? (
                           req.requestedLimits?.includeTracking ? (
                             <span className="rounded-full bg-teal-100 px-2.5 py-1 font-semibold text-teal-700 dark:bg-teal-900/30 dark:text-teal-200">
@@ -1400,7 +1406,7 @@ export default function AdminPanelPage() {
                       </div>
 
                       <p className="mt-2 text-xs text-slate-500">{t('adminPanelPage.plan')}: {req.planName || t('adminPanelPage.na')}{req.requestType === 'subscription' ? ` (${planCategoryLabel})` : ''}</p>
-                      {(req.requestType === 'subscription' || req.requestType === 'tracking_credits_topup') ? (
+                      {(req.requestType === 'subscription' || req.requestType === 'tracking_credits_topup' || req.requestType === 'market_analysis_credits_topup') ? (
                         req.paymentMethod === 'epoint' ? (
                           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
                             <span className={`rounded-full px-2.5 py-1 font-semibold ${

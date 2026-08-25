@@ -13,16 +13,18 @@ import { AlertCircle, Download, Gauge, LineChart, Lock, ShieldCheck, TrendingUp,
 import { useTranslation } from 'react-i18next';
 import DailyFinanceFlowChart from '../components/DailyFinanceFlowChart';
 
-// Formula: (credits / 3) * 0.35 AZN — e.g. 6 credits -> (6/3)*0.35 = 0.70 AZN.
-// Mirrors computeTrackingCreditsTopUpPrice on the backend, which recomputes and
-// trusts only its own number — this is purely for the live preview.
-function computeTrackingCreditsPrice(credits) {
-  return (Number(credits) || 0) / 3 * 0.35;
+// Formula: (credits / 3) * rate AZN — e.g. 6 credits at 0.35 -> (6/3)*0.35 = 0.70 AZN.
+// Mirrors computeTrackingCreditsTopUpPrice on the backend, which recomputes
+// and trusts only its own number (from the caller's own role/mentor flag,
+// never anything the client sends) — this is purely for the live preview.
+function computeTrackingCreditsPrice(credits, isPrivileged = false) {
+  const rate = isPrivileged ? 0.22 : 0.35;
+  return (Number(credits) || 0) / 3 * rate;
 }
 
 const MIN_TRACKING_CREDITS_REQUEST = 15;
 
-function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber }) {
+function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, isPrivilegedRate }) {
   const { formatPrice } = useLanguage();
   const [credits, setCredits] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -45,7 +47,7 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber })
 
   const creditsNum = Number(credits);
   const hasValidCredits = credits !== '' && Number.isFinite(creditsNum) && creditsNum >= MIN_TRACKING_CREDITS_REQUEST;
-  const price = hasValidCredits ? computeTrackingCreditsPrice(creditsNum) : 0;
+  const price = hasValidCredits ? computeTrackingCreditsPrice(creditsNum, isPrivilegedRate) : 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -157,10 +159,165 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber })
   );
 }
 
+// Formula: (credits / 1000) * 1 AZN — fixed rate, no mentor/admin discount.
+// Mirrors computeMarketAnalysisCreditsTopUpPrice on the backend, which
+// recomputes and trusts only its own number — this is purely for the
+// live preview.
+const MARKET_ANALYSIS_CREDITS_UNIT = 1000;
+const MARKET_ANALYSIS_CREDITS_RATE_PER_UNIT = 1;
+
+function computeMarketAnalysisCreditsPrice(credits) {
+  return (Number(credits) || 0) / MARKET_ANALYSIS_CREDITS_UNIT * MARKET_ANALYSIS_CREDITS_RATE_PER_UNIT;
+}
+
+function MarketAnalysisCreditsModal({ open, onClose, onSuccess, existingPhoneNumber }) {
+  const { formatPrice } = useLanguage();
+  const [credits, setCredits] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [customNote, setCustomNote] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const hasPhoneOnFile = !!String(existingPhoneNumber || '').trim();
+
+  useEffect(() => {
+    if (open) {
+      setCredits('');
+      setPhoneNumber('');
+      setCustomNote('');
+      setError('');
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  const creditsNum = Number(credits);
+  const isWholeThousand = Number.isFinite(creditsNum) && creditsNum > 0 && creditsNum % MARKET_ANALYSIS_CREDITS_UNIT === 0;
+  const hasValidCredits = credits !== '' && isWholeThousand;
+  const price = hasValidCredits ? computeMarketAnalysisCreditsPrice(creditsNum) : 0;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (credits === '' || !Number.isFinite(creditsNum) || creditsNum <= 0) {
+      setError(`Enter at least ${MARKET_ANALYSIS_CREDITS_UNIT} Market Analysis credits.`);
+      return;
+    }
+    if (!isWholeThousand) {
+      setError(`Only whole thousands are allowed (e.g. 1000, 2000, 3000) — not ${creditsNum}.`);
+      return;
+    }
+
+    if (!hasPhoneOnFile && !phoneNumber.trim()) {
+      setError('Enter a phone number.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await settingsAPI.submitMarketAnalysisCreditsRequest({
+        requestedCredits: creditsNum,
+        phoneNumber: hasPhoneOnFile ? existingPhoneNumber : phoneNumber.trim(),
+        customNote: customNote.trim(),
+      });
+      const requestId = response?.data?.request?.id;
+      if (requestId) {
+        // No email-verification step for this (authenticated) request type —
+        // go straight to Epoint. Credits are added automatically once the
+        // payment succeeds (see payments.js /epoint/callback).
+        window.location.href = paymentsAPI.epointCheckoutUrl(requestId);
+        return;
+      }
+      onSuccess?.();
+      onClose?.();
+    } catch (err) {
+      setError(err?.response?.data?.error || err?.message || 'Failed to send request');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-white/15 bg-slate-900 p-5 shadow-2xl">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-white">Get more Market Analysis credits</h3>
+            <p className="mt-1 text-sm text-slate-400">1000 credits = 1 AZN. Only whole thousands (1000, 2000, 3000, ...).</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-white/15 p-1.5 text-slate-300 hover:bg-white/10"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs text-slate-400">
+              How many Market Analysis credits do you need? <span className="text-slate-500">(min: {MARKET_ANALYSIS_CREDITS_UNIT}, in thousands)</span>
+            </label>
+            <input
+              type="number"
+              min={MARKET_ANALYSIS_CREDITS_UNIT}
+              step={MARKET_ANALYSIS_CREDITS_UNIT}
+              value={credits}
+              onChange={(e) => setCredits(e.target.value)}
+              placeholder={`e.g. ${MARKET_ANALYSIS_CREDITS_UNIT}`}
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+              disabled={loading}
+            />
+          </div>
+
+          {hasPhoneOnFile ? (
+            <p className="text-xs text-slate-500">
+              We'll contact you at <span className="font-semibold text-slate-300">{existingPhoneNumber}</span> (on file).
+            </p>
+          ) : (
+            <div>
+              <label className="mb-1 block text-xs text-slate-400">Phone number</label>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="e.g. 0501234567"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+                disabled={loading}
+              />
+            </div>
+          )}
+
+          {hasValidCredits ? (
+            <div className="rounded-xl border border-violet-500/30 bg-violet-500/5 p-3 text-sm text-violet-100">
+              You will pay <span className="font-semibold">{formatPrice(price)}</span> for {creditsNum} Market Analysis credits.
+            </div>
+          ) : credits !== '' && Number.isFinite(creditsNum) && creditsNum > 0 ? (
+            <p className="text-xs text-amber-300">Only whole thousands are allowed (1000, 2000, 3000, ...).</p>
+          ) : null}
+
+          {error ? <p className="text-sm text-red-300">{error}</p> : null}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
+          >
+            {loading ? 'Sending...' : 'Send Request'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const [products, setProducts] = useState([]);
   const [limits, setLimits] = useState(null);
   const [trackingCreditsModalOpen, setTrackingCreditsModalOpen] = useState(false);
+  const [marketAnalysisCreditsModalOpen, setMarketAnalysisCreditsModalOpen] = useState(false);
   const [adminStats, setAdminStats] = useState(null);
   const [ebayRateLimits, setEbayRateLimits] = useState(null);
   const [ebayRateLimitsLoading, setEbayRateLimitsLoading] = useState(false);
@@ -1167,8 +1324,18 @@ export default function DashboardPage() {
         open={trackingCreditsModalOpen}
         onClose={() => setTrackingCreditsModalOpen(false)}
         existingPhoneNumber={limits?.phoneNumber}
+        isPrivilegedRate={user?.role === 'admin' || !!user?.isMentor}
         onSuccess={() => {
           setAlert({ type: 'success', message: 'Your tracking credit request has been sent to the admin team.' });
+        }}
+      />
+
+      <MarketAnalysisCreditsModal
+        open={marketAnalysisCreditsModalOpen}
+        onClose={() => setMarketAnalysisCreditsModalOpen(false)}
+        existingPhoneNumber={limits?.phoneNumber}
+        onSuccess={() => {
+          setAlert({ type: 'success', message: 'Your Market Analysis credit request has been sent to the admin team.' });
         }}
       />
 
@@ -1484,19 +1651,19 @@ export default function DashboardPage() {
           <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
             {t('dashboard.sellerSearchCost')}
           </p>
-          {(marketEmpty || marketLow) && (
-            <button
-              type="button"
-              onClick={onOpenUpgradeRequest}
-              className={`mt-3 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                marketEmpty
-                  ? 'bg-rose-600 text-white hover:bg-rose-700'
-                  : 'bg-amber-500 text-white hover:bg-amber-600'
-              }`}
-            >
-              Planı Yüksəlt
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setMarketAnalysisCreditsModalOpen(true)}
+            className={`mt-3 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+              marketEmpty
+                ? 'bg-rose-600 text-white hover:bg-rose-700'
+                : isDark
+                  ? 'bg-violet-500 text-slate-950 hover:bg-violet-400'
+                  : 'bg-violet-600 text-white hover:bg-violet-700'
+            }`}
+          >
+            Get more credit
+          </button>
         </div>
 
         {/* Tracking Credits */}

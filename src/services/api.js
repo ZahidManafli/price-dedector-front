@@ -126,6 +126,7 @@ export const settingsAPI = {
   submitUpdateCreditRequest: (data) => api.post('/settings/subscription-requests/update-credits', data),
   submitResetCreditsRequest: (data) => api.post('/settings/subscription-requests/reset-credits', data),
   submitTrackingCreditsRequest: (data) => api.post('/settings/subscription-requests/tracking-credits', data),
+  submitMarketAnalysisCreditsRequest: (data) => api.post('/settings/subscription-requests/market-analysis-credits', data),
 };
 
 // Epoint online payment APIs.
