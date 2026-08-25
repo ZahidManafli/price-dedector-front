@@ -148,7 +148,7 @@ export const paymentsAPI = {
   setDefaultCard: (cardId) => api.patch(`/payments/cards/${encodeURIComponent(cardId)}/default`),
   deleteCard: (cardId) => api.delete(`/payments/cards/${encodeURIComponent(cardId)}`),
   setAutoRenew: (enabled) => api.patch('/payments/auto-renew', { enabled }),
-  payNow: () => api.post('/payments/pay-now'),
+  payNow: (currency) => api.post('/payments/pay-now', { currency }),
 };
 
 export const ebayAPI = {

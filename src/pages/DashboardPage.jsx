@@ -25,7 +25,7 @@ function computeTrackingCreditsPrice(credits, isPrivileged = false) {
 const MIN_TRACKING_CREDITS_REQUEST = 15;
 
 function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, isPrivilegedRate }) {
-  const { formatPrice } = useLanguage();
+  const { formatPrice, currentLanguage } = useLanguage();
   const [credits, setCredits] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [customNote, setCustomNote] = useState('');
@@ -69,6 +69,8 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, i
         requestedCredits: creditsNum,
         phoneNumber: hasPhoneOnFile ? existingPhoneNumber : phoneNumber.trim(),
         customNote: customNote.trim(),
+        // Only English selects USD — everything else stays AZN.
+        currency: currentLanguage === 'en' ? 'USD' : 'AZN',
       });
       const requestId = response?.data?.request?.id;
       if (requestId) {
@@ -171,7 +173,7 @@ function computeMarketAnalysisCreditsPrice(credits) {
 }
 
 function MarketAnalysisCreditsModal({ open, onClose, onSuccess, existingPhoneNumber }) {
-  const { formatPrice } = useLanguage();
+  const { formatPrice, currentLanguage } = useLanguage();
   const [credits, setCredits] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [customNote, setCustomNote] = useState('');
@@ -220,6 +222,8 @@ function MarketAnalysisCreditsModal({ open, onClose, onSuccess, existingPhoneNum
         requestedCredits: creditsNum,
         phoneNumber: hasPhoneOnFile ? existingPhoneNumber : phoneNumber.trim(),
         customNote: customNote.trim(),
+        // Only English selects USD — everything else stays AZN.
+        currency: currentLanguage === 'en' ? 'USD' : 'AZN',
       });
       const requestId = response?.data?.request?.id;
       if (requestId) {

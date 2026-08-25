@@ -42,7 +42,7 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [preferences, setPreferences] = useState({
     emailOnPriceChange: true,
     emailNotificationFrequency: 'instant',
@@ -323,7 +323,8 @@ export default function SettingsPage() {
   const handlePayNow = async () => {
     try {
       setPayingNow(true);
-      const response = await paymentsAPI.payNow();
+      // Only English selects USD — everything else stays AZN.
+      const response = await paymentsAPI.payNow(i18n.language === 'en' ? 'USD' : 'AZN');
       const nextExpiresAt = response?.data?.nextExpiresAt ? new Date(response.data.nextExpiresAt).toLocaleDateString() : '';
       setAlert({
         type: 'success',

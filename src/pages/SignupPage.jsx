@@ -164,7 +164,7 @@ export default function SignupPage() {
   const location = useLocation();
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const { formatPrice } = useLanguage();
+  const { formatPrice, currentLanguage } = useLanguage();
   const referralSlug = new URLSearchParams(location.search).get('ref') || '';
 
   const [referral, setReferral] = useState(null);
@@ -303,6 +303,9 @@ export default function SignupPage() {
         name: formData.name.trim(), surname: formData.surname.trim(),
         email: formData.email.trim(), phoneNumber: formData.phoneNumber.trim(),
         planId: formData.planId, ...(referralSlug ? { referralSlug } : {}),
+        // Only English selects USD — everything else stays AZN (see
+        // LanguageContext.jsx, mirrored server-side when actually charging).
+        currency: currentLanguage === 'en' ? 'USD' : 'AZN',
         includeTracking: !!(canOfferTrackingAddon && formData.includeTracking),
         trackingPlanId: canOfferTrackingAddon && formData.includeTracking
           ? String((ownPlanTrackingAddon || selectedTrackingAddon)?.id || '')

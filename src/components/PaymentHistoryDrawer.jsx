@@ -121,7 +121,7 @@ export default function PaymentHistoryDrawer({ open, onClose }) {
 
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <div className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                    {Number(payment.amount || 0).toFixed(2)} AZN
+                    {Number(payment.amount || 0).toFixed(2)} {payment.currency || 'AZN'}
                     {payment.cardMask ? (
                       <span className={`ml-2 text-xs font-normal ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{payment.cardMask}</span>
                     ) : null}

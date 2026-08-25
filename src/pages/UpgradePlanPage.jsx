@@ -303,7 +303,7 @@ export default function UpgradePlanPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isDark } = useTheme();
-  const { formatPrice } = useLanguage();
+  const { formatPrice, currentLanguage } = useLanguage();
 
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -368,7 +368,14 @@ export default function UpgradePlanPage() {
 
     setSubmitting(true);
     try {
-      const res = await settingsAPI.submitSubscriptionRequest({ planId: plan.id, includeTracking, trackingPlanId });
+      const res = await settingsAPI.submitSubscriptionRequest({
+        planId: plan.id,
+        includeTracking,
+        trackingPlanId,
+        // Only English selects USD — everything else stays AZN (see
+        // LanguageContext.jsx, mirrored server-side when actually charging).
+        currency: currentLanguage === 'en' ? 'USD' : 'AZN',
+      });
       const req = res?.data?.request;
       setPendingRequest({ id: req?.id, email: req?.email });
       setVerifying(true);
