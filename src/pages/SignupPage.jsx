@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { referralAPI, settingsAPI } from '../services/api';
+import { referralAPI, settingsAPI, paymentsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useTranslation } from 'react-i18next';
@@ -340,6 +340,16 @@ export default function SignupPage() {
     try {
       setLoading(true); setAlert(null);
       await settingsAPI.verifySubscriptionRequest({ requestId, email: formData.email.trim(), code });
+
+      // Custom plans have no fixed price to charge online — those stay on
+      // the existing manual admin-review flow. Every real plan moves on to
+      // Epoint's hosted checkout; the account is created automatically once
+      // that payment succeeds (see payments.js /epoint/callback).
+      if (formData.planId && formData.planId !== 'custom') {
+        window.location.href = paymentsAPI.epointCheckoutUrl(requestId);
+        return;
+      }
+
       await Swal.fire({ icon: 'success', title: t('common:success'), text: 'Email verified. Your subscription request has been sent to admin for approval.', confirmButtonColor: '#2563eb' });
       navigate('/login');
     } catch (error) {
