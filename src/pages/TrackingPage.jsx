@@ -518,7 +518,10 @@ function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerU
         {/* Aquiline number takes priority when both exist; otherwise show the real
             carrier tracking number "Get Tracking" captured directly (it only ever
             differs from the Amazon order id once that's actually happened). The
-            Aquiline code links out to AfterShip's tracking page. */}
+            Aquiline code links out to Aquiline's tracking page. If "Convert tracking
+            code" was used on an order that already had a code, that's a SEPARATE
+            Aquiline order (manualAquilineTrackingNumber — see convertTrackingCodeToAquiline)
+            shown stacked underneath the original rather than replacing it. */}
         {row.aquilineTrackingNumber ? (
           <a
             href={`https://aquiline-tracking.com/app/track/${encodeURIComponent(row.aquilineTrackingNumber)}`}
@@ -534,6 +537,17 @@ function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerU
               {row.trackingNumber}
             </div>
           )
+        )}
+        {row.manualAquilineTrackingNumber && (
+          <a
+            href={`https://aquiline-tracking.com/app/track/${encodeURIComponent(row.manualAquilineTrackingNumber)}`}
+            target="_blank"
+            rel="noreferrer"
+            title="Manually converted tracking code"
+            className={`block text-xs mt-1 underline ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}
+          >
+            {row.manualAquilineTrackingNumber}
+          </a>
         )}
       </td>
       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
