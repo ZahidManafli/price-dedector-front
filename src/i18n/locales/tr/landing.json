@@ -152,6 +152,13 @@
       "cta": "Telegram'da Aç"
     }
   },
+  "footer": {
+    "tagline": "Amazon fiyatlarını takip edin, fırsatları değerlendirin ve eBay ilanlarını tek platformdan yönetin.",
+    "contactTitle": "İletişim",
+    "taxId": "VÖEN",
+    "address": "Ahmad Recebli 225, Narimanov, Bakü, AZ1075",
+    "rights": "Tüm hakları saklıdır."
+  },
   "faq": {
     "eyebrow": "SEO soruları",
     "title": "Checkila hakkında sık sorulan sorular",

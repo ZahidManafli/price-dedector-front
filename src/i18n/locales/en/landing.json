@@ -152,6 +152,13 @@
       "cta": "Open in Telegram"
     }
   },
+  "footer": {
+    "tagline": "Track Amazon prices, evaluate opportunities, and manage eBay listings — all from one platform.",
+    "contactTitle": "Contact",
+    "taxId": "Tax ID",
+    "address": "Ahmad Rajabli 225, Narimanov, Baku, AZ1075",
+    "rights": "All rights reserved."
+  },
   "faq": {
     "eyebrow": "SEO questions",
     "title": "Common questions about Checkila",

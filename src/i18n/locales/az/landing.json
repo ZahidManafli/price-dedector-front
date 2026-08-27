@@ -152,6 +152,13 @@
       "cta": "Telegram-da aç"
     }
   },
+  "footer": {
+    "tagline": "Amazon qiymətlərini izləyin, imkanları qiymətləndirin və eBay-də bir platformadan idarə edin.",
+    "contactTitle": "Əlaqə",
+    "taxId": "VÖEN",
+    "address": "Əhməd Rəcəbli 225, Nərimanov, Bakı, AZ1075",
+    "rights": "Bütün hüquqlar qorunur."
+  },
   "faq": {
     "eyebrow": "SEO sualları",
     "title": "Checkila haqqında tez-tez verilən suallar",

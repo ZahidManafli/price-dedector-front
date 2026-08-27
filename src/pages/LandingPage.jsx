@@ -13,6 +13,9 @@ import {
   ShieldCheck,
   Sparkles,
   ChevronDown,
+  Phone,
+  Mail,
+  MapPin,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { partnerAPI, settingsAPI } from '../services/api';
@@ -1043,15 +1046,83 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-6 pb-10 text-sm text-slate-500 dark:text-slate-400">
-          <Link to="/privacy" className="transition hover:text-slate-900 dark:hover:text-white">
-            Privacy Policy
-          </Link>
-          <Link to="/extension-privacy" className="transition hover:text-slate-900 dark:hover:text-white">
-            Extension Privacy Policy
-          </Link>
-        </div>
       </main>
+
+      <footer className="relative z-10 border-t border-slate-200 dark:border-white/10">
+        <div className="mx-auto max-w-7xl px-6 py-14">
+          <div className="grid gap-10 md:grid-cols-[1.15fr_0.85fr]">
+            <div>
+              <div className="flex items-center gap-3">
+                <img
+                  src="/logo-2.png"
+                  alt="Checkila"
+                  className="h-10 w-10 rounded-xl object-cover ring-1 ring-slate-200 dark:ring-white/20"
+                />
+                <span className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">Checkila</span>
+              </div>
+              <p className="mt-4 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">
+                {t('landing:footer.tagline')}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-100">
+                {t('landing:footer.contactTitle')}
+              </p>
+              <ul className="mt-4 space-y-3 text-sm">
+                <li className="flex items-center gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-700 dark:text-cyan-100">
+                    <Phone size={15} />
+                  </span>
+                  <a
+                    href="tel:+994708047546"
+                    className="text-slate-600 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                  >
+                    +994 70 804 75 46
+                  </a>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-700 dark:text-cyan-100">
+                    <Mail size={15} />
+                  </span>
+                  <a
+                    href="mailto:checkilanotify@gmail.com"
+                    className="text-slate-600 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                  >
+                    checkilanotify@gmail.com
+                  </a>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-700 dark:text-cyan-100">
+                    <BadgeCheck size={15} />
+                  </span>
+                  <span className="text-slate-600 dark:text-slate-300">{t('landing:footer.taxId')}: 1807480082</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-700 dark:text-cyan-100">
+                    <MapPin size={15} />
+                  </span>
+                  <span className="text-slate-600 dark:text-slate-300">
+                    {t('landing:footer.address')}
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-12 flex flex-col gap-4 border-t border-slate-200 pt-6 text-sm text-slate-500 dark:border-white/10 dark:text-slate-400 md:flex-row md:items-center md:justify-between">
+            <p>© {new Date().getFullYear()} Checkila. {t('landing:footer.rights')}</p>
+            <div className="flex flex-wrap items-center gap-4">
+              <Link to="/privacy" className="transition hover:text-slate-900 dark:hover:text-white">
+                Privacy Policy
+              </Link>
+              <Link to="/extension-privacy" className="transition hover:text-slate-900 dark:hover:text-white">
+                Extension Privacy Policy
+              </Link>
+            </div>
+          </div>
+        </div>
+      </footer>
 
       <SubscriptionRequestModal
         open={requestModalOpen}
