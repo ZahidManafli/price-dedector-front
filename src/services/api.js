@@ -166,6 +166,11 @@ export const ebayAPI = {
   setActiveAccount: (ebayAccountId) => api.patch('/ebay/active-account', { ebayAccountId }),
   setAccountName: (ebayAccountId, connectionName) =>
     api.patch(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}/name`, { connectionName }),
+  getCountryCodes: () => api.get('/ebay/country-codes'),
+  setAccountCountry: (ebayAccountId, country) =>
+    api.patch(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}/country`, { country }),
+  setAccountLocation: (ebayAccountId, location, postalCode) =>
+    api.patch(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}/location`, { location, postalCode }),
   disconnectAccount: (ebayAccountId) => api.patch(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}/disconnect`),
   deleteAccount: (ebayAccountId) => api.delete(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}`),
   refreshAccountToken: (ebayAccountId) => api.post(`/ebay/accounts/${encodeURIComponent(ebayAccountId)}/refresh-token`),

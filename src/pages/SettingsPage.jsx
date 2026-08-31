@@ -70,6 +70,8 @@ export default function SettingsPage() {
   const [aquilineForm, setAquilineForm] = useState(() => aquilineFormFromProfile(readStoredAquilineProfile(user?.email)));
   const [alert, setAlert] = useState(null);
   const [nameDrafts, setNameDrafts] = useState({});
+  const [countryCodes, setCountryCodes] = useState([]);
+  const [locationDrafts, setLocationDrafts] = useState({});
   const [limits, setLimits] = useState(null);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -100,7 +102,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [prefRes, ebayRes, amazonRes, aquilineRes] = await Promise.all([
+        const [prefRes, ebayRes, amazonRes, aquilineRes, countryRes] = await Promise.all([
           settingsAPI.getPreferences(),
           // A plan-expired user can still reach Settings (e.g. to pay via
           // "Ödəniş et"), but /ebay/status stays gated on expiry — without
@@ -109,7 +111,9 @@ export default function SettingsPage() {
           ebayAPI.getStatus().catch(() => ({ data: {} })),
           amazonOAuthAPI.getStatus().catch(() => ({ data: { connected: false } })),
           aquilineAPI.getProfile().catch(() => null), // null = fetch failed, keep cached profile as-is
+          ebayAPI.getCountryCodes().catch(() => ({ data: { countries: [] } })),
         ]);
+        setCountryCodes(countryRes?.data?.countries || []);
         const limitsRes = await settingsAPI.getLimits().catch(() => null);
         setPreferences((prev) => ({ ...prev, ...(prefRes.data || {}) }));
         const nextStatus = ebayRes.data || {};
@@ -125,10 +129,13 @@ export default function SettingsPage() {
           writeStoredAquilineProfile(user?.email, existingAquilineProfile);
         }
         const drafts = {};
+        const locDrafts = {};
         (nextStatus.ebayAccounts || []).forEach((a) => {
           drafts[a.id] = a.connectionName || a.username || a.profileUserId || '';
+          locDrafts[a.id] = { location: a.location || '', postalCode: a.postalCode || '' };
         });
         setNameDrafts(drafts);
+        setLocationDrafts(locDrafts);
         setLimits(limitsRes?.data || null);
       } catch (_error) {
         // Keep defaults if optional settings/status calls fail.
@@ -515,6 +522,41 @@ export default function SettingsPage() {
       setAlert({
         type: 'error',
         message: error.response?.data?.error || t('settingsPage.failedUpdateEbayName')
+      });
+    } finally {
+      setEbayLoading(false);
+    }
+  };
+
+  const handleSaveAccountCountry = async (ebayAccountId, country) => {
+    try {
+      setEbayLoading(true);
+      await ebayAPI.setAccountCountry(ebayAccountId, country);
+      const ebayRes = await ebayAPI.getStatus();
+      setEbayStatus(ebayRes.data || {});
+      setAlert({ type: 'success', message: t('settingsPage.countryUpdated') || 'Listing country updated' });
+    } catch (error) {
+      setAlert({
+        type: 'error',
+        message: error.response?.data?.error || t('settingsPage.failedUpdateCountry'),
+      });
+    } finally {
+      setEbayLoading(false);
+    }
+  };
+
+  const handleSaveAccountLocation = async (ebayAccountId) => {
+    const draft = locationDrafts[ebayAccountId] || { location: '', postalCode: '' };
+    try {
+      setEbayLoading(true);
+      await ebayAPI.setAccountLocation(ebayAccountId, draft.location.trim(), draft.postalCode.trim());
+      const ebayRes = await ebayAPI.getStatus();
+      setEbayStatus(ebayRes.data || {});
+      setAlert({ type: 'success', message: t('settingsPage.locationUpdated') || 'Listing location updated' });
+    } catch (error) {
+      setAlert({
+        type: 'error',
+        message: error.response?.data?.error || t('settingsPage.failedUpdateLocation'),
       });
     } finally {
       setEbayLoading(false);
@@ -987,6 +1029,75 @@ export default function SettingsPage() {
                                 }`}
                               >
                                 {t('settingsPage.saveName')}
+                              </button>
+                            </div>
+                            <div className="mt-1 flex items-center gap-2">
+                              <label className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                                {t('settingsPage.listingCountry')}
+                              </label>
+                              <select
+                                value={acc.country || 'US'}
+                                onChange={(e) => handleSaveAccountCountry(acc.id, e.target.value)}
+                                disabled={ebayLoading}
+                                className={`text-xs rounded px-2 py-1 border w-48 ${
+                                  isDark
+                                    ? 'bg-slate-900 border-slate-700 text-slate-100'
+                                    : 'bg-white border-slate-300 text-slate-900'
+                                }`}
+                              >
+                                {(countryCodes.length ? countryCodes : [{ code: 'US', name: 'United States' }]).map((c) => (
+                                  <option key={c.code} value={c.code}>
+                                    {c.name} ({c.code})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="mt-1 flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={locationDrafts[acc.id]?.location ?? (acc.location || '')}
+                                onChange={(e) =>
+                                  setLocationDrafts((prev) => ({
+                                    ...prev,
+                                    [acc.id]: { ...(prev[acc.id] || { postalCode: acc.postalCode || '' }), location: e.target.value },
+                                  }))
+                                }
+                                disabled={ebayLoading}
+                                className={`text-xs rounded px-2 py-1 border w-32 ${
+                                  isDark
+                                    ? 'bg-slate-900 border-slate-700 text-slate-100'
+                                    : 'bg-white border-slate-300 text-slate-900'
+                                }`}
+                                placeholder={t('settingsPage.locationPlaceholder')}
+                              />
+                              <input
+                                type="text"
+                                value={locationDrafts[acc.id]?.postalCode ?? (acc.postalCode || '')}
+                                onChange={(e) =>
+                                  setLocationDrafts((prev) => ({
+                                    ...prev,
+                                    [acc.id]: { ...(prev[acc.id] || { location: acc.location || '' }), postalCode: e.target.value },
+                                  }))
+                                }
+                                disabled={ebayLoading}
+                                className={`text-xs rounded px-2 py-1 border w-24 ${
+                                  isDark
+                                    ? 'bg-slate-900 border-slate-700 text-slate-100'
+                                    : 'bg-white border-slate-300 text-slate-900'
+                                }`}
+                                placeholder={t('settingsPage.postalCodePlaceholder')}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleSaveAccountLocation(acc.id)}
+                                disabled={ebayLoading}
+                                className={`text-xs font-semibold rounded-md px-2 py-1 border ${
+                                  isDark
+                                    ? 'border-indigo-700 text-indigo-200 hover:bg-indigo-900/30'
+                                    : 'border-indigo-200 text-indigo-700 hover:bg-indigo-50'
+                                }`}
+                              >
+                                {t('settingsPage.saveLocation')}
                               </button>
                             </div>
                             <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
