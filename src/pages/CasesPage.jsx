@@ -198,12 +198,13 @@ const RESOURCES = {
     description: 'Buyer- or seller-initiated order cancellations. Search, review, approve, or reject.',
     lookupLabel: 'cancelId',
     columns: ['Cancel ID', 'Order', 'Buyer', 'Seller', 'Reason', 'Status', 'Amount', 'Requested', ''],
-    search: (dateFrom, dateTo) =>
+    search: (dateFrom, dateTo, { refresh } = {}) =>
       casesAPI.searchCancellations({
         creation_date_range_from: dateFrom,
         creation_date_range_to: dateTo,
         role: 'SELLER',
         limit: 100,
+        ...(refresh ? { refresh: 1 } : {}),
       }),
     extractList: (data) => (Array.isArray(data?.cancellations) ? data.cancellations : []),
     rowId: (item) => item.cancelId,
@@ -270,11 +271,12 @@ const RESOURCES = {
     description: 'eBay Money Back Guarantee cases opened against your orders. Read-only lookup.',
     lookupLabel: 'caseId',
     columns: ['Case ID', 'Buyer', 'Seller', 'Item', 'Status', 'Claim amount', 'Created', 'Respond by', ''],
-    search: (dateFrom, dateTo) =>
+    search: (dateFrom, dateTo, { refresh } = {}) =>
       casesAPI.searchCases({
         case_creation_date_range_from: dateFrom,
         case_creation_date_range_to: dateTo,
         limit: 100,
+        ...(refresh ? { refresh: 1 } : {}),
       }),
     extractList: (data) => (Array.isArray(data?.members) ? data.members : []),
     rowId: (item) => item.caseId,
@@ -312,11 +314,12 @@ const RESOURCES = {
     description: '"Item not received" inquiries. Send messages, provide shipment info, or issue a full refund.',
     lookupLabel: 'inquiryId',
     columns: ['Inquiry ID', 'Buyer', 'Seller', 'Item', 'Status', 'Claim amount', 'Created', 'Respond by', ''],
-    search: (dateFrom, dateTo) =>
+    search: (dateFrom, dateTo, { refresh } = {}) =>
       casesAPI.searchInquiries({
         inquiry_creation_date_range_from: dateFrom,
         inquiry_creation_date_range_to: dateTo,
         limit: 100,
+        ...(refresh ? { refresh: 1 } : {}),
       }),
     extractList: (data) => (Array.isArray(data?.members) ? data.members : []),
     rowId: (item) => item.inquiryId,
@@ -571,11 +574,15 @@ export default function CasesPage() {
 
   const resource = RESOURCES[activeResource];
 
-  const load = async (resourceKey) => {
+  // Reads straight from SQL by default — the app-level bootstrap (see
+  // EbayDataContext) already force-refreshed cancellations/cases/inquiries from
+  // eBay into that cache on site load / active-account switch. The "Refresh"
+  // button is the only thing that bypasses the cache and hits eBay live.
+  const load = async (resourceKey, { refresh = false } = {}) => {
     setLoading(true);
     setError('');
     try {
-      const res = await RESOURCES[resourceKey].search(dateFrom, dateTo);
+      const res = await RESOURCES[resourceKey].search(dateFrom, dateTo, { refresh });
       setItemsByResource((prev) => ({ ...prev, [resourceKey]: RESOURCES[resourceKey].extractList(res?.data) }));
     } catch (err) {
       setError(err?.response?.data?.error || err.message || `Failed to load ${RESOURCES[resourceKey]?.label.toLowerCase()}`);
@@ -621,7 +628,7 @@ export default function CasesPage() {
           )}
           <button
             type="button"
-            onClick={() => load(activeResource)}
+            onClick={() => load(activeResource, { refresh: true })}
             disabled={loading}
             className="btn-secondary text-sm flex items-center gap-1.5 disabled:opacity-60"
           >
@@ -731,7 +738,7 @@ export default function CasesPage() {
           id={selected.id}
           isDark={isDark}
           onClose={() => setSelected(null)}
-          onChanged={() => load(selected.resourceKey)}
+          onChanged={() => load(selected.resourceKey, { refresh: true })}
         />
       )}
     </div>

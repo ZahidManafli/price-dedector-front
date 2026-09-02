@@ -753,24 +753,9 @@ export default function OrdersPage() {
       }
 
       applyOrdersPayload(data, pageIndex);
-
-      if (data?.from_cache && !forceRefresh) {
-        ebayAPI
-          .getOrders({
-            refresh: true,
-            ...(cursor ? { next: cursor } : {}),
-          })
-          .then((refreshRes) => {
-            const refreshData = refreshRes?.data || {};
-            if (requestId !== ordersRequestRef.current) return;
-            if (refreshData?.accessDenied) return;
-            applyOrdersPayload(refreshData, pageIndex);
-          })
-          .catch((refreshErr) => {
-            const msg = refreshErr?.response?.data?.error || '';
-            if (msg) console.warn('Silent orders refresh failed:', msg);
-          });
-      }
+      // No follow-up live eBay refresh when this came from cache: the app-level
+      // bootstrap (see EbayDataContext) already force-refreshed orders into SQL on
+      // site load / active-account switch, so this page can just trust the cache.
     } catch (err) {
       if (requestId !== ordersRequestRef.current) return;
       setError(err?.response?.data?.error || err?.message || t('ordersPage.failedLoad'));

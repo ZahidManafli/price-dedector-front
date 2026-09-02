@@ -257,6 +257,10 @@ export const ebayAPI = {
   getMessageTemplates: (ebayAccountId) =>
     api.get('/ebay/message-templates', { params: ebayAccountId ? { ebayAccountId } : {} }),
   saveMessageTemplates: (payload) => api.put('/ebay/message-templates', payload),
+  // Force-refreshes orders + cases (cancellations/cases/inquiries) straight from eBay,
+  // caches them in SQL, and reports how many are new since the last call — powers the
+  // sidebar's red badge counts. Called once on app load and again on active-account switch.
+  bootstrap: () => api.get('/ebay/bootstrap'),
 };
 
 // eBay Post-Order API (cancellations, case management, inquiries) — gated behind the

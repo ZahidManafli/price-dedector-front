@@ -36,6 +36,25 @@ import { useSidebar } from '../context/SidebarContext';
 import { ebayAPI } from '../services/api';
 import { TAB_KEYS } from '../utils/planAccess';
 import { useTour } from '../context/TourContext';
+import { useEbayData } from '../context/EbayDataContext';
+
+function NavBadge({ count }) {
+  if (!count || count <= 0) return null;
+  return (
+    <span className="ml-auto flex-shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold leading-none">
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
+
+function NavIconBadge({ count }) {
+  if (!count || count <= 0) return null;
+  return (
+    <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[15px] h-[15px] px-0.5 rounded-full bg-red-600 text-white text-[9px] font-bold leading-none ring-2 ring-white dark:ring-slate-950">
+      {count > 9 ? '9+' : count}
+    </span>
+  );
+}
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -49,6 +68,21 @@ export default function Sidebar() {
   const { replayTour } = useTour();
   const [activeEbayLabel, setActiveEbayLabel] = useState(null);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
+  const { newOrdersCount, newCasesCount, clearOrdersBadge, clearCasesBadge } = useEbayData();
+
+  const badgeCountForPath = (path) => {
+    if (path === '/orders') return newOrdersCount;
+    if (path === '/cases') return newCasesCount;
+    return 0;
+  };
+
+  // Visiting Orders/Cases counts as "seen" — clear that link's badge for the rest
+  // of the session (it comes back fresh next time the bootstrap runs: site reload
+  // or an active-account switch).
+  useEffect(() => {
+    if (location.pathname.startsWith('/orders')) clearOrdersBadge();
+    if (location.pathname.startsWith('/cases')) clearCasesBadge();
+  }, [location.pathname, clearOrdersBadge, clearCasesBadge]);
 
   const links = [
     { label: t('nav.dashboard'), path: '/dashboard', icon: LayoutDashboard, tab: TAB_KEYS.DASHBOARD, tour: 'sidebar-dashboard' },
@@ -189,6 +223,7 @@ export default function Sidebar() {
               }
 
               const active = isActive(link.path);
+              const badgeCount = badgeCountForPath(link.path);
 
               return (
                 <Link
@@ -205,8 +240,12 @@ export default function Sidebar() {
                   }`}
                   title={isCollapsed ? link.label : ''}
                 >
-                  <link.icon size={18} className={`flex-shrink-0 ${active ? '' : 'text-slate-400 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'}`} />
+                  <span className="relative flex-shrink-0">
+                    <link.icon size={18} className={active ? '' : 'text-slate-400 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'} />
+                    {isCollapsed && <NavIconBadge count={badgeCount} />}
+                  </span>
                   {!isCollapsed && <span className="text-sm">{link.label}</span>}
+                  {!isCollapsed && <NavBadge count={badgeCount} />}
                 </Link>
               );
             })}
