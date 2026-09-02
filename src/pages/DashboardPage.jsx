@@ -24,11 +24,12 @@ function computeTrackingCreditsPrice(credits, isPrivileged = false) {
 
 const MIN_TRACKING_CREDITS_REQUEST = 15;
 
-function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, isPrivilegedRate }) {
+function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, isPrivilegedRate, defaultCard }) {
   const { formatPrice } = useLanguage();
   const [credits, setCredits] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [customNote, setCustomNote] = useState('');
+  const [payWithSavedCard, setPayWithSavedCard] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -39,6 +40,7 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, i
       setCredits('');
       setPhoneNumber('');
       setCustomNote('');
+      setPayWithSavedCard(false);
       setError('');
     }
   }, [open]);
@@ -71,6 +73,14 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, i
         customNote: customNote.trim(),
       });
       const requestId = response?.data?.request?.id;
+      if (requestId && defaultCard && payWithSavedCard) {
+        // Charge the user's own saved card server-to-server right now — no
+        // redirect to Epoint's hosted checkout at all.
+        await paymentsAPI.payWithSavedCard(requestId);
+        onSuccess?.({ paid: true, requestedCredits: creditsNum });
+        onClose?.();
+        return;
+      }
       if (requestId) {
         // No email-verification step for this (authenticated) request type —
         // go straight to Epoint. Credits are added automatically once the
@@ -144,6 +154,19 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, i
             </div>
           ) : null}
 
+          {defaultCard ? (
+            <label className="flex items-center gap-2 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={payWithSavedCard}
+                onChange={(e) => setPayWithSavedCard(e.target.checked)}
+                disabled={loading}
+                className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-cyan-400 focus:ring-cyan-400"
+              />
+              Saxlanılmış kart ilə ödə (**** {defaultCard.cardMask})
+            </label>
+          ) : null}
+
           {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
           <button
@@ -151,7 +174,7 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, i
             disabled={loading}
             className="w-full rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
           >
-            {loading ? 'Sending...' : 'Send Request'}
+            {loading ? 'Sending...' : defaultCard && payWithSavedCard ? 'Ödə' : 'Send Request'}
           </button>
         </form>
       </div>
@@ -170,11 +193,12 @@ function computeMarketAnalysisCreditsPrice(credits) {
   return (Number(credits) || 0) / MARKET_ANALYSIS_CREDITS_UNIT * MARKET_ANALYSIS_CREDITS_RATE_PER_UNIT;
 }
 
-function MarketAnalysisCreditsModal({ open, onClose, onSuccess, existingPhoneNumber }) {
+function MarketAnalysisCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, defaultCard }) {
   const { formatPrice } = useLanguage();
   const [credits, setCredits] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [customNote, setCustomNote] = useState('');
+  const [payWithSavedCard, setPayWithSavedCard] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -185,6 +209,7 @@ function MarketAnalysisCreditsModal({ open, onClose, onSuccess, existingPhoneNum
       setCredits('');
       setPhoneNumber('');
       setCustomNote('');
+      setPayWithSavedCard(false);
       setError('');
     }
   }, [open]);
@@ -222,6 +247,14 @@ function MarketAnalysisCreditsModal({ open, onClose, onSuccess, existingPhoneNum
         customNote: customNote.trim(),
       });
       const requestId = response?.data?.request?.id;
+      if (requestId && defaultCard && payWithSavedCard) {
+        // Charge the user's own saved card server-to-server right now — no
+        // redirect to Epoint's hosted checkout at all.
+        await paymentsAPI.payWithSavedCard(requestId);
+        onSuccess?.({ paid: true, requestedCredits: creditsNum });
+        onClose?.();
+        return;
+      }
       if (requestId) {
         // No email-verification step for this (authenticated) request type —
         // go straight to Epoint. Credits are added automatically once the
@@ -298,6 +331,19 @@ function MarketAnalysisCreditsModal({ open, onClose, onSuccess, existingPhoneNum
             <p className="text-xs text-amber-300">Only whole thousands are allowed (1000, 2000, 3000, ...).</p>
           ) : null}
 
+          {defaultCard ? (
+            <label className="flex items-center gap-2 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={payWithSavedCard}
+                onChange={(e) => setPayWithSavedCard(e.target.checked)}
+                disabled={loading}
+                className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-cyan-400 focus:ring-cyan-400"
+              />
+              Saxlanılmış kart ilə ödə (**** {defaultCard.cardMask})
+            </label>
+          ) : null}
+
           {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
           <button
@@ -305,7 +351,7 @@ function MarketAnalysisCreditsModal({ open, onClose, onSuccess, existingPhoneNum
             disabled={loading}
             className="w-full rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
           >
-            {loading ? 'Sending...' : 'Send Request'}
+            {loading ? 'Sending...' : defaultCard && payWithSavedCard ? 'Ödə' : 'Send Request'}
           </button>
         </form>
       </div>
@@ -318,6 +364,7 @@ export default function DashboardPage() {
   const [limits, setLimits] = useState(null);
   const [trackingCreditsModalOpen, setTrackingCreditsModalOpen] = useState(false);
   const [marketAnalysisCreditsModalOpen, setMarketAnalysisCreditsModalOpen] = useState(false);
+  const [defaultCard, setDefaultCard] = useState(null);
   const [adminStats, setAdminStats] = useState(null);
   const [ebayRateLimits, setEbayRateLimits] = useState(null);
   const [ebayRateLimitsLoading, setEbayRateLimitsLoading] = useState(false);
@@ -347,14 +394,16 @@ export default function DashboardPage() {
     const load = async () => {
       try {
         setLoading(true);
-        const [productsRes, limitsRes, ebayRes] = await Promise.all([
+        const [productsRes, limitsRes, ebayRes, cardsRes] = await Promise.all([
           productAPI.getAll().catch(() => ({ data: [] })),
           settingsAPI.getLimits().catch(() => null),
           ebayAPI.getStatus().catch(() => null),
+          paymentsAPI.listCards().catch(() => null),
         ]);
         setProducts(productsRes?.data || []);
         setLimits(limitsRes?.data || null);
         syncPermissionsFromLimits(limitsRes?.data || null);
+        setDefaultCard((cardsRes?.data?.cards || []).find((c) => c.isDefault) || null);
         const ebayData = ebayRes?.data || {};
         setEbayStatus(ebayData);
         if (ebayData?.connected) {
@@ -1325,7 +1374,15 @@ export default function DashboardPage() {
         onClose={() => setTrackingCreditsModalOpen(false)}
         existingPhoneNumber={limits?.phoneNumber}
         isPrivilegedRate={user?.role === 'admin' || !!user?.isMentor}
-        onSuccess={() => {
+        defaultCard={defaultCard}
+        onSuccess={async ({ paid, requestedCredits } = {}) => {
+          if (paid) {
+            const limitsRes = await settingsAPI.getLimits().catch(() => null);
+            setLimits(limitsRes?.data || null);
+            syncPermissionsFromLimits(limitsRes?.data || null);
+            setAlert({ type: 'success', message: `${requestedCredits} tracking krediti hesabınıza əlavə olundu.` });
+            return;
+          }
           setAlert({ type: 'success', message: 'Your tracking credit request has been sent to the admin team.' });
         }}
       />
@@ -1334,7 +1391,15 @@ export default function DashboardPage() {
         open={marketAnalysisCreditsModalOpen}
         onClose={() => setMarketAnalysisCreditsModalOpen(false)}
         existingPhoneNumber={limits?.phoneNumber}
-        onSuccess={() => {
+        defaultCard={defaultCard}
+        onSuccess={async ({ paid, requestedCredits } = {}) => {
+          if (paid) {
+            const limitsRes = await settingsAPI.getLimits().catch(() => null);
+            setLimits(limitsRes?.data || null);
+            syncPermissionsFromLimits(limitsRes?.data || null);
+            setAlert({ type: 'success', message: `${requestedCredits} Market Analysis krediti hesabınıza əlavə olundu.` });
+            return;
+          }
           setAlert({ type: 'success', message: 'Your Market Analysis credit request has been sent to the admin team.' });
         }}
       />
