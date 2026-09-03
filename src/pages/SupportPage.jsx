@@ -1626,6 +1626,9 @@ export default function SupportPage() {
           onAssigned={() => {
             setAssigningTicket(null);
             loadAllData();
+            // Lets the Sidebar's pending-tickets badge (mentor-only) drop immediately
+            // instead of waiting for its next scheduled refresh.
+            window.dispatchEvent(new Event('support:updated'));
           }}
         />
       ) : null}

@@ -299,6 +299,7 @@ export const supportAPI = {
   createTicket: (payload) => api.post('/support/tickets', payload),
   listMine: () => api.get('/support/tickets/mine'),
   listAll: () => api.get('/support/tickets'),
+  pendingCount: () => api.get('/support/tickets/pending-count'),
   assignSchedule: (id, payload) => api.put(`/support/tickets/${id}/schedule`, payload),
   listMessages: (id) => api.get(`/support/tickets/${id}/messages`),
   sendMessage: (id, payload) => api.post(`/support/tickets/${id}/messages`, payload),

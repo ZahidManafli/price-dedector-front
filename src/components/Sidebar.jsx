@@ -33,7 +33,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTranslation } from 'react-i18next';
 import { useSidebar } from '../context/SidebarContext';
-import { ebayAPI } from '../services/api';
+import { ebayAPI, supportAPI } from '../services/api';
 import { TAB_KEYS } from '../utils/planAccess';
 import { useTour } from '../context/TourContext';
 import { useEbayData } from '../context/EbayDataContext';
@@ -69,10 +69,13 @@ export default function Sidebar() {
   const [activeEbayLabel, setActiveEbayLabel] = useState(null);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const { newOrdersCount, newCasesCount, clearOrdersBadge, clearCasesBadge } = useEbayData();
+  const isMentor = user?.role === 'admin' || !!user?.isMentor;
+  const [pendingTicketsCount, setPendingTicketsCount] = useState(0);
 
   const badgeCountForPath = (path) => {
     if (path === '/orders') return newOrdersCount;
     if (path === '/cases') return newCasesCount;
+    if (path === '/support') return pendingTicketsCount;
     return 0;
   };
 
@@ -83,6 +86,32 @@ export default function Sidebar() {
     if (location.pathname.startsWith('/orders')) clearOrdersBadge();
     if (location.pathname.startsWith('/cases')) clearCasesBadge();
   }, [location.pathname, clearOrdersBadge, clearCasesBadge]);
+
+  // Mentor-only: how many support tickets are still waiting on a scheduled time slot
+  // ("vaxt təyin edilməmiş"). Unlike Orders/Cases this is a live count, not a "new
+  // since last visit" diff — it re-syncs on every navigation (same as activeEbayLabel
+  // below) and immediately when SupportPage assigns a ticket a time.
+  useEffect(() => {
+    if (!isMentor) {
+      setPendingTicketsCount(0);
+      return undefined;
+    }
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await supportAPI.pendingCount();
+        if (!cancelled) setPendingTicketsCount(Math.max(0, Number(res?.data?.count) || 0));
+      } catch {
+        // Best-effort — leave whatever count was last shown.
+      }
+    };
+    load();
+    window.addEventListener('support:updated', load);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('support:updated', load);
+    };
+  }, [isMentor, location.pathname]);
 
   const links = [
     { label: t('nav.dashboard'), path: '/dashboard', icon: LayoutDashboard, tab: TAB_KEYS.DASHBOARD, tour: 'sidebar-dashboard' },
