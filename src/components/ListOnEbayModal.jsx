@@ -36,6 +36,10 @@ import { ebayAPI, dewisoAPI } from '../services/api';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 
+// eBay's Trading API AddItem call (which /ebay/quick-list submits through) accepts at
+// most 12 PictureURLs per listing — matches the backend's own pictureUrls.slice(0, 12).
+const MAX_LISTING_IMAGES = 24;
+
 const CONDITION_OPTIONS = [
   { id: 1000, label: 'New' },
   { id: 1500, label: 'New Other' },
@@ -48,8 +52,14 @@ const CONDITION_OPTIONS = [
   { id: 7000, label: 'For Parts or Not Working' },
 ];
 
+// Shared cap on a single uploaded image file — matches the backend's
+// /dewiso/images/upload multer limit (see dewiso.js).
+const MAX_IMAGE_FILE_BYTES = 10 * 1024 * 1024;
+
 // ─── ImageEditModal ────────────────────────────────────────────────────────────
-function ImageEditModal({ isDark, currentUrl, imageIndex, onConfirm, onClose }) {
+// mode: 'edit' replaces the image at `imageIndex`; 'add' appends a new one after
+// the current gallery (imageIndex is the next free slot, currentUrl is null).
+function ImageEditModal({ isDark, currentUrl, imageIndex, mode = 'edit', onConfirm, onClose }) {
   const [tab, setTab] = useState('url');
   const [urlInput, setUrlInput] = useState('');
   const [file, setFile] = useState(null);
@@ -58,21 +68,24 @@ function ImageEditModal({ isDark, currentUrl, imageIndex, onConfirm, onClose }) 
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
-  const handleFileChange = (e) => {
-    const f = e.target.files?.[0];
+  const applyFileIfValid = (f) => {
     if (!f) return;
+    if (f.size > MAX_IMAGE_FILE_BYTES) {
+      setError(`File is too large (${(f.size / (1024 * 1024)).toFixed(1)} MB) — max 10 MB`);
+      return;
+    }
     setFile(f);
     setFilePreview(URL.createObjectURL(f));
     setError(null);
   };
 
+  const handleFileChange = (e) => {
+    applyFileIfValid(e.target.files?.[0]);
+  };
+
   const handleDrop = (e) => {
     e.preventDefault();
-    const f = e.dataTransfer.files?.[0];
-    if (!f) return;
-    setFile(f);
-    setFilePreview(URL.createObjectURL(f));
-    setError(null);
+    applyFileIfValid(e.dataTransfer.files?.[0]);
   };
 
   const handleConfirm = async () => {
@@ -126,9 +139,9 @@ function ImageEditModal({ isDark, currentUrl, imageIndex, onConfirm, onClose }) 
       <div className={card}>
         <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
           <div>
-            <h3 className="text-sm font-semibold">Edit Image {imageIndex + 1}</h3>
+            <h3 className="text-sm font-semibold">{mode === 'add' ? 'Add Image' : `Edit Image ${imageIndex + 1}`}</h3>
             <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Replace with a URL or upload from your computer
+              {mode === 'add' ? 'Add a URL or upload a new image from your computer' : 'Replace with a URL or upload from your computer'}
             </p>
           </div>
           <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl font-bold leading-none">✕</button>
@@ -176,7 +189,7 @@ function ImageEditModal({ isDark, currentUrl, imageIndex, onConfirm, onClose }) 
                   <>
                     <div className="text-2xl mb-2">📁</div>
                     <p className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Click or drag & drop an image</p>
-                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>JPG, PNG, WEBP · max 5 MB</p>
+                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>JPG, PNG, WEBP · max 10 MB</p>
                   </>
                 )}
               </div>
@@ -435,38 +448,57 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
       .trim();
   };
 
+  // idx >= the current array length means "Add Image" was used — append rather
+  // than overwrite an existing slot.
   const handleImageEdited = ({ displayUrl, maxDimensionImageUrl }) => {
     const idx = editingImageIdx;
     setDisplayUrls((prev) => {
       const next = [...prev];
-      next[idx] = displayUrl;
-      // Propagate to bucket if possible
-      if (typeof onUpdateItem === 'function') {
-        onUpdateItem({
-          scrapedData: {
-            ...scrapedOverride,
-            pictureUrls: next,
-          },
-        });
-      }
+      if (idx >= prev.length) next.push(displayUrl); else next[idx] = displayUrl;
       return next;
     });
     setmaxDimensionImageUrls((prev) => {
       const next = [...prev];
-      next[idx] = maxDimensionImageUrl;
-      // Propagate to bucket if possible
+      if (idx >= prev.length) next.push(maxDimensionImageUrl); else next[idx] = maxDimensionImageUrl;
+      // Propagate to bucket if possible — done once here (after both arrays are
+      // conceptually the same shape) rather than in both setState updaters.
       if (typeof onUpdateItem === 'function') {
-        onUpdateItem({
-          scrapedData: {
-            ...scrapedOverride,
-            pictureUrls: next,
-          },
-        });
+        onUpdateItem({ scrapedData: { ...scrapedOverride, pictureUrls: next } });
       }
       return next;
     });
     setEditingImageIdx(null);
     setSelectedImageIdx(idx);
+  };
+
+  // Swaps the image at `idx` with its left/right neighbor — the reorder control on
+  // each thumbnail. Keeps displayUrls/maxDimensionImageUrls in lockstep and follows
+  // the moved image with the selection so the main preview doesn't jump elsewhere.
+  const moveImage = (idx, direction) => {
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= displayUrls.length) return;
+
+    const swap = (arr) => {
+      const next = [...arr];
+      [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+      return next;
+    };
+
+    setDisplayUrls((prev) => swap(prev));
+    setmaxDimensionImageUrls((prev) => {
+      const next = swap(prev);
+      if (typeof onUpdateItem === 'function') {
+        onUpdateItem({ scrapedData: { ...scrapedOverride, pictureUrls: next } });
+      }
+      return next;
+    });
+    setSelectedImageIdx((prev) => (prev === idx ? targetIdx : prev === targetIdx ? idx : prev));
+  };
+
+  const canAddMoreImages = displayUrls.length < MAX_LISTING_IMAGES;
+  const handleAddImage = () => {
+    if (!canAddMoreImages) return;
+    setEditingImageIdx(displayUrls.length);
   };
 
   const handleChange = (e) => {
@@ -624,8 +656,8 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
 
               {/* Image gallery */}
-              {displayUrls.length > 0 && (
-                <div className={`rounded-xl border overflow-hidden ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
+              <div className={`rounded-xl border overflow-hidden ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
+                {displayUrls.length > 0 ? (
                   <div className="relative w-full aspect-square bg-black/10 group">
                     <img
                       src={displayUrls[selectedImageIdx] || displayUrls[0]}
@@ -655,33 +687,87 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
                       </svg>
                       Edit
                     </button>
-                    {loadingSpecifics && displayUrls.length === 0 && (
+                    {loadingSpecifics && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                         <span className="text-xs text-white animate-pulse">Loading images…</span>
                       </div>
                     )}
                   </div>
-                  {/* Thumbnail strip */}
-                  {displayUrls.length > 1 && (
-                    <div className="flex gap-1.5 p-2 overflow-x-auto">
-                      {displayUrls.map((url, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setSelectedImageIdx(idx)}
-                          className={`shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
-                            selectedImageIdx === idx
-                              ? 'border-blue-500 opacity-100'
-                              : isDark ? 'border-slate-600 opacity-60 hover:opacity-100' : 'border-slate-200 opacity-60 hover:opacity-100'
-                          }`}
-                        >
-                          <img src={url} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
-                        </button>
-                      ))}
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleAddImage}
+                    className={`flex w-full flex-col items-center justify-center gap-1.5 aspect-square text-xs font-medium transition-colors ${
+                      isDark ? 'text-slate-400 hover:bg-slate-800/70' : 'text-slate-500 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="text-2xl">📷</span>
+                    {loadingSpecifics ? 'Loading images…' : 'Add an image'}
+                  </button>
+                )}
+
+                {/* Thumbnail strip — click to select, ‹ › to reorder, + to add more */}
+                <div className="flex items-center gap-1.5 p-2 overflow-x-auto">
+                  {displayUrls.map((url, idx) => (
+                    <div key={idx} className="relative shrink-0 group/thumb">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedImageIdx(idx)}
+                        className={`block w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
+                          selectedImageIdx === idx
+                            ? 'border-blue-500 opacity-100'
+                            : isDark ? 'border-slate-600 opacity-60 hover:opacity-100' : 'border-slate-200 opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={url} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                      </button>
+                      {displayUrls.length > 1 && (
+                        <div className="absolute inset-x-0 -bottom-1 flex justify-center gap-0.5 opacity-0 group-hover/thumb:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => moveImage(idx, -1)}
+                            disabled={idx === 0}
+                            title="Move left"
+                            className={`flex items-center justify-center w-4 h-4 rounded text-[10px] leading-none shadow disabled:opacity-30 disabled:cursor-not-allowed ${
+                              isDark ? 'bg-slate-900 text-slate-200 border border-slate-600' : 'bg-white text-slate-700 border border-slate-300'
+                            }`}
+                          >
+                            ‹
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveImage(idx, 1)}
+                            disabled={idx === displayUrls.length - 1}
+                            title="Move right"
+                            className={`flex items-center justify-center w-4 h-4 rounded text-[10px] leading-none shadow disabled:opacity-30 disabled:cursor-not-allowed ${
+                              isDark ? 'bg-slate-900 text-slate-200 border border-slate-600' : 'bg-white text-slate-700 border border-slate-300'
+                            }`}
+                          >
+                            ›
+                          </button>
+                        </div>
+                      )}
                     </div>
+                  ))}
+                  {canAddMoreImages && (
+                    <button
+                      type="button"
+                      onClick={handleAddImage}
+                      title="Add another image"
+                      className={`shrink-0 flex items-center justify-center w-12 h-12 rounded-lg border-2 border-dashed text-lg font-semibold transition-colors ${
+                        isDark ? 'border-slate-600 text-slate-500 hover:border-blue-500 hover:text-blue-400' : 'border-slate-300 text-slate-400 hover:border-blue-400 hover:text-blue-500'
+                      }`}
+                    >
+                      +
+                    </button>
                   )}
                 </div>
-              )}
+                {displayUrls.length > 0 && (
+                  <p className={`px-2 pb-2 text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {displayUrls.length}/{MAX_LISTING_IMAGES} images · hover a thumbnail to reorder
+                  </p>
+                )}
+              </div>
 
               {/* Error */}
               {error && (
@@ -861,8 +947,9 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
       {editingImageIdx !== null && (
         <ImageEditModal
           isDark={isDark}
-          currentUrl={displayUrls[editingImageIdx]}
+          currentUrl={displayUrls[editingImageIdx] ?? null}
           imageIndex={editingImageIdx}
+          mode={editingImageIdx >= displayUrls.length ? 'add' : 'edit'}
           onConfirm={handleImageEdited}
           onClose={() => setEditingImageIdx(null)}
         />
