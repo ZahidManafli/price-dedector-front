@@ -63,6 +63,16 @@ export default function ListingsPage() {
   const [savingAutoStock, setSavingAutoStock] = useState(false);
   const [removingAutoStock, setRemovingAutoStock] = useState('');
 
+  // ── Promoted listings ad rate state ───────────────────────────────────────
+  // adRateMap: { [ebayListingId]: { adId, bidPercentage } | undefined }
+  const [adRateMap, setAdRateMap] = useState({});
+  const [adRateLoading, setAdRateLoading] = useState({});
+  const [adRateEditId, setAdRateEditId] = useState(null);
+  const [adRateEditValue, setAdRateEditValue] = useState('');
+  const [savingAdRate, setSavingAdRate] = useState(false);
+  const [removingAdRate, setRemovingAdRate] = useState('');
+  const [adRateScopeError, setAdRateScopeError] = useState(false);
+
   // ── Init ──────────────────────────────────────────────────────────────────
   const loadRelistFrequency = (ebayAccountId) => {
     ebayAPI
@@ -294,6 +304,68 @@ export default function ListingsPage() {
     }
   };
 
+  // ── Promoted listings ad rate ─────────────────────────────────────────────
+  const fetchAdRatesForIds = async (ids) => {
+    const toFetch = ids.filter((id) => id && adRateMap[id] === undefined);
+    if (toFetch.length === 0) return;
+    setAdRateLoading((prev) => {
+      const next = { ...prev };
+      toFetch.forEach((id) => { next[id] = true; });
+      return next;
+    });
+    try {
+      const res = await ebayAPI.getAdRates(toFetch);
+      const adRates = res?.data?.adRates || {};
+      const mapUpdates = {};
+      toFetch.forEach((id) => { mapUpdates[id] = adRates[id] || null; });
+      setAdRateMap((prev) => ({ ...prev, ...mapUpdates }));
+    } catch {
+      // Silent — ad rates are a secondary/optional display, don't block the page on failure.
+    } finally {
+      setAdRateLoading((prev) => {
+        const next = { ...prev };
+        toFetch.forEach((id) => { next[id] = false; });
+        return next;
+      });
+    }
+  };
+
+  const handleSaveAdRate = async (ebayListingId) => {
+    const bidPercentage = Number(adRateEditValue);
+    if (!Number.isFinite(bidPercentage) || bidPercentage < 2 || bidPercentage > 100) {
+      setError(t('listingsPage.adRateInvalid'));
+      return;
+    }
+    setSavingAdRate(true);
+    try {
+      await ebayAPI.setAdRate(ebayListingId, bidPercentage);
+      setAdRateMap((prev) => ({ ...prev, [ebayListingId]: { ...(prev[ebayListingId] || {}), bidPercentage } }));
+      setAdRateEditId(null);
+      setAdRateEditValue('');
+    } catch (err) {
+      if (err?.response?.data?.code === 'EBAY_MARKETING_SCOPE_REQUIRED') {
+        setAdRateScopeError(true);
+      } else {
+        setError(err?.response?.data?.error || t('listingsPage.failedSaveAdRate'));
+      }
+    } finally {
+      setSavingAdRate(false);
+    }
+  };
+
+  const handleRemoveAdRate = async (ebayListingId) => {
+    if (!window.confirm(t('listingsPage.removeAdRateConfirm'))) return;
+    setRemovingAdRate(ebayListingId);
+    try {
+      await ebayAPI.removeAdRate(ebayListingId);
+      setAdRateMap((prev) => ({ ...prev, [ebayListingId]: null }));
+    } catch (err) {
+      setError(err?.response?.data?.error || t('listingsPage.failedRemoveAdRate'));
+    } finally {
+      setRemovingAdRate('');
+    }
+  };
+
   // ── Pagination / filter reset ─────────────────────────────────────────────
   useEffect(() => { setPage(0); }, [query, statusFilter, sortKey, sortDir]);
 
@@ -423,6 +495,7 @@ export default function ListingsPage() {
       return /^\d{9,15}$/.test(id) ? id : null;
     }).filter(Boolean);
     fetchAutoStockForIds(ids);
+    fetchAdRatesForIds(ids);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagedItems, ebayStatus.connected]);
 
@@ -519,6 +592,19 @@ export default function ListingsPage() {
       {error && (
         <div className="mb-4">
           <Alert type="error" message={error} onClose={() => setError(null)} />
+        </div>
+      )}
+
+      {adRateScopeError && (
+        <div className={`mb-4 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${isDark ? 'bg-amber-950/30 border-amber-800 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+          <span>{t('listingsPage.reconnectForPromotedListings')}</span>
+          <button
+            type="button"
+            onClick={handleConnect}
+            className="shrink-0 rounded-md bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 hover:bg-amber-700"
+          >
+            {t('listingsPage.reconnectEbay')}
+          </button>
         </div>
       )}
 
@@ -643,7 +729,7 @@ export default function ListingsPage() {
               <table className={`min-w-full ${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
                 <thead className={isDark ? 'bg-slate-800/70' : 'bg-slate-50'}>
                   <tr>
-                    {['image', 'title', 'listingId', 'price', 'stockCount', 'sold', 'status', ''].map((col, i) => (
+                    {['image', 'title', 'listingId', 'price', 'stockCount', 'sold', 'adRate', 'status', ''].map((col, i) => (
                       <th
                         key={i}
                         className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}
@@ -654,6 +740,7 @@ export default function ListingsPage() {
                         {col === 'price' && sortLabel('price', t('listingsPage.price'))}
                         {col === 'stockCount' && sortLabel('quantity', t('listingsPage.stockCount'))}
                         {col === 'sold' && sortLabel('sold', t('listingsPage.sold'))}
+                        {col === 'adRate' && t('listingsPage.adRate')}
                         {col === 'status' && sortLabel('status', t('listingsPage.status'))}
                       </th>
                     ))}
@@ -674,6 +761,10 @@ export default function ListingsPage() {
                     const autoStockRule = ebayListingId ? autoStockMap[ebayListingId] : undefined;
                     const isAutoStockLoading = ebayListingId ? !!autoStockLoading[ebayListingId] : false;
                     const isAssignOpen = autoStockAssignId === ebayListingId;
+
+                    const adRate = ebayListingId ? adRateMap[ebayListingId] : undefined;
+                    const isAdRateLoading = ebayListingId ? !!adRateLoading[ebayListingId] : false;
+                    const isAdRateEditOpen = adRateEditId === ebayListingId;
 
                     return (
                       <React.Fragment key={`${key}-${idx}`}>
@@ -869,6 +960,112 @@ export default function ListingsPage() {
 
                           {/* Sold */}
                           <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{offer._sold}</td>
+
+                          {/* Promoted listings ad rate */}
+                          <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                            {ebayListingId && (
+                              isAdRateLoading ? (
+                                <Loader2 size={12} className={isDark ? 'text-slate-400 animate-spin' : 'text-slate-400 animate-spin'} />
+                              ) : adRate?.bidPercentage != null ? (
+                                /* ── Promoted ── */
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className={`text-[10px] font-semibold uppercase tracking-wide ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{t('listingsPage.promoted')}</span>
+                                    {isAdRateEditOpen ? (
+                                      <div className="flex items-center gap-1">
+                                        <input
+                                          type="number"
+                                          min="2" max="100" step="0.1"
+                                          value={adRateEditValue}
+                                          onChange={(e) => setAdRateEditValue(e.target.value)}
+                                          className={`w-16 rounded border px-1.5 py-0.5 text-xs outline-none focus:ring-2 focus:ring-emerald-500/40 ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
+                                          autoFocus
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSaveAdRate(ebayListingId)}
+                                          disabled={savingAdRate}
+                                          className="h-5 w-5 rounded bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 disabled:opacity-50"
+                                        >
+                                          {savingAdRate ? <Loader2 size={9} className="animate-spin" /> : <Check size={9} />}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setAdRateEditId(null)}
+                                          className={`h-5 w-5 rounded flex items-center justify-center ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                                        >
+                                          <X size={9} />
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => { setAdRateEditId(ebayListingId); setAdRateEditValue(String(adRate.bidPercentage)); }}
+                                        className={`text-xs font-bold hover:underline ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}
+                                      >
+                                        {adRate.bidPercentage}%
+                                      </button>
+                                    )}
+                                  </div>
+                                  {!isAdRateEditOpen && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveAdRate(ebayListingId)}
+                                      disabled={removingAdRate === ebayListingId}
+                                      className={`inline-flex items-center gap-0.5 text-[10px] font-medium transition ${isDark ? 'text-rose-400 hover:text-rose-300' : 'text-rose-500 hover:text-rose-700'} disabled:opacity-50`}
+                                    >
+                                      {removingAdRate === ebayListingId ? <Loader2 size={9} className="animate-spin" /> : <X size={9} />}
+                                      {t('listingsPage.removeAdRate')}
+                                    </button>
+                                  )}
+                                </div>
+                              ) : (
+                                /* ── Not promoted ── */
+                                <div className="flex flex-col gap-1">
+                                  {!isAdRateEditOpen ? (
+                                    <>
+                                      <span className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('listingsPage.notPromoted')}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => { setAdRateEditId(ebayListingId); setAdRateEditValue(''); }}
+                                        className={`inline-flex items-center gap-0.5 text-[10px] font-medium transition ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
+                                      >
+                                        + {t('listingsPage.setAdRate')}
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <div className="flex items-center gap-1">
+                                      <input
+                                        type="number"
+                                        min="2" max="100" step="0.1"
+                                        value={adRateEditValue}
+                                        onChange={(e) => setAdRateEditValue(e.target.value)}
+                                        placeholder="%"
+                                        className={`w-16 rounded border px-1.5 py-0.5 text-xs outline-none focus:ring-2 focus:ring-blue-500/40 ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500' : 'bg-white border-slate-300 text-slate-900'}`}
+                                        autoFocus
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSaveAdRate(ebayListingId)}
+                                        disabled={savingAdRate}
+                                        className="h-6 rounded bg-blue-600 text-white text-[10px] font-semibold px-2 hover:bg-blue-700 disabled:opacity-50 flex items-center gap-0.5"
+                                      >
+                                        {savingAdRate ? <Loader2 size={9} className="animate-spin" /> : <Check size={9} />}
+                                        {t('listingsPage.saveAdRate')}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setAdRateEditId(null)}
+                                        className={`h-6 w-6 rounded flex items-center justify-center ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                                      >
+                                        <X size={10} />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            )}
+                          </td>
 
                           {/* Status */}
                           <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>

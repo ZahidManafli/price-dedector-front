@@ -193,6 +193,12 @@ export const ebayAPI = {
     api.put(`/ebay/listings/${encodeURIComponent(listingId)}/auto-stock`, payload),
   deleteListingAutoStockRule: (listingId) =>
     api.delete(`/ebay/listings/${encodeURIComponent(listingId)}/auto-stock`),
+  getAdRates: (listingIds) =>
+    api.get('/ebay/listings/ad-rates', { params: { listingIds: (listingIds || []).join(',') } }),
+  setAdRate: (legacyItemId, bidPercentage) =>
+    api.put(`/ebay/listings/${encodeURIComponent(legacyItemId)}/ad-rate`, { bidPercentage }),
+  removeAdRate: (legacyItemId) =>
+    api.delete(`/ebay/listings/${encodeURIComponent(legacyItemId)}/ad-rate`),
   getRelistFrequency: (ebayAccountId) =>
     api.get('/ebay/relist-frequency', { params: ebayAccountId ? { ebayAccountId } : undefined }),
   saveRelistFrequency: (relistFrequencyDays, ebayAccountId) =>
