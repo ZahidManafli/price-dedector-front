@@ -56,36 +56,82 @@ const CONDITION_OPTIONS = [
 // /dewiso/images/upload multer limit (see dewiso.js).
 const MAX_IMAGE_FILE_BYTES = 10 * 1024 * 1024;
 
+// ─── Item Origin (Country/Region of Manufacture) ──────────────────────────────
+// eBay item specifics carry this aspect under a few different display names
+// depending on category/scrape source — match any of them as "the" origin field.
+const ITEM_ORIGIN_SPEC_NAME = 'Country/Region of Manufacture';
+const ITEM_ORIGIN_SPEC_ALIASES = new Set([
+  'country/region of manufacture',
+  'country of manufacture',
+  'region of manufacture',
+  'country of origin',
+  'item origin',
+]);
+const isItemOriginSpec = (spec) =>
+  ITEM_ORIGIN_SPEC_ALIASES.has(String(spec?.name || spec?.label || '').trim().toLowerCase());
+
+// "United States" first — it's the default value shown in the Select whenever the
+// listing has no real scraped/known origin yet.
+const COUNTRY_OPTIONS = [
+  'United States', 'China', 'United Kingdom', 'Canada', 'Germany', 'France', 'Italy',
+  'Spain', 'Japan', 'South Korea', 'India', 'Vietnam', 'Mexico', 'Turkey', 'Australia',
+  'Netherlands', 'Poland', 'Bangladesh', 'Indonesia', 'Thailand', 'Taiwan', 'Cambodia',
+  'Portugal', 'Brazil', 'Switzerland', 'Unknown',
+];
+
+// Guarantees the origin spec is always present in the list so the modal can always
+// render it as a Select. Only overrides the value with the "United States" default
+// when it's genuinely missing/blank/"Unknown" — a real scraped country is left as-is.
+function ensureItemOriginSpec(list) {
+  const arr = Array.isArray(list) ? list.map((s) => ({ ...s })) : [];
+  const idx = arr.findIndex(isItemOriginSpec);
+  if (idx === -1) {
+    arr.push({ name: ITEM_ORIGIN_SPEC_NAME, label: ITEM_ORIGIN_SPEC_NAME, value: 'United States' });
+    return arr;
+  }
+  const currentValue = String(arr[idx].value || '').trim();
+  if (!currentValue || currentValue.toLowerCase() === 'unknown') {
+    arr[idx] = { ...arr[idx], value: 'United States' };
+  }
+  return arr;
+}
+
 // ─── ImageEditModal ────────────────────────────────────────────────────────────
-// mode: 'edit' replaces the image at `imageIndex`; 'add' appends a new one after
-// the current gallery (imageIndex is the next free slot, currentUrl is null).
+// mode: 'edit' replaces the image at `imageIndex` (single file only); 'add' appends
+// new ones after the current gallery (imageIndex is the next free slot, currentUrl
+// is null) and accepts multiple files selected at once.
+// onConfirm is always called with an ARRAY of { displayUrl, maxDimensionImageUrl }
+// — length 1 for a URL paste or an 'edit' replace, length N for a multi-file add.
 function ImageEditModal({ isDark, currentUrl, imageIndex, mode = 'edit', onConfirm, onClose }) {
   const [tab, setTab] = useState('url');
   const [urlInput, setUrlInput] = useState('');
-  const [file, setFile] = useState(null);
-  const [filePreview, setFilePreview] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [filePreviews, setFilePreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
-  const applyFileIfValid = (f) => {
-    if (!f) return;
-    if (f.size > MAX_IMAGE_FILE_BYTES) {
-      setError(`File is too large (${(f.size / (1024 * 1024)).toFixed(1)} MB) — max 10 MB`);
+  const applyFilesIfValid = (fileList) => {
+    const incoming = Array.from(fileList || []).filter(Boolean);
+    if (!incoming.length) return;
+    const selected = mode === 'add' ? incoming : incoming.slice(0, 1);
+    const oversized = selected.find((f) => f.size > MAX_IMAGE_FILE_BYTES);
+    if (oversized) {
+      setError(`File is too large (${(oversized.size / (1024 * 1024)).toFixed(1)} MB) — max 10 MB`);
       return;
     }
-    setFile(f);
-    setFilePreview(URL.createObjectURL(f));
+    setFiles(selected);
+    setFilePreviews(selected.map((f) => URL.createObjectURL(f)));
     setError(null);
   };
 
   const handleFileChange = (e) => {
-    applyFileIfValid(e.target.files?.[0]);
+    applyFilesIfValid(e.target.files);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
-    applyFileIfValid(e.dataTransfer.files?.[0]);
+    applyFilesIfValid(e.dataTransfer.files);
   };
 
   const handleConfirm = async () => {
@@ -93,24 +139,27 @@ function ImageEditModal({ isDark, currentUrl, imageIndex, mode = 'edit', onConfi
     if (tab === 'url') {
       const trimmed = urlInput.trim();
       if (!trimmed) return setError('Please enter an image URL');
-      onConfirm({ displayUrl: trimmed, maxDimensionImageUrl: trimmed });
+      onConfirm([{ displayUrl: trimmed, maxDimensionImageUrl: trimmed }]);
       return;
     }
-    if (!file) return setError('Please select an image file');
+    if (!files.length) return setError('Please select an image file');
     try {
       setUploading(true);
       const formData = new FormData();
-      formData.append('images', file);
+      files.forEach((f) => formData.append('images', f));
       formData.append('templateId', `listing-image-edit-${Date.now()}`);
       const res = await dewisoAPI.uploadImages(formData);
       const items = res?.data?.items || [];
-      const first = items[0];
-      if (!first) throw new Error('Upload returned no items');
-      if (first.status === 'failed') throw new Error(first.error || 'Image upload failed');
-      const maxDimensionImageUrl = first.maxDimensionImageUrl || first.localUrl;
-      const displayUrl = first.localUrl || first.maxDimensionImageUrl;
-      if (!maxDimensionImageUrl) throw new Error('No eBay image URL returned — reconnect your eBay account');
-      onConfirm({ displayUrl, maxDimensionImageUrl });
+      if (!items.length) throw new Error('Upload returned no items');
+      const failed = items.find((it) => it.status === 'failed');
+      if (failed) throw new Error(failed.error || 'Image upload failed');
+      const uploaded = items.map((it) => {
+        const maxDimensionImageUrl = it.maxDimensionImageUrl || it.localUrl;
+        const displayUrl = it.localUrl || it.maxDimensionImageUrl;
+        if (!maxDimensionImageUrl) throw new Error('No eBay image URL returned — reconnect your eBay account');
+        return { displayUrl, maxDimensionImageUrl };
+      });
+      onConfirm(uploaded);
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Upload failed');
     } finally {
@@ -139,9 +188,9 @@ function ImageEditModal({ isDark, currentUrl, imageIndex, mode = 'edit', onConfi
       <div className={card}>
         <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
           <div>
-            <h3 className="text-sm font-semibold">{mode === 'add' ? 'Add Image' : `Edit Image ${imageIndex + 1}`}</h3>
+            <h3 className="text-sm font-semibold">{mode === 'add' ? 'Add Image(s)' : `Edit Image ${imageIndex + 1}`}</h3>
             <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              {mode === 'add' ? 'Add a URL or upload a new image from your computer' : 'Replace with a URL or upload from your computer'}
+              {mode === 'add' ? 'Add a URL, or upload one or more images from your computer' : 'Replace with a URL or upload from your computer'}
             </p>
           </div>
           <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl font-bold leading-none">✕</button>
@@ -151,7 +200,7 @@ function ImageEditModal({ isDark, currentUrl, imageIndex, mode = 'edit', onConfi
             <div className={`rounded-xl overflow-hidden border aspect-video flex items-center justify-center ${
               isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'
             }`}>
-              <img src={filePreview || currentUrl} alt="Current" className="max-h-36 object-contain" />
+              <img src={filePreviews[0] || currentUrl} alt="Current" className="max-h-36 object-contain" />
             </div>
           )}
           <div className={`flex gap-1 p-1 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
@@ -183,24 +232,45 @@ function ImageEditModal({ isDark, currentUrl, imageIndex, mode = 'edit', onConfi
                     : 'border-slate-300 hover:border-blue-400 bg-slate-50'
                 }`}
               >
-                {filePreview ? (
-                  <img src={filePreview} alt="Preview" className="mx-auto max-h-28 object-contain rounded-lg" />
+                {filePreviews.length > 0 ? (
+                  filePreviews.length === 1 ? (
+                    <img src={filePreviews[0]} alt="Preview" className="mx-auto max-h-28 object-contain rounded-lg" />
+                  ) : (
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {filePreviews.map((src, i) => (
+                        <img key={i} src={src} alt={`Preview ${i + 1}`} className="h-16 w-16 object-cover rounded-md border border-slate-500/30" />
+                      ))}
+                    </div>
+                  )
                 ) : (
                   <>
                     <div className="text-2xl mb-2">📁</div>
-                    <p className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Click or drag & drop an image</p>
-                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>JPG, PNG, WEBP · max 10 MB</p>
+                    <p className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      {mode === 'add' ? 'Click or drag & drop image(s)' : 'Click or drag & drop an image'}
+                    </p>
+                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>JPG, PNG, WEBP · max 10 MB each</p>
                   </>
                 )}
               </div>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-              {file && (
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple={mode === 'add'}
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              {files.length > 0 && (
                 <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  📎 {file.name} ({(file.size / 1024).toFixed(0)} KB)
+                  {files.length === 1
+                    ? `📎 ${files[0].name} (${(files[0].size / 1024).toFixed(0)} KB)`
+                    : `📎 ${files.length} files selected`}
                 </p>
               )}
               <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                Image will be uploaded to eBay Picture Services and linked to your listing.
+                {files.length > 1
+                  ? 'Images will be uploaded to eBay Picture Services and linked to your listing.'
+                  : 'Image will be uploaded to eBay Picture Services and linked to your listing.'}
               </p>
             </div>
           )}
@@ -329,7 +399,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
         freeShipping: scrapedOverride.freeShipping ?? true,
         dispatchTimeMax: String(scrapedOverride.dispatchTimeMax || 3),
       }));
-      setItemSpecifics(scrapedOverride.itemSpecifics || []);
+      setItemSpecifics(ensureItemOriginSpec(scrapedOverride.itemSpecifics || []));
       setDisplayUrls(overridePics);
       setmaxDimensionImageUrls(overridePics);
       return; // Skip the normal scrape path
@@ -345,9 +415,10 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
       categoryId: String(item.categoryId || item.raw?.categoryId || ''),
     }));
 
-    if (Array.isArray(item.itemSpecifics) && item.itemSpecifics.length > 0) {
-      setItemSpecifics(item.itemSpecifics);
-    }
+    // Always run (even when item.itemSpecifics is empty) so the origin row is
+    // present with its "United States" default from the moment the modal opens,
+    // not only after/if the async scrape below returns.
+    setItemSpecifics(ensureItemOriginSpec(item.itemSpecifics));
 
     const itemUrl =
       item.itemUrl || item.itemWebUrl || item.maxDimensionImageUrl || item.url || item.raw?.itemWebUrl || item.raw?.itemUrl || item.raw?.productUrl ||
@@ -377,7 +448,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
         if (cancelled) return;
         const data = res?.data || {};
         if (data.categoryId) setForm((prev) => ({ ...prev, categoryId: String(data.categoryId) }));
-        if (Array.isArray(data.itemSpecifics) && data.itemSpecifics.length > 0) setItemSpecifics(data.itemSpecifics);
+        if (Array.isArray(data.itemSpecifics) && data.itemSpecifics.length > 0) setItemSpecifics(ensureItemOriginSpec(data.itemSpecifics));
         if (Array.isArray(data.pictureUrls) && data.pictureUrls.length > 0) {
           setDisplayUrls(data.pictureUrls);
           setmaxDimensionImageUrls(data.pictureUrls);
@@ -449,17 +520,30 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
   };
 
   // idx >= the current array length means "Add Image" was used — append rather
-  // than overwrite an existing slot.
-  const handleImageEdited = ({ displayUrl, maxDimensionImageUrl }) => {
+  // than overwrite an existing slot. `images` is always an array (see
+  // ImageEditModal) — length 1 for a URL paste or an 'edit' replace, length N for
+  // a multi-file add; extra entries beyond the first are only ever appended
+  // (an 'edit' replace never produces more than one, but this stays safe either
+  // way), capped so the gallery never exceeds MAX_LISTING_IMAGES.
+  const handleImageEdited = (images) => {
     const idx = editingImageIdx;
+    const list = Array.isArray(images) ? images : [images];
+    if (!list.length) { setEditingImageIdx(null); return; }
+
+    const isAppend = idx >= displayUrls.length;
+    const room = Math.max(0, MAX_LISTING_IMAGES - displayUrls.length);
+    const toAppend = isAppend ? list.slice(0, room) : list.slice(1);
+
     setDisplayUrls((prev) => {
       const next = [...prev];
-      if (idx >= prev.length) next.push(displayUrl); else next[idx] = displayUrl;
+      if (isAppend) toAppend.forEach((img) => next.push(img.displayUrl));
+      else { next[idx] = list[0].displayUrl; toAppend.forEach((img) => next.push(img.displayUrl)); }
       return next;
     });
     setmaxDimensionImageUrls((prev) => {
       const next = [...prev];
-      if (idx >= prev.length) next.push(maxDimensionImageUrl); else next[idx] = maxDimensionImageUrl;
+      if (isAppend) toAppend.forEach((img) => next.push(img.maxDimensionImageUrl));
+      else { next[idx] = list[0].maxDimensionImageUrl; toAppend.forEach((img) => next.push(img.maxDimensionImageUrl)); }
       // Propagate to bucket if possible — done once here (after both arrays are
       // conceptually the same shape) rather than in both setState updaters.
       if (typeof onUpdateItem === 'function') {
@@ -504,6 +588,14 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  };
+
+  const handleItemSpecificChange = (specIndex, value) => {
+    setItemSpecifics((prev) => {
+      const next = [...prev];
+      next[specIndex] = { ...next[specIndex], value };
+      return next;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -889,10 +981,25 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
                         {itemSpecifics.map((spec, i) => {
                           const specLabel = spec.name || spec.label || '';
                           const specValue = spec.value || '';
+                          const isOrigin = isItemOriginSpec(spec);
+                          const originOptions = COUNTRY_OPTIONS.includes(specValue)
+                            ? COUNTRY_OPTIONS
+                            : [specValue, ...COUNTRY_OPTIONS].filter(Boolean);
                           return (
-                            <div key={`${specLabel}-${i}`} className={`grid grid-cols-2 gap-3 px-3 py-1.5 ${isDark ? 'bg-slate-800/50' : i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
+                            <div key={`${specLabel}-${i}`} className={`grid grid-cols-2 gap-3 px-3 py-1.5 items-center ${isDark ? 'bg-slate-800/50' : i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
                               <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{specLabel}</span>
-                              <span className={isDark ? 'text-slate-200' : 'text-slate-700'}>{specValue}</span>
+                              {isOrigin ? (
+                                <select
+                                  value={specValue || COUNTRY_OPTIONS[0]}
+                                  onChange={(e) => handleItemSpecificChange(i, e.target.value)}
+                                  disabled={submitting}
+                                  className={`w-full rounded-md border px-2 py-1 text-xs outline-none ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-800'}`}
+                                >
+                                  {originOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                              ) : (
+                                <span className={isDark ? 'text-slate-200' : 'text-slate-700'}>{specValue}</span>
+                              )}
                             </div>
                           );
                         })}
