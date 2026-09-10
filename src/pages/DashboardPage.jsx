@@ -8,10 +8,10 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Download, Gauge, LineChart, Lock, ShieldCheck, TrendingUp, X } from 'lucide-react';
+import { AlertCircle, Gauge, LineChart, Lock, ShieldCheck, TrendingUp, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import DailyFinanceFlowChart from '../components/DailyFinanceFlowChart';
 import SellerAnalyticsSection from '../components/SellerAnalyticsSection';
+import FinanceAnalyticsSection from '../components/FinanceAnalyticsSection';
 
 // Formula: (credits / 3) * rate AZN — e.g. 6 credits at 0.35 -> (6/3)*0.35 = 0.70 AZN.
 // Mirrors computeTrackingCreditsTopUpPrice on the backend, which recomputes
@@ -387,7 +387,7 @@ export default function DashboardPage() {
   const [analytics, setAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState(null);
-  const financeData = analytics?.finance || null;
+  const [financeDays, setFinanceDays] = useState(365);
 
   useEffect(() => {
     const load = async () => {
@@ -445,7 +445,7 @@ export default function DashboardPage() {
       setAnalyticsLoading(true);
       setAnalyticsError(null);
       try {
-        const res = await ebayAPI.getDashboardAnalytics();
+        const res = await ebayAPI.getDashboardAnalytics(financeDays);
         setAnalytics(res?.data || null);
       } catch (err) {
         // Belt-and-suspenders for the case above going stale (cached allowedTabs
@@ -467,196 +467,13 @@ export default function DashboardPage() {
       }
     };
     loadAnalytics();
-  }, [ebayStatus?.connected, hasTabAccess]);
-
-  const financeCurrency =
-    financeData?.summaries?.orderEarnings?.orderEarnings?.currency ||
-    financeData?.summaries?.sellerFunds?.totalFunds?.currency ||
-    financeData?.balances?.availableFunds?.currency ||
-    'USD';
-
-  const formatFinanceAmount = (value, currency = financeCurrency) => {
-    const numericValue = Number(value || 0);
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(Number.isFinite(numericValue) ? numericValue : 0);
-  };
-
-  const financeChartData = useMemo(() => {
-    const points = Array.isArray(financeData?.chart?.points) ? financeData.chart.points : [];
-    const grouped = new Map();
-
-    for (const point of points) {
-      const key = String(point?.label || 'Unknown').trim() || 'Unknown';
-      if (!grouped.has(key)) {
-        grouped.set(key, {
-          day: key,
-          orderEarnings: 0,
-          payouts: 0,
-        });
-      }
-      const row = grouped.get(key);
-      const value = Number(point?.value || 0);
-      if (point?.type === 'order_earnings') {
-        row.orderEarnings += value;
-      } else if (point?.type === 'payout') {
-        row.payouts += value;
-      }
-    }
-
-    return Array.from(grouped.values()).map((row) => ({
-      ...row,
-      net: Number((row.orderEarnings - row.payouts).toFixed(2)),
-    }));
-  }, [financeData]);
-
-  const financeSummaryCards = useMemo(() => {
-    const orderSummary = financeData?.summaries?.orderEarnings || {};
-    const payoutSummary = financeData?.summaries?.payout || {};
-    const transactionSummary = financeData?.summaries?.transaction || {};
-    const sellerFunds = financeData?.summaries?.sellerFunds || {};
-
-    return [
-      {
-        label: 'Net earnings',
-        value: orderSummary?.orderEarnings?.value ?? financeData?.details?.orderEarnings?.orderEarningsSummary?.orderEarnings?.value ?? 0,
-        currency: orderSummary?.orderEarnings?.currency || financeCurrency,
-        hint: 'Order earnings after fees and refunds',
-      },
-      {
-        label: 'Gross amount',
-        value: orderSummary?.grossAmount?.value ?? 0,
-        currency: orderSummary?.grossAmount?.currency || financeCurrency,
-        hint: 'Gross order revenue',
-      },
-      {
-        label: 'Expenses',
-        value: orderSummary?.expenses?.value ?? 0,
-        currency: orderSummary?.expenses?.currency || financeCurrency,
-        hint: 'Fees, labels, donations',
-      },
-      {
-        label: 'Refunds',
-        value: orderSummary?.refunds?.value ?? 0,
-        currency: orderSummary?.refunds?.currency || financeCurrency,
-        hint: 'Refunds and claims',
-      },
-      {
-        label: 'Available funds',
-        value: sellerFunds?.availableFunds?.value ?? 0,
-        currency: sellerFunds?.availableFunds?.currency || financeCurrency,
-        hint: 'Ready for payout processing',
-      },
-      {
-        label: 'On hold',
-        value: sellerFunds?.fundsOnHold?.value ?? 0,
-        currency: sellerFunds?.fundsOnHold?.currency || financeCurrency,
-        hint: 'Pending release',
-      },
-      {
-        label: 'Payout amount',
-        value: payoutSummary?.amount?.value ?? 0,
-        currency: payoutSummary?.amount?.currency || financeCurrency,
-        hint: `${Number(payoutSummary?.payoutCount || 0)} payouts`,
-      },
-      {
-        label: 'Transaction volume',
-        value: transactionSummary?.creditAmount?.value ?? transactionSummary?.transactionAmount?.value ?? transactionSummary?.amount?.value ?? 0,
-        currency:
-          transactionSummary?.creditAmount?.currency ||
-          transactionSummary?.transactionAmount?.currency ||
-          transactionSummary?.amount?.currency ||
-          financeCurrency,
-        hint: `${Number(transactionSummary?.creditCount || 0)} credits`,
-      },
-    ];
-  }, [financeData, financeCurrency]);
-
-  const recentOrderEarnings = financeData?.orderEarningsList || financeData?.collections?.orderEarnings || [];
-  const recentPayouts = financeData?.payoutList || financeData?.collections?.payouts || [];
-  const recentTransactions = financeData?.transactionList || financeData?.collections?.transactions || [];
-  const financeDetails = financeData?.details || {};
-
-  // Upcoming payouts: payouts whose payoutDate falls within the next 7 days from now.
-  // eBay schedules payouts in advance so the payoutDate can be a future date.
-  const upcomingPayouts = useMemo(() => {
-    const now = Date.now();
-    const in7Days = now + 7 * 24 * 60 * 60 * 1000;
-    // All payouts from both list and collections, deduped by payoutId
-    const all = [...recentPayouts];
-    const seen = new Set();
-    return all.filter((p) => {
-      if (!p?.payoutDate) return false;
-      const ts = new Date(p.payoutDate).getTime();
-      if (Number.isNaN(ts)) return false;
-      if (ts < now || ts > in7Days) return false;
-      if (seen.has(p.payoutId)) return false;
-      seen.add(p.payoutId);
-      return true;
-    }).sort((a, b) => new Date(a.payoutDate) - new Date(b.payoutDate));
-  }, [recentPayouts]);
-
-  const upcomingPayoutTotal = useMemo(() => {
-    return upcomingPayouts.reduce((sum, p) => sum + Number(p?.amount?.value || 0), 0);
-  }, [upcomingPayouts]);
-
-  const upcomingPayoutCurrency = upcomingPayouts[0]?.amount?.currency || financeCurrency;
+  }, [ebayStatus?.connected, hasTabAccess, financeDays]);
 
   const handleDismissEbayBanner = () => {
     setShowEbayBanner(false);
     try {
       localStorage.setItem('hideEbayAnalyticsBanner', '1');
     } catch {}
-  };
-
-  const handleExportFinanceCSV = () => {
-    const rows = [
-      ['Type', 'ID / Label', 'Amount', 'Currency', 'Extra'],
-      ['--- SUMMARY ---', '', '', '', ''],
-      ...financeSummaryCards.map((c) => ['Summary', c.label, c.value, c.currency, c.hint]),
-      ['', '', '', '', ''],
-      ['--- ORDER EARNINGS ---', '', '', '', ''],
-      ...recentOrderEarnings.map((item) => [
-        'Order Earning',
-        item.orderId || '',
-        item?.orderEarningsSummary?.orderEarnings?.value || 0,
-        item?.orderEarningsSummary?.orderEarnings?.currency || financeCurrency,
-        `Gross: ${item?.orderEarningsSummary?.grossAmount?.value || 0} | Refunds: ${item?.orderEarningsSummary?.refunds?.value || 0}`,
-      ]),
-      ['', '', '', '', ''],
-      ['--- PAYOUTS ---', '', '', '', ''],
-      ...recentPayouts.map((item) => [
-        'Payout',
-        item.payoutId || '',
-        item?.amount?.value || 0,
-        item?.amount?.currency || financeCurrency,
-        `Status: ${item.payoutStatus || ''} | Txns: ${item.transactionCount || 0}`,
-      ]),
-      ['', '', '', '', ''],
-      ['--- TRANSACTIONS ---', '', '', '', ''],
-      ...recentTransactions.map((item, i) => [
-        'Transaction',
-        item.transactionId || item.transactionType || `txn-${i}`,
-        item.amount || 0,
-        item.currency || financeCurrency,
-        `Status: ${item.transactionStatus || ''} | Date: ${item.transactionDate ? new Date(item.transactionDate).toLocaleDateString() : ''}`,
-      ]),
-    ];
-    const csv = rows
-      .map((r) => r.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `checkila-finance-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   const handleConnectEbay = async () => {
@@ -1456,280 +1273,14 @@ export default function DashboardPage() {
       </div>
 
       <div className={`glass-card p-5 border ${isDark ? 'bg-slate-950 text-white border-slate-800' : 'bg-white text-slate-900 border-slate-200'}`}>
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className={`text-xs uppercase tracking-[0.22em] ${isDark ? 'text-cyan-300' : 'text-cyan-700'}`}>Finance overview</p>
-            <h2 className="mt-1 text-2xl font-semibold">How much money eBay has generated, held, and paid out</h2>
-            <p className={`mt-2 text-sm leading-6 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              Live seller finances from order earnings, payouts, funds on hold, and transaction summaries.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className={`rounded-2xl border px-4 py-3 ${isDark ? 'border-slate-700 bg-slate-900/60' : 'border-slate-200 bg-slate-50'}`}>
-              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Time range</p>
-              <p className="text-sm font-semibold">{financeData?.timeframe?.label || 'Last 12 months'}</p>
-            </div>
-            {financeData && !financeData.financeAccessDenied && (
-              <button
-                type="button"
-                onClick={handleExportFinanceCSV}
-                title="Finance məlumatlarını CSV kimi yüklə"
-                className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                  isDark
-                    ? 'border-slate-700 bg-slate-900/60 text-slate-200 hover:bg-slate-900 hover:border-slate-600'
-                    : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-white hover:border-slate-300'
-                }`}
-              >
-                <Download size={15} />
-                <span className="hidden sm:inline">CSV</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {analyticsLoading ? (
-          <div className="flex items-center justify-center py-10">
-            <LoadingSpinner />
-          </div>
-        ) : financeData?.financeAccessDenied ? (
-          <div className="mt-5">
-            <Alert
-              type="error"
-              message={financeData?.financeAccessErrorMessage || 'eBay finance access denied for this account.'}
-              onClose={() => {}}
-            />
-          </div>
-        ) : (
-          <>
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-              {financeSummaryCards.map((card) => (
-                <div key={card.label} className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-slate-50'}`}>
-                  <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{card.label}</p>
-                  <p className="mt-2 text-2xl font-bold">{formatFinanceAmount(card.value, card.currency)}</p>
-                  <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{card.hint}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* ── Upcoming payouts next 7 days ── */}
-            <div className="mt-5">
-              <div className={`rounded-2xl border p-5 ${
-                isDark
-                  ? 'border-emerald-800/60 bg-emerald-950/30'
-                  : 'border-emerald-200 bg-emerald-50'
-              }`}>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <p className={`text-xs uppercase tracking-widest font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
-                      Upcoming payouts
-                    </p>
-                    <p className={`mt-1 text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                      {formatFinanceAmount(upcomingPayoutTotal, upcomingPayoutCurrency)}
-                    </p>
-                    <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {upcomingPayouts.length === 0
-                        ? 'No scheduled payouts in the next 7 days'
-                        : `${upcomingPayouts.length} payout${upcomingPayouts.length > 1 ? 's' : ''} scheduled in the next 7 days`}
-                    </p>
-                  </div>
-                  <div className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold ${
-                    isDark ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-800/60' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                  }`}>
-                    <span>Next 7 days</span>
-                  </div>
-                </div>
-
-                {upcomingPayouts.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    {upcomingPayouts.map((p) => {
-                      const daysUntil = Math.ceil((new Date(p.payoutDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-                      return (
-                        <div
-                          key={p.payoutId}
-                          className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 ${
-                            isDark ? 'border-emerald-800/40 bg-emerald-950/40' : 'border-emerald-200 bg-white'
-                          }`}
-                        >
-                          <div className="min-w-0">
-                            <p className={`text-xs font-medium truncate ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                              {p.payoutId || '—'}
-                            </p>
-                            <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                              {new Date(p.payoutDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                              {' · '}
-                              {p.payoutStatus || 'SCHEDULED'}
-                              {' · '}
-                              {p.transactionCount ?? 0} txns
-                            </p>
-                          </div>
-                          <div className="flex flex-col items-end shrink-0">
-                            <strong className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
-                              {formatFinanceAmount(p?.amount?.value || 0, p?.amount?.currency || financeCurrency)}
-                            </strong>
-                            <span className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                              in {daysUntil} day{daysUntil !== 1 ? 's' : ''}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
-                <DailyFinanceFlowChart finance={financeData} />
-              </div>
-
-              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
-                <p className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>Live eBay finance summaries</p>
-                <div className="mt-4 space-y-3 text-sm">
-                  <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
-                    <div className="flex items-center justify-between gap-3">
-                      <span>Orders in summary</span>
-                      <strong>{financeData?.summaries?.orderEarnings?.orderCount ?? 0}</strong>
-                    </div>
-                    <div className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Order earnings summary</div>
-                  </div>
-                  <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
-                    <div className="flex items-center justify-between gap-3">
-                      <span>Payout count</span>
-                      <strong>{financeData?.summaries?.payout?.payoutCount ?? 0}</strong>
-                    </div>
-                    <div className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Payout summary</div>
-                  </div>
-                  <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
-                    <div className="flex items-center justify-between gap-3">
-                      <span>Transaction count</span>
-                      <strong>{financeData?.summaries?.transaction?.creditCount ?? 0}</strong>
-                    </div>
-                    <div className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Transaction summary</div>
-                  </div>
-                  <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
-                    <div className="flex items-center justify-between gap-3">
-                      <span>Funds snapshot</span>
-                      <strong>{formatFinanceAmount(financeData?.balances?.totalFunds || 0)}</strong>
-                    </div>
-                    <div className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Available + processing + hold</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-4 xl:grid-cols-3">
-              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-sm font-semibold">Recent order earnings</h3>
-                  <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{recentOrderEarnings.length}</span>
-                </div>
-                <div className="mt-3 space-y-2 max-h-[280px] overflow-auto pr-1">
-                  {recentOrderEarnings.length > 0 ? recentOrderEarnings.map((item) => (
-                    <div key={item.orderId} className={`rounded-xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="font-medium truncate">{item.orderId}</span>
-                        <strong>{formatFinanceAmount(item?.orderEarningsSummary?.orderEarnings?.value || 0, item?.orderEarningsSummary?.orderEarnings?.currency || financeCurrency)}</strong>
-                      </div>
-                      <div className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        Gross {formatFinanceAmount(item?.orderEarningsSummary?.grossAmount?.value || 0, item?.orderEarningsSummary?.grossAmount?.currency || financeCurrency)} • Refunds {formatFinanceAmount(item?.orderEarningsSummary?.refunds?.value || 0, item?.orderEarningsSummary?.refunds?.currency || financeCurrency)}
-                      </div>
-                    </div>
-                  )) : <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No order earnings returned yet.</p>}
-                </div>
-              </div>
-
-              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-sm font-semibold">Recent payouts</h3>
-                  <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{recentPayouts.length}</span>
-                </div>
-                <div className="mt-3 space-y-2 max-h-[280px] overflow-auto pr-1">
-                  {recentPayouts.length > 0 ? recentPayouts.map((item) => (
-                    <div key={item.payoutId} className={`rounded-xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="font-medium truncate">{item.payoutId}</span>
-                        <strong>{formatFinanceAmount(item?.amount?.value || 0, item?.amount?.currency || financeCurrency)}</strong>
-                      </div>
-                      <div className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {item.payoutStatus || 'UNKNOWN'} • {item.transactionCount || 0} transactions
-                      </div>
-                    </div>
-                  )) : <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No payouts returned yet.</p>}
-                </div>
-              </div>
-
-              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-sm font-semibold">Recent transactions</h3>
-                  <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{recentTransactions.length}</span>
-                </div>
-                <div className="mt-3 space-y-2 max-h-[280px] overflow-auto pr-1">
-                  {recentTransactions.length > 0 ? recentTransactions.map((item, index) => (
-                    <div key={item.transactionId || `${item.transactionType}-${index}`} className={`rounded-xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-200 bg-slate-50'}`}>
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="font-medium truncate">{item.transactionType || 'TRANSACTION'}</span>
-                        <strong>{formatFinanceAmount(item.amount || 0, item.currency || financeCurrency)}</strong>
-                      </div>
-                      <div className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {item.transactionStatus || '—'} • {item.transactionDate ? new Date(item.transactionDate).toLocaleString() : 'No date'}
-                      </div>
-                    </div>
-                  )) : <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No transactions returned yet.</p>}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-4 xl:grid-cols-3">
-              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
-                <h3 className="text-sm font-semibold">Order earnings detail</h3>
-                {financeDetails.orderEarnings ? (
-                  <div className="mt-3 space-y-2 text-sm">
-                    <div>Order: <strong>{financeDetails.orderEarnings.orderId || '—'}</strong></div>
-                    <div>Gross: <strong>{formatFinanceAmount(financeDetails.orderEarnings.orderEarningsSummary?.grossAmount?.value || 0, financeDetails.orderEarnings.orderEarningsSummary?.grossAmount?.currency || financeCurrency)}</strong></div>
-                    <div>Expenses: <strong>{formatFinanceAmount(financeDetails.orderEarnings.orderEarningsSummary?.expenses?.value || 0, financeDetails.orderEarnings.orderEarningsSummary?.expenses?.currency || financeCurrency)}</strong></div>
-                    <div>Refunds: <strong>{formatFinanceAmount(financeDetails.orderEarnings.orderEarningsSummary?.refunds?.value || 0, financeDetails.orderEarnings.orderEarningsSummary?.refunds?.currency || financeCurrency)}</strong></div>
-                    <div>Earnings: <strong>{formatFinanceAmount(financeDetails.orderEarnings.orderEarningsSummary?.orderEarnings?.value || 0, financeDetails.orderEarnings.orderEarningsSummary?.orderEarnings?.currency || financeCurrency)}</strong></div>
-                  </div>
-                ) : (
-                  <p className={`mt-3 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No order detail available yet.</p>
-                )}
-              </div>
-
-              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
-                <h3 className="text-sm font-semibold">Payout detail</h3>
-                {financeDetails.payout ? (
-                  <div className="mt-3 space-y-2 text-sm">
-                    <div>Payout ID: <strong>{financeDetails.payout.payoutId || '—'}</strong></div>
-                    <div>Status: <strong>{financeDetails.payout.payoutStatus || '—'}</strong></div>
-                    <div>Amount: <strong>{formatFinanceAmount(financeDetails.payout.amount?.value || 0, financeDetails.payout.amount?.currency || financeCurrency)}</strong></div>
-                    <div>Payout date: <strong>{financeDetails.payout.payoutDate ? new Date(financeDetails.payout.payoutDate).toLocaleString() : '—'}</strong></div>
-                    <div>Transactions: <strong>{financeDetails.payout.transactionCount ?? 0}</strong></div>
-                  </div>
-                ) : (
-                  <p className={`mt-3 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No payout detail available yet.</p>
-                )}
-              </div>
-
-              <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
-                <h3 className="text-sm font-semibold">Transfer / billing detail</h3>
-                {financeDetails.transfer || financeDetails.billingActivity ? (
-                  <div className="mt-3 space-y-2 text-sm">
-                    {financeDetails.transfer ? <div>Transfer ID: <strong>{financeDetails.transfer.transferId || '—'}</strong></div> : null}
-                    {financeDetails.transfer ? <div>Transfer amount: <strong>{formatFinanceAmount(financeDetails.transfer.transferAmount?.value || 0, financeDetails.transfer.transferAmount?.currency || financeCurrency)}</strong></div> : null}
-                    {financeDetails.transfer ? <div>Transaction date: <strong>{financeDetails.transfer.transactionDate ? new Date(financeDetails.transfer.transactionDate).toLocaleString() : '—'}</strong></div> : null}
-                    <div>
-                      Billing activity: <strong>{financeDetails.billingActivity ? 'Available' : 'Not returned'}</strong>
-                    </div>
-                    {financeDetails.billingActivity ? <pre className={`mt-2 max-h-40 overflow-auto rounded-xl p-3 text-xs ${isDark ? 'bg-slate-950 text-slate-200' : 'bg-slate-50 text-slate-800'}`}>{JSON.stringify(financeDetails.billingActivity, null, 2)}</pre> : null}
-                  </div>
-                ) : (
-                  <p className={`mt-3 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No transfer or billing activity returned yet.</p>
-                )}
-              </div>
-            </div>
-          </>
-        )}
+        <FinanceAnalyticsSection
+          analytics={analytics}
+          loading={analyticsLoading}
+          error={analyticsError}
+          isDark={isDark}
+          days={financeDays}
+          onDaysChange={setFinanceDays}
+        />
       </div>
 
     </div>

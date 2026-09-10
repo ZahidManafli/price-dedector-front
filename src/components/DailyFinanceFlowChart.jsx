@@ -1,20 +1,13 @@
 /**
- * DailyFinanceFlowChart.jsx  — v2
+ * DailyFinanceFlowChart — the dashboard's "hero" finance chart.
  *
- * What the chart now shows (all three sources merged into one timeline):
- *
- *  1. TODAY  — `finance.balances.availableFunds` (net ready-to-withdraw balance).
- *              This is money the seller can already request; show it at today's date.
- *
- *  2. FUTURE — `finance.chart.upcomingPayouts` (on-hold SALEs grouped by their eBay
- *              estimated-release date, e.g. Jun 29, Jun 30).  Built by the backend
- *              from transactionMemo "Estimated release on <date>".
- *
- *  3. PAST   — `finance.chart.points` / payoutList for the last 30 days shown as a
- *              faded reference so the seller can compare history vs future.
- *
- * The previous bug: only "future" on-hold release dates were plotted, so "today's"
- * available funds ($33.88) never appeared, and neither did the balance label.
+ * Merges three sources into one timeline:
+ *  1. TODAY     — `balances.availableFunds` (net ready-to-withdraw balance), plotted at today's date.
+ *  2. FUTURE    — `chart.upcomingPayouts` (on-hold SALEs grouped by their eBay estimated-release
+ *                 date, e.g. Jun 29, Jun 30). Built by the backend from transactionMemo
+ *                 "Estimated release on <date>".
+ *  3. PAST      — `lists.payouts.items` for the fetched period, shown as a faded reference so the
+ *                 seller can compare history vs. future.
  */
 
 import { useMemo } from 'react';
@@ -31,75 +24,34 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-// ─── helpers ────────────────────────────────────────────────────────────────
-
-const USD = (v) =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(v ?? 0);
-
-/** Format a Date → "May 24" style label */
 function fmtLabel(date) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-/** Today label used as the "available now" anchor point */
 const TODAY_LABEL = fmtLabel(new Date());
 
-function resolveFutureReleaseLabel(memo, now = new Date()) {
-  const releaseRe = /estimated release on\s+([A-Za-z]+ \d+)/i;
-  const match = String(memo || '').match(releaseRe);
-  if (!match) return null;
-
-  const currentYear = now.getFullYear();
-  const parsed = new Date(`${match[1]} ${currentYear}`);
-  if (Number.isNaN(parsed.getTime())) return null;
-
-  if (parsed.getTime() < now.getTime()) {
-    if (now.getMonth() >= 10 && parsed.getMonth() <= 2) {
-      const rolled = new Date(parsed);
-      rolled.setFullYear(rolled.getFullYear() + 1);
-      if (rolled.getTime() >= now.getTime()) return fmtLabel(rolled);
-    }
-    return null;
-  }
-
-  return fmtLabel(parsed);
-}
-
-// ─── custom tooltip ──────────────────────────────────────────────────────────
-
-const TYPE_META = {
-  upcoming: { label: 'Upcoming release', color: '#22c55e' },
-  available: { label: 'Available now',   color: '#3b82f6' },
-  past:      { label: 'Past payout',     color: '#f97316' },
-};
-
-function CustomTooltip({ active, payload, label }) {
+function CustomTooltip({ active, payload, label, isDark, t, currencyFormatter }) {
   if (!active || !payload?.length) return null;
   const isToday = label === TODAY_LABEL;
+  const META = {
+    upcoming: { label: t('dashboard.finance.pillUpcoming'), color: '#22c55e' },
+    available: { label: t('dashboard.finance.pillAvailable'), color: '#3b82f6' },
+    past: { label: t('dashboard.finance.payoutsTitle'), color: '#f97316' },
+  };
   return (
-    <div style={{
-      background: '#0d1b2a',
-      border: '1px solid rgba(255,255,255,0.12)',
-      borderRadius: 10,
-      padding: '10px 14px',
-      minWidth: 185,
-      boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-    }}>
-      <p style={{ color: '#94a3b8', fontSize: 11, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-        {label}{isToday ? ' · Today' : ''}
+    <div className={`rounded-xl border px-3.5 py-2.5 min-w-[190px] shadow-xl ${
+      isDark ? 'bg-slate-950 border-slate-700' : 'bg-white border-slate-200'
+    }`}>
+      <p className={`text-[11px] uppercase tracking-wide mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+        {label}{isToday ? ` · ${t('dashboard.finance.todayLabel')}` : ''}
       </p>
       {payload.map((entry) => {
         if (entry.value == null) return null;
-        const meta = TYPE_META[entry.dataKey] ?? { label: entry.name, color: entry.color };
+        const meta = META[entry.dataKey] ?? { label: entry.name, color: entry.color };
         return (
-          <div key={entry.dataKey} style={{ display: 'flex', justifyContent: 'space-between', gap: 24, marginBottom: 3 }}>
-            <span style={{ color: meta.color, fontSize: 12 }}>{meta.label}</span>
-            <span style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>{USD(entry.value)}</span>
+          <div key={entry.dataKey} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
+            <span className="text-xs" style={{ color: meta.color }}>{meta.label}</span>
+            <span className={`text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{currencyFormatter(entry.value)}</span>
           </div>
         );
       })}
@@ -107,244 +59,120 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
-// ─── main component ──────────────────────────────────────────────────────────
-
-export default function DailyFinanceFlowChart({ finance }) {
-
-  // ── 1. AVAILABLE NOW + PROCESSING ─────────────────────────────────────────
-  const availableNow = Number(
-    finance?.balances?.availableFunds ??
-    finance?.summaries?.sellerFunds?.availableFunds?.value ??
-    0
-  );
-  // processingFunds = money eBay has already initiated payout for (arriving today/tomorrow)
-  const processingNow = Number(
-    finance?.balances?.processingFunds ??
-    finance?.summaries?.sellerFunds?.processingFunds?.value ??
-    0
-  );
-
-  // ── 2. UPCOMING RELEASES — from backend upcomingPayouts ──────────────────
-  //    Falls back to deriving from transactionList if backend key is missing.
-  const upcomingPoints = useMemo(() => {
-    const raw = finance?.chart?.upcomingPayouts;
-    if (Array.isArray(raw) && raw.length > 0) {
-      return raw.map((p) => ({ label: p.label, upcoming: p.value }));
-    }
-
-    // Client-side fallback: parse "Estimated release on Jun 30" from transactions
-    const txList = [
-      ...(finance?.collections?.transactions ?? []),
-      ...(finance?.transactionList ?? []),
-    ];
-    const seen = new Set();
-    const map = {};
-    const year = new Date().getFullYear();
-    const now = new Date();
-
-    for (const tx of txList) {
-      const id = tx?.transactionId ?? tx?.raw?.transactionId;
-      if (!id || seen.has(id)) continue;
-      seen.add(id);
-
-      const status = String(tx?.transactionStatus ?? tx?.raw?.transactionStatus ?? '').toUpperCase();
-      const entry  = String(tx?.bookingEntry  ?? tx?.raw?.bookingEntry  ?? '').toUpperCase();
-      const type   = String(tx?.transactionType ?? tx?.raw?.transactionType ?? '').toUpperCase();
-      if (status !== 'FUNDS_ON_HOLD' || entry !== 'CREDIT' || type !== 'SALE') continue;
-
-      const amount = Number(tx?.amount?.value ?? tx?.amount ?? tx?.raw?.amount?.value ?? 0);
-      if (!Number.isFinite(amount) || amount <= 0) continue;
-
-      const memo  = String(tx?.raw?.transactionMemo ?? tx?.transactionMemo ?? '');
-      const lbl = resolveFutureReleaseLabel(memo, now);
-      if (!lbl) continue;
-      map[lbl] = (map[lbl] ?? 0) + amount;
-    }
-
-    return Object.entries(map)
-      .map(([label, upcoming]) => ({ label, upcoming: Math.round(upcoming * 100) / 100 }))
-      .sort((a, b) => new Date(`${a.label} ${year}`) - new Date(`${b.label} ${year}`));
-  }, [finance]);
-
-  // ── 3. PAST PAYOUTS — last 30 days for reference ─────────────────────────
-  const pastPoints = useMemo(() => {
-    const list = finance?.payoutList ?? finance?.collections?.payouts ?? [];
-    return [...list]
-      .slice(0, 30)
-      .map((p) => ({
-        label: fmtLabel(new Date(p.payoutDate)),
-        past: Number(p.amount?.value ?? 0),
-      }))
-      .reverse(); // oldest → newest
-  }, [finance]);
-
-  // ── 4. MERGE into one sorted timeline ────────────────────────────────────
-  const chartData = useMemo(() => {
-    const year = new Date().getFullYear();
-    const map = {};
-
-    const set = (label, key, value) => {
-      map[label] = { ...(map[label] ?? { label }), [key]: value };
-    };
-
-    for (const p of pastPoints)    set(p.label, 'past',      p.past);
-    // Today's available balance — anchors the gap between past and future
-    if (availableNow > 0)          set(TODAY_LABEL, 'available', availableNow);
-    for (const p of upcomingPoints) set(p.label, 'upcoming',  p.upcoming);
-
-    return Object.values(map).sort(
-      (a, b) =>
-        new Date(`${a.label} ${year}`) - new Date(`${b.label} ${year}`)
-    );
-  }, [pastPoints, availableNow, upcomingPoints]);
-
-  // ── 5. Summary totals ────────────────────────────────────────────────────
-  const totalUpcoming = upcomingPoints.reduce((s, p) => s + (p.upcoming ?? 0), 0);
-  const totalOnHold   = Number(finance?.balances?.fundsOnHold ?? finance?.summaries?.sellerFunds?.fundsOnHold?.value ?? 0);
-
-  const hasData = chartData.some((d) => d.past || d.available || d.upcoming);
-
+function Pill({ label, value, color, sublabel, isDark }) {
   return (
-    <div style={{
-      background: 'linear-gradient(160deg, #0d1b2a 0%, #0a1520 100%)',
-      borderRadius: 16,
-      padding: '20px 24px 12px',
-      fontFamily: 'system-ui, sans-serif',
-    }}>
-      {/* ── Header ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-        <div>
-          <h3 style={{ color: '#fff', margin: 0, fontSize: 16, fontWeight: 700 }}>
-            Daily finance flow
-          </h3>
-          <p style={{ color: '#64748b', margin: '2px 0 0', fontSize: 13 }}>
-            Available now · Upcoming releases · Past payouts
-          </p>
-        </div>
-        <span style={{ color: '#64748b', fontSize: 13 }}>{chartData.length} points</span>
-      </div>
-
-      {/* ── Summary pills ── */}
-      <div style={{ display: 'flex', gap: 10, margin: '14px 0 18px', flexWrap: 'wrap' }}>
-        <Pill label="Processing now"  value={USD(processingNow)} color="#a78bfa" sublabel="Arriving today/tomorrow" />
-        <Pill label="Available now"   value={USD(availableNow)}  color="#3b82f6" sublabel="Next payout cycle" />
-        <Pill label="Releasing soon"  value={USD(totalUpcoming)} color="#22c55e" sublabel={`across ${upcomingPoints.length} date${upcomingPoints.length !== 1 ? 's' : ''}`} />
-        <Pill label="On hold total"   value={USD(totalOnHold)}   color="#f59e0b" sublabel="Pending release" />
-      </div>
-
-      {/* ── Chart ── */}
-      {!hasData ? (
-        <div style={{ color: '#475569', textAlign: 'center', padding: '40px 0', fontSize: 14 }}>
-          No payout data available for this period
-        </div>
-      ) : (
-        <ResponsiveContainer width="100%" height={270}>
-          <ComposedChart data={chartData} margin={{ top: 4, right: 8, left: -10, bottom: 0 }}>
-            <defs>
-              <linearGradient id="gradUpcoming" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#22c55e" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#22c55e" stopOpacity={0.02} />
-              </linearGradient>
-              <linearGradient id="gradPast" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#f97316" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-
-            <XAxis
-              dataKey="label"
-              tick={{ fill: '#64748b', fontSize: 11 }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              tick={{ fill: '#64748b', fontSize: 11 }}
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={(v) => `$${v}`}
-            />
-
-            <Tooltip content={<CustomTooltip />} />
-
-            {/* Vertical "today" marker separating past from future */}
-            <ReferenceLine
-              x={TODAY_LABEL}
-              stroke="rgba(255,255,255,0.15)"
-              strokeDasharray="4 4"
-              label={{ value: 'Today', fill: '#64748b', fontSize: 10, position: 'top' }}
-            />
-
-            <Legend
-              iconType="circle"
-              iconSize={8}
-              wrapperStyle={{ paddingTop: 12, fontSize: 13 }}
-              formatter={(key) => {
-                const labels = {
-                  past:      <span style={{ color: '#f97316' }}>Past payout</span>,
-                  available: <span style={{ color: '#3b82f6' }}>Available now</span>,
-                  upcoming:  <span style={{ color: '#22c55e' }}>Upcoming release</span>,
-                };
-                return labels[key] ?? key;
-              }}
-            />
-
-            {/* Past payouts — orange area */}
-            <Area
-              type="monotone"
-              dataKey="past"
-              stroke="#f97316"
-              strokeWidth={2}
-              fill="url(#gradPast)"
-              dot={{ r: 3, fill: '#f97316', strokeWidth: 0 }}
-              activeDot={{ r: 5 }}
-              connectNulls
-            />
-
-            {/* Available now — blue dot at today's date */}
-            <Line
-              type="monotone"
-              dataKey="available"
-              stroke="#3b82f6"
-              strokeWidth={0}
-              dot={{ r: 7, fill: '#3b82f6', strokeWidth: 2, stroke: '#1d4ed8' }}
-              activeDot={{ r: 9 }}
-              connectNulls={false}
-            />
-
-            {/* Upcoming releases — green area */}
-            <Area
-              type="monotone"
-              dataKey="upcoming"
-              stroke="#22c55e"
-              strokeWidth={2.5}
-              fill="url(#gradUpcoming)"
-              dot={{ r: 4, fill: '#22c55e', strokeWidth: 0 }}
-              activeDot={{ r: 6 }}
-              connectNulls
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
-      )}
+    <div
+      className="rounded-xl px-3.5 py-2 flex flex-col min-w-[128px] border"
+      style={{ background: `${color}${isDark ? '1a' : '0d'}`, borderColor: `${color}40` }}
+    >
+      <span className={`text-[11px] mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</span>
+      <span className="text-[15px] font-bold leading-tight" style={{ color }}>{value}</span>
+      {sublabel && <span className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{sublabel}</span>}
     </div>
   );
 }
 
-function Pill({ label, value, color, sublabel }) {
+export default function DailyFinanceFlowChart({ isDark, t, finance, currencyFormatter }) {
+  const balances = finance?.balances || {};
+  const payoutItems = finance?.lists?.payouts?.items || [];
+  const upcomingPoints = finance?.chart?.upcomingPayouts || [];
+
+  const availableNow = Number(balances.availableFunds ?? 0);
+  const processingNow = Number(balances.processingFunds ?? 0);
+  const totalOnHold = Number(balances.fundsOnHold ?? 0);
+
+  const pastPoints = useMemo(() => {
+    return [...payoutItems]
+      .filter((p) => p?.payoutDate)
+      .slice(0, 60)
+      .map((p) => ({ label: fmtLabel(new Date(p.payoutDate)), past: Number(p.amount?.value ?? 0) }))
+      .reverse();
+  }, [payoutItems]);
+
+  const chartData = useMemo(() => {
+    const year = new Date().getFullYear();
+    const map = {};
+    const set = (label, key, value) => {
+      map[label] = { ...(map[label] ?? { label }), [key]: value };
+    };
+    for (const p of pastPoints) set(p.label, 'past', p.past);
+    if (availableNow > 0) set(TODAY_LABEL, 'available', availableNow);
+    for (const p of upcomingPoints) set(p.label, 'upcoming', p.value);
+
+    return Object.values(map).sort((a, b) => new Date(`${a.label} ${year}`) - new Date(`${b.label} ${year}`));
+  }, [pastPoints, availableNow, upcomingPoints]);
+
+  const totalUpcoming = upcomingPoints.reduce((s, p) => s + (p.value ?? 0), 0);
+  const hasData = chartData.some((d) => d.past || d.available || d.upcoming);
+  const fmt = currencyFormatter || ((v) => `$${Number(v || 0).toFixed(2)}`);
+  const axisColor = isDark ? '#64748b' : '#94a3b8';
+  const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(15,23,42,0.06)';
+
   return (
-    <div style={{
-      background: `${color}12`,
-      border: `1px solid ${color}28`,
-      borderRadius: 10,
-      padding: '7px 14px',
-      display: 'flex',
-      flexDirection: 'column',
-      minWidth: 130,
-    }}>
-      <span style={{ color: '#64748b', fontSize: 11, marginBottom: 1 }}>{label}</span>
-      <span style={{ color, fontSize: 15, fontWeight: 700, lineHeight: 1.2 }}>{value}</span>
-      {sublabel && <span style={{ color: '#475569', fontSize: 10, marginTop: 2 }}>{sublabel}</span>}
+    <div>
+      <div className="flex items-start justify-between gap-3 mb-1">
+        <div>
+          <h3 className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('dashboard.finance.chartTitle')}</h3>
+          <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{t('dashboard.finance.chartSubtitle')}</p>
+        </div>
+      </div>
+
+      <div className="flex gap-2 flex-wrap my-3.5">
+        <Pill isDark={isDark} label={t('dashboard.finance.pillProcessing')} value={fmt(processingNow)} color="#a78bfa" />
+        <Pill isDark={isDark} label={t('dashboard.finance.pillAvailable')} value={fmt(availableNow)} color="#3b82f6" />
+        <Pill isDark={isDark} label={t('dashboard.finance.pillUpcoming')} value={fmt(totalUpcoming)} color="#22c55e" />
+        <Pill isDark={isDark} label={t('dashboard.finance.pillOnHold')} value={fmt(totalOnHold)} color="#f59e0b" />
+      </div>
+
+      {!hasData ? (
+        <div className={`text-center py-10 text-sm rounded-xl border border-dashed ${
+          isDark ? 'border-slate-700 text-slate-500' : 'border-slate-300 text-slate-400'
+        }`}>
+          {t('dashboard.finance.noChartData')}
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={260}>
+          <ComposedChart data={chartData} margin={{ top: 4, right: 8, left: -10, bottom: 0 }}>
+            <defs>
+              <linearGradient id="gradUpcomingFin" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#22c55e" stopOpacity={0.02} />
+              </linearGradient>
+              <linearGradient id="gradPastFin" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#f97316" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+
+            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+            <XAxis dataKey="label" tick={{ fill: axisColor, fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: axisColor, fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => fmt(v).replace(/\.00$/, '')} />
+            <Tooltip content={<CustomTooltip isDark={isDark} t={t} currencyFormatter={fmt} />} />
+            <ReferenceLine
+              x={TODAY_LABEL}
+              stroke={isDark ? 'rgba(255,255,255,0.15)' : 'rgba(15,23,42,0.15)'}
+              strokeDasharray="4 4"
+              label={{ value: t('dashboard.finance.todayLabel'), fill: axisColor, fontSize: 10, position: 'top' }}
+            />
+            <Legend
+              iconType="circle"
+              iconSize={8}
+              wrapperStyle={{ paddingTop: 12, fontSize: 12 }}
+              formatter={(key) => {
+                const labels = {
+                  past: <span style={{ color: '#f97316' }}>{t('dashboard.finance.payoutsTitle')}</span>,
+                  available: <span style={{ color: '#3b82f6' }}>{t('dashboard.finance.pillAvailable')}</span>,
+                  upcoming: <span style={{ color: '#22c55e' }}>{t('dashboard.finance.pillUpcoming')}</span>,
+                };
+                return labels[key] ?? key;
+              }}
+            />
+            <Area type="monotone" dataKey="past" stroke="#f97316" strokeWidth={2} fill="url(#gradPastFin)" dot={{ r: 3, fill: '#f97316', strokeWidth: 0 }} activeDot={{ r: 5 }} connectNulls />
+            <Line type="monotone" dataKey="available" stroke="#3b82f6" strokeWidth={0} dot={{ r: 7, fill: '#3b82f6', strokeWidth: 2, stroke: '#1d4ed8' }} activeDot={{ r: 9 }} connectNulls={false} />
+            <Area type="monotone" dataKey="upcoming" stroke="#22c55e" strokeWidth={2.5} fill="url(#gradUpcomingFin)" dot={{ r: 4, fill: '#22c55e', strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls />
+          </ComposedChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }

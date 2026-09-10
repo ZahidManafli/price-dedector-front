@@ -217,7 +217,10 @@ export const ebayAPI = {
   updateListingDraft: (draftId, payload) => api.patch(`/ebay/listing/draft/${encodeURIComponent(draftId)}`, payload),
   submitListingDraft: (draftId) => api.post('/ebay/listing/submit', { draftId }),
   sellSimilar: (listingId) => api.post('/ebay/listing/sell-similar', { listingId }),
-  getDashboardAnalytics: () => api.get('/ebay/analytics/dashboard'),
+  getDashboardAnalytics: (days) => api.get('/ebay/analytics/dashboard', days ? { params: { days } } : undefined),
+  getOrderEarningsDetail: (orderId) => api.get(`/ebay/finance/order-earnings/${encodeURIComponent(orderId)}`),
+  getPayoutDetail: (payoutId) => api.get(`/ebay/finance/payout/${encodeURIComponent(payoutId)}`),
+  getTransferDetail: (transferId) => api.get(`/ebay/finance/transfer/${encodeURIComponent(transferId)}`),
   getOrders: (offsetOrOptions = 0, limit = 25, options = {}) => {
     const usingOptionsOnly = typeof offsetOrOptions === 'object' && offsetOrOptions !== null;
     const requestOptions = usingOptionsOnly ? offsetOrOptions : options;

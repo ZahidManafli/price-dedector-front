@@ -24,6 +24,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
+import { SectionCard, StatTile, WidgetDenied as SharedWidgetDenied, EmptyState } from './dashboardUi';
 
 // ─── shared color tokens ────────────────────────────────────────────────────
 
@@ -69,45 +70,6 @@ function formatNumber(value, digits = 0) {
 
 // ─── small building blocks ──────────────────────────────────────────────────
 
-function SectionCard({ isDark, className = '', children }) {
-  return (
-    <div
-      className={`relative overflow-hidden rounded-2xl border ${
-        isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
-      } ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
-
-function StatTile({ isDark, icon: Icon, label, value, sublabel, accent = 'indigo' }) {
-  const accentMap = {
-    indigo: { text: 'text-indigo-500', ring: 'from-indigo-500/15' },
-    emerald: { text: 'text-emerald-500', ring: 'from-emerald-500/15' },
-    rose: { text: 'text-rose-500', ring: 'from-rose-500/15' },
-    amber: { text: 'text-amber-500', ring: 'from-amber-500/15' },
-    violet: { text: 'text-violet-500', ring: 'from-violet-500/15' },
-    sky: { text: 'text-sky-500', ring: 'from-sky-500/15' },
-  };
-  const a = accentMap[accent] || accentMap.indigo;
-  return (
-    <div
-      className={`relative overflow-hidden rounded-xl border p-3 ${
-        isDark ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-slate-50'
-      }`}
-    >
-      <div className={`pointer-events-none absolute -top-6 -right-6 h-16 w-16 rounded-full bg-gradient-to-br ${a.ring} to-transparent blur-xl`} />
-      <div className="relative flex items-center gap-1.5">
-        {Icon && <Icon size={12} className={a.text} />}
-        <p className={`text-[10px] uppercase tracking-wide font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
-      </div>
-      <p className={`relative mt-1 text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{value}</p>
-      {sublabel && <p className={`relative text-[10px] mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{sublabel}</p>}
-    </div>
-  );
-}
-
 function RatingBadge({ isDark, rating, t }) {
   const style = RATING_STYLE[rating] || RATING_STYLE.NOT_APPLICABLE;
   const labelKey = {
@@ -141,24 +103,7 @@ function LevelBadge({ isDark, level, t }) {
 }
 
 function WidgetDenied({ isDark, message, t }) {
-  return (
-    <div className={`flex items-start gap-2.5 rounded-xl border border-dashed px-3 py-4 text-xs ${
-      isDark ? 'border-slate-700 text-slate-400 bg-slate-950/30' : 'border-slate-300 text-slate-500 bg-slate-50'
-    }`}>
-      <Lock size={14} className="mt-0.5 shrink-0" />
-      <span>{message || t('dashboard.widgetAccessDenied')}</span>
-    </div>
-  );
-}
-
-function EmptyState({ isDark, children }) {
-  return (
-    <div className={`rounded-xl border border-dashed px-3 py-6 text-center text-xs ${
-      isDark ? 'border-slate-700 text-slate-400 bg-slate-950/30' : 'border-slate-300 text-slate-500 bg-slate-50'
-    }`}>
-      {children}
-    </div>
-  );
+  return <SharedWidgetDenied isDark={isDark} message={message} fallback={t('dashboard.widgetAccessDenied')} LockIcon={Lock} />;
 }
 
 // ─── customer service metric card ───────────────────────────────────────────
