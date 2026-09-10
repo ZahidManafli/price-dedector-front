@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { adminAPI, productAPI, settingsAPI, ebayAPI, paymentsAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
@@ -12,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Download, Gauge, LineChart, Lock, ShieldCheck, TrendingUp, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import DailyFinanceFlowChart from '../components/DailyFinanceFlowChart';
+import SellerAnalyticsSection from '../components/SellerAnalyticsSection';
 
 // Formula: (credits / 3) * rate AZN — e.g. 6 credits at 0.35 -> (6/3)*0.35 = 0.70 AZN.
 // Mirrors computeTrackingCreditsTopUpPrice on the backend, which recomputes
@@ -387,7 +387,6 @@ export default function DashboardPage() {
   const [analytics, setAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState(null);
-  const [hideAnalyticsAccessAlert, setHideAnalyticsAccessAlert] = useState(false);
   const financeData = analytics?.finance || null;
 
   useEffect(() => {
@@ -445,7 +444,6 @@ export default function DashboardPage() {
       if (!ebayStatus?.connected || !hasTabAccess('market_analysis')) return;
       setAnalyticsLoading(true);
       setAnalyticsError(null);
-      setHideAnalyticsAccessAlert(false);
       try {
         const res = await ebayAPI.getDashboardAnalytics();
         setAnalytics(res?.data || null);
@@ -470,14 +468,6 @@ export default function DashboardPage() {
     };
     loadAnalytics();
   }, [ebayStatus?.connected, hasTabAccess]);
-
-  const trafficChartData = useMemo(() => {
-    const points = analytics?.traffic?.points || [];
-    return points.map((p) => ({
-      day: p.day,
-      conversion: Number(p.conversionRate || 0),
-    }));
-  }, [analytics]);
 
   const financeCurrency =
     financeData?.summaries?.orderEarnings?.orderEarnings?.currency ||
@@ -614,30 +604,6 @@ export default function DashboardPage() {
   }, [upcomingPayouts]);
 
   const upcomingPayoutCurrency = upcomingPayouts[0]?.amount?.currency || financeCurrency;
-  const executiveStats = useMemo(() => {
-    const metrics = analytics?.sellerStandards?.profile?.metrics || [];
-    const find = (key) => metrics.find((m) => m.metricKey === key)?.value;
-    const conversionPoints = (analytics?.traffic?.points || []).map((p) => Number(p.conversionRate || 0));
-    const avgConv =
-      conversionPoints.length > 0
-        ? conversionPoints.reduce((sum, n) => sum + n, 0) / conversionPoints.length
-        : 0;
-    let peakPoint = null;
-    for (const p of analytics?.traffic?.points || []) {
-      if (!peakPoint || Number(p.conversionRate || 0) > Number(peakPoint.conversionRate || 0)) {
-        peakPoint = p;
-      }
-    }
-    return {
-      defectRate: find('DEFECTIVE_TRANSACTION_COUNT') ?? '-',
-      salesAmount: find('MIN_GMV') ?? '-',
-      transactions: find('MIN_TXN_COUNT') ?? '-',
-      lateShipments: find('SHIPPING_MISS_COUNT') ?? '-',
-      avgConversion: avgConv,
-      peakDay: peakPoint?.day || '-',
-      peakConversion: Number(peakPoint?.conversionRate || 0),
-    };
-  }, [analytics]);
 
   const handleDismissEbayBanner = () => {
     setShowEbayBanner(false);
@@ -1044,311 +1010,20 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {ebayStatus?.connected &&
-        (!analytics?.analyticsAccessDenied || (analytics?.analyticsAccessDenied && !hideAnalyticsAccessAlert)) && (
+      {ebayStatus?.connected && (
         <div
           className={`glass-card p-5 border ${
             isDark ? 'bg-slate-950/40 border-slate-800 text-white' : 'bg-slate-100 border-slate-200 text-slate-900'
           } mb-6`}
         >
-          {/*
-            If eBay Analytics is not accessible (common for buyer-only accounts / missing permissions),
-            show only the alert and hide the analytics section entirely.
-          */}
-          {analytics?.analyticsAccessDenied && !hideAnalyticsAccessAlert && (
-            <div className="mb-4">
-              <div className={`relative overflow-hidden rounded-2xl border p-5 ${
-                isDark ? 'border-indigo-800/50 bg-indigo-950/30' : 'border-indigo-200 bg-indigo-50'
-              }`}>
-                <button
-                  type="button"
-                  onClick={() => setHideAnalyticsAccessAlert(true)}
-                  className={`absolute top-3 right-3 h-8 w-8 rounded-lg flex items-center justify-center transition ${
-                    isDark ? 'bg-slate-900/60 hover:bg-slate-900 border border-slate-700' : 'bg-white/70 hover:bg-white border border-slate-200'
-                  }`}
-                >
-                  <X size={14} />
-                </button>
-
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${isDark ? 'bg-indigo-900/60' : 'bg-indigo-100'}`}>
-                    <Lock size={16} className={isDark ? 'text-indigo-300' : 'text-indigo-600'} />
-                  </div>
-                  <div>
-                    <p className={`text-sm font-bold ${isDark ? 'text-indigo-200' : 'text-indigo-900'}`}>
-                      eBay Analytics — Giriş Yoxdur
-                    </p>
-                    <p className={`text-xs ${isDark ? 'text-indigo-300/70' : 'text-indigo-700'}`}>
-                      {analytics?.analyticsAccessErrorMessage || 'Bu hesab eBay Seller Analytics API-yə çıxış icazəsinə malik deyil.'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                  {[
-                    { icon: TrendingUp, label: 'Konversiya Qrafiki', desc: '7 günlük traffic & satış trendi' },
-                    { icon: ShieldCheck, label: 'Satıcı Standartları', desc: 'Defect rate, gecikmə, profil' },
-                    { icon: Gauge, label: 'Müştəri Xidməti', desc: 'Şikayət nisbəti & reytinq' },
-                    { icon: LineChart, label: 'Finance Analitika', desc: 'Qazanc, xərc, payout axışı' },
-                  ].map((f) => (
-                    <div key={f.label} className={`relative rounded-xl border p-3 overflow-hidden ${
-                      isDark ? 'border-slate-700/50 bg-slate-900/40' : 'border-slate-200 bg-white/60'
-                    }`}>
-                      <div className="absolute inset-0 backdrop-blur-[1px]" />
-                      <div className="relative">
-                        <f.icon size={16} className={`mb-1.5 ${isDark ? 'text-indigo-400' : 'text-indigo-500'}`} />
-                        <p className={`text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{f.label}</p>
-                        <p className={`text-[11px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{f.desc}</p>
-                        <div className={`mt-2 h-4 rounded w-3/4 ${isDark ? 'bg-slate-700/60' : 'bg-slate-200'}`} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={handleConnectEbay}
-                    className="rounded-xl px-4 py-2 text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-sm"
-                  >
-                    eBay-i Yenidən Qoş
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/settings')}
-                    className={`rounded-xl px-4 py-2 text-sm font-semibold transition border ${
-                      isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-900/50' : 'border-slate-200 text-slate-700 hover:bg-white'
-                    }`}
-                  >
-                    {t('dashboard.goToSettings')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {!analytics?.analyticsAccessDenied && (
-            <>
-              <div className="flex items-start justify-between gap-4 mb-4">
-                <div>
-                  <h2 className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                    {t('dashboard.sellerAnalytics')}
-                  </h2>
-                  <p className={`text-sm mt-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    {t('dashboard.sellerAnalyticsSubtitle')}
-                  </p>
-                </div>
-                <div className="text-xs opacity-80">
-                  {analyticsLoading ? t('dashboard.loading') : analytics ? t('dashboard.updated') : ''}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 mb-4">
-                <div className={`rounded-lg border p-3 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
-                  <p className={`text-[10px] uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dashboard.transactions')}</p>
-                  <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{executiveStats.transactions}</p>
-                </div>
-                <div className={`rounded-lg border p-3 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
-                  <p className={`text-[10px] uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Sales Amount</p>
-                  <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{executiveStats.salesAmount}</p>
-                </div>
-                <div className={`rounded-lg border p-3 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
-                  <p className={`text-[10px] uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Defect Count</p>
-                  <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{executiveStats.defectRate}</p>
-                </div>
-                <div className={`rounded-lg border p-3 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
-                  <p className={`text-[10px] uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Late Shipments</p>
-                  <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{executiveStats.lateShipments}</p>
-                </div>
-                <div className={`rounded-lg border p-3 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
-                  <p className={`text-[10px] uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Avg Conversion</p>
-                  <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{executiveStats.avgConversion.toFixed(3)}</p>
-                </div>
-                <div className={`rounded-lg border p-3 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
-                  <p className={`text-[10px] uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Peak Day</p>
-                  <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{executiveStats.peakDay}</p>
-                  <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{executiveStats.peakConversion.toFixed(3)}</p>
-                </div>
-              </div>
-
-              {analyticsError && (
-                <div className="mb-4">
-                  <Alert type="error" message={analyticsError} onClose={() => setAnalyticsError(null)} />
-                </div>
-              )}
-
-              {analyticsLoading && (
-                <div className="flex items-center justify-center py-6">
-                  <LoadingSpinner />
-                </div>
-              )}
-
-              {!analyticsLoading && analytics && !analytics?.analyticsAccessDenied && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  <div
-                    className={`rounded-xl border p-4 ${
-                      isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'
-                    }`}
-                  >
-                    <p className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                      {t('dashboard.customerServiceMetric')}
-                    </p>
-                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {analytics?.customerService?.metricType || t('dashboard.itemNotAsDescribed')} • {t('dashboard.current')}
-                    </p>
-                    {analytics?.customerService?.dimension ? (
-                      <div className="mt-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                            {analytics.customerService.dimension.name || t('dashboard.topCategory')}
-                          </p>
-                          <span
-                            className={`text-xs font-semibold px-2 py-1 rounded-full border ${
-                              isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-slate-50 border-slate-200'
-                            }`}
-                          >
-                            {analytics.customerService.dimension.rating || t('na', { ns: 'common' })}
-                          </span>
-                        </div>
-                        <div className="mt-3 grid grid-cols-2 gap-3">
-                          <div>
-                            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dashboard.rate')}</p>
-                            <p className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                              {Number(analytics.customerService.dimension.rate || 0).toFixed(2)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                              {t('dashboard.transactions')}
-                            </p>
-                            <p className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                              {Number(analytics.customerService.dimension.transactionCount || 0).toLocaleString()}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className={`text-sm mt-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('dashboard.noData')}</p>
-                    )}
-                  </div>
-
-                  <div
-                    className={`rounded-xl border p-4 ${
-                      isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'
-                    }`}
-                  >
-                    <div className="grid grid-cols-3 gap-2 mb-3">
-                      <div className={`rounded-lg border p-2 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
-                        <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dashboard.program')}</p>
-                        <p className={`text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                          {analytics?.sellerStandards?.profile?.program || '-'}
-                        </p>
-                      </div>
-                      <div className={`rounded-lg border p-2 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
-                        <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dashboard.cycle')}</p>
-                        <p className={`text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                          {analytics?.sellerStandards?.profile?.cycle?.cycleType || '-'}
-                        </p>
-                      </div>
-                      <div className={`rounded-lg border p-2 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
-                        <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dashboard.metrics')}</p>
-                        <p className={`text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                          {(analytics?.sellerStandards?.profile?.metrics || []).length}
-                        </p>
-                      </div>
-                    </div>
-                    <p className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                      {t('dashboard.sellerStandardsProfile')}
-                    </p>
-                    {analytics?.sellerStandards?.profile ? (
-                      <div className="mt-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                            {analytics.sellerStandards.profile.standardslevel || '-'}
-                          </p>
-                          <span
-                            className={`text-xs font-semibold px-2 py-1 rounded-full border ${
-                              isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-slate-50 border-slate-200'
-                            }`}
-                          >
-                            {analytics.sellerStandards.profile.cycle?.cycleType || t('dashboard.current')}
-                          </span>
-                        </div>
-                        <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                          {t('dashboard.program')}: {analytics.sellerStandards.profile.program || '-'}
-                        </p>
-                        <div className="mt-4 space-y-2">
-                          {analytics.sellerStandards.profile.metrics?.slice(0, 4)?.map((m) => (
-                            <div
-                              key={m.metricKey}
-                              className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 ${
-                                isDark ? 'border-slate-800 bg-slate-900/30' : 'border-slate-200 bg-slate-50'
-                              }`}
-                            >
-                              <span
-                                className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}
-                              >
-                                {m.name || m.metricKey}
-                              </span>
-                              <span className={`text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                                {m.value == null ? '-' : String(m.value)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <p className={`text-sm mt-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('dashboard.noData')}</p>
-                    )}
-                  </div>
-
-                  <div
-                    className={`rounded-xl border p-4 ${
-                      isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                        <p className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                        {t('dashboard.trafficConversion')}
-                      </p>
-                      <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {t('dashboard.last7Days')}
-                      </span>
-                    </div>
-                    {trafficChartData.length > 0 ? (
-                      <div className="h-[220px] mt-3">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={trafficChartData}>
-                            <defs>
-                              <linearGradient id="convGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.5} />
-                                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.05} />
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#cbd5e1'} />
-                            <XAxis dataKey="day" stroke={isDark ? '#94a3b8' : '#64748b'} />
-                            <YAxis stroke={isDark ? '#94a3b8' : '#64748b'} />
-                            <Area
-                              type="monotone"
-                              dataKey="conversion"
-                              stroke="#8b5cf6"
-                              fill="url(#convGradient)"
-                              strokeWidth={3}
-                            />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                    ) : (
-                      <div className={`mt-3 h-[220px] rounded-xl border border-dashed flex items-center justify-center text-sm ${
-                        isDark ? 'border-slate-700 text-slate-400 bg-slate-900/40' : 'border-slate-300 text-slate-500 bg-slate-50'
-                      }`}>
-                        {t('dashboard.noTrafficData')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+          <SellerAnalyticsSection
+            analytics={analytics}
+            loading={analyticsLoading}
+            error={analyticsError}
+            isDark={isDark}
+            onConnectEbay={handleConnectEbay}
+            onGoToSettings={() => navigate('/settings')}
+          />
         </div>
       )}
 
