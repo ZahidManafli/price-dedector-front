@@ -6,6 +6,13 @@ import Swal from 'sweetalert2';
 import { ebayAPI, settingsAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 
+// Amazon's tracking-page URL structure — mirrors buildAmazonTrackingUrl in
+// backend-for-server/src/routes/ebay.js and extension/background.js. Always this
+// one shape; the old "ship-track" redirect page is retired.
+function buildAmazonTrackingUrl(amazonOrderId) {
+  return `https://www.amazon.com/progress-tracker/package?orderId=${encodeURIComponent(amazonOrderId)}&_encoding=UTF8`;
+}
+
 // Same lookup as OrdersPage.jsx — eBay order line items never carry an image
 // themselves, so it has to be joined in from the separate (cached) listings snapshot
 // via the line item's legacyItemId.
@@ -309,7 +316,6 @@ function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerU
   const [sendingToEbay, setSendingToEbay] = useState(false);
   const [getTrackingModal, setGetTrackingModal] = useState(null); // { phase, message }
   const [updateLabelsModal, setUpdateLabelsModal] = useState(null); // { phase, message }
-  const [openingAmazonTab, setOpeningAmazonTab] = useState(false);
   const [gettingManualTracking, setGettingManualTracking] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -455,29 +461,6 @@ function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerU
     }
   };
 
-  // Routed through the extension instead of a plain <a href> — Amazon has migrated
-  // some (not all) accounts to a new tracking-page URL structure, and a guessed old-
-  // style link now dead-ends into Amazon's own error page for those accounts with no
-  // way for a plain click to recover. The extension opens a real, visible Amazon tab
-  // and retries with the new link structure if the old one hits that error page.
-  const handleOpenAmazonTab = async (e) => {
-    e.preventDefault();
-    if (openingAmazonTab) return;
-    setError('');
-    setOpeningAmazonTab(true);
-    try {
-      const startRes = await ebayAPI.openAmazonTab(row.ebayOrderId);
-      const jobId = startRes?.data?.jobId;
-      if (!jobId) throw new Error('Failed to open the Amazon tracking page');
-      const { error: pollFailure } = await pollExtensionJobUntilDone(jobId, { timeoutMs: 60_000 });
-      if (pollFailure) throw new Error(pollFailure);
-    } catch (err) {
-      setError(err?.response?.data?.error || err.message || 'Failed to open the Amazon tracking page');
-    } finally {
-      setOpeningAmazonTab(false);
-    }
-  };
-
   return (
     <tr className={isDark ? 'bg-slate-900' : 'bg-white'}>
       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
@@ -525,15 +508,14 @@ function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerU
       </td>
       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
         {row.amazonOrderId ? (
-          <button
-            type="button"
-            onClick={handleOpenAmazonTab}
-            disabled={openingAmazonTab}
-            title="Opens this order's Amazon tracking page via the extension"
-            className={`underline disabled:opacity-60 disabled:cursor-wait ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-500'}`}
+          <a
+            href={buildAmazonTrackingUrl(row.amazonOrderId)}
+            target="_blank"
+            rel="noreferrer"
+            className={`underline ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-500'}`}
           >
-            {openingAmazonTab ? 'Opening…' : row.amazonOrderId}
-          </button>
+            {row.amazonOrderId}
+          </a>
         ) : (
           row.amazonTrackingNumber || <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>—</span>
         )}
