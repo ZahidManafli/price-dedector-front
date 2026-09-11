@@ -9,8 +9,17 @@ import { useTheme } from '../context/ThemeContext';
 // Amazon's tracking-page URL structure — mirrors buildAmazonTrackingUrl in
 // backend-for-server/src/routes/ebay.js and extension/background.js. Always this
 // one shape; the old "ship-track" redirect page is retired.
+// The page 404s without an itemId param — but doesn't actually validate it against
+// the order, so a fixed placeholder works for every order; only orderId matters.
+const AMAZON_TRACKING_URL_PLACEHOLDER_ITEM_ID = 'jmslkuiptjosvop';
 function buildAmazonTrackingUrl(amazonOrderId) {
-  return `https://www.amazon.com/progress-tracker/package?orderId=${encodeURIComponent(amazonOrderId)}&_encoding=UTF8`;
+  const params = new URLSearchParams({
+    itemId: AMAZON_TRACKING_URL_PLACEHOLDER_ITEM_ID,
+    ref: 'ppx_yo2ov_dt_b_fed_track_package',
+    orderId: String(amazonOrderId || ''),
+    _encoding: 'UTF8',
+  });
+  return `https://www.amazon.com/progress-tracker/package?${params.toString()}`;
 }
 
 // Same lookup as OrdersPage.jsx — eBay order line items never carry an image
