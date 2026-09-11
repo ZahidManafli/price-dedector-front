@@ -257,6 +257,8 @@ export const ebayAPI = {
   convertTrackingCode: (orderId, payload) =>
     api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/convert`, payload),
   updateLabels: (orderId) => api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/update-labels`),
+  setAmazonTrackingLink: (orderId, amazonTrackingUrl) =>
+    api.put(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/amazon-link`, { amazonTrackingUrl }),
   pollExtensionJob: (jobId) => api.get(`/ebay/extension-scrape/${encodeURIComponent(jobId)}`),
   scrapeItemDetails: (url) => api.post('/ebay/scrape-item-details', { url }),
   quickList: (payload) => api.post('/ebay/quick-list', payload),

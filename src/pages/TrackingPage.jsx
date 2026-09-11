@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X, Trash2, Search, Copy } from 'lucide-react';
+import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X, Trash2, Search, Copy, Pencil } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { ebayAPI, settingsAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
@@ -308,6 +308,84 @@ function ConvertTrackingModal({ isDark, onClose, onSubmit }) {
   );
 }
 
+// The "Amazon · change" control — lets the seller pin the exact Amazon tracking URL
+// for one order. Once set, every navigation to Amazon for it (this order-number
+// link, Update Labels, Get Tracking, the automatic checks) uses it verbatim instead
+// of the auto-built tracking-page URL. Submitting an empty field clears the override.
+function AmazonLinkModal({ isDark, currentUrl, onClose, onSubmit }) {
+  const [url, setUrl] = useState(currentUrl || '');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (loading) return;
+    setLoading(true);
+    setError('');
+    try {
+      await onSubmit(url.trim());
+      onClose();
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Failed to save the Amazon tracking link');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div
+        className={`rounded-2xl shadow-xl p-6 w-full max-w-md mx-4 border ${
+          isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
+        }`}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className={`text-base font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+            Amazon tracking link
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className={isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <label className="block text-sm">
+            <span className={`block mb-1 font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+              Amazon tracking URL
+            </span>
+            <input
+              autoFocus
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://www.amazon.com/progress-tracker/package?..."
+              className={`w-full rounded-lg border px-3 py-2 ${
+                isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+              }`}
+            />
+            <span className={`block mt-1 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              Leave empty to go back to the automatically built link.
+            </span>
+          </label>
+          {error && <p className="text-sm text-rose-500">{error}</p>}
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={onClose} className="btn-secondary text-sm px-3 py-1.5">
+              Cancel
+            </button>
+            <button type="submit" disabled={loading} className="btn-primary text-sm px-3 py-1.5">
+              {loading ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 // Polls an extension_scrape_jobs-backed job until it's done/error, same contract
 // every job type (fast-mode search, update-labels, get-tracking) already uses.
 async function pollExtensionJobUntilDone(jobId, { timeoutMs = 60_000, intervalMs = 1500 } = {}) {
@@ -327,11 +405,19 @@ function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerU
   const [updateLabelsModal, setUpdateLabelsModal] = useState(null); // { phase, message }
   const [gettingManualTracking, setGettingManualTracking] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
+  const [showAmazonLinkModal, setShowAmazonLinkModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
 
   const handleConvertTrackingCode = async ({ carrier, trackingCode }) => {
     const res = await ebayAPI.convertTrackingCode(row.ebayOrderId, { carrier, trackingCode });
+    const updated = res?.data?.tracking;
+    if (updated) onUpdated(updated);
+    return updated;
+  };
+
+  const handleSetAmazonTrackingLink = async (amazonTrackingUrl) => {
+    const res = await ebayAPI.setAmazonTrackingLink(row.ebayOrderId, amazonTrackingUrl);
     const updated = res?.data?.tracking;
     if (updated) onUpdated(updated);
     return updated;
@@ -518,7 +604,7 @@ function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerU
       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
         {row.amazonOrderId ? (
           <a
-            href={buildAmazonTrackingUrl(row.amazonOrderId)}
+            href={row.manualAmazonTrackingUrl || buildAmazonTrackingUrl(row.amazonOrderId)}
             target="_blank"
             rel="noreferrer"
             className={`underline ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-500'}`}
@@ -657,6 +743,20 @@ function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerU
               Convert tracking code
             </button>
           )}
+          {/* Pins the exact Amazon tracking URL for this order — every future
+              navigation to Amazon for it (the order-number link, Update Labels, Get
+              Tracking, the automatic checks) uses it verbatim instead of the
+              auto-built tracking-page URL. */}
+          {row.amazonOrderId && (
+            <button
+              type="button"
+              onClick={() => setShowAmazonLinkModal(true)}
+              title="Set a custom Amazon tracking link for this order"
+              className="btn-secondary text-xs px-3 py-1.5 inline-flex items-center gap-1"
+            >
+              Amazon <Pencil size={11} />
+            </button>
+          )}
           {/* Delete — only while still 'ordered' (nothing shipped/tracked yet), so this
               can never throw away real tracking/shipping history. The backend enforces
               the same rule regardless of this button's visibility. */}
@@ -697,6 +797,14 @@ function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerU
           isDark={isDark}
           onClose={() => setShowConvertModal(false)}
           onSubmit={handleConvertTrackingCode}
+        />
+      )}
+      {showAmazonLinkModal && (
+        <AmazonLinkModal
+          isDark={isDark}
+          currentUrl={row.manualAmazonTrackingUrl}
+          onClose={() => setShowAmazonLinkModal(false)}
+          onSubmit={handleSetAmazonTrackingLink}
         />
       )}
     </tr>
