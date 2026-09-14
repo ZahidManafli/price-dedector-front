@@ -1,25 +1,30 @@
 import React, { useEffect, useRef } from 'react';
 
-// Purely a "waiting for the popup" status card — it renders no iframe.
-// Google Pay's actual payment sheet (and most bank-hosted payment pages,
-// for anti-clickjacking reasons — many send X-Frame-Options/CSP
-// frame-ancestors that refuse to render at all inside a cross-origin
-// <iframe>, and even where that's not set, the web Payment Request API
-// that drives Google Pay demands a real top-level browsing context) will
-// not reliably render embedded in an <iframe> the way Epoint's docs
-// suggest — in practice it just shows a blank white box. The actual widget
-// page is opened in a real popup window by the caller (PaymentMethodPicker
-// / SettingsPage), which is the only thing that works consistently across
-// browsers; this component just polls for completion and offers a way to
-// cancel/close that popup while the user finishes paying in it.
-export default function GooglePayModal({ open, onCancel, onPoll, pollIntervalMs = 3000 }) {
+// Epoint's own docs describe the Google Pay / Apple Pay widget as something
+// to embed in an <iframe>, not navigate to — it never redirects back to us,
+// so completion only ever arrives async, via Epoint's server-to-server
+// callback. `onPoll` is called on an interval and must resolve
+// `{ done: boolean }`; the modal keeps polling until it does.
+//
+// `allow="payment"` is required for the web Payment Request API (which
+// Google Pay's own button/sheet is built on) to function at all inside a
+// nested browsing context — without it, browsers silently refuse to let the
+// framed page open the payment sheet. If the frame still renders blank
+// after this, that means Epoint's widget response is setting
+// X-Frame-Options/CSP frame-ancestors that refuses embedding from our
+// domain — a hard browser security boundary nothing on our side can
+// override; the "open in a new tab" fallback link below exists specifically
+// for that case, and Epoint support would need to whitelist our domain for
+// the widget the same way the checkout/card-registration flows already
+// depend on the "Veb saytın ünvanı" registered in the merchant panel.
+export default function GooglePayModal({ widgetUrl, onCancel, onPoll, pollIntervalMs = 3000 }) {
   const onPollRef = useRef(onPoll);
   useEffect(() => {
     onPollRef.current = onPoll;
   }, [onPoll]);
 
   useEffect(() => {
-    if (!open) return undefined;
+    if (!widgetUrl) return undefined;
     const id = setInterval(async () => {
       try {
         const result = await onPollRef.current?.();
@@ -29,24 +34,33 @@ export default function GooglePayModal({ open, onCancel, onPoll, pollIntervalMs 
       }
     }, pollIntervalMs);
     return () => clearInterval(id);
-  }, [open, pollIntervalMs]);
+  }, [widgetUrl, pollIntervalMs]);
 
-  if (!open) return null;
+  if (!widgetUrl) return null;
 
   return (
     <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/80 p-4">
-      <div className="w-full max-w-sm rounded-2xl border border-white/15 bg-slate-900 p-6 text-center shadow-2xl">
-        <p className="text-sm font-semibold text-white">Google Pay</p>
-        <p className="mt-3 text-sm text-slate-300">
-          Ödənişi açılan pəncərədə tamamlayın. Pəncərə görünmürsə, brauzerinizin pop-up bloklayıcısını yoxlayın.
+      <div className="w-full max-w-sm rounded-2xl border border-white/15 bg-slate-900 p-4 shadow-2xl">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-sm font-semibold text-white">Google Pay</p>
+          <button type="button" onClick={onCancel} className="text-xs text-slate-400 hover:text-slate-200">
+            Bağla
+          </button>
+        </div>
+        <iframe
+          title="Google Pay"
+          src={widgetUrl}
+          allow="payment"
+          className="h-[560px] w-full rounded-xl border border-white/10 bg-white"
+        />
+        <p className="mt-2 text-center text-xs text-slate-400">
+          Ödəniş tamamlandıqdan sonra bu pəncərə avtomatik bağlanacaq.
         </p>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="mt-5 rounded-lg border border-white/15 px-4 py-2 text-xs text-slate-300 hover:bg-white/10"
-        >
-          Ləğv et
-        </button>
+        <p className="mt-1 text-center text-xs">
+          <a href={widgetUrl} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">
+            Yüklənmirsə, buradan yeni pəncərədə açın
+          </a>
+        </p>
       </div>
     </div>
   );
