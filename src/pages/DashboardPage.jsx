@@ -12,6 +12,7 @@ import { AlertCircle, Gauge, LineChart, Lock, ShieldCheck, TrendingUp, X } from 
 import { useTranslation } from 'react-i18next';
 import SellerAnalyticsSection from '../components/SellerAnalyticsSection';
 import FinanceAnalyticsSection from '../components/FinanceAnalyticsSection';
+import PaymentMethodPicker from '../components/PaymentMethodPicker';
 
 // Formula: (credits / 3) * rate AZN — e.g. 6 credits at 0.35 -> (6/3)*0.35 = 0.70 AZN.
 // Mirrors computeTrackingCreditsTopUpPrice on the backend, which recomputes
@@ -32,6 +33,7 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, i
   const [payWithSavedCard, setPayWithSavedCard] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [pendingRequestId, setPendingRequestId] = useState('');
 
   const hasPhoneOnFile = !!String(existingPhoneNumber || '').trim();
 
@@ -42,6 +44,7 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, i
       setCustomNote('');
       setPayWithSavedCard(false);
       setError('');
+      setPendingRequestId('');
     }
   }, [open]);
 
@@ -83,9 +86,10 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, i
       }
       if (requestId) {
         // No email-verification step for this (authenticated) request type —
-        // go straight to Epoint. Credits are added automatically once the
-        // payment succeeds (see payments.js /epoint/callback).
-        window.location.href = paymentsAPI.epointCheckoutUrl(requestId);
+        // let the user pick card vs Google Pay. Credits are added
+        // automatically once the payment succeeds (see payments.js
+        // /epoint/callback).
+        setPendingRequestId(requestId);
         return;
       }
       onSuccess?.();
@@ -96,6 +100,28 @@ function TrackingCreditsModal({ open, onClose, onSuccess, existingPhoneNumber, i
       setLoading(false);
     }
   };
+
+  if (pendingRequestId) {
+    return (
+      <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4">
+        <div className="w-full max-w-md rounded-2xl border border-white/15 bg-slate-900 p-5 shadow-2xl">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <h3 className="text-lg font-semibold text-white">Choose payment method</h3>
+            <button type="button" onClick={onClose} className="rounded-lg border border-white/15 p-1.5 text-slate-300 hover:bg-white/10">
+              <X size={16} />
+            </button>
+          </div>
+          <PaymentMethodPicker
+            requestId={pendingRequestId}
+            onGooglePaySuccess={() => {
+              onSuccess?.({ paid: true, requestedCredits: creditsNum });
+              onClose?.();
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4">
@@ -201,6 +227,7 @@ function MarketAnalysisCreditsModal({ open, onClose, onSuccess, existingPhoneNum
   const [payWithSavedCard, setPayWithSavedCard] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [pendingRequestId, setPendingRequestId] = useState('');
 
   const hasPhoneOnFile = !!String(existingPhoneNumber || '').trim();
 
@@ -211,6 +238,7 @@ function MarketAnalysisCreditsModal({ open, onClose, onSuccess, existingPhoneNum
       setCustomNote('');
       setPayWithSavedCard(false);
       setError('');
+      setPendingRequestId('');
     }
   }, [open]);
 
@@ -257,9 +285,10 @@ function MarketAnalysisCreditsModal({ open, onClose, onSuccess, existingPhoneNum
       }
       if (requestId) {
         // No email-verification step for this (authenticated) request type —
-        // go straight to Epoint. Credits are added automatically once the
-        // payment succeeds (see payments.js /epoint/callback).
-        window.location.href = paymentsAPI.epointCheckoutUrl(requestId);
+        // let the user pick card vs Google Pay. Credits are added
+        // automatically once the payment succeeds (see payments.js
+        // /epoint/callback).
+        setPendingRequestId(requestId);
         return;
       }
       onSuccess?.();
@@ -270,6 +299,28 @@ function MarketAnalysisCreditsModal({ open, onClose, onSuccess, existingPhoneNum
       setLoading(false);
     }
   };
+
+  if (pendingRequestId) {
+    return (
+      <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4">
+        <div className="w-full max-w-md rounded-2xl border border-white/15 bg-slate-900 p-5 shadow-2xl">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <h3 className="text-lg font-semibold text-white">Choose payment method</h3>
+            <button type="button" onClick={onClose} className="rounded-lg border border-white/15 p-1.5 text-slate-300 hover:bg-white/10">
+              <X size={16} />
+            </button>
+          </div>
+          <PaymentMethodPicker
+            requestId={pendingRequestId}
+            onGooglePaySuccess={() => {
+              onSuccess?.({ paid: true, requestedCredits: creditsNum });
+              onClose?.();
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4">

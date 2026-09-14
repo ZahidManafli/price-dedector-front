@@ -2,10 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, ArrowLeft, Loader2, ShieldCheck } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { settingsAPI, paymentsAPI } from '../services/api';
+import { settingsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import PaymentMethodPicker from '../components/PaymentMethodPicker';
 
 // ── normalizePlan — mirrors LandingPage exactly ───────────────
 function normalizePlan(raw = {}) {
@@ -313,6 +314,7 @@ export default function UpgradePlanPage() {
 
   const [verifying, setVerifying] = useState(false);
   const [pendingRequest, setPendingRequest] = useState(null);
+  const [choosingPayment, setChoosingPayment] = useState(false);
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -393,9 +395,11 @@ export default function UpgradePlanPage() {
     try {
       await settingsAPI.verifySubscriptionRequest({ requestId: pendingRequest.id, email: pendingRequest.email, code });
       // Every plan on this page is a real, priced plan (no "custom" option
-      // here) — always go straight to Epoint. The account is upgraded
-      // automatically once payment succeeds (see payments.js /epoint/callback).
-      window.location.href = paymentsAPI.epointCheckoutUrl(pendingRequest.id);
+      // here) — always move on to an online payment. The account is
+      // upgraded automatically once payment succeeds (see payments.js
+      // /epoint/callback).
+      setVerifying(false);
+      setChoosingPayment(true);
     } catch (err) {
       setCodeError(err?.response?.data?.error || 'Invalid or expired code. Please try again.');
     } finally {
@@ -406,6 +410,43 @@ export default function UpgradePlanPage() {
   const pageBg = isDark ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-900';
   const headerBg = isDark ? 'bg-slate-950/90 border-white/[0.06]' : 'bg-white/90 border-slate-200';
   const cardBg = isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
+
+  // ── Choose payment method ──────────────────────────────────
+  if (choosingPayment) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center px-4 ${pageBg}`}>
+        <div className={`w-full max-w-sm rounded-3xl border p-8 shadow-xl ${cardBg}`}>
+          <div className="text-center mb-7">
+            <div className={`mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border ${isDark ? 'border-cyan-400/20 bg-cyan-400/10' : 'border-cyan-300/30 bg-cyan-50'}`}>
+              <ShieldCheck className="h-7 w-7 text-cyan-400" />
+            </div>
+            <h2 className="text-xl font-bold">Choose payment method</h2>
+            <p className={`mt-2 text-sm leading-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Email verified — pay to activate your new plan.
+            </p>
+          </div>
+
+          <PaymentMethodPicker
+            requestId={pendingRequest?.id}
+            cardLabel="Card"
+            googlePayLabel="Google Pay"
+            chooseLabel="How would you like to pay?"
+            onGooglePaySuccess={() => {
+              navigate('/dashboard');
+            }}
+          />
+
+          <button
+            type="button"
+            onClick={() => { setChoosingPayment(false); setCode(''); setCodeError(''); }}
+            className={`mt-5 w-full text-center text-xs transition ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            ← Choose a different plan
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ── Verify ─────────────────────────────────────────────────
   if (verifying) {

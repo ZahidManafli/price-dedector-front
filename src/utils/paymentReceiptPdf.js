@@ -143,7 +143,8 @@ export async function downloadPaymentReceiptPdf(payment, { customerName, custome
   y += 15;
   doc.setFontSize(10.5);
   doc.setTextColor(INK);
-  doc.text(`Epoint online payment${payment.cardMask ? ` — card ${payment.cardMask}` : ''}`, marginX, y);
+  const methodSuffix = payment.paymentChannel === 'google_pay' ? ' — Google Pay' : payment.cardMask ? ` — card ${payment.cardMask}` : '';
+  doc.text(`Epoint online payment${methodSuffix}`, marginX, y);
   if (payment.transaction) {
     y += 14;
     doc.setFontSize(9);

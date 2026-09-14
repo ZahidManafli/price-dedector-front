@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { referralAPI, settingsAPI, paymentsAPI } from '../services/api';
+import { referralAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
+import PaymentMethodPicker from '../components/PaymentMethodPicker';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -179,6 +180,7 @@ export default function SignupPage() {
   const [verificationStep, setVerificationStep] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [verificationExpiresAt, setVerificationExpiresAt] = useState('');
+  const [paymentStep, setPaymentStep] = useState(false);
   const [alert, setAlert] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -343,10 +345,11 @@ export default function SignupPage() {
 
       // Custom plans have no fixed price to charge online — those stay on
       // the existing manual admin-review flow. Every real plan moves on to
-      // Epoint's hosted checkout; the account is created automatically once
-      // that payment succeeds (see payments.js /epoint/callback).
+      // an online payment; the account is created automatically once that
+      // payment succeeds (see payments.js /epoint/callback).
       if (formData.planId && formData.planId !== 'custom') {
-        window.location.href = paymentsAPI.epointCheckoutUrl(requestId);
+        setVerificationStep(false);
+        setPaymentStep(true);
         return;
       }
 
@@ -359,6 +362,7 @@ export default function SignupPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (paymentStep) return;
     if (verificationStep) { await verifyCode(); return; }
     await submitSubscriptionRequest();
   };
@@ -458,8 +462,8 @@ export default function SignupPage() {
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
 
-            {/* ── Section: Plan picker (hidden during verify step) ── */}
-            {!verificationStep && (
+            {/* ── Section: Plan picker (hidden during verify/payment step) ── */}
+            {!paymentStep && !verificationStep && (
               <div>
                 <p className={`text-xs uppercase tracking-widest font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   1 · Choose your plan
@@ -581,8 +585,8 @@ export default function SignupPage() {
               </div>
             )}
 
-            {/* ── Section: Personal details (hidden during verify step) ── */}
-            {!verificationStep && (
+            {/* ── Section: Personal details (hidden during verify/payment step) ── */}
+            {!paymentStep && !verificationStep && (
               <div>
                 <p className={`text-xs uppercase tracking-widest font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   2 · Your details
@@ -596,8 +600,27 @@ export default function SignupPage() {
               </div>
             )}
 
+            {/* ── Section: Choose payment method ── */}
+            {paymentStep && (
+              <div>
+                <p className={`text-xs uppercase tracking-widest font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  3 · Choose payment method
+                </p>
+                <PaymentMethodPicker
+                  requestId={requestId}
+                  cardLabel="Card"
+                  googlePayLabel="Google Pay"
+                  chooseLabel="How would you like to pay?"
+                  onGooglePaySuccess={async () => {
+                    await Swal.fire({ icon: 'success', title: t('common:success'), text: 'Payment received. Your subscription is now active.', confirmButtonColor: '#2563eb' });
+                    navigate('/login');
+                  }}
+                />
+              </div>
+            )}
+
             {/* ── Section: Verify code ── */}
-            {verificationStep && (
+            {!paymentStep && verificationStep && (
               <div>
                 <p className={`text-xs uppercase tracking-widest font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   3 · Verify your email
@@ -616,7 +639,7 @@ export default function SignupPage() {
             )}
 
             {/* ── Selected plan summary (when not custom, not loading) ── */}
-            {!verificationStep && !plansLoading && selectedPlanId && selectedPlanId !== 'custom' && selectedPlan && (
+            {!paymentStep && !verificationStep && !plansLoading && selectedPlanId && selectedPlanId !== 'custom' && selectedPlan && (
               <div className={`rounded-lg border px-4 py-3 flex items-center justify-between gap-4 ${
                 isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'
               }`}>
@@ -636,15 +659,17 @@ export default function SignupPage() {
             )}
 
             {/* ── Submit button — same class pattern as LoginPage btn-primary ── */}
-            <button
-              type="submit"
-              disabled={loading || plansLoading || (!verificationStep && !selectedPlanId)}
-              className="w-full btn-primary py-2.5"
-            >
-              {loading
-                ? (verificationStep ? 'Verifying...' : 'Sending request...')
-                : (verificationStep ? 'Verify & submit' : 'Send subscription request')}
-            </button>
+            {!paymentStep && (
+              <button
+                type="submit"
+                disabled={loading || plansLoading || (!verificationStep && !selectedPlanId)}
+                className="w-full btn-primary py-2.5"
+              >
+                {loading
+                  ? (verificationStep ? 'Verifying...' : 'Sending request...')
+                  : (verificationStep ? 'Verify & submit' : 'Send subscription request')}
+              </button>
+            )}
           </form>
         </div>
 

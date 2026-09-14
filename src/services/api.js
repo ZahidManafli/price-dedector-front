@@ -25,6 +25,8 @@ api.interceptors.request.use((config) => {
     url.startsWith('/settings/subscription-requests/reset-credits') ||
     url.startsWith('/settings/subscription-requests/tracking-credits') ||
     url.startsWith('/payments/epoint/checkout/') ||
+    url.startsWith('/payments/epoint/widget/') ||
+    url.startsWith('/payments/epoint/status/') ||
     url.startsWith('/api/partners/public') ||
     url.includes('/privacy') ||
     url.includes('/about');
@@ -156,6 +158,14 @@ export const paymentsAPI = {
   setAutoRenew: (enabled) => api.patch('/payments/auto-renew', { enabled }),
   payNow: () => api.post('/payments/pay-now'),
   payWithSavedCard: (requestId) => api.post(`/payments/epoint/pay-with-saved-card/${encodeURIComponent(requestId)}`),
+  // Google Pay / Apple Pay (Epoint's digital-wallet widget) — getWidgetPayload
+  // hands back a widget_url meant to be embedded in an <iframe> (not
+  // navigated to, unlike epointCheckoutUrl), and getPaymentStatus lets the
+  // page hosting that iframe poll for the async callback result.
+  getWidgetPayload: (requestId) => api.get(`/payments/epoint/widget/${encodeURIComponent(requestId)}`),
+  getPaymentStatus: (requestId) => api.get(`/payments/epoint/status/${encodeURIComponent(requestId)}`),
+  payNowWidget: () => api.post('/payments/epoint/pay-now/widget'),
+  getRenewalWidgetStatus: (attemptId) => api.get(`/payments/epoint/pay-now/widget/${encodeURIComponent(attemptId)}/status`),
 };
 
 export const ebayAPI = {

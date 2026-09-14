@@ -1418,6 +1418,9 @@ export default function AdminPanelPage() {
                             }`}>
                               Onlayn ödəniş (Epoint) — {req.paymentStatus}
                             </span>
+                            {req.paymentChannel === 'google_pay' ? (
+                              <span className="text-slate-500">Google Pay</span>
+                            ) : null}
                             {req.epointAmount != null ? (
                               <span className="text-slate-500">{Number(req.epointAmount).toFixed(2)} AZN</span>
                             ) : null}

@@ -5,6 +5,7 @@ import { amazonOAuthAPI, aquilineAPI, authAPI, ebayAPI, paymentsAPI, settingsAPI
 import Alert from '../components/Alert';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import PaymentHistoryDrawer from '../components/PaymentHistoryDrawer';
+import GooglePayModal from '../components/GooglePayModal';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -87,6 +88,9 @@ export default function SettingsPage() {
   const [autoRenewEnabled, setAutoRenewEnabled] = useState(false);
   const [autoRenewSaving, setAutoRenewSaving] = useState(false);
   const [payingNow, setPayingNow] = useState(false);
+  const [payingNowWidget, setPayingNowWidget] = useState(false);
+  const [renewalWidgetUrl, setRenewalWidgetUrl] = useState('');
+  const [renewalAttemptId, setRenewalAttemptId] = useState('');
   const [historyOpen, setHistoryOpen] = useState(false);
 
   const isTrialPlan = String(limits?.plan?.name || '').toLowerCase().includes('trial');
@@ -341,6 +345,45 @@ export default function SettingsPage() {
     } finally {
       setPayingNow(false);
     }
+  };
+
+  // Google Pay equivalent of "Ödəniş et" — doesn't need a saved card at all,
+  // since there's nothing to tokenize up front. Payment completes inside the
+  // widget iframe; GooglePayModal polls the attempt's status until Epoint's
+  // async callback lands (see payments.js POST /epoint/pay-now/widget and
+  // GET /epoint/pay-now/widget/:attemptId/status).
+  const handlePayNowGooglePay = async () => {
+    try {
+      setPayingNowWidget(true);
+      const response = await paymentsAPI.payNowWidget();
+      const { attemptId, widgetUrl } = response?.data || {};
+      if (!attemptId || !widgetUrl) throw new Error('Google Pay widget yüklənə bilmədi.');
+      setRenewalAttemptId(attemptId);
+      setRenewalWidgetUrl(widgetUrl);
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err?.message || 'Ödəniş zamanı xəta baş verdi' });
+    } finally {
+      setPayingNowWidget(false);
+    }
+  };
+
+  const pollRenewalWidgetStatus = async () => {
+    const res = await paymentsAPI.getRenewalWidgetStatus(renewalAttemptId);
+    const status = res?.data?.status;
+    if (status === 'completed') {
+      setRenewalWidgetUrl('');
+      setAlert({ type: 'success', message: 'Ödəniş uğurla alındı. Planınız 1 ay uzadıldı.' });
+      await loadCards();
+      const limitsRes = await settingsAPI.getLimits().catch(() => null);
+      setLimits(limitsRes?.data || limits);
+      return { done: true };
+    }
+    if (status === 'failed') {
+      setRenewalWidgetUrl('');
+      setAlert({ type: 'error', message: 'Google Pay ödənişi rədd edildi. Zəhmət olmasa yenidən cəhd edin.' });
+      return { done: true };
+    }
+    return { done: false };
   };
 
   const handleToggleAutoRenew = async () => {
@@ -798,21 +841,39 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {defaultCard && !isTrialPlan && limits?.plan?.isExpired && (
-            <div>
+          {!isTrialPlan && limits?.plan?.isExpired && (
+            <div className="flex flex-wrap items-center gap-3">
+              {defaultCard && (
+                <button
+                  type="button"
+                  onClick={handlePayNow}
+                  disabled={payingNow}
+                  className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-4 py-2 hover:bg-blue-700 transition disabled:opacity-50"
+                >
+                  {payingNow ? 'Ödəniş edilir...' : 'Ödəniş et'}
+                </button>
+              )}
               <button
                 type="button"
-                onClick={handlePayNow}
-                disabled={payingNow}
-                className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-4 py-2 hover:bg-blue-700 transition disabled:opacity-50"
+                onClick={handlePayNowGooglePay}
+                disabled={payingNowWidget}
+                className="rounded-lg border border-emerald-500 text-emerald-500 text-sm font-semibold px-4 py-2 hover:bg-emerald-500/10 transition disabled:opacity-50"
               >
-                {payingNow ? 'Ödəniş edilir...' : 'Ödəniş et'}
+                {payingNowWidget ? 'Yüklənir...' : 'Google Pay ilə ödə'}
               </button>
-              <p className={`text-xs mt-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Əsas kartınızdan planınızın qiymətini (tracking add-on varsa, onunla birlikdə) indi çıxarır və planınızı 1 ay uzadır.
+              <p className={`w-full text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {defaultCard
+                  ? 'Əsas kartınızdan və ya Google Pay ilə planınızın qiymətini (tracking add-on varsa, onunla birlikdə) indi çıxarır və planınızı 1 ay uzadır.'
+                  : 'Google Pay ilə planınızın qiymətini (tracking add-on varsa, onunla birlikdə) indi çıxarır və planınızı 1 ay uzadır.'}
               </p>
             </div>
           )}
+
+          <GooglePayModal
+            widgetUrl={renewalWidgetUrl}
+            onCancel={() => setRenewalWidgetUrl('')}
+            onPoll={pollRenewalWidgetStatus}
+          />
 
           <div className={`rounded-lg p-3 md:p-4 flex items-center justify-between gap-4 ${
             isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'

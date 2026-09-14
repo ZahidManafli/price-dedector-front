@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { settingsAPI, paymentsAPI } from '../services/api';
+import { settingsAPI } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
+import PaymentMethodPicker from './PaymentMethodPicker';
 
 function toHumanText(value = '') {
   const raw = String(value || '').trim();
@@ -92,6 +93,7 @@ export default function SubscriptionRequestModal({
   const [verificationRequestId, setVerificationRequestId] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [verificationExpiresAt, setVerificationExpiresAt] = useState('');
+  const [paymentStep, setPaymentStep] = useState(false);
 
   const defaultValuesSignature = useMemo(
     () =>
@@ -179,6 +181,7 @@ export default function SubscriptionRequestModal({
     setVerificationRequestId('');
     setVerificationCode('');
     setVerificationExpiresAt('');
+    setPaymentStep(false);
   }, [selectedPlanId, open, requestType, defaultValuesSignature, presetIncludeTracking]);
 
   if (!open) return null;
@@ -210,10 +213,10 @@ export default function SubscriptionRequestModal({
 
         // Custom plans have no fixed price to charge online — those stay on
         // the existing manual admin-review flow. Everything else moves on to
-        // Epoint's hosted checkout; the account is provisioned automatically
-        // once that payment succeeds (see payments.js /epoint/callback).
+        // an online payment; the account is provisioned automatically once
+        // that payment succeeds (see payments.js /epoint/callback).
         if (form.planId && form.planId !== 'custom') {
-          window.location.href = paymentsAPI.epointCheckoutUrl(verificationRequestId);
+          setPaymentStep(true);
           return;
         }
 
@@ -357,7 +360,15 @@ export default function SubscriptionRequestModal({
         </div>
 
         <form onSubmit={submit} className="space-y-3">
-          {isSubscriptionRequest ? (
+          {paymentStep ? (
+            <PaymentMethodPicker
+              requestId={verificationRequestId}
+              onGooglePaySuccess={() => {
+                onSuccess?.();
+                onClose?.();
+              }}
+            />
+          ) : isSubscriptionRequest ? (
             <>
               {verificationStep ? (
                 <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
@@ -576,20 +587,22 @@ export default function SubscriptionRequestModal({
             />
           )}
 
-          {infoMessage ? <p className="text-sm text-emerald-300">{infoMessage}</p> : null}
-          {error ? <p className="text-sm text-red-300">{error}</p> : null}
+          {!paymentStep && infoMessage ? <p className="text-sm text-emerald-300">{infoMessage}</p> : null}
+          {!paymentStep && error ? <p className="text-sm text-red-300">{error}</p> : null}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
-          >
-            {loading
-              ? t('subscriptionRequestModal.submitting')
-              : verificationStep
-                ? 'Verify code'
-                : submitLabel || (isCreditTopUpRequest ? t('subscriptionRequestModal.sendCreditRequest') : isResetRequest ? t('subscriptionRequestModal.sendResetRequest') : t('subscriptionRequestModal.sendRequest'))}
-          </button>
+          {!paymentStep ? (
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
+            >
+              {loading
+                ? t('subscriptionRequestModal.submitting')
+                : verificationStep
+                  ? 'Verify code'
+                  : submitLabel || (isCreditTopUpRequest ? t('subscriptionRequestModal.sendCreditRequest') : isResetRequest ? t('subscriptionRequestModal.sendResetRequest') : t('subscriptionRequestModal.sendRequest'))}
+            </button>
+          ) : null}
         </form>
       </div>
     </div>
