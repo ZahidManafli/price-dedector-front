@@ -1,21 +1,25 @@
 import React, { useEffect, useRef } from 'react';
 
-// Epoint's own docs describe the Google Pay / Apple Pay widget as something
-// to embed in an <iframe>, not navigate to — it never redirects back to us,
-// so completion only ever arrives async, via Epoint's server-to-server
-// callback. `onPoll` is called on an interval and must resolve
-// `{ done: boolean }`; the modal keeps polling until it does. Kept as a
-// standalone component (rather than baked into PaymentMethodPicker) so the
-// Settings-page plan-renewal flow — which has no subscription_requests id to
-// poll against — can reuse the same iframe+polling UI.
-export default function GooglePayModal({ widgetUrl, onCancel, onPoll, pollIntervalMs = 3000 }) {
+// Purely a "waiting for the popup" status card — it renders no iframe.
+// Google Pay's actual payment sheet (and most bank-hosted payment pages,
+// for anti-clickjacking reasons — many send X-Frame-Options/CSP
+// frame-ancestors that refuse to render at all inside a cross-origin
+// <iframe>, and even where that's not set, the web Payment Request API
+// that drives Google Pay demands a real top-level browsing context) will
+// not reliably render embedded in an <iframe> the way Epoint's docs
+// suggest — in practice it just shows a blank white box. The actual widget
+// page is opened in a real popup window by the caller (PaymentMethodPicker
+// / SettingsPage), which is the only thing that works consistently across
+// browsers; this component just polls for completion and offers a way to
+// cancel/close that popup while the user finishes paying in it.
+export default function GooglePayModal({ open, onCancel, onPoll, pollIntervalMs = 3000 }) {
   const onPollRef = useRef(onPoll);
   useEffect(() => {
     onPollRef.current = onPoll;
   }, [onPoll]);
 
   useEffect(() => {
-    if (!widgetUrl) return undefined;
+    if (!open) return undefined;
     const id = setInterval(async () => {
       try {
         const result = await onPollRef.current?.();
@@ -25,27 +29,24 @@ export default function GooglePayModal({ widgetUrl, onCancel, onPoll, pollInterv
       }
     }, pollIntervalMs);
     return () => clearInterval(id);
-  }, [widgetUrl, pollIntervalMs]);
+  }, [open, pollIntervalMs]);
 
-  if (!widgetUrl) return null;
+  if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/80 p-4">
-      <div className="w-full max-w-sm rounded-2xl border border-white/15 bg-slate-900 p-4 shadow-2xl">
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-sm font-semibold text-white">Google Pay</p>
-          <button type="button" onClick={onCancel} className="text-xs text-slate-400 hover:text-slate-200">
-            Bağla
-          </button>
-        </div>
-        <iframe
-          title="Google Pay"
-          src={widgetUrl}
-          className="h-[560px] w-full rounded-xl border border-white/10 bg-white"
-        />
-        <p className="mt-2 text-center text-xs text-slate-400">
-          Ödəniş tamamlandıqdan sonra bu pəncərə avtomatik bağlanacaq.
+      <div className="w-full max-w-sm rounded-2xl border border-white/15 bg-slate-900 p-6 text-center shadow-2xl">
+        <p className="text-sm font-semibold text-white">Google Pay</p>
+        <p className="mt-3 text-sm text-slate-300">
+          Ödənişi açılan pəncərədə tamamlayın. Pəncərə görünmürsə, brauzerinizin pop-up bloklayıcısını yoxlayın.
         </p>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="mt-5 rounded-lg border border-white/15 px-4 py-2 text-xs text-slate-300 hover:bg-white/10"
+        >
+          Ləğv et
+        </button>
       </div>
     </div>
   );

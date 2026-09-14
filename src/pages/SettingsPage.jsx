@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCircle2, CreditCard, Link2, Mail, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { amazonOAuthAPI, aquilineAPI, authAPI, ebayAPI, paymentsAPI, settingsAPI } from '../services/api';
@@ -89,8 +89,9 @@ export default function SettingsPage() {
   const [autoRenewSaving, setAutoRenewSaving] = useState(false);
   const [payingNow, setPayingNow] = useState(false);
   const [payingNowWidget, setPayingNowWidget] = useState(false);
-  const [renewalWidgetUrl, setRenewalWidgetUrl] = useState('');
+  const [renewalWaiting, setRenewalWaiting] = useState(false);
   const [renewalAttemptId, setRenewalAttemptId] = useState('');
+  const renewalPopupRef = useRef(null);
   const [historyOpen, setHistoryOpen] = useState(false);
 
   const isTrialPlan = String(limits?.plan?.name || '').toLowerCase().includes('trial');
@@ -348,19 +349,31 @@ export default function SettingsPage() {
   };
 
   // Google Pay equivalent of "Ödəniş et" — doesn't need a saved card at all,
-  // since there's nothing to tokenize up front. Payment completes inside the
-  // widget iframe; GooglePayModal polls the attempt's status until Epoint's
-  // async callback lands (see payments.js POST /epoint/pay-now/widget and
-  // GET /epoint/pay-now/widget/:attemptId/status).
+  // since there's nothing to tokenize up front. The widget opens in a real
+  // popup window (never an <iframe> — Google's payment sheet won't render
+  // in one, it just shows blank), opened synchronously in this click
+  // handler so the browser still treats it as user-initiated once the
+  // payNowWidget() fetch resolves. GooglePayModal polls the attempt's
+  // status until Epoint's async callback lands (see payments.js POST
+  // /epoint/pay-now/widget and GET /epoint/pay-now/widget/:attemptId/status).
   const handlePayNowGooglePay = async () => {
+    const popup = window.open('', 'epoint_google_pay', 'width=430,height=720');
     try {
       setPayingNowWidget(true);
       const response = await paymentsAPI.payNowWidget();
       const { attemptId, widgetUrl } = response?.data || {};
       if (!attemptId || !widgetUrl) throw new Error('Google Pay widget yüklənə bilmədi.');
-      setRenewalAttemptId(attemptId);
-      setRenewalWidgetUrl(widgetUrl);
+
+      if (popup && !popup.closed) {
+        popup.location.href = widgetUrl;
+        renewalPopupRef.current = popup;
+        setRenewalAttemptId(attemptId);
+        setRenewalWaiting(true);
+      } else {
+        window.location.href = widgetUrl;
+      }
     } catch (err) {
+      popup?.close();
       setAlert({ type: 'error', message: err?.response?.data?.error || err?.message || 'Ödəniş zamanı xəta baş verdi' });
     } finally {
       setPayingNowWidget(false);
@@ -368,10 +381,15 @@ export default function SettingsPage() {
   };
 
   const pollRenewalWidgetStatus = async () => {
+    if (!renewalPopupRef.current || renewalPopupRef.current.closed) {
+      setRenewalWaiting(false);
+      return { done: true };
+    }
     const res = await paymentsAPI.getRenewalWidgetStatus(renewalAttemptId);
     const status = res?.data?.status;
     if (status === 'completed') {
-      setRenewalWidgetUrl('');
+      setRenewalWaiting(false);
+      renewalPopupRef.current?.close();
       setAlert({ type: 'success', message: 'Ödəniş uğurla alındı. Planınız 1 ay uzadıldı.' });
       await loadCards();
       const limitsRes = await settingsAPI.getLimits().catch(() => null);
@@ -379,11 +397,17 @@ export default function SettingsPage() {
       return { done: true };
     }
     if (status === 'failed') {
-      setRenewalWidgetUrl('');
+      setRenewalWaiting(false);
+      renewalPopupRef.current?.close();
       setAlert({ type: 'error', message: 'Google Pay ödənişi rədd edildi. Zəhmət olmasa yenidən cəhd edin.' });
       return { done: true };
     }
     return { done: false };
+  };
+
+  const cancelRenewalWaiting = () => {
+    renewalPopupRef.current?.close();
+    setRenewalWaiting(false);
   };
 
   const handleToggleAutoRenew = async () => {
@@ -870,8 +894,8 @@ export default function SettingsPage() {
           )}
 
           <GooglePayModal
-            widgetUrl={renewalWidgetUrl}
-            onCancel={() => setRenewalWidgetUrl('')}
+            open={renewalWaiting}
+            onCancel={cancelRenewalWaiting}
             onPoll={pollRenewalWidgetStatus}
           />
 
