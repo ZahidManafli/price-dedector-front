@@ -36,8 +36,9 @@ import { ebayAPI, dewisoAPI } from '../services/api';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 
-// eBay's Trading API AddItem call (which /ebay/quick-list submits through) accepts at
-// most 12 PictureURLs per listing — matches the backend's own pictureUrls.slice(0, 12).
+// Must match the backend's own cap (pictureUrls.slice(0, 24) and
+// createEbayImagesFromUrls's { max: 24 }) in POST /ebay/quick-list — keep both in
+// sync, since a mismatch here silently drops images past whichever is smaller.
 const MAX_LISTING_IMAGES = 24;
 
 const CONDITION_OPTIONS = [
@@ -342,6 +343,12 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
   const [loadingSpecifics, setLoadingSpecifics] = useState(false);
   const [editingImageIdx, setEditingImageIdx] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  // Guards against the slow background scrapeItemDetails() call (below) landing
+  // AFTER the user has already added/reordered their own images and clobbering
+  // the gallery with just the original source listing's own picture count —
+  // see handleImageEdited/moveImage, which set this the moment the user
+  // touches the gallery.
+  const hasUserEditedImagesRef = useRef(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const quillRef = useRef(null);
@@ -379,6 +386,8 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
   // ── 2. Pre-fill form + scrape item details ────────────────────────────────
   useEffect(() => {
     if (!item) return;
+
+    hasUserEditedImagesRef.current = false;
 
     // ── If bucket already scraped — use override directly, no re-scrape ──
     if (scrapedOverride) {
@@ -449,7 +458,11 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
         const data = res?.data || {};
         if (data.categoryId) setForm((prev) => ({ ...prev, categoryId: String(data.categoryId) }));
         if (Array.isArray(data.itemSpecifics) && data.itemSpecifics.length > 0) setItemSpecifics(ensureItemOriginSpec(data.itemSpecifics));
-        if (Array.isArray(data.pictureUrls) && data.pictureUrls.length > 0) {
+        // This scrape is a slow background call — if the user has already
+        // started adding/reordering their own images by the time it resolves,
+        // applying it here would silently replace their gallery with just the
+        // original source listing's own (often much smaller) picture set.
+        if (!hasUserEditedImagesRef.current && Array.isArray(data.pictureUrls) && data.pictureUrls.length > 0) {
           setDisplayUrls(data.pictureUrls);
           setmaxDimensionImageUrls(data.pictureUrls);
           setSelectedImageIdx(0);
@@ -530,6 +543,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
     const list = Array.isArray(images) ? images : [images];
     if (!list.length) { setEditingImageIdx(null); return; }
 
+    hasUserEditedImagesRef.current = true;
     const isAppend = idx >= displayUrls.length;
     const room = Math.max(0, MAX_LISTING_IMAGES - displayUrls.length);
     const toAppend = isAppend ? list.slice(0, room) : list.slice(1);
@@ -562,6 +576,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
     const targetIdx = idx + direction;
     if (targetIdx < 0 || targetIdx >= displayUrls.length) return;
 
+    hasUserEditedImagesRef.current = true;
     const swap = (arr) => {
       const next = [...arr];
       [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
