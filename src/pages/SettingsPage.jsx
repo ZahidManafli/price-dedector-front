@@ -39,6 +39,26 @@ function aquilineFormFromProfile(profile) {
   };
 }
 
+function myRequestTypeLabel(row) {
+  if (row.requestType === 'tracking_credits_topup') return 'Tracking Credit artırılması';
+  if (row.requestType === 'market_analysis_credits_topup') return 'Market Analysis Credit artırılması';
+  return `Plan yüksəltmə${row.planName ? ` — ${row.planName}` : ''}`;
+}
+
+function myRequestStatusLabel(status) {
+  if (status === 'approved') return 'Təsdiqləndi';
+  if (status === 'rejected') return 'Rədd edildi';
+  if (status === 'cancelled') return 'Ləğv edildi';
+  return 'Gözləmədə';
+}
+
+function myRequestStatusBadgeClass(status, isDark) {
+  if (status === 'approved') return isDark ? 'bg-emerald-900/30 text-emerald-200' : 'bg-emerald-100 text-emerald-700';
+  if (status === 'rejected') return isDark ? 'bg-red-900/30 text-red-200' : 'bg-red-100 text-red-700';
+  if (status === 'cancelled') return isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-500';
+  return isDark ? 'bg-amber-900/30 text-amber-200' : 'bg-amber-100 text-amber-700';
+}
+
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
@@ -91,6 +111,9 @@ export default function SettingsPage() {
   const [payingNowWidget, setPayingNowWidget] = useState(false);
   const [renewalWidgetUrl, setRenewalWidgetUrl] = useState('');
   const [renewalAttemptId, setRenewalAttemptId] = useState('');
+  const [myRequests, setMyRequests] = useState([]);
+  const [myRequestsLoading, setMyRequestsLoading] = useState(false);
+  const [cancellingRequestId, setCancellingRequestId] = useState('');
   const [historyOpen, setHistoryOpen] = useState(false);
 
   const isTrialPlan = String(limits?.plan?.name || '').toLowerCase().includes('trial');
@@ -292,9 +315,36 @@ export default function SettingsPage() {
   useEffect(() => {
     if (settingsTab === 'billing') {
       loadCards();
+    } else if (settingsTab === 'requests') {
+      loadMyRequests();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settingsTab]);
+
+  const loadMyRequests = async () => {
+    try {
+      setMyRequestsLoading(true);
+      const response = await settingsAPI.listMyRequests();
+      setMyRequests(response?.data?.requests || []);
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || 'Sorğular yüklənərkən xəta baş verdi' });
+    } finally {
+      setMyRequestsLoading(false);
+    }
+  };
+
+  const handleCancelRequest = async (id) => {
+    try {
+      setCancellingRequestId(id);
+      await settingsAPI.cancelSubscriptionRequest(id);
+      setAlert({ type: 'success', message: 'Sorğu ləğv edildi.' });
+      await loadMyRequests();
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || 'Sorğu ləğv edilərkən xəta baş verdi' });
+    } finally {
+      setCancellingRequestId('');
+    }
+  };
 
   const handleAddCard = async () => {
     try {
@@ -643,11 +693,12 @@ export default function SettingsPage() {
         )}
 
         <div className={`mb-6 rounded-xl p-1 border ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-1">
+          <div className="grid grid-cols-2 md:grid-cols-7 gap-1">
             {[
               { id: 'security', label: t('settingsPage.security') },
               { id: 'plans', label: t('settingsPage.plans') },
               { id: 'billing', label: 'Ödəniş' },
+              { id: 'requests', label: 'Sorğularım' },
               { id: 'ebay', label: t('settingsPage.ebay') },
               { id: 'amazon', label: t('settingsPage.amazon') },
               { id: 'notifications', label: t('settingsPage.notifications') },
@@ -899,6 +950,75 @@ export default function SettingsPage() {
               />
             </button>
           </div>
+        </div>
+        )}
+
+        {settingsTab === 'requests' && (
+        <div className="glass-card p-4 md:p-5 mb-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Sorğularım</h2>
+            <button
+              type="button"
+              onClick={loadMyRequests}
+              disabled={myRequestsLoading}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition disabled:opacity-50 ${
+                isDark ? 'border-slate-700 text-slate-300 hover:bg-white/5' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {myRequestsLoading ? 'Yüklənir...' : 'Yenilə'}
+            </button>
+          </div>
+
+          {myRequestsLoading ? (
+            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Yüklənir...</p>
+          ) : myRequests.length === 0 ? (
+            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Hələ heç bir sorğunuz yoxdur.</p>
+          ) : (
+            <div className="space-y-3">
+              {myRequests.map((row) => (
+                <div
+                  key={row.id}
+                  className={`rounded-lg p-3 md:p-4 ${isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                        {myRequestTypeLabel(row)}
+                      </p>
+                      <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        {row.createdAt ? new Date(row.createdAt).toLocaleString() : ''}
+                      </p>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${myRequestStatusBadgeClass(row.status, isDark)}`}>
+                      {myRequestStatusLabel(row.status)}
+                    </span>
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                    <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                      {row.amount != null ? `${Number(row.amount).toFixed(2)} AZN` : null}
+                      {row.requestedCredits ? ` — +${row.requestedCredits} kredit` : ''}
+                      {row.includeTracking ? ' (+ Tracking Add-on)' : ''}
+                    </p>
+                    {row.status === 'pending' && (
+                      <button
+                        type="button"
+                        onClick={() => handleCancelRequest(row.id)}
+                        disabled={cancellingRequestId === row.id}
+                        className="rounded-lg border border-red-500 text-red-500 text-xs font-semibold px-3 py-1.5 hover:bg-red-500/10 transition disabled:opacity-50"
+                      >
+                        {cancellingRequestId === row.id ? 'Ləğv edilir...' : 'Ləğv et'}
+                      </button>
+                    )}
+                  </div>
+
+                  {row.status === 'rejected' && row.adminNote ? (
+                    <p className="mt-2 text-xs text-red-400">Səbəb: {row.adminNote}</p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         )}
 
