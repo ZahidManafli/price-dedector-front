@@ -17,7 +17,7 @@ import React, { useEffect, useRef } from 'react';
 // for that case, and Epoint support would need to whitelist our domain for
 // the widget the same way the checkout/card-registration flows already
 // depend on the "Veb saytın ünvanı" registered in the merchant panel.
-export default function GooglePayModal({ widgetUrl, onCancel, onPoll, pollIntervalMs = 3000 }) {
+export default function GooglePayModal({ widgetUrl, onCancel, onPoll, pollIntervalMs = 3000, title = 'Google Pay' }) {
   const onPollRef = useRef(onPoll);
   useEffect(() => {
     onPollRef.current = onPoll;
@@ -42,13 +42,13 @@ export default function GooglePayModal({ widgetUrl, onCancel, onPoll, pollInterv
     <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/80 p-4">
       <div className="w-full max-w-sm rounded-2xl border border-white/15 bg-slate-900 p-4 shadow-2xl">
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-sm font-semibold text-white">Google Pay</p>
+          <p className="text-sm font-semibold text-white">{title}</p>
           <button type="button" onClick={onCancel} className="text-xs text-slate-400 hover:text-slate-200">
             Bağla
           </button>
         </div>
         <iframe
-          title="Google Pay"
+          title={title}
           src={widgetUrl}
           allow="payment"
           className="h-[560px] w-full rounded-xl border border-white/10 bg-white"

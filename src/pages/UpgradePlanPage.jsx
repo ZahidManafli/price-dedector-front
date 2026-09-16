@@ -429,7 +429,6 @@ export default function UpgradePlanPage() {
           <PaymentMethodPicker
             requestId={pendingRequest?.id}
             cardLabel="Card"
-            googlePayLabel="Google Pay"
             chooseLabel="How would you like to pay?"
             onGooglePaySuccess={() => {
               navigate('/dashboard');

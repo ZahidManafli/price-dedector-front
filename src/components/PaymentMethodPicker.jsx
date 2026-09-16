@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { paymentsAPI } from '../services/api';
 import GooglePayModal from './GooglePayModal';
+import { getWalletPaymentLabel } from '../utils/walletPayment';
 
 // Shared "how do you want to pay" step for every online-payment flow that
 // already has a pending subscription_requests row (id === requestId):
@@ -17,7 +18,7 @@ export default function PaymentMethodPicker({
   onGooglePaySuccess,
   onGooglePayFailure,
   cardLabel = 'Kart',
-  googlePayLabel = 'Google Pay',
+  googlePayLabel = getWalletPaymentLabel(),
   chooseLabel = 'Ödəniş üsulunu seçin',
   className = '',
 }) {
@@ -82,7 +83,7 @@ export default function PaymentMethodPicker({
         </button>
       </div>
       {error ? <p className="mt-2 text-sm text-red-400">{error}</p> : null}
-      <GooglePayModal widgetUrl={widgetUrl} onCancel={() => setWidgetUrl('')} onPoll={poll} />
+      <GooglePayModal widgetUrl={widgetUrl} onCancel={() => setWidgetUrl('')} onPoll={poll} title={googlePayLabel} />
     </div>
   );
 }

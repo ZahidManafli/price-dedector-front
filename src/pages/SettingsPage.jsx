@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { readStoredAquilineProfile, writeStoredAquilineProfile } from '../utils/aquilineProfileStorage';
+import { getWalletPaymentLabel } from '../utils/walletPayment';
 
 const EMPTY_AQUILINE_FORM = {
   addressLine1: '',
@@ -111,6 +112,7 @@ export default function SettingsPage() {
   const [payingNowWidget, setPayingNowWidget] = useState(false);
   const [renewalWidgetUrl, setRenewalWidgetUrl] = useState('');
   const [renewalAttemptId, setRenewalAttemptId] = useState('');
+  const [renewalPickerOpen, setRenewalPickerOpen] = useState(false);
   const [myRequests, setMyRequests] = useState([]);
   const [myRequestsLoading, setMyRequestsLoading] = useState(false);
   const [cancellingRequestId, setCancellingRequestId] = useState('');
@@ -118,6 +120,12 @@ export default function SettingsPage() {
 
   const isTrialPlan = String(limits?.plan?.name || '').toLowerCase().includes('trial');
   const defaultCard = cards.find((c) => c.isDefault) || null;
+  const walletLabel = getWalletPaymentLabel();
+  const planExpiresAtMs = limits?.plan?.expiresAt ? new Date(limits.plan.expiresAt).getTime() : null;
+  const daysUntilExpiry = planExpiresAtMs != null ? Math.ceil((planExpiresAtMs - Date.now()) / 86400000) : null;
+  const isPlanExpired = !!limits?.plan?.isExpired;
+  const isPlanExpiringSoon = !isPlanExpired && daysUntilExpiry !== null && daysUntilExpiry <= 3;
+  const showRenewalCta = !isTrialPlan && (isPlanExpired || isPlanExpiringSoon);
 
   const activeEbayAccount = Array.isArray(ebayStatus.ebayAccounts)
     ? ebayStatus.ebayAccounts.find((acc) => acc.id && ebayStatus.activeEbayAccountId === acc.id) || ebayStatus.ebayAccounts[0] || null
@@ -390,6 +398,9 @@ export default function SettingsPage() {
         type: 'success',
         message: nextExpiresAt ? `Ödəniş uğurla alındı. Planınız ${nextExpiresAt} tarixinədək uzadıldı.` : 'Ödəniş uğurla alındı.',
       });
+      setRenewalPickerOpen(false);
+      const limitsRes = await settingsAPI.getLimits().catch(() => null);
+      setLimits(limitsRes?.data || limits);
     } catch (err) {
       setAlert({ type: 'error', message: err?.response?.data?.error || 'Ödəniş zamanı xəta baş verdi' });
     } finally {
@@ -422,6 +433,7 @@ export default function SettingsPage() {
     const status = res?.data?.status;
     if (status === 'completed') {
       setRenewalWidgetUrl('');
+      setRenewalPickerOpen(false);
       setAlert({ type: 'success', message: 'Ödəniş uğurla alındı. Planınız 1 ay uzadıldı.' });
       await loadCards();
       const limitsRes = await settingsAPI.getLimits().catch(() => null);
@@ -892,30 +904,59 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {!isTrialPlan && limits?.plan?.isExpired && (
-            <div className="flex flex-wrap items-center gap-3">
-              {defaultCard && (
-                <button
-                  type="button"
-                  onClick={handlePayNow}
-                  disabled={payingNow}
-                  className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-4 py-2 hover:bg-blue-700 transition disabled:opacity-50"
-                >
-                  {payingNow ? 'Ödəniş edilir...' : 'Ödəniş et'}
-                </button>
-              )}
+          {showRenewalCta && !renewalPickerOpen && (
+            <div>
               <button
                 type="button"
-                onClick={handlePayNowGooglePay}
-                disabled={payingNowWidget}
-                className="rounded-lg border border-emerald-500 text-emerald-500 text-sm font-semibold px-4 py-2 hover:bg-emerald-500/10 transition disabled:opacity-50"
+                onClick={() => setRenewalPickerOpen(true)}
+                className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-4 py-2 hover:bg-blue-700 transition"
               >
-                {payingNowWidget ? 'Yüklənir...' : 'Google Pay ilə ödə'}
+                İndi planı yenilə
               </button>
-              <p className={`w-full text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <p className={`text-xs mt-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {isPlanExpired
+                  ? 'Planınızın müddəti bitib. Davam etmək üçün indi yeniləyin.'
+                  : `Planınızın müddətinin bitməsinə ${daysUntilExpiry} gün qalıb. İndi yeniləyə bilərsiniz.`}
+              </p>
+            </div>
+          )}
+
+          {showRenewalCta && renewalPickerOpen && (
+            <div className="space-y-2">
+              <p className={`text-xs font-semibold uppercase tracking-widest ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Ödəniş üsulunu seçin
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                {defaultCard && (
+                  <button
+                    type="button"
+                    onClick={handlePayNow}
+                    disabled={payingNow}
+                    className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-4 py-2 hover:bg-blue-700 transition disabled:opacity-50"
+                  >
+                    {payingNow ? 'Ödəniş edilir...' : 'Kart'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handlePayNowGooglePay}
+                  disabled={payingNowWidget}
+                  className="rounded-lg border border-emerald-500 text-emerald-500 text-sm font-semibold px-4 py-2 hover:bg-emerald-500/10 transition disabled:opacity-50"
+                >
+                  {payingNowWidget ? 'Yüklənir...' : `${walletLabel} ilə ödə`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRenewalPickerOpen(false)}
+                  className={`text-xs font-semibold ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Ləğv et
+                </button>
+              </div>
+              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 {defaultCard
-                  ? 'Əsas kartınızdan və ya Google Pay ilə planınızın qiymətini (tracking add-on varsa, onunla birlikdə) indi çıxarır və planınızı 1 ay uzadır.'
-                  : 'Google Pay ilə planınızın qiymətini (tracking add-on varsa, onunla birlikdə) indi çıxarır və planınızı 1 ay uzadır.'}
+                  ? `Əsas kartınızdan və ya ${walletLabel} ilə planınızın qiymətini (tracking add-on varsa, onunla birlikdə) indi çıxarır və planınızı 1 ay uzadır.`
+                  : `${walletLabel} ilə planınızın qiymətini (tracking add-on varsa, onunla birlikdə) indi çıxarır və planınızı 1 ay uzadır.`}
               </p>
             </div>
           )}
@@ -924,6 +965,7 @@ export default function SettingsPage() {
             widgetUrl={renewalWidgetUrl}
             onCancel={() => setRenewalWidgetUrl('')}
             onPoll={pollRenewalWidgetStatus}
+            title={walletLabel}
           />
 
           <div className={`rounded-lg p-3 md:p-4 flex items-center justify-between gap-4 ${
