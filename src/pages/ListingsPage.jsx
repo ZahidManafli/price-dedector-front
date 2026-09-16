@@ -409,7 +409,7 @@ export default function ListingsPage() {
         const id = offer?.offerId || offer?.listingId || offer?.listing?.listingId || offer?.sku || '-';
         const status = String(offer?.status || offer?.marketplaceId || '-');
         const title = offer?.listing?.title || offer?.title || offer?.product?.title || '(no title)';
-        let rawQuantity = null, rawSold = null, rawThumb = '', rawStartTime = null;
+        let rawQuantity = null, rawSold = null, rawThumb = '', rawStartTime = null, rawWatchCount = null, rawHitCount = null;
         if (offer?.rawXml && typeof DOMParser !== 'undefined') {
           try {
             const doc = new DOMParser().parseFromString(offer.rawXml, 'text/xml');
@@ -418,6 +418,8 @@ export default function ListingsPage() {
             rawQuantity = parseNumberish(getText('Quantity'));
             rawSold = parseNumberish(getText('SellingStatus > QuantitySold'));
             rawThumb = getAllText('PictureDetails > PictureURL')[0] || '';
+            rawWatchCount = parseNumberish(getText('WatchCount'));
+            rawHitCount = parseNumberish(getText('HitCount'));
             const st = getText('StartTime');
             if (st) { const d = new Date(st); if (!isNaN(d)) rawStartTime = d; }
           } catch { /* silent */ }
@@ -432,6 +434,8 @@ export default function ListingsPage() {
           parseNumberish(offer?.availability?.shipToLocationAvailability?.quantity) ??
           null;
         const soldCount = rawSold ?? parseNumberish(offer?.quantitySold) ?? parseNumberish(offer?.sellingStatus?.quantitySold) ?? 0;
+        const watchCount = rawWatchCount ?? parseNumberish(offer?.watchCount) ?? 0;
+        const hitCount = rawHitCount ?? parseNumberish(offer?.hitCount) ?? 0;
         const stockCount = rawQuantity != null ? Math.max(0, rawQuantity - Number(soldCount || 0)) : fallbackQuantity;
         const priceNumber = parseNumberish(offer?.pricingSummary?.price?.value);
         const daysSinceListed = rawStartTime ? Math.floor((Date.now() - rawStartTime.getTime()) / (1000 * 60 * 60 * 24)) : null;
@@ -443,6 +447,8 @@ export default function ListingsPage() {
           _title: title,
           _stock: stockCount ?? null,
           _sold: soldCount,
+          _watchCount: watchCount,
+          _hitCount: hitCount,
           _isDeadStock: isDeadStock,
           _daysSinceListed: daysSinceListed,
           _priceText: offer?.pricingSummary?.price?.value != null
@@ -476,6 +482,8 @@ export default function ListingsPage() {
       if (sortKey === 'price') return compareNum(a._priceValue, b._priceValue);
       if (sortKey === 'quantity') return compareNum(a._stock, b._stock);
       if (sortKey === 'sold') return compareNum(a._sold, b._sold);
+      if (sortKey === 'watchCount') return compareNum(a._watchCount, b._watchCount);
+      if (sortKey === 'hitCount') return compareNum(a._hitCount, b._hitCount);
       if (sortKey === 'status') return String(a._status || '').localeCompare(String(b._status || ''));
       return 0;
     };
@@ -729,7 +737,7 @@ export default function ListingsPage() {
               <table className={`min-w-full ${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
                 <thead className={isDark ? 'bg-slate-800/70' : 'bg-slate-50'}>
                   <tr>
-                    {['image', 'title', 'listingId', 'price', 'stockCount', 'sold', 'adRate', 'status', ''].map((col, i) => (
+                    {['image', 'title', 'listingId', 'price', 'stockCount', 'sold', 'watchCount', 'hitCount', 'adRate', 'status', ''].map((col, i) => (
                       <th
                         key={i}
                         className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}
@@ -740,6 +748,8 @@ export default function ListingsPage() {
                         {col === 'price' && sortLabel('price', t('listingsPage.price'))}
                         {col === 'stockCount' && sortLabel('quantity', t('listingsPage.stockCount'))}
                         {col === 'sold' && sortLabel('sold', t('listingsPage.sold'))}
+                        {col === 'watchCount' && sortLabel('watchCount', t('listingsPage.watchCount'))}
+                        {col === 'hitCount' && sortLabel('hitCount', t('listingsPage.hitCount'))}
                         {col === 'adRate' && t('listingsPage.adRate')}
                         {col === 'status' && sortLabel('status', t('listingsPage.status'))}
                       </th>
@@ -960,6 +970,12 @@ export default function ListingsPage() {
 
                           {/* Sold */}
                           <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{offer._sold}</td>
+
+                          {/* Watch count */}
+                          <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{offer._watchCount}</td>
+
+                          {/* Hit count (30-day page views) */}
+                          <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{offer._hitCount}</td>
 
                           {/* Promoted listings ad rate */}
                           <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>

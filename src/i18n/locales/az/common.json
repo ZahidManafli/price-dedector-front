@@ -443,6 +443,8 @@
     "price": "Qiymət",
     "stockCount": "Ehtiyat",
     "sold": "Satılan",
+    "watchCount": "İzləyən",
+    "hitCount": "Baxış (30 gün)",
     "adRate": "Reklam faizi",
     "promoted": "Reklam olunur",
     "notPromoted": "Reklam olunmur",

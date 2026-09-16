@@ -443,6 +443,8 @@
     "price": "Fiyat",
     "stockCount": "Stok",
     "sold": "Satılan",
+    "watchCount": "İzleyen",
+    "hitCount": "Görüntülenme (30g)",
     "adRate": "Reklam oranı",
     "promoted": "Reklamlı",
     "notPromoted": "Reklamsız",
