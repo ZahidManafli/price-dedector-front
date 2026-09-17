@@ -12,7 +12,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import Swal from 'sweetalert2';
-import { TrendingUp, Plus, Trash2, X, ChevronDown, Loader2 } from 'lucide-react';
+import { TrendingUp, Plus, Trash2, X, ChevronDown, Loader2, Info } from 'lucide-react';
+import OrderDetailModal from '../components/OrderDetailModal';
 
 // ─── Profit formula ────────────────────────────────────────────────────────────
 // Net profit = eBay total due seller (the entry's ebay_payout — already net of eBay's
@@ -285,6 +286,7 @@ export default function ProfitTablePage() {
   const [listingImages, setListingImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(true);
   const [adFeesByOrderId, setAdFeesByOrderId] = useState({});
+  const [infoEntry, setInfoEntry] = useState(null);
 
   // ── Load real ad-fee-to-order matches from SQL-cached eBay finance transactions ──
   useEffect(() => {
@@ -757,7 +759,21 @@ export default function ProfitTablePage() {
 
                       {/* Order ID */}
                       <td className={`px-4 py-3 text-xs font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {entry.order_id || '—'}
+                        <div className="flex items-center gap-1.5">
+                          <span>{entry.order_id || '—'}</span>
+                          {entry.order_id && (
+                            <button
+                              type="button"
+                              onClick={() => setInfoEntry(entry)}
+                              title={t('profitTablePage.viewDetails')}
+                              className={`p-0.5 rounded-full transition-colors ${
+                                isDark ? 'text-indigo-400 hover:bg-indigo-900/40' : 'text-indigo-500 hover:bg-indigo-50'
+                              }`}
+                            >
+                              <Info size={13} />
+                            </button>
+                          )}
+                        </div>
                       </td>
 
                       {/* Amazon price */}
@@ -829,6 +845,16 @@ export default function ProfitTablePage() {
           </table>
         </div>
       </div>
+
+      {infoEntry && (
+        <OrderDetailModal
+          orderId={infoEntry.order_id}
+          relatedFee={infoEntry._relatedFee || 0}
+          amazonPrice={parseFloat(infoEntry.amazon_price ?? 0)}
+          count={parseInt(infoEntry.count ?? 1)}
+          onClose={() => setInfoEntry(null)}
+        />
+      )}
     </div>
   );
 }
