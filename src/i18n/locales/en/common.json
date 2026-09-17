@@ -844,6 +844,7 @@
       "ordered": "Ordered",
       "orderedSent": "Sent",
       "details": "Details",
+      "earningsTooltip": "View order earnings",
       "copyAddress": "Copy address",
       "copyingAddress": "Copying...",
       "copyAddressSuccess": "Copied! Click \"Checkila Fill\" on Amazon.",

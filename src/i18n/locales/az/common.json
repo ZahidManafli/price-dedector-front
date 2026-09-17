@@ -638,6 +638,7 @@
       "ordered": "Sifariş edildi",
       "orderedSent": "Göndərildi",
       "details": "Detallar",
+      "earningsTooltip": "Sifarişin qazanc detallarına bax",
       "copyAddress": "Ünvanı kopyala",
       "copyingAddress": "Kopyalanır...",
       "copyAddressSuccess": "Kopyalandı! Amazonda \"Checkila Fill\" basın.",

@@ -2,6 +2,7 @@
 // so every "eBay data" card in the dashboard shares one consistent design language.
 
 import { useState } from 'react';
+import LoadingSpinner from './LoadingSpinner';
 
 export function SectionCard({ isDark, className = '', children }) {
   return (
@@ -175,5 +176,67 @@ export function DataTable({ isDark, columns, rows, keyField = 'id', defaultVisib
         </button>
       )}
     </div>
+  );
+}
+
+/** Shared date formatter for finance/order detail rows across the dashboard and Orders page. */
+export function fmtDate(value, withTime = false) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return withTime
+    ? d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+/** Label/value line used inside DetailModal bodies. */
+export function Row({ label, value, isDark, bold }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{label}</span>
+      <span className={`${bold ? 'font-bold' : 'font-medium'} ${isDark ? 'text-slate-100' : 'text-slate-900'} text-right`}>{value ?? '—'}</span>
+    </div>
+  );
+}
+
+/** Fetch-on-open state machine for a DetailModal keyed by an id (order/payout/transfer id, ...). */
+export function useDetailFetcher(fetchFn) {
+  const [state, setState] = useState({ open: false, loading: false, error: null, data: null, id: null });
+  const open = async (id) => {
+    setState({ open: true, loading: true, error: null, data: null, id });
+    try {
+      const res = await fetchFn(id);
+      setState({ open: true, loading: false, error: null, data: res?.data || null, id });
+    } catch (err) {
+      setState({ open: true, loading: false, error: err?.response?.data?.error || err?.message || 'Failed', data: null, id });
+    }
+  };
+  const close = () => setState((s) => ({ ...s, open: false }));
+  return [state, open, close];
+}
+
+/** Order earnings detail modal — used by the Finance dashboard and the Orders page's per-row "i" button. */
+export function OrderEarningsDetailModal({ isDark, t, state, onClose, fmt }) {
+  if (!state.open) return null;
+  const d = state.data;
+  const s = d?.orderEarningsSummary || {};
+  return (
+    <DetailModal isDark={isDark} title={t('dashboard.finance.detailOrderTitle')} onClose={onClose}>
+      {state.loading ? (
+        <div className="py-6 flex justify-center"><LoadingSpinner /></div>
+      ) : state.error ? (
+        <p className="text-sm text-rose-500">{state.error}</p>
+      ) : d ? (
+        <div className="space-y-2 text-sm">
+          <Row label={t('dashboard.finance.colOrderId')} value={d.orderId} isDark={isDark} />
+          <Row label={t('dashboard.finance.detailBuyer')} value={d.buyer?.username || '—'} isDark={isDark} />
+          <Row label={t('dashboard.finance.detailOrderCreated')} value={fmtDate(d.orderCreationDate, true)} isDark={isDark} />
+          <Row label={t('dashboard.finance.grossAmount')} value={fmt(s.grossAmount?.value, s.grossAmount?.currency)} isDark={isDark} />
+          <Row label={t('dashboard.finance.expenses')} value={fmt(s.expenses?.value, s.expenses?.currency)} isDark={isDark} />
+          <Row label={t('dashboard.finance.refunds')} value={fmt(s.refunds?.value, s.refunds?.currency)} isDark={isDark} />
+          <Row label={t('dashboard.finance.netEarnings')} value={fmt(s.orderEarnings?.value, s.orderEarnings?.currency)} isDark={isDark} bold />
+        </div>
+      ) : null}
+    </DetailModal>
   );
 }
