@@ -4,12 +4,11 @@ import { ebayAPI, productAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
-import { ArrowDownUp, Loader2, MessageSquare, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, TrendingUp, Copy, Info } from 'lucide-react';
+import { ArrowDownUp, Loader2, MessageSquare, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, TrendingUp, Copy } from 'lucide-react';
 import OrderMessageSidebar from '../components/OrderMessageSidebar';
 import EbayAccountSwitcher from '../components/EbayAccountSwitcher';
 import { profitAPI } from '../services/api';
 import { copyAddressToExtension } from '../utils/checkilaExtensionBridge';
-import { useDetailFetcher, OrderEarningsDetailModal } from '../components/dashboardUi';
 
 const ORDERS_FILTER_STORAGE_KEY = 'checkila.ordersPage.filters.v1';
 const ORDERS_LISTINGS_STORAGE_KEY = 'checkila.ordersPage.listings.v1';
@@ -487,22 +486,6 @@ export default function OrdersPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
   const { t } = useTranslation();
-  // Order earnings modal reuses the Finance dashboard's labels/formatting (dashboard.finance.*).
-  const { t: tFinance } = useTranslation('system');
-  const [orderEarningsModal, openOrderEarningsModal, closeOrderEarningsModal] = useDetailFetcher(ebayAPI.getOrderEarningsDetail);
-  const fmtEarningsCurrency = (value, currency) => {
-    const n = Number(value || 0);
-    try {
-      return new Intl.NumberFormat(undefined, {
-        style: 'currency',
-        currency: currency || 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(Number.isFinite(n) ? n : 0);
-    } catch {
-      return `${n.toFixed(2)} ${currency || ''}`.trim();
-    }
-  };
 
   const getBuyerDisplay = (order) => {
     const username = String(order?.buyer?.username || '').trim();
@@ -1085,14 +1068,6 @@ export default function OrdersPage() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="inline-flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => openOrderEarningsModal(id)}
-                              title={t('ordersPage.table.earningsTooltip')}
-                              className={`inline-flex items-center justify-center h-7 w-7 rounded-md border transition-colors ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}`}
-                            >
-                              <Info size={13} />
-                            </button>
                             <CopyAddressButton order={order} isDark={isDark} t={t} />
                             {true && listingId && (
                               <button
@@ -1165,14 +1140,6 @@ export default function OrdersPage() {
           onClose={() => setMessagePanelOrder(null)}
         />
       )}
-
-      <OrderEarningsDetailModal
-        isDark={isDark}
-        t={tFinance}
-        state={orderEarningsModal}
-        onClose={closeOrderEarningsModal}
-        fmt={fmtEarningsCurrency}
-      />
     </div>
   );
 }

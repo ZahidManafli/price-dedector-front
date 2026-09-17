@@ -1,10 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, Banknote, Clock, Download, Landmark, Lock, Repeat, Wallet } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
 import DailyFinanceFlowChart from './DailyFinanceFlowChart';
 import { ebayAPI } from '../services/api';
-import { SectionCard, StatTile, Dot, DetailModal, DataTable, Row, fmtDate, useDetailFetcher, OrderEarningsDetailModal } from './dashboardUi';
+import { SectionCard, StatTile, Dot, DetailModal, DataTable } from './dashboardUi';
 
 // ─── status → color mappings ────────────────────────────────────────────────
 
@@ -42,9 +42,56 @@ function StatusBadge({ isDark, t, kind, value }) {
   return <Dot isDark={isDark} color={color}>{t(`dashboard.finance.${nsMap}.${value}`, { defaultValue: value })}</Dot>;
 }
 
+function fmtDate(value, withTime = false) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return withTime
+    ? d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 // ─── detail modals ───────────────────────────────────────────────────────────
-// (fmtDate/Row/useDetailFetcher/OrderEarningsDetailModal now live in ./dashboardUi
-// so the Orders page's per-row "i" button can reuse the same order earnings modal.)
+
+function useDetailFetcher(fetchFn) {
+  const [state, setState] = useState({ open: false, loading: false, error: null, data: null, id: null });
+  const open = async (id) => {
+    setState({ open: true, loading: true, error: null, data: null, id });
+    try {
+      const res = await fetchFn(id);
+      setState({ open: true, loading: false, error: null, data: res?.data || null, id });
+    } catch (err) {
+      setState({ open: true, loading: false, error: err?.response?.data?.error || err?.message || 'Failed', data: null, id });
+    }
+  };
+  const close = () => setState((s) => ({ ...s, open: false }));
+  return [state, open, close];
+}
+
+function OrderEarningsDetailModal({ isDark, t, state, onClose, fmt }) {
+  if (!state.open) return null;
+  const d = state.data;
+  const s = d?.orderEarningsSummary || {};
+  return (
+    <DetailModal isDark={isDark} title={t('dashboard.finance.detailOrderTitle')} onClose={onClose}>
+      {state.loading ? (
+        <div className="py-6 flex justify-center"><LoadingSpinner /></div>
+      ) : state.error ? (
+        <p className="text-sm text-rose-500">{state.error}</p>
+      ) : d ? (
+        <div className="space-y-2 text-sm">
+          <Row label={t('dashboard.finance.colOrderId')} value={d.orderId} isDark={isDark} />
+          <Row label={t('dashboard.finance.detailBuyer')} value={d.buyer?.username || '—'} isDark={isDark} />
+          <Row label={t('dashboard.finance.detailOrderCreated')} value={fmtDate(d.orderCreationDate, true)} isDark={isDark} />
+          <Row label={t('dashboard.finance.grossAmount')} value={fmt(s.grossAmount?.value, s.grossAmount?.currency)} isDark={isDark} />
+          <Row label={t('dashboard.finance.expenses')} value={fmt(s.expenses?.value, s.expenses?.currency)} isDark={isDark} />
+          <Row label={t('dashboard.finance.refunds')} value={fmt(s.refunds?.value, s.refunds?.currency)} isDark={isDark} />
+          <Row label={t('dashboard.finance.netEarnings')} value={fmt(s.orderEarnings?.value, s.orderEarnings?.currency)} isDark={isDark} bold />
+        </div>
+      ) : null}
+    </DetailModal>
+  );
+}
 
 function PayoutDetailModal({ isDark, t, state, onClose, fmt }) {
   if (!state.open) return null;
@@ -103,6 +150,15 @@ function TransferDetailModal({ isDark, t, state, onClose, fmt }) {
         </div>
       ) : null}
     </DetailModal>
+  );
+}
+
+function Row({ label, value, isDark, bold }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{label}</span>
+      <span className={`${bold ? 'font-bold' : 'font-medium'} ${isDark ? 'text-slate-100' : 'text-slate-900'} text-right`}>{value ?? '—'}</span>
+    </div>
   );
 }
 

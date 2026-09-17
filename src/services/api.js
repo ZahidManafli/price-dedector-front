@@ -231,6 +231,7 @@ export const ebayAPI = {
   sellSimilar: (listingId) => api.post('/ebay/listing/sell-similar', { listingId }),
   getDashboardAnalytics: (days) => api.get('/ebay/analytics/dashboard', days ? { params: { days } } : undefined),
   getOrderEarningsDetail: (orderId) => api.get(`/ebay/finance/order-earnings/${encodeURIComponent(orderId)}`),
+  getOrderAdFees: () => api.get('/ebay/finance/order-ad-fees'),
   getPayoutDetail: (payoutId) => api.get(`/ebay/finance/payout/${encodeURIComponent(payoutId)}`),
   getTransferDetail: (transferId) => api.get(`/ebay/finance/transfer/${encodeURIComponent(transferId)}`),
   getOrders: (offsetOrOptions = 0, limit = 25, options = {}) => {

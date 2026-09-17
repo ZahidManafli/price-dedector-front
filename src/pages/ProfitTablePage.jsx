@@ -14,20 +14,19 @@ import {
 import Swal from 'sweetalert2';
 import { TrendingUp, Plus, Trash2, X, ChevronDown, Loader2 } from 'lucide-react';
 
-// ─── Profit formula (mirrors backend profitCalculator.js) ─────────────────────
-function calcProfit(ebayPayout, amazonPrice, adRate, count = 1) {
+// ─── Profit formula ────────────────────────────────────────────────────────────
+// Net profit = eBay total due seller (the entry's ebay_payout — already net of eBay's
+// Final Value Fee, per the real Finances API SALE transaction amount) - related
+// Promoted Listings ad fee (matched to this order from real eBay finance transactions,
+// see /ebay/finance/order-ad-fees) - Amazon cost.
+function calcProfit(ebayPayout, amazonPrice, relatedFee, count = 1) {
   const salePrice = parseFloat(ebayPayout) || 0;
   const unitCost = parseFloat(amazonPrice) || 0;
+  const fee = parseFloat(relatedFee) || 0;
   const qty = Math.max(1, parseInt(count) || 1);
   const cogs = unitCost * qty;
   if (salePrice === 0 || cogs === 0) return 0;
-  const taxRate = 0.06;
-  const fvfRate = 0.136;
-  const adRateDecimal = (parseFloat(adRate) || 0) / 100;
-  const fixedFee = 0.30;
-  const grossAmount = salePrice * (1 + taxRate);
-  const feeTotal = grossAmount * (fvfRate + adRateDecimal) + fixedFee;
-  return Math.round((salePrice - cogs - feeTotal) * 100) / 100;
+  return Math.round((salePrice - fee - cogs) * 100) / 100;
 }
 
 // ─── Extract image URL from a listing (mirrors ListingsPage.jsx logic) ────────
@@ -285,11 +284,20 @@ export default function ProfitTablePage() {
   const [submitting, setSubmitting] = useState(false);
   const [listingImages, setListingImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(true);
+  const [adFeesByOrderId, setAdFeesByOrderId] = useState({});
+
+  // ── Load real ad-fee-to-order matches from SQL-cached eBay finance transactions ──
+  useEffect(() => {
+    ebayAPI.getOrderAdFees()
+      .then((res) => setAdFeesByOrderId(res?.data?.fees || {}))
+      .catch(() => setAdFeesByOrderId({}));
+  }, []);
 
   // ── Derived profit ─────────────────────────────────────────────────────────
+  const previewRelatedFee = adFeesByOrderId[String(form.order_id || '').trim()]?.amount ?? 0;
   const previewProfit = useMemo(
-    () => calcProfit(form.ebay_payout, form.amazon_price, form.ad_rate, form.count),
-    [form.ebay_payout, form.amazon_price, form.ad_rate, form.count]
+    () => calcProfit(form.ebay_payout, form.amazon_price, previewRelatedFee, form.count),
+    [form.ebay_payout, form.amazon_price, previewRelatedFee, form.count]
   );
 
   // ── Load entries ───────────────────────────────────────────────────────────
@@ -332,11 +340,25 @@ export default function ProfitTablePage() {
       .finally(() => setLoadingImages(false));
   }, []);
 
+  // ── Entries with real related fee + recomputed profit ─────────────────────
+  const entriesWithFee = useMemo(
+    () =>
+      entries.map((e) => {
+        const relatedFee = adFeesByOrderId[String(e.order_id || '').trim()]?.amount ?? 0;
+        const computedProfit = calcProfit(e.ebay_payout, e.amazon_price, relatedFee, e.count);
+        return { ...e, _relatedFee: relatedFee, _computedProfit: computedProfit };
+      }),
+    [entries, adFeesByOrderId]
+  );
+
   // ── Chart data ─────────────────────────────────────────────────────────────
-  const chartData = useMemo(() => prepareChartData(entries, range), [entries, range]);
+  const chartData = useMemo(
+    () => prepareChartData(entriesWithFee.map((e) => ({ ...e, profit: e._computedProfit })), range),
+    [entriesWithFee, range]
+  );
   const totalProfit = useMemo(
-    () => entries.reduce((s, e) => s + parseFloat(e.profit || 0), 0),
-    [entries]
+    () => entriesWithFee.reduce((s, e) => s + parseFloat(e._computedProfit || 0), 0),
+    [entriesWithFee]
   );
 
   // ── Form handlers ──────────────────────────────────────────────────────────
@@ -650,6 +672,7 @@ export default function ProfitTablePage() {
                   t('profitTablePage.colOrderId'),
                   t('profitTablePage.colAmazonPrice'),
                   t('profitTablePage.colEbayPayout'),
+                  t('profitTablePage.colFee'),
                   t('profitTablePage.colAdRate'),
                   t('profitTablePage.colCount'),
                   t('profitTablePage.colCreatedAt'),
@@ -670,22 +693,22 @@ export default function ProfitTablePage() {
             <tbody className={isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}>
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center">
+                  <td colSpan={11} className="px-4 py-10 text-center">
                     <Loader2 className="animate-spin mx-auto text-indigo-500" size={24} />
                   </td>
                 </tr>
-              ) : entries.length === 0 ? (
+              ) : entriesWithFee.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={11}
                     className={`px-4 py-8 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
                   >
                     {t('profitTablePage.empty')}
                   </td>
                 </tr>
               ) : (
-                entries.map((entry) => {
-                  const profit = parseFloat(entry.profit ?? 0);
+                entriesWithFee.map((entry) => {
+                  const profit = parseFloat(entry._computedProfit ?? 0);
                   const profitBadge =
                     profit > 0
                       ? isDark
@@ -745,6 +768,11 @@ export default function ProfitTablePage() {
                       {/* eBay payout */}
                       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                         ${parseFloat(entry.ebay_payout ?? 0).toFixed(2)}
+                      </td>
+
+                      {/* Related ad fee (matched from real eBay finance transactions) */}
+                      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                        {entry._relatedFee > 0 ? `-$${entry._relatedFee.toFixed(2)}` : '—'}
                       </td>
 
                       {/* Ad rate */}
