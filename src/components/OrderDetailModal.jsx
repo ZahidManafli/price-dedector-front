@@ -248,7 +248,12 @@ export default function OrderDetailModal({ orderId, relatedFee, amazonPrice, cou
     : null;
   const hasProfitTieIn =
     totalEbayPaid !== null && effectiveAmazonPrice !== null && (effectiveAmazonPrice > 0 || adFeeAmount > 0);
-  const amazonCostTotal = Number(effectiveAmazonPrice || 0) * effectiveCount;
+  // An explicit amazonPrice override (Profit Table manual entry) is already the
+  // TOTAL paid to Amazon for the purchase — never multiply it by count. Only the
+  // auto-resolved value (products.currentAmazonPrice, a per-unit price) needs
+  // multiplying by the line item's own quantity.
+  const amazonCostTotal =
+    amazonPrice !== undefined ? Number(effectiveAmazonPrice || 0) : Number(effectiveAmazonPrice || 0) * effectiveCount;
   const netProfit = hasProfitTieIn ? Math.round((totalEbayPaid - amazonCostTotal) * 100) / 100 : null;
 
   return (

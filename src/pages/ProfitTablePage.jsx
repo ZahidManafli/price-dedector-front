@@ -20,12 +20,14 @@ import OrderDetailModal from '../components/OrderDetailModal';
 // Final Value Fee, per the real Finances API SALE transaction amount) - related
 // Promoted Listings ad fee (matched to this order from real eBay finance transactions,
 // see /ebay/finance/order-ad-fees) - Amazon cost.
-function calcProfit(ebayPayout, amazonPrice, relatedFee, count = 1) {
+//
+// amazon_price is the TOTAL amount actually paid to Amazon for this purchase
+// (not a per-unit price), so it must NOT be multiplied by count — count is
+// purely informational here (how many units that Amazon order contained).
+function calcProfit(ebayPayout, amazonPrice, relatedFee) {
   const salePrice = parseFloat(ebayPayout) || 0;
-  const unitCost = parseFloat(amazonPrice) || 0;
+  const cogs = parseFloat(amazonPrice) || 0;
   const fee = parseFloat(relatedFee) || 0;
-  const qty = Math.max(1, parseInt(count) || 1);
-  const cogs = unitCost * qty;
   if (salePrice === 0 || cogs === 0) return 0;
   return Math.round((salePrice - fee - cogs) * 100) / 100;
 }
@@ -286,20 +288,26 @@ export default function ProfitTablePage() {
   const [listingImages, setListingImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(true);
   const [adFeesByOrderId, setAdFeesByOrderId] = useState({});
+  const [loadingFees, setLoadingFees] = useState(true);
   const [infoEntry, setInfoEntry] = useState(null);
 
   // ── Load real ad-fee-to-order matches from SQL-cached eBay finance transactions ──
+  // This call also refreshes every connected eBay account's orders on the backend
+  // (not just the active store), so it can take a few seconds for an account with
+  // several stores — the Fee/Profit columns show a spinner below until it resolves.
   useEffect(() => {
+    setLoadingFees(true);
     ebayAPI.getOrderAdFees()
       .then((res) => setAdFeesByOrderId(res?.data?.fees || {}))
-      .catch(() => setAdFeesByOrderId({}));
+      .catch(() => setAdFeesByOrderId({}))
+      .finally(() => setLoadingFees(false));
   }, []);
 
   // ── Derived profit ─────────────────────────────────────────────────────────
   const previewRelatedFee = adFeesByOrderId[String(form.order_id || '').trim()]?.amount ?? 0;
   const previewProfit = useMemo(
-    () => calcProfit(form.ebay_payout, form.amazon_price, previewRelatedFee, form.count),
-    [form.ebay_payout, form.amazon_price, previewRelatedFee, form.count]
+    () => calcProfit(form.ebay_payout, form.amazon_price, previewRelatedFee),
+    [form.ebay_payout, form.amazon_price, previewRelatedFee]
   );
 
   // ── Load entries ───────────────────────────────────────────────────────────
@@ -347,7 +355,7 @@ export default function ProfitTablePage() {
     () =>
       entries.map((e) => {
         const relatedFee = adFeesByOrderId[String(e.order_id || '').trim()]?.amount ?? 0;
-        const computedProfit = calcProfit(e.ebay_payout, e.amazon_price, relatedFee, e.count);
+        const computedProfit = calcProfit(e.ebay_payout, e.amazon_price, relatedFee);
         return { ...e, _relatedFee: relatedFee, _computedProfit: computedProfit };
       }),
     [entries, adFeesByOrderId]
@@ -619,8 +627,13 @@ export default function ProfitTablePage() {
             {rangeLabelMap[r]}
           </button>
         ))}
-        <div className={`ml-auto text-sm font-semibold ${profitColor(totalProfit)}`}>
-          {t('profitTablePage.totalProfit')}: {totalProfit > 0 ? '+' : ''}{totalProfit.toFixed(2)} $
+        <div className={`ml-auto flex items-center gap-2 text-sm font-semibold ${profitColor(totalProfit)}`}>
+          {t('profitTablePage.totalProfit')}:
+          {loadingFees ? (
+            <Loader2 size={14} className="animate-spin text-indigo-500" />
+          ) : (
+            <span>{totalProfit > 0 ? '+' : ''}{totalProfit.toFixed(2)} $</span>
+          )}
         </div>
       </div>
 
@@ -788,7 +801,13 @@ export default function ProfitTablePage() {
 
                       {/* Related ad fee (matched from real eBay finance transactions) */}
                       <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                        {entry._relatedFee > 0 ? `-$${entry._relatedFee.toFixed(2)}` : '—'}
+                        {loadingFees ? (
+                          <Loader2 size={14} className="animate-spin text-indigo-500" />
+                        ) : entry._relatedFee > 0 ? (
+                          `-$${entry._relatedFee.toFixed(2)}`
+                        ) : (
+                          '—'
+                        )}
                       </td>
 
                       {/* Ad rate */}
@@ -814,12 +833,16 @@ export default function ProfitTablePage() {
 
                       {/* Profit */}
                       <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center rounded-lg px-2 py-1 text-xs font-semibold border ${profitBadge}`}
-                        >
-                          {profit > 0 ? '+' : ''}
-                          {profit.toFixed(2)}
-                        </span>
+                        {loadingFees ? (
+                          <Loader2 size={14} className="animate-spin text-indigo-500" />
+                        ) : (
+                          <span
+                            className={`inline-flex items-center rounded-lg px-2 py-1 text-xs font-semibold border ${profitBadge}`}
+                          >
+                            {profit > 0 ? '+' : ''}
+                            {profit.toFixed(2)}
+                          </span>
+                        )}
                       </td>
 
                       {/* Delete */}
