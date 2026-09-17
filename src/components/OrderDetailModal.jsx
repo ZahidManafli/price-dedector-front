@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
-import { ebayAPI } from '../services/api';
+import { ebayAPI, productAPI } from '../services/api';
 import {
   X,
   Loader2,
@@ -122,21 +122,29 @@ function paymentTone(status) {
 }
 
 /**
- * Read-only, richly detailed view of a single eBay order — opened from the
- * Profit Table's "i" button. Always fetches the live order (GET /ebay/orders/:orderId)
- * rather than relying on cached list pages, since eBay only fully populates
- * cancelStatus.cancelRequests on the single-order call.
+ * Read-only, richly detailed view of a single eBay order — opened from both
+ * the Profit Table and the Orders page "i" button. Always fetches the live
+ * order (GET /ebay/orders/:orderId) rather than relying on cached list pages,
+ * since eBay only fully populates cancelStatus.cancelRequests on the
+ * single-order call.
  *
- * Optional relatedFee/amazonPrice/count let the modal recompute this specific
- * order's net profit live, tying the Profit Table's numbers back to the real
- * order data they were derived from.
+ * relatedFee/amazonPrice/count are optional overrides — the Profit Table
+ * passes its own manually-entered amazon_price/count so the financial summary
+ * matches exactly what that entry recorded. When they're left unset (as from
+ * the Orders page, which has no such entry), the modal resolves them itself:
+ * the ad fee from /ebay/finance/order-ad-fees, and the Amazon cost from the
+ * product linked to this order's line item (matched by ebay item id), using
+ * the line item's own quantity.
  */
-export default function OrderDetailModal({ orderId, relatedFee = 0, amazonPrice = 0, count = 1, onClose }) {
+export default function OrderDetailModal({ orderId, relatedFee, amazonPrice, count, onClose }) {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [autoRelatedFee, setAutoRelatedFee] = useState(null);
+  const [autoAmazonPrice, setAutoAmazonPrice] = useState(null);
+  const [autoCount, setAutoCount] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -161,6 +169,47 @@ export default function OrderDetailModal({ orderId, relatedFee = 0, amazonPrice 
     };
   }, [orderId, t]);
 
+  // Resolve whichever of relatedFee/amazonPrice the caller didn't supply, once
+  // the order itself has loaded. Runs at most once per order (guarded by the
+  // still-null auto-state checks), and only calls the endpoints actually needed.
+  useEffect(() => {
+    if (!order) return;
+
+    if (relatedFee === undefined) {
+      ebayAPI
+        .getOrderAdFees()
+        .then((res) => {
+          const fees = res?.data?.fees || {};
+          const match = fees[order.orderId];
+          setAutoRelatedFee(Number(match?.amount) || 0);
+        })
+        .catch(() => setAutoRelatedFee(0));
+    }
+
+    if (amazonPrice === undefined) {
+      const legacyItemId = String(order?.lineItems?.[0]?.legacyItemId || '').trim();
+      const lineItemQty = Number(order?.lineItems?.[0]?.quantity) || 1;
+      if (!legacyItemId) {
+        setAutoAmazonPrice(0);
+        setAutoCount(lineItemQty);
+        return;
+      }
+      productAPI
+        .getAll()
+        .then((res) => {
+          const products = Array.isArray(res?.data) ? res.data : [];
+          const match = products.find((p) => String(p?.ebayItemId || '').trim() === legacyItemId);
+          setAutoAmazonPrice(Number(match?.currentAmazonPrice) || 0);
+          setAutoCount(lineItemQty);
+        })
+        .catch(() => {
+          setAutoAmazonPrice(0);
+          setAutoCount(lineItemQty);
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order]);
+
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key === 'Escape') onClose?.();
@@ -179,18 +228,27 @@ export default function OrderDetailModal({ orderId, relatedFee = 0, amazonPrice 
   const cancelStatus = order?.cancelStatus;
   const hasCancellation = cancelStatus && String(cancelStatus.cancelState || 'NONE_REQUESTED').toUpperCase() !== 'NONE_REQUESTED';
 
+  // Effective values: the caller's explicit override when given, otherwise
+  // whatever this modal resolved on its own (see the auto-resolve effect above).
+  // While that resolution is still in flight, these stay null/undefined and
+  // the profit tie-in section simply doesn't render yet.
+  const effectiveRelatedFee = relatedFee !== undefined ? Number(relatedFee || 0) : autoRelatedFee;
+  const effectiveAmazonPrice = amazonPrice !== undefined ? Number(amazonPrice || 0) : autoAmazonPrice;
+  const effectiveCount = count !== undefined ? Math.max(1, Number(count) || 1) : Math.max(1, Number(autoCount) || 1);
+
   // "Total eBay Paid" is what actually lands in the seller's pocket: eBay's own
   // totalDueSeller already nets out the Final Value Fee, but the Promoted
   // Listings ad fee is billed separately later and never reflected in that
   // figure — so it still has to be subtracted here, manually, when the order
   // was sold via an ad campaign.
   const liveDueSeller = Number(order?.paymentSummary?.totalDueSeller?.value);
-  const adFeeAmount = soldViaAds ? Number(relatedFee || 0) : 0;
+  const adFeeAmount = soldViaAds ? Number(effectiveRelatedFee || 0) : 0;
   const totalEbayPaid = Number.isFinite(liveDueSeller)
     ? Math.round((liveDueSeller - adFeeAmount) * 100) / 100
     : null;
-  const hasProfitTieIn = totalEbayPaid !== null && (Number(amazonPrice) > 0 || adFeeAmount > 0);
-  const amazonCostTotal = Number(amazonPrice || 0) * Math.max(1, Number(count) || 1);
+  const hasProfitTieIn =
+    totalEbayPaid !== null && effectiveAmazonPrice !== null && (effectiveAmazonPrice > 0 || adFeeAmount > 0);
+  const amazonCostTotal = Number(effectiveAmazonPrice || 0) * effectiveCount;
   const netProfit = hasProfitTieIn ? Math.round((totalEbayPaid - amazonCostTotal) * 100) / 100 : null;
 
   return (
