@@ -179,12 +179,19 @@ export default function OrderDetailModal({ orderId, relatedFee = 0, amazonPrice 
   const cancelStatus = order?.cancelStatus;
   const hasCancellation = cancelStatus && String(cancelStatus.cancelState || 'NONE_REQUESTED').toUpperCase() !== 'NONE_REQUESTED';
 
+  // "Total eBay Paid" is what actually lands in the seller's pocket: eBay's own
+  // totalDueSeller already nets out the Final Value Fee, but the Promoted
+  // Listings ad fee is billed separately later and never reflected in that
+  // figure — so it still has to be subtracted here, manually, when the order
+  // was sold via an ad campaign.
   const liveDueSeller = Number(order?.paymentSummary?.totalDueSeller?.value);
-  const hasProfitTieIn = Number.isFinite(liveDueSeller) && (Number(amazonPrice) > 0 || Number(relatedFee) > 0);
-  const amazonCostTotal = Number(amazonPrice || 0) * Math.max(1, Number(count) || 1);
-  const netProfit = hasProfitTieIn
-    ? Math.round((liveDueSeller - Number(relatedFee || 0) - amazonCostTotal) * 100) / 100
+  const adFeeAmount = soldViaAds ? Number(relatedFee || 0) : 0;
+  const totalEbayPaid = Number.isFinite(liveDueSeller)
+    ? Math.round((liveDueSeller - adFeeAmount) * 100) / 100
     : null;
+  const hasProfitTieIn = totalEbayPaid !== null && (Number(amazonPrice) > 0 || adFeeAmount > 0);
+  const amazonCostTotal = Number(amazonPrice || 0) * Math.max(1, Number(count) || 1);
+  const netProfit = hasProfitTieIn ? Math.round((totalEbayPaid - amazonCostTotal) * 100) / 100 : null;
 
   return (
     <div
@@ -282,14 +289,24 @@ export default function OrderDetailModal({ orderId, relatedFee = 0, amazonPrice 
 
                 <InfoRow label={t('orderDetailModal.feeBasisAmount')} value={fmtMoney(order.totalFeeBasisAmount)} />
                 <InfoRow label={t('orderDetailModal.marketplaceFee')} value={fmtMoney(order.totalMarketplaceFee)} tone="danger" />
-                {soldViaAds && relatedFee > 0 && (
-                  <InfoRow label={t('orderDetailModal.adFee')} value={`-${relatedFee.toFixed(2)} USD`} tone="danger" />
-                )}
                 <InfoRow
                   label={t('orderDetailModal.dueToSeller')}
                   value={fmtMoney(order.paymentSummary?.totalDueSeller)}
-                  tone="success"
                 />
+                {soldViaAds && adFeeAmount > 0 && (
+                  <InfoRow label={t('orderDetailModal.adFee')} value={`-${adFeeAmount.toFixed(2)} USD`} tone="danger" />
+                )}
+
+                {totalEbayPaid !== null && (
+                  <div className="flex items-center justify-between pt-2 mt-1">
+                    <span className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                      {t('orderDetailModal.totalEbayPaid')}
+                    </span>
+                    <span className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                      {totalEbayPaid.toFixed(2)} USD
+                    </span>
+                  </div>
+                )}
 
                 {hasProfitTieIn && (
                   <>

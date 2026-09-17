@@ -4,8 +4,9 @@ import { ebayAPI, productAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
-import { ArrowDownUp, Loader2, MessageSquare, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, TrendingUp, Copy } from 'lucide-react';
+import { ArrowDownUp, Loader2, MessageSquare, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, TrendingUp, Copy, Info } from 'lucide-react';
 import OrderMessageSidebar from '../components/OrderMessageSidebar';
+import OrderDetailModal from '../components/OrderDetailModal';
 import EbayAccountSwitcher from '../components/EbayAccountSwitcher';
 import { profitAPI } from '../services/api';
 import { copyAddressToExtension } from '../utils/checkilaExtensionBridge';
@@ -537,6 +538,7 @@ export default function OrdersPage() {
 
   // ── Message Panel state ───────────────────────────────────────────────────
   const [messagePanelOrder, setMessagePanelOrder] = useState(null);
+  const [infoOrderId, setInfoOrderId] = useState(null);
 
   const listingImageById = useMemo(() => {
     const map = new Map();
@@ -1068,6 +1070,16 @@ export default function OrdersPage() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="inline-flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setInfoOrderId(String(id))}
+                              title={t('ordersPage.table.viewDetails', { defaultValue: 'View order details' })}
+                              className={`p-1 rounded-full transition-colors ${
+                                isDark ? 'text-indigo-400 hover:bg-indigo-950/40' : 'text-indigo-500 hover:bg-indigo-50'
+                              }`}
+                            >
+                              <Info size={15} />
+                            </button>
                             <CopyAddressButton order={order} isDark={isDark} t={t} />
                             {true && listingId && (
                               <button
@@ -1139,6 +1151,10 @@ export default function OrdersPage() {
           order={messagePanelOrder}
           onClose={() => setMessagePanelOrder(null)}
         />
+      )}
+
+      {infoOrderId && (
+        <OrderDetailModal orderId={infoOrderId} onClose={() => setInfoOrderId(null)} />
       )}
     </div>
   );
