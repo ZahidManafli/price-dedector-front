@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/generate-sitemap.mjs",
     "build": "vite build",
+    "sitemap": "node scripts/generate-sitemap.mjs",
     "preview": "vite preview",
     "lint": "eslint src --ext js,jsx",
     "lint:fix": "eslint src --ext js,jsx --fix"

@@ -1,0 +1,361 @@
+{
+  "dropshippingTool": {
+    "meta": {
+      "title": "eBay Dropshipping Aracı: Ürün Araştırması ve Otomasyon | Checkila",
+      "description": "Checkila; ürün araştırması, Amazon fiyat takibi, kâr hesaplama ve eBay iş akışı yönetimini tek panelde birleştiren bir eBay dropshipping aracıdır."
+    },
+    "hero": {
+      "eyebrow": "eBay Dropshipping Aracı",
+      "h1": "Daha Akıllı Ürün Araştırması ve Otomasyon için eBay Dropshipping Aracı",
+      "subhead": "Ürünleri araştırın, Amazon fiyatlarını takip edin, kârı değerlendirin ve eBay iş akışınızı yönetin — hepsi dropshipper'lar için tasarlanmış tek bir panelden."
+    },
+    "problems": [
+      { "problem": "Amazon fiyatlarını elle kontrol ediyorsunuz ve yine de rakipleriniz sizi geçiyor.", "solution": "Checkila, Amazon fiyatlarını sürekli izler ve marjınızı eritmeden önce değişiklikleri size bildirir." },
+      { "problem": "Hangi ürünlerin gerçekten listelemeye değer olduğunu bilmiyorsunuz.", "solution": "Herhangi bir ürün için Checkila Analizi çalıştırın; taahhüt etmeden önce talebi, rekabeti ve kâr potansiyelini görün." },
+      { "problem": "Düzinelerce ilanı yönetmeye başladığınızda Excel tabloları yetersiz kalıyor.", "solution": "Checkila; ürün araştırmasını, fiyatlandırmayı ve ilan yönetimini tek bir çalışma alanında birleştirir." }
+    ],
+    "features": [
+      { "title": "Ürün Araştırması", "description": "Zaman harcamadan önce Amazon ürünlerini inceleyip eBay'de yeniden satışa uygunluğunu değerlendirin." },
+      { "title": "Amazon Fiyat Takibi", "description": "Tedarikçinin fiyatı veya stoku değiştiğinde bildirim alın, böylece eBay ilanlarınız her zaman doğru kalsın." },
+      { "title": "Kâr Hesaplama Aracı", "description": "Bir ürüne karar vermeden önce komisyonlar, kargo ve ürün maliyeti sonrası gerçek marjınızı görün." },
+      { "title": "Pazar Analizi", "description": "Bir ürünün eBay'de nasıl performans gösterdiğini kontrol edin — rekabet, fiyatlandırma ve talep sinyalleri." },
+      { "title": "Chrome Uzantısı", "description": "Gezinirken Amazon ve eBay ürün sayfalarından doğrudan ürün ve fiyat verisi çekin." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Keşfet", "description": "Ürün Araştırması ve Chrome Uzantısı ile aday ürünler bulun." },
+      { "step": "02", "title": "Karar Ver", "description": "Ürünün listelemeye değer olduğunu doğrulamak için Checkila Analizi ve kâr hesaplaması yapın." },
+      { "step": "03", "title": "Yayınla", "description": "eBay'de listeleyin ve fiyat ile stok takibini Checkila'ya bırakın, böylece hızlı tepki verebilirsiniz." }
+    ],
+    "faq": [
+      { "q": "eBay dropshipping aracı nedir?", "a": "eBay dropshipping aracı, stok tutmadan eBay'de ürün satan satıcıların ürün bulmasına, tedarikçi fiyatlarını takip etmesine ve ilanlarını tek yerden yönetmesine yardımcı olan bir yazılımdır. Checkila; ürün araştırması, Amazon fiyat takibi ve kâr hesaplamasını tam olarak bu iş akışı için bir araya getirir." },
+      { "q": "Checkila eBay dropshipping konusunda nasıl yardımcı olur?", "a": "Checkila, tedarik ettiğiniz ürünlerin Amazon fiyat ve stok durumunu izler, komisyonlar sonrası gerçek eBay kârınızı hesaplar; fırsatları ve riskleri size bildirerek güvenle listeleme ve fiyat güncelleme yapmanızı sağlar." },
+      { "q": "Checkila'yı kullanmak için eBay Store aboneliğine ihtiyacım var mı?", "a": "Hayır. Checkila, Store aboneliği olsun olmasın her türlü eBay satış düzeniyle birlikte çalışır. Gerçek eBay komisyonlarınız yine de Store seviyenize ve kategorinize bağlıdır." },
+      { "q": "Checkila'yı kodlama bilgisi veya teknik deneyim olmadan kullanabilir miyim?", "a": "Evet. Checkila bir web paneli ve Chrome uzantısından oluşur — hesaplarınızı bağlamak dışında herhangi bir kurulum gerekmez." },
+      { "q": "Checkila ABD dışındaki satıcılar için de çalışır mı?", "a": "Evet. Checkila birden fazla dili ve para birimini destekler; nereden sattığınızdan bağımsız olarak Amazon ve eBay ilanlarını takip eder." },
+      { "q": "Checkila, fiyatları Excel'de takip etmekten nasıl farklı?", "a": "Excel tabloları manuel kontrol gerektirir ve birkaç üründen sonra yönetilemez hale gelir. Checkila; fiyat ve stok takibini otomatikleştirir, kârınızı sizin yerinize hesaplar ve araştırma, fiyatlandırma ile ilanlarınızı tek bir sistemde tutar." }
+    ],
+    "cta": { "title": "Dropshipping'i daha akıllı yapın", "description": "Checkila'ya katılın ve eBay dropshipping'te tahmin yürütmeyi bırakın.", "button": "Ücretsiz Başla" }
+  },
+
+  "productResearch": {
+    "meta": {
+      "title": "eBay Ürün Araştırma Aracı | Checkila ile Kârlı Ürünler Bulun",
+      "description": "Checkila'nın ürün araştırma aracıyla eBay için kârlı ürünler bulun: Amazon sorgulama, rekabet analizi ve fiyat karşılaştırması tek yerde."
+    },
+    "hero": {
+      "eyebrow": "eBay Ürün Araştırma Aracı",
+      "h1": "eBay Ürün Araştırma Aracı",
+      "subhead": "Listelemeden önce herhangi bir ürünü değerlendirin — talep, rekabet ve fiyatlandırma yan yana."
+    },
+    "problems": [
+      { "problem": "Amazon'da saatlerce geziniyorsunuz ama gerçekte neyin satacağını bilmiyorsunuz.", "solution": "Checkila'nın ürün sorgulama özelliği, bir ürünü saatler değil dakikalar içinde değerlendirmeniz için gereken veriyi ortaya çıkarır." },
+      { "problem": "Bir ürün popüler görünüyor ama eBay'de zaten doymuş olup olmadığını anlayamıyorsunuz.", "solution": "Satıcı zekası ve rekabet verileri, bir ilan kategorisinin ne kadar kalabalık olduğunu gösterir." },
+      { "problem": "Bir ürünü listeliyorsunuz, sonra marjın buna değmeyecek kadar düşük olduğunu öğreniyorsunuz.", "solution": "Yayınlamadan önce fırsatı ve kâr potansiyelini değerlendirin, sonra değil." }
+    ],
+    "features": [
+      { "title": "Amazon Ürün Sorgulama", "description": "Araştırmanıza başlamak için bir Amazon ilanından doğrudan ürün detaylarını çekin." },
+      { "title": "Checkila Analizi", "description": "Bir ürün için talep, rekabet ve fiyatlandırmanın yapılandırılmış bir değerlendirmesini çalıştırın." },
+      { "title": "Satıcı Zekası", "description": "Diğer satıcıların benzer ürünleri nasıl fiyatlandırdığını ve konumlandırdığını görün." },
+      { "title": "Fiyat Karşılaştırması", "description": "Taahhüt etmeden önce Amazon maliyetini gerçekçi bir eBay satış fiyatıyla karşılaştırın." },
+      { "title": "Fırsat Değerlendirmesi", "description": "Önce neyi listeleyeceğinize öncelik verebilmeniz için bir ürünün potansiyelini puanlayın." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Ara", "description": "Bir ürünü anahtar kelime, kategori veya Amazon bağlantısıyla arayın." },
+      { "step": "02", "title": "Analiz Et", "description": "Checkila Analizi ile talep, rekabet ve tahmini marjı inceleyin." },
+      { "step": "03", "title": "Kısa Listeye Al", "description": "En güçlü adayları kaydedin ve ilan iş akışınıza taşıyın." }
+    ],
+    "faq": [
+      { "q": "eBay ürün araştırma aracı nedir?", "a": "Her kaynağı tek tek kontrol etmek yerine talep, rekabet ve fiyatlandırma verisini tek ekranda birleştirerek bir ürünün eBay'de listelemeye değer olup olmadığını değerlendirmenize yardımcı olan yazılımdır." },
+      { "q": "Checkila eBay satıcı zekasına yardımcı olur mu?", "a": "Evet. Checkila, listelemeden önce rekabeti değerlendirebilmeniz için benzer ilanların nasıl fiyatlandırıldığını ve konumlandırıldığını gösterir." },
+      { "q": "Checkila ürün araştırması Amazon ürünleriyle çalışır mı?", "a": "Evet. Bir ürünü doğrudan Amazon'dan sorgulayıp eBay'de yeniden satış için değerlendirebilirsiniz." },
+      { "q": "Checkila Analizi nasıl çalışır?", "a": "Checkila Analizi; bir ürünün fiyatlandırma, rekabet ve talep sinyallerini inceler ve listeleyip listelememeye karar vermenize yardımcı olacak yapılandırılmış bir değerlendirme sunar." },
+      { "q": "Ürün araştırması her Checkila planına dahil mi?", "a": "Ürün araştırması ve Checkila Analizi kredi tabanlı bir sistemle çalışır; kullanabileceğiniz analiz sayısı planınıza bağlıdır." },
+      { "q": "Aynı anda birden fazla ürünü karşılaştırabilir miyim?", "a": "Evet, hangilerini listeleyeceğinize karar vermeden önce birden fazla ürünü araştırıp kısa listeye alabilirsiniz." }
+    ],
+    "cta": { "title": "Ürünleri güvenle araştırın", "description": "Hangi ürünlerin listelemeye değer olduğunu tahmin etmeyi bırakın.", "button": "Araştırmaya Başla" }
+  },
+
+  "amazonTracking": {
+    "meta": {
+      "title": "eBay Dropshipping için Amazon Fiyat Takibi | Checkila",
+      "description": "Checkila ile Amazon fiyat ve stok değişikliklerini otomatik olarak takip edin; eBay dropshipping marjınızı manuel kontrol yapmadan koruyun."
+    },
+    "hero": {
+      "eyebrow": "Amazon Fiyat Takibi",
+      "h1": "eBay Dropshipping için Amazon Fiyat Takibi",
+      "subhead": "Sürekli manuel kontrole gerek kalmadan Amazon fiyat değişikliklerini ve stok hareketlerini takip edin."
+    },
+    "problems": [
+      { "problem": "Amazon fiyatı değişti ve eBay ilanınız artık kârsız.", "solution": "Checkila, Amazon fiyatlarını izler ve marjınız erimeden sizi uyarır." },
+      { "problem": "Bir tedarikçi ürünü stokta kalmadı ve siz satmaya devam ettiniz.", "solution": "Stok uyarıları, takip ettiğiniz bir ürün tükendiği anda size haber verir." },
+      { "problem": "Her gün düzinelerce Amazon ilanını elle tekrar kontrol etmek sürdürülebilir değil.", "solution": "Checkila izlemeyi otomatikleştirir; siz yalnızca gerçekten bir şey değiştiğinde harekete geçersiniz." }
+    ],
+    "features": [
+      { "title": "Sürekli Fiyat İzleme", "description": "Tedarik ettiğiniz her ürünün Amazon fiyatını otomatik olarak takip edin." },
+      { "title": "Stok Uyarıları", "description": "Bir ürün stokta kalmadığında veya tekrar geldiğinde anında haberdar olun." },
+      { "title": "Fiyat Değişikliği Uyarıları", "description": "Takip ettiğiniz bir fiyat değiştiğinde Telegram üzerinden veya panelde bildirim alın." },
+      { "title": "Geçmiş Fiyat Görünümü", "description": "Taahhüt etmeden önce bir ürünün fiyatının zaman içinde nasıl değiştiğini görün." },
+      { "title": "eBay Marj Koruması", "description": "Fiyat artışlarını erken yakalayın, para kaybetmeden önce eBay ilanınızı güncelleyin." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Ürün ekle", "description": "Tedarik ettiğiniz Amazon ürününü takip listenize ekleyin." },
+      { "step": "02", "title": "Amazon'u izle", "description": "Checkila, sizin adınıza fiyat ve stok durumunu kontrol eder." },
+      { "step": "03", "title": "Değişiklikleri tespit et", "description": "Fiyat veya stok durumu değiştiği anda uyarı alın." },
+      { "step": "04", "title": "Fiyatlandırmanızı koruyun", "description": "Bir değişiklik kârınızı etkilemeden eBay ilanınızı güncelleyin." }
+    ],
+    "faq": [
+      { "q": "Checkila ile Amazon fiyatlarını takip edebilir miyim?", "a": "Evet. Checkila, eklediğiniz ürünlerin Amazon fiyatını sürekli izler ve değiştiğinde sizi bilgilendirir." },
+      { "q": "Checkila Amazon stoklarını izler mi?", "a": "Evet. Stok durumu fiyatla birlikte takip edilir, böylece bir tedarikçi ürünü tükendiğinde bilirsiniz." },
+      { "q": "Fiyat değişikliği uyarıları ne kadar hızlı geliyor?", "a": "Checkila, takip edilen ürünleri düzenli aralıklarla kontrol eder ve bir değişiklik tespit edildiği anda sizi bilgilendirir." },
+      { "q": "Telegram üzerinden fiyat ve stok uyarısı alabilir miyim?", "a": "Evet. Checkila Telegram botunu bağlayarak paneli açık tutmadan fiyat, stok ve sipariş uyarıları alabilirsiniz." },
+      { "q": "Kaç ürün takip edebilirim?", "a": "Takip edebileceğiniz ürün sayısı Checkila planınıza bağlıdır." },
+      { "q": "Fiyat takibi tüm Amazon pazaryerlerinde çalışır mı?", "a": "Checkila, eBay dropshipping'de yaygın olarak kullanılan Amazon ilanları için tasarlanmıştır; pazaryeri kapsamı için planınızı kontrol edin veya destek ekibiyle iletişime geçin." }
+    ],
+    "cta": { "title": "Bir daha asla fiyat değişikliğini kaçırmayın", "description": "Amazon'u izlemeyi Checkila'ya bırakın, siz satışa odaklanın.", "button": "Ürünleri Takip Et" }
+  },
+
+  "profitCalculator": {
+    "meta": {
+      "title": "Dropshipping Satıcıları için eBay Kâr Hesaplama Aracı | Checkila",
+      "description": "Checkila'nın kâr hesaplama aracıyla gerçek eBay dropshipping kârınızı hesaplayın — ürün maliyeti, eBay komisyonları, kargo ve reklam harcaması dahil."
+    },
+    "hero": {
+      "eyebrow": "eBay Kâr Hesaplama Aracı",
+      "h1": "Dropshipping Satıcıları için eBay Kâr Hesaplama Aracı",
+      "subhead": "Listelemeden önce gerçek marjınızı bilin — ürün maliyeti, eBay komisyonları, kargo ve promosyon harcaması tek bir rakamda."
+    },
+    "problems": [
+      { "problem": "Komisyonlar sonrası elinize gerçekte ne geçeceğini bilmeden bir ürünü listeliyorsunuz.", "solution": "Checkila'nın kâr hesaplama aracı, ilanı yayınlamadan önce beklenen kârı gösterir." },
+      { "problem": "eBay komisyonları, kargo ve reklam harcaması farklı sekmelere ve fişlere dağılmış durumda.", "solution": "Rakamlarınızı bir kez girin, tüm dökümü tek yerde görün." },
+      { "problem": "Kağıt üzerinde 'kârlı' görünen bir ürün, komisyonlar sonrası zarara dönüşüyor.", "solution": "İlk satışınızdan sonra değil, karar vermeden önce nihai değer ücretini ve promosyonlu ilan maliyetini hesaba katın." }
+    ],
+    "features": [
+      { "title": "Tam Komisyon Dökümü", "description": "Nihai değer ücretini, sipariş başına ücreti ve promosyon maliyetini ayrı kalemler olarak görün." },
+      { "title": "Gerçek Net Kâr", "description": "Sadece bir ciro rakamı değil, net kâr ve marj yüzdesi elde edin." },
+      { "title": "Senaryo Karşılaştırması", "description": "Listelemeden önce fiyatı, kargoyu veya reklam harcamasını değiştirerek kârın nasıl etkilendiğini görün." },
+      { "title": "Başabaş Fiyatlandırma", "description": "Maliyetlerinizi karşılayan minimum fiyatı bulun." },
+      { "title": "İş Akışınızın Bir Parçası", "description": "Asla körlemesine listelemek zorunda kalmamak için ürün araştırmasıyla birlikte kullanın." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Maliyetlerinizi girin", "description": "Ürün maliyetini, kargoyu ve beklenen satış fiyatını ekleyin." },
+      { "step": "02", "title": "Komisyonları ekleyin", "description": "eBay nihai değer ücretini, promosyon yüzdesini ve diğer maliyetleri dahil edin." },
+      { "step": "03", "title": "Kârınızı görün", "description": "Net kârı, marjı ve başabaş fiyatını anında inceleyin." }
+    ],
+    "faq": [
+      { "q": "Checkila eBay dropshipping kârımı hesaplayabilir mi?", "a": "Evet. Ürün maliyetinizi, kargoyu ve eBay komisyonlarını girin; Checkila net kârınızı ve marjınızı gösterir." },
+      { "q": "Kâr hesaplama aracı eBay nihai değer ücretlerini içeriyor mu?", "a": "Evet, sipariş başına ücret, kargo maliyeti ve promosyonlu ilan harcamasıyla birlikte; böylece sonuç gerçek ödemenizi yansıtır." },
+      { "q": "eBay dropshipping için iyi bir kâr marjı nedir?", "a": "Birçok satıcı tüm komisyonlar sonrası %10-15 aralığında bir net marjı hedefler; komisyonları, kargoyu ve reklam harcamasını rahatça karşılayıp yeniden yatırıma yer bırakan her değer makul bir hedeftir." },
+      { "q": "Farklı fiyatlandırma senaryolarını karşılaştırabilir miyim?", "a": "Evet, her seçeneğin nihai kârınızı nasıl etkilediğini görmek için fiyat, kargo veya promosyon girdilerinizi değiştirebilirsiniz." },
+      { "q": "Kâr hesaplama aracı, eBay komisyon hesaplayıcısıyla aynı mı?", "a": "İlişkili ama farklılar: komisyon hesaplayıcı yalnızca eBay'in ücret yapısına odaklanırken, kâr hesaplama aracı komisyonları ürün maliyetiniz ve kargonuzla birleştirerek gerçek eve götüreceğiniz kârı gösterir." },
+      { "q": "Kâr hesaplama aracını kullanmak için hesaba mı ihtiyacım var?", "a": "Tam kâr hesaplama aracı, kaydolduktan sonra Checkila panelinizin içinde kullanılabilir." }
+    ],
+    "cta": { "title": "Listelemeden önce marjınızı bilin", "description": "Gerçek eBay dropshipping kârını saniyeler içinde hesaplayın.", "button": "Kârı Hesapla" }
+  },
+
+  "marketAnalysis": {
+    "meta": {
+      "title": "eBay Pazar Analizi ve Satıcı Zekası | Checkila",
+      "description": "Listelemeden önce Checkila ile eBay pazar talebini, fiyatlandırmasını ve rekabetini analiz edin — dropshipper'lar için veriye dayalı satıcı zekası."
+    },
+    "hero": {
+      "eyebrow": "eBay Pazar Analizi",
+      "h1": "eBay Pazar Analizi ve Satıcı Zekası",
+      "subhead": "Envanter veya zaman ayırmadan önce bir ürünün eBay'de gerçekte nasıl performans gösterdiğini görün."
+    },
+    "problems": [
+      { "problem": "Bir nişin büyüdüğünü mü yoksa zaten doymuş mu olduğunu anlayamıyorsunuz.", "solution": "Checkila'nın pazar analizi, bir kategori veya ürün için talep ve rekabet sinyallerini gösterir." },
+      { "problem": "Rakip satıcılar farklı fiyatlandırıyor ama nedenini bilmiyorsunuz.", "solution": "Pazarın gerçekte nerede durduğunu anlamak için benzer ilanları yan yana görün." },
+      { "problem": "Pazarı planlamak yerine ona tepki veriyorsunuz.", "solution": "Rakiplerinizin önüne geçmek için trend ve talep verisini kullanarak sırada neyi listeleyeceğinize karar verin." }
+    ],
+    "features": [
+      { "title": "Talep Sinyalleri", "description": "Bir ürünün veya kategorinin eBay'de ne kadar ilgi gördüğünü anlayın." },
+      { "title": "Rakip Fiyatlandırması", "description": "Benzer ilanların aktif satıcılar arasında nasıl fiyatlandırıldığını görün." },
+      { "title": "Kategori Trendleri", "description": "Kalabalıklaşmadan önce büyüyen kategorileri yakalayın." },
+      { "title": "İlan Karşılaştırması", "description": "Planladığınız ilanı hâlihazırda satan ürünlerle karşılaştırın." },
+      { "title": "Veriye Dayalı Kararlar", "description": "İlan kararlarınızı tahmin yerine pazar verisine dayandırın." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Bir pazar seçin", "description": "Analiz etmek için bir ürün kategorisi veya belirli bir ilan seçin." },
+      { "step": "02", "title": "Veriyi inceleyin", "description": "O pazar için talep, fiyatlandırma ve rakip sinyallerini görün." },
+      { "step": "03", "title": "Harekete geçin", "description": "Neyi listeleyeceğinize, nasıl fiyatlandıracağınıza veya sırada nereye bakacağınıza karar verin." }
+    ],
+    "faq": [
+      { "q": "eBay pazar analizi neyi gösterir?", "a": "Bir ürün veya kategorinin eBay'de nasıl performans gösterdiğini gösterir — talep sinyalleri, rakip fiyatlandırması ve alanın ne kadar kalabalık olduğu — böylece girmeye değer olup olmadığına karar verebilirsiniz." },
+      { "q": "Pazar analizi özellikle dropshipping için yararlı mı?", "a": "Evet. Dropshipper'lar, tedarik etmeye karar vermeden önce aşırı doymuş kategorilerden kaçınmak ve gerçek, sürdürülebilir talebi olan ürünleri bulmak için kullanır." },
+      { "q": "Belirli bir ürün için rakip fiyatlandırmasını görebilir miyim?", "a": "Evet, Checkila diğer satıcıların benzer ürünleri nasıl fiyatlandırdığını görebilmeniz için benzer ilanları ortaya çıkarır." },
+      { "q": "Pazar verisi ne sıklıkla güncelleniyor?", "a": "Pazar verisi düzenli olarak yenilenir; böylece analiziniz eski anlık görüntüleri değil, güncel ilanları ve fiyatlandırmayı yansıtır." },
+      { "q": "Pazar Analizi ve Ürün Araştırmasına ayrı ayrı ihtiyacım var mı?", "a": "Birlikte çalışırlar: Ürün Araştırması belirli bir ürünü değerlendirirken, Pazar Analizi onun etrafındaki daha geniş kategoriye veya rekabet ortamına bakar." },
+      { "q": "Pazar analizi her plana dahil mi?", "a": "Kullanılabilirlik Checkila planınıza bağlıdır; nelerin dahil olduğunu görmek için fiyatlandırma sayfasını kontrol edin." }
+    ],
+    "cta": { "title": "Listelemeden önce pazarı anlayın", "description": "Gerçek eBay verisine dayalı ilan kararları verin.", "button": "Pazar Analizini Keşfet" }
+  },
+
+  "inventoryTracking": {
+    "meta": {
+      "title": "eBay Envanter ve Sipariş Takip Yazılımı | Checkila",
+      "description": "Checkila'nın envanter ve sipariş takip araçlarıyla eBay siparişlerini, kargolarını ve Amazon tedarikçi stoklarını tek panelde takip edin."
+    },
+    "hero": {
+      "eyebrow": "Envanter ve Sipariş Takibi",
+      "h1": "Excel Tablosu Olmadan eBay Envanter ve Sipariş Takibi",
+      "subhead": "Hiçbir şeyin gözden kaçmaması için tedarikçi stokunu ve alıcı siparişlerini senkronize tutun."
+    },
+    "problems": [
+      { "problem": "Bir tedarikçinin stoku tükendi ve bunu bir alıcı şikayet edene kadar fark etmediniz.", "solution": "Checkila, Amazon tedarikçi stokunu takip eder; böylece bir müşteri hizmetleri sorununa dönüşmeden önce haberiniz olur." },
+      { "problem": "eBay sipariş durumunu birden fazla sekmede elle kontrol ediyorsunuz.", "solution": "eBay satışlarınız için sipariş ve kargo durumunu tek panelde görün." },
+      { "problem": "Ürün izlemeyi sipariş takibinden ayırt etmek zor.", "solution": "Checkila, tedarikçi tarafındaki ürün izlemeyi (fiyat, stok) alıcı tarafındaki sipariş takibinden (kargo, teslimat) ayırır; böylece ikisi de netleşir." }
+    ],
+    "features": [
+      { "title": "Tedarikçi Stok İzleme", "description": "Tedarik ettiğiniz her şey için Amazon ürün stok durumunu takip edin." },
+      { "title": "Sipariş Durumu Takibi", "description": "Her eBay siparişinin ödemeden teslimata kadar nerede olduğunu görün." },
+      { "title": "Kargo Görünürlüğü", "description": "Panelden çıkmadan kargo sürecini takip edin." },
+      { "title": "Yeni Sipariş Uyarıları", "description": "Yeni bir eBay siparişi geldiği anda bildirim alın." },
+      { "title": "Merkezi Görünüm", "description": "Ürün izleme ve sipariş takibi tek bir bağlantılı çalışma alanında yaşar." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Hesaplarınızı bağlayın", "description": "eBay ve Amazon hesaplarınızı Checkila'ya bağlayın." },
+      { "step": "02", "title": "Otomatik takip edin", "description": "Checkila, tedarikçi stokunu ve sipariş durumunu sürekli izler." },
+      { "step": "03", "title": "Uyarı alın", "description": "Yeni siparişler, stok sorunları ve kargo güncellemeleri için uyarı alın." }
+    ],
+    "faq": [
+      { "q": "Checkila eBay siparişlerini takip ediyor mu?", "a": "Evet. Checkila, eBay satışlarınız için sipariş ve kargo durumunu gösterir ve yeni siparişler geldiğinde sizi uyarabilir." },
+      { "q": "Envanter takibi sipariş takibiyle aynı mı?", "a": "Hayır. Envanter/ürün takibi Amazon tedarikçinizin fiyat ve stokunu izlerken, sipariş takibi eBay alıcınızın siparişini ödemeden teslimata kadar takip eder." },
+      { "q": "Yeni eBay siparişleri hakkında bildirim alabilir miyim?", "a": "Evet, yeni sipariş uyarıları panelden veya Checkila Telegram botu üzerinden iletilebilir." },
+      { "q": "Checkila, tedarikçilerim için Amazon stokunu takip ediyor mu?", "a": "Evet, Checkila tedarik için eklediğiniz Amazon ürünlerinin stok durumunu izler." },
+      { "q": "Birden fazla eBay hesabını yönetebilir miyim?", "a": "Hesap desteği Checkila planınıza bağlıdır; birden fazla mağaza yönetiyorsanız destek ekibiyle iletişime geçin." },
+      { "q": "Sipariş takibi eBay'in kendi araçlarının yerini alıyor mu?", "a": "Checkila, eBay'in kendi sipariş yönetiminin yerini almak yerine, ürün ve fiyat izlemesiyle birlikte size birleşik bir görünüm sunarak eBay'in satıcı araçlarını tamamlar." }
+    ],
+    "cta": { "title": "Stok ve siparişleri senkronize tutun", "description": "eBay işinizi takip etmek için sekmeler arasında gidip gelmeyi bırakın.", "button": "Takibe Başla" }
+  },
+
+  "chromeExtension": {
+    "meta": {
+      "title": "eBay ve Amazon Satıcıları için Checkila Chrome Uzantısı",
+      "description": "Checkila Chrome uzantısı, gezinirken Amazon ve eBay'den ürün ve fiyat verisi çeker; dropshipping ürün araştırması için tasarlandı."
+    },
+    "hero": {
+      "eyebrow": "Chrome Uzantısı",
+      "h1": "eBay ve Amazon Satıcıları için Checkila Chrome Uzantısı",
+      "subhead": "Zaten bulunduğunuz Amazon veya eBay sayfasından ayrılmadan ürünleri ve fiyatlandırmayı araştırın."
+    },
+    "problems": [
+      { "problem": "Amazon ile araştırma aracınız arasında ürün detaylarını kopyala-yapıştır yapmak zaman kaybettiriyor.", "solution": "Checkila uzantısı, görüntülediğiniz sayfadan doğrudan ürün verisi çeker." },
+      { "problem": "Gezinme ile analiz arasında geçiş yaparken yerinizi kaybediyorsunuz.", "solution": "Sekme değiştirmeden doğrudan Amazon veya eBay ilanından hızlı bir değerlendirme yapın." },
+      { "problem": "Gezinirken bulduğunuz bir ürünü elle takip etmeyi unutmak kolay.", "solution": "Bundan sonra otomatik olarak takip edilmesi için tek tıkla Checkila'ya ekleyin." }
+    ],
+    "features": [
+      { "title": "Tek Tıkla Ürün İçe Aktarma", "description": "Amazon veya eBay sayfalarından ürün detaylarını anında Checkila'ya çekin." },
+      { "title": "Sayfa İçi Araştırma", "description": "İlana hâlâ göz atarken fiyatlandırma ve analiz verisini görün." },
+      { "title": "Anında Takip", "description": "Sayfadan ayrılmadan bir ürünü Amazon fiyat takip listenize ekleyin." },
+      { "title": "Hareket Halinde Satıcı Bilgisi", "description": "Bulduğunuz herhangi bir ilan için rekabet ve fiyatlandırma bağlamını kontrol edin." },
+      { "title": "Hafif ve Hızlı", "description": "Siz gezinip araştırırken işinize karışmayacak şekilde tasarlandı." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Yükle", "description": "Checkila uzantısını birkaç saniyede Chrome'a ekleyin." },
+      { "step": "02", "title": "Gezin", "description": "Herhangi bir Amazon veya eBay ürün sayfasını her zamanki gibi açın." },
+      { "step": "03", "title": "Anında araştırın", "description": "Verileri Checkila'ya çekin veya tek tıkla ürünü takip etmeye başlayın." }
+    ],
+    "faq": [
+      { "q": "Checkila'nın Chrome uzantısı var mı?", "a": "Evet. Checkila Chrome uzantısı, Amazon ve eBay sayfalarından ürün ve fiyat verisini doğrudan Checkila hesabınıza çekmenizi sağlar." },
+      { "q": "Chrome uzantısı ne işe yarar?", "a": "Araştırma için ürün detaylarını içe aktarır ve gezindiğiniz sayfadan ayrılmadan bir ürünün Amazon fiyatını takip etmeye başlamanızı sağlar." },
+      { "q": "Chrome uzantısı ücretsiz mi?", "a": "Uzantıyı yüklemek ücretsizdir; üzerinden çekebileceğiniz veri ve analiz Checkila planınıza bağlıdır." },
+      { "q": "Uzantı hem Amazon hem eBay'de çalışıyor mu?", "a": "Evet, hem Amazon hem eBay ilan sayfalarında ürün araştırmasını destekleyecek şekilde tasarlandı." },
+      { "q": "Uzantıyı kullanmak için Checkila hesabına ihtiyacım var mı?", "a": "Evet, içe aktarılan ürünlerin ve takibin panelinizle senkronize olması için Checkila hesabınızla giriş yapın." },
+      { "q": "Verilerim Checkila uzantısıyla güvende mi?", "a": "Uzantı, araştırmanızı desteklemek için yalnızca ürün sayfası verisini okur; ayrıntılar için uzantı gizlilik politikamıza bakın." }
+    ],
+    "cta": { "title": "Sayfadan ayrılmadan araştırın", "description": "Checkila Chrome uzantısını ekleyin ve iş akışınızı hızlandırın.", "button": "Uzantıyı Alın" }
+  },
+
+  "telegramBot": {
+    "meta": {
+      "title": "Checkila Telegram Botu: Hareket Halinde eBay ve Amazon Uyarıları",
+      "description": "Checkila botuyla Amazon fiyat ve stok uyarılarını, yeni eBay sipariş bildirimlerini Telegram'da alın."
+    },
+    "hero": {
+      "eyebrow": "Telegram Botu",
+      "h1": "eBay ve Amazon Uyarıları için Checkila Telegram Botu",
+      "subhead": "Paneli açık tutmak zorunda kalmadan fiyat değişikliklerini, stok uyarılarını ve yeni siparişleri doğrudan Telegram'a gönderin."
+    },
+    "problems": [
+      { "problem": "Bir fiyat değişikliğini ancak paneli kontrol ettiğinizde fark ediyorsunuz.", "solution": "Checkila Telegram botu, bir şey değiştiği anda size bildirim gönderir." },
+      { "problem": "Yeni eBay siparişleri saatlerce fark edilmeden kalabiliyor.", "solution": "Yeni bir sipariş geldiğinde anında Telegram bildirimi alın." },
+      { "problem": "Güncellemeler için birden fazla kanalı kontrol etmek sizi yavaşlatıyor.", "solution": "Fiyat, stok ve sipariş uyarılarını tek bir Telegram sohbetinde birleştirin." }
+    ],
+    "features": [
+      { "title": "Fiyat Uyarıları", "description": "Takip edilen bir Amazon fiyatı değiştiği anda bildirim alın." },
+      { "title": "Stok Uyarıları", "description": "Tedarik ettiğiniz bir ürün stokta kalmadığında hemen haberdar olun." },
+      { "title": "Yeni Sipariş Uyarıları", "description": "Yeni bir eBay siparişi geldiği anda Telegram mesajı alın." },
+      { "title": "Panel Gerektirmez", "description": "Tüm gün bir tarayıcı sekmesi açık tutmadan bilgilenin." },
+      { "title": "Basit Kurulum", "description": "Checkila hesabınızı birkaç adımda bota bağlayın." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Botu açın", "description": "Checkila Telegram botuyla bir sohbet başlatın." },
+      { "step": "02", "title": "Hesabınızı bağlayın", "description": "Onu Checkila panelinize bağlayın." },
+      { "step": "03", "title": "Uyarı almaya başlayın", "description": "O andan itibaren fiyat, stok ve sipariş uyarılarını otomatik olarak alın." }
+    ],
+    "faq": [
+      { "q": "Telegram'da fiyat ve stok uyarısı alabilir miyim?", "a": "Evet. Bağlandıktan sonra Checkila Telegram botu, takip ettiğiniz ürünler için fiyat ve stok uyarıları gönderir." },
+      { "q": "Telegram botu beni yeni eBay siparişleri hakkında bilgilendiriyor mu?", "a": "Evet, yeni sipariş bildirimleri geldikleri anda bot üzerinden iletilebilir." },
+      { "q": "Telegram botunu kullanmak ücretsiz mi?", "a": "Botu bağlamak ücretsizdir; hangi uyarıları alacağınız Checkila planınıza bağlıdır." },
+      { "q": "Checkila Telegram botunu nasıl bağlarım?", "a": "Botu Checkila panel ayarlarınızdan açın ve hesabınızı bağlamak için bağlantı adımlarını izleyin." },
+      { "q": "Belirli uyarı türlerini kapatabilir miyim?", "a": "Uyarı tercihleri Checkila hesap ayarlarınızdan yönetilebilir." },
+      { "q": "Bot panelin yerini mi alıyor?", "a": "Hayır, onu tamamlıyor — bot anlık uyarılar içindir, panel ise araştırma, analiz ve ilan yönetimi yaptığınız yerdir." }
+    ],
+    "cta": { "title": "Zaten olduğunuz yerde uyarı alın", "description": "Checkila Telegram botunu bir dakikadan kısa sürede bağlayın.", "button": "Telegram Botunu Aç" }
+  },
+
+  "ebayFeeCalculator": {
+    "meta": {
+      "title": "eBay Komisyon Hesaplayıcı ve 2026 Ücret Rehberi | Checkila",
+      "description": "eBay'in komisyon olarak gerçekte ne kadar aldığını görün. Kategori ve Store seviyesine göre güncel nihai değer ücreti oranları, formül ve tam SSS."
+    },
+    "hero": {
+      "eyebrow": "eBay Komisyonları, Açıklandı",
+      "h1": "eBay Komisyon Hesaplayıcı ve Eksiksiz 2026 Ücret Rehberi",
+      "subhead": "eBay komisyon olarak ne kadar alıyor? İşte güncel oran yapısı, arkasındaki formül ve satıcıların en çok sorduğu soruların yanıtları."
+    },
+    "intro": "Her eBay satışında birden fazla ücret devreye girer: satıştan alınan bir nihai değer ücreti, küçük bir sipariş başına ücret, ücretsiz ilan hakkınızın dışına çıktığınızda listeleme ücretleri ve promosyonlu ilanlar veya ödeme işleme gibi isteğe bağlı maliyetler. Bu sayfa, 2026 yılında bu ücretlerin kategoriye ve Store abonelik seviyesine göre tam olarak nasıl hesaplandığını anlatır; böylece güvenle fiyatlandırma yapabilirsiniz. Belirli bir ilan için tam rakamlarınızı hesaplamak üzere Checkila panelinizin içindeki hesaplayıcıyı kullanın.",
+    "feeTypes": [
+      { "name": "Nihai değer ücreti (FVF)", "what": "Bir ürün satıldığında alınan ana pazaryeri komisyonu.", "how": "Toplam satışın (ürün fiyatı + kargo + varsa vergi) bir yüzdesi, artı küçük ve sabit bir sipariş başına ücret.", "who": "Satıcı" },
+      { "name": "Sipariş başına ücret", "what": "Ürün başına değil, ödeme işlemi başına bir kez uygulanan sabit ücret.", "how": "10 $ ve altındaki siparişlerde genellikle 0,30 $, 10 $ üzerindeki siparişlerde 0,40 $.", "who": "Satıcı" },
+      { "name": "Listeleme ücreti (Insertion fee)", "what": "Aylık ücretsiz hakkınızı kullandıktan sonra bir ilan oluşturduğunuzda alınır.", "how": "Kategoriye ve Store abonelik seviyesine göre değişen, ilan başına sabit bir ücret.", "who": "Satıcı" },
+      { "name": "Promosyonlu İlan ücreti", "what": "Bir ilanın görünürlüğünü artırmak için reklam maliyeti.", "how": "Genellikle satış fiyatının bir yüzdesi, yalnızca promosyonlu bir ilan gerçekten satıldığında alınır.", "who": "Satıcı" },
+      { "name": "Ödeme işleme ücreti", "what": "Alıcının ödemesini eBay'in yönetilen ödemeleri üzerinden işleme maliyeti.", "how": "Ödemenin bir yüzdesi artı ülkeye göre değişen küçük sabit bir tutar.", "who": "Satıcı" },
+      { "name": "Uluslararası işlem ücreti", "what": "Sınır ötesi satışlar veya döviz çevrimi için geçerlidir.", "how": "Uluslararası gönderim yaparken veya para birimi çevrilirken satışa eklenen bir yüzde.", "who": "Satıcı" },
+      { "name": "Store abonelik ücreti", "what": "Bir eBay Store planının aylık veya yıllık maliyeti.", "how": "Daha büyük ücretsiz ilan hakları ve daha düşük ücret seviyeleri sunan, seviyeye göre sabit bir fiyat (Starter, Basic, Premium, Anchor, Enterprise).", "who": "Satıcı" }
+    ],
+    "storeTiers": [
+      { "tier": "Store Yok", "monthlyFee": "0 $", "typicalFvf": "7.500 $'a kadar %13,6 + üzeri için %2,35 (çoğu kategoride)" },
+      { "tier": "Starter", "monthlyFee": "7,95 $ (yıllık ödemede 4,95 $)", "typicalFvf": "7.500 $'a kadar %13,6 + üzeri için %2,35 (çoğu kategoride)" },
+      { "tier": "Basic", "monthlyFee": "27,95 $ (yıllık ödemede 21,95 $)", "typicalFvf": "~%12,7 (2.500 $'a kadar) + üzeri için %2,35 (birçok kategoride)" },
+      { "tier": "Premium", "monthlyFee": "74,95 $ (yıllık ödemede 59,95 $)", "typicalFvf": "~%12,7 (2.500 $'a kadar) + üzeri için %2,35 (birçok kategoride)" },
+      { "tier": "Anchor", "monthlyFee": "349,95 $ (yıllık ödemede 299,95 $)", "typicalFvf": "Genellikle 2.500 $'a kadar %12,7, belirli kategorilerde daha düşük" }
+    ],
+    "formula": [
+      { "label": "Toplam Satış", "formula": "Ürün fiyatı + alıcının ödediği kargo + satış vergisi", "explanation": "eBay'in çoğu ücret yüzdesini uyguladığı taban tutar budur." },
+      { "label": "Nihai Değer Ücreti", "formula": "Toplam Satış × FVF oranı + sipariş başına sabit ücret", "explanation": "eBay'in satıştan aldığı temel komisyon." },
+      { "label": "Promosyon Ücreti", "formula": "Toplam Satış × promosyon %", "explanation": "Yalnızca promosyonlu bir ilan satıldığında alınır." },
+      { "label": "Net Kâr", "formula": "Toplam Satış − Toplam Ücretler − Kargo Maliyeti − Ürün Maliyeti", "explanation": "Her ücret ve maliyet hesaba katıldıktan sonra elinizde gerçekte kalan tutar." }
+    ],
+    "glossary": [
+      { "term": "Nihai değer ücreti", "definition": "Bir ürün satıldığında eBay'in aldığı komisyon; toplam satışın bir yüzdesi artı küçük bir sipariş başına ücret olarak hesaplanır." },
+      { "term": "Listeleme ücreti (Insertion fee)", "definition": "Aylık ücretsiz hakkınız kullanıldıktan sonra bir ilan oluşturmak için alınan ücret." },
+      { "term": "Sipariş başına ücret", "definition": "Siparişte kaç ürün olduğuna bakılmaksızın, ödeme işlemi başına bir kez uygulanan sabit ücret." },
+      { "term": "Store aboneliği", "definition": "Daha büyük ücretsiz ilan hakları ve genellikle daha düşük nihai değer ücretleri sağlayan aylık veya yıllık plan." },
+      { "term": "Sıfır listeleme ücretli hak", "definition": "Listeleme ücreti alınmayan aylık ilan kotası." },
+      { "term": "Başabaş fiyatı", "definition": "Tüm ücretleri ve maliyetleri karşılayan, kârın sıfır olduğu minimum fiyat." },
+      { "term": "Net kâr", "definition": "Satış fiyatından tüm ücretler, kargo maliyeti ve ürün maliyeti düşüldükten sonra kalan tutar." }
+    ],
+    "faq": [
+      { "q": "eBay komisyon olarak ne kadar alıyor?", "a": "Kategorinize, Store aboneliğinize ve fiyatınıza bağlıdır. eBay genellikle %9-15 aralığında bir nihai değer ücreti artı küçük bir sipariş başına ücret alır; bunun üzerine listeleme, promosyon veya uluslararası ücretler eklenebilir." },
+      { "q": "eBay ücretleri nasıl hesaplanıyor?", "a": "Ücretler Toplam Satış üzerinden hesaplanır — ürün fiyatı artı varsa kargo ve vergi. Nihai değer ücreti bu tabana uygulanır; promosyon veya listeleme ücreti gibi diğer masraflar ayrıca eklenir." },
+      { "q": "eBay yüzde kaç alıyor?", "a": "Yüzdeler kategoriye ve Store seviyesine göre değişir; nihai değer ücreti genellikle %9-15 civarındadır ve birçok kategoride satışın daha yüksek kısımlarında daha düşük dilimler uygulanır." },
+      { "q": "Ürün satılmazsa eBay ücret alıyor mu?", "a": "Aylık ücretsiz hakkınız kullanıldıktan sonra, bir ilan oluşturduğunuzda listeleme ücreti alınır ve ürün satılmasa bile genellikle iade edilmez." },
+      { "q": "Gereksiz eBay ücretlerinden nasıl kaçınırım?", "a": "Doğru kategoriyi ve ilan formatını seçin, aylık ücretsiz ilan hakkınızı veya bir Store aboneliğini kullanın ve promosyonlu ilan harcamasını rastgele değil bilinçli şekilde uygulayın." },
+      { "q": "eBay Store aboneliği için ödeme yapmaya değer mi?", "a": "Yüksek hacimli satıcılar için genellikle evet — Store'lar birçok kategoride daha büyük ücretsiz ilan hakları ve daha düşük ücret dilimleri sağlar. Düşük hacimli satıcılar aylık maliyeti gerçekte ne kadar tasarruf edeceğiyle karşılaştırmalı." },
+      { "q": "Hâlâ PayPal ücretleriyle uğraşmam gerekiyor mu?", "a": "Çoğunlukla hayır. eBay'in yönetilen ödemeleri artık çoğu satıcı için ödeme sürecini yönetiyor, bu yüzden PayPal artık varsayılan ödeme yöntemi değil." },
+      { "q": "2026'da eBay'de iyi bir kâr marjı nedir?", "a": "Birçok satıcı tüm ücretler, kargo ve ürün maliyeti sonrası %10-15 aralığında bir net marjı hedefler; maliyetlerinizi rahatça karşılayıp yeniden yatırıma yer bırakan her değer sağlıklı bir hedeftir." }
+    ],
+    "cta": { "title": "Tam rakamınızı öğrenin", "description": "Bu rehber genel ücret yapısını kapsar. Kendi ilanınız için Checkila içindeki tam eBay komisyon hesaplayıcısını kullanın.", "button": "Hesaplayıcıyı Aç" }
+  }
+}

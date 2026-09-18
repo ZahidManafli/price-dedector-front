@@ -1,17 +1,32 @@
 {
   "navigation": {
+    "home": "Home",
     "features": "Features",
     "plans": "Plans",
     "contact": "Contact",
     "chromeExtension": "Checkila Chrome Extension",
     "telegramBot": "Checkila Telegram Bot"
   },
+  "sections": {
+    "whatsIncluded": "What's included",
+    "feeTypesTitle": "Types of eBay fees",
+    "storeTiersTitle": "eBay Store subscription tiers",
+    "formulaTitle": "How the numbers add up",
+    "glossaryTitle": "eBay fee terms you should know"
+  },
   "hero": {
     "eyebrow": "Automated Reseller Platform",
-    "title": "Monitor Amazon pricing. List to eBay. Repeat.",
-    "subtitle": "Track products across Amazon, analyze opportunities with Checkila intelligence, and publish to eBay—all in one workflow.",
+    "title": "eBay Dropshipping Tool & E-Commerce Automation Platform",
+    "tagline": "Monitor Amazon pricing. List to eBay. Repeat.",
+    "subtitle": "Research products, track Amazon prices, analyze opportunities, and manage your eBay workflow — all in one platform.",
     "cta": "Get Started",
     "viewPlans": "View plans"
+  },
+  "featuresSection": {
+    "eyebrow": "What's inside",
+    "title": "Four tools, one dropshipping workflow",
+    "description": "Everything you need to research, price, and manage eBay listings sourced from Amazon.",
+    "learnMore": "Learn more"
   },
   "partners":{
     "eyebrow":"Our Partners",
@@ -78,7 +93,8 @@
     "trackingDescription": "Add-on tracking credits you attach to a subscription, analytics, or Amazon monitoring plan when you subscribe.",
     "supportPlans": "Support Plans",
     "supportDescription": "Plans for direct mentor access and priority support.",
-    "noPlans": "No plans configured yet. Ask admin to add plans in Admin Panel.",
+    "noPlans": "We're finalizing pricing for this plan group. Reach out and we'll put together a plan that fits your volume.",
+    "noPlansCta": "Talk to us",
     "monthlyDuration": "Monthly"
   },
   "plans": {
@@ -154,6 +170,7 @@
   },
   "footer": {
     "tagline": "Track Amazon prices, evaluate opportunities, and manage eBay listings — all from one platform.",
+    "resourcesTitle": "Resources",
     "contactTitle": "Contact",
     "taxId": "Tax ID",
     "address": "Ahmad Rajabli 225, Narimanov, Baku, AZ1075",
@@ -165,16 +182,36 @@
     "description": "Clear answers for sellers looking for a dropshipping tool, product research workflow, or eBay seller intelligence.",
     "items": [
       {
-        "question": "Is Checkila useful for dropshipping research?",
-        "answer": "Yes. It helps you review pricing, opportunities, and seller signals before you make a listing decision."
+        "question": "What is an eBay dropshipping tool?",
+        "answer": "It's software that helps sellers who list on eBay without holding inventory research products, track supplier pricing, and manage listings from one place. Checkila is built specifically for this workflow."
       },
       {
-        "question": "Can Checkila help with eBay seller intelligence?",
-        "answer": "Yes. It gives you a clearer view of buyer and listing information while you browse eBay."
+        "question": "How does Checkila help with eBay dropshipping?",
+        "answer": "Checkila monitors Amazon prices and stock, calculates your real eBay profit after fees, and surfaces opportunities and risks so you can list and reprice with confidence."
+      },
+      {
+        "question": "Can I track Amazon prices with Checkila?",
+        "answer": "Yes. Checkila continuously tracks Amazon price and stock changes and alerts you when something moves."
+      },
+      {
+        "question": "Can Checkila calculate my eBay dropshipping profit?",
+        "answer": "Yes. Enter your item cost, shipping and fees, and Checkila shows your net profit and margin before you list."
       },
       {
         "question": "Does Checkila help with product research?",
-        "answer": "Yes. You can compare products faster and focus on the listings that look worth selling."
+        "answer": "Yes. Checkila Analysis reviews demand, competition and pricing so you can compare products faster and focus on the listings worth selling."
+      },
+      {
+        "question": "Can Checkila help with eBay seller intelligence?",
+        "answer": "Yes. It gives you a clearer view of competitor pricing and listing information while you browse eBay."
+      },
+      {
+        "question": "Does Checkila have a Chrome extension?",
+        "answer": "Yes. The Checkila Chrome extension pulls product and pricing data from Amazon and eBay pages directly into your account."
+      },
+      {
+        "question": "Can I receive price and stock alerts on Telegram?",
+        "answer": "Yes. Connect the Checkila Telegram bot to get price, stock and new-order alerts without keeping the dashboard open."
       }
     ]
   }

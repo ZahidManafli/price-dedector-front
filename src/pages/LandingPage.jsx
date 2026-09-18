@@ -24,6 +24,7 @@ import { useTheme } from '../context/ThemeContext';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import PartnersSection from '../components/PartnersSection';
 import { applySeo } from '../utils/seo';
+import { pathFor, SUPPORTED_LANGS, SEO_PAGES } from '../data/seoPages';
 
 const CHROME_EXTENSION_URL =
   'https://chromewebstore.google.com/detail/checkila-extension/mokpdmidbgchibehajdblfkjcgcibcbb';
@@ -266,7 +267,9 @@ function normalizePlan(raw = {}) {
 }
 
 export default function LandingPage() {
-  const { t } = useTranslation(['landing', 'common', 'pricing']);
+  const { t, i18n } = useTranslation(['landing', 'common', 'pricing', 'seoPages']);
+  const activeLangCode = (i18n.language || 'en').split('-')[0];
+  const activeLang = SUPPORTED_LANGS.includes(activeLangCode) ? activeLangCode : 'en';
   const { changeLanguage } = useLanguage();
   const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState('subscription');
@@ -276,20 +279,11 @@ export default function LandingPage() {
   const [presetIncludeTracking, setPresetIncludeTracking] = useState(false);
 
   const faqItems = useMemo(
-    () => [
-      {
-        question: t('landing:faq.items.0.question'),
-        answer: t('landing:faq.items.0.answer'),
-      },
-      {
-        question: t('landing:faq.items.1.question'),
-        answer: t('landing:faq.items.1.answer'),
-      },
-      {
-        question: t('landing:faq.items.2.question'),
-        answer: t('landing:faq.items.2.answer'),
-      },
-    ],
+    () =>
+      Array.from({ length: 8 }, (_, idx) => ({
+        question: t(`landing:faq.items.${idx}.question`),
+        answer: t(`landing:faq.items.${idx}.answer`),
+      })).filter((item) => item.question && !item.question.startsWith('landing:faq')),
     [t]
   );
 
@@ -445,16 +439,19 @@ export default function LandingPage() {
       icon: BarChart3,
       title: t('landing:features.tracking.title'),
       description: t('landing:features.tracking.description'),
+      href: pathFor('amazonTracking', activeLang),
     },
     {
       icon: Radar,
       title: t('landing:features.analysis.title'),
       description: t('landing:features.analysis.description'),
+      href: pathFor('productResearch', activeLang),
     },
     {
       icon: ShieldCheck,
       title: t('landing:features.listing.title'),
       description: t('landing:features.listing.description'),
+      href: pathFor('inventoryTracking', activeLang),
     },
   ];
 
@@ -517,6 +514,12 @@ export default function LandingPage() {
               <a href="/ebay-calculator" className="transition hover:text-slate-900 dark:hover:text-white">
                 {t('common:nav.ebayCalculator')}
               </a>
+              <Link
+                to={pathFor('ebayFeeCalculator', activeLang)}
+                className="transition hover:text-slate-900 dark:hover:text-white"
+              >
+                {t('seoPages:ebayFeeCalculator.hero.eyebrow')}
+              </Link>
               <a href="#contact" className="transition hover:text-slate-900 dark:hover:text-white">
                 {t('landing:navigation.contact')}
               </a>
@@ -565,7 +568,10 @@ export default function LandingPage() {
               <h1 className="mt-5 text-4xl font-semibold leading-tight tracking-tight text-slate-900 dark:text-white md:text-6xl xl:text-7xl">
                 {t('landing:hero.title')}
               </h1>
-              <p className="mt-6 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300 md:text-lg">
+              <p className="mt-4 max-w-xl text-lg font-medium text-cyan-700 dark:text-cyan-200 md:text-xl">
+                {t('landing:hero.tagline')}
+              </p>
+              <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300 md:text-lg">
                 {t('landing:hero.subtitle')}
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -672,9 +678,9 @@ export default function LandingPage() {
 
         <section id="features" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
           <SectionHeader
-            eyebrow={t('landing:hero.eyebrow')}
-            title={t('landing:features.tracking.title')}
-            description={t('landing:features.tracking.description')}
+            eyebrow={t('landing:featuresSection.eyebrow')}
+            title={t('landing:featuresSection.title')}
+            description={t('landing:featuresSection.description')}
             align="center"
           />
 
@@ -690,6 +696,13 @@ export default function LandingPage() {
                 </div>
                 <h2 className="mt-4 text-lg font-semibold text-slate-900 dark:text-white">{feature.title}</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{feature.description}</p>
+                <Link
+                  to={feature.href}
+                  className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-cyan-700 transition hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
+                >
+                  {t('landing:featuresSection.learnMore')}
+                  <ArrowRight size={13} />
+                </Link>
               </article>
             ))}
           </div>
@@ -870,7 +883,14 @@ export default function LandingPage() {
                 <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
                   {subscriptionVisiblePlans.length === 0 ? (
                     <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
-                      {t('landing:pricing.noPlans')}
+                      <p>{t('landing:pricing.noPlans')}</p>
+                      <a
+                        href="mailto:checkilanotify@gmail.com"
+                        className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
+                      >
+                        {t('landing:pricing.noPlansCta')}
+                        <ArrowRight size={14} />
+                      </a>
                     </div>
                   ) : (
                     subscriptionVisiblePlans.map((plan) => (
@@ -907,7 +927,14 @@ export default function LandingPage() {
                 <div className="mt-6 grid gap-5 lg:grid-cols-2">
                   {analyticsVisiblePlans.length === 0 ? (
                     <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
-                      {t('landing:pricing.noPlans')}
+                      <p>{t('landing:pricing.noPlans')}</p>
+                      <a
+                        href="mailto:checkilanotify@gmail.com"
+                        className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
+                      >
+                        {t('landing:pricing.noPlansCta')}
+                        <ArrowRight size={14} />
+                      </a>
                     </div>
                   ) : (
                     analyticsVisiblePlans.map((plan) => (
@@ -944,7 +971,14 @@ export default function LandingPage() {
                 <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
                   {amazonMonitoringVisiblePlans.length === 0 ? (
                     <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
-                      {t('landing:pricing.noPlans')}
+                      <p>{t('landing:pricing.noPlans')}</p>
+                      <a
+                        href="mailto:checkilanotify@gmail.com"
+                        className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
+                      >
+                        {t('landing:pricing.noPlansCta')}
+                        <ArrowRight size={14} />
+                      </a>
                     </div>
                   ) : (
                     amazonMonitoringVisiblePlans.map((plan) => (
@@ -971,7 +1005,14 @@ export default function LandingPage() {
                 <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
                   {trackingVisiblePlans.length === 0 ? (
                     <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
-                      {t('landing:pricing.noPlans')}
+                      <p>{t('landing:pricing.noPlans')}</p>
+                      <a
+                        href="mailto:checkilanotify@gmail.com"
+                        className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
+                      >
+                        {t('landing:pricing.noPlansCta')}
+                        <ArrowRight size={14} />
+                      </a>
                     </div>
                   ) : (
                     trackingVisiblePlans.map((plan) => (
@@ -998,7 +1039,14 @@ export default function LandingPage() {
                 <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
                   {supportVisiblePlans.length === 0 ? (
                     <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
-                      {t('landing:pricing.noPlans')}
+                      <p>{t('landing:pricing.noPlans')}</p>
+                      <a
+                        href="mailto:checkilanotify@gmail.com"
+                        className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
+                      >
+                        {t('landing:pricing.noPlansCta')}
+                        <ArrowRight size={14} />
+                      </a>
                     </div>
                   ) : (
                     supportVisiblePlans.map((plan) => (
@@ -1050,7 +1098,7 @@ export default function LandingPage() {
 
       <footer className="relative z-10 border-t border-slate-200 dark:border-white/10">
         <div className="mx-auto max-w-7xl px-6 py-14">
-          <div className="grid gap-10 md:grid-cols-[1.15fr_0.85fr]">
+          <div className="grid gap-10 md:grid-cols-[1.05fr_0.75fr_0.85fr]">
             <div>
               <div className="flex items-center gap-3">
                 <img
@@ -1063,6 +1111,24 @@ export default function LandingPage() {
               <p className="mt-4 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">
                 {t('landing:footer.tagline')}
               </p>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-100">
+                {t('landing:footer.resourcesTitle')}
+              </p>
+              <ul className="mt-4 space-y-2.5 text-sm">
+                {SEO_PAGES.map((page) => (
+                  <li key={page.key}>
+                    <Link
+                      to={pathFor(page.key, activeLang)}
+                      className="text-slate-600 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                    >
+                      {t(`seoPages:${page.key}.hero.eyebrow`)}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             <div>

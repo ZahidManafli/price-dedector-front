@@ -1,0 +1,361 @@
+{
+  "dropshippingTool": {
+    "meta": {
+      "title": "eBay Dropshipping Tool for Product Research & Automation | Checkila",
+      "description": "Checkila is an eBay dropshipping tool that helps you research products, track Amazon prices, calculate profit, and manage your eBay workflow from one dashboard."
+    },
+    "hero": {
+      "eyebrow": "eBay Dropshipping Tool",
+      "h1": "eBay Dropshipping Tool for Smarter Product Research & Automation",
+      "subhead": "Research products, track Amazon prices, evaluate profit, and manage your eBay workflow — all from one dashboard built for dropshippers."
+    },
+    "problems": [
+      { "problem": "You're checking Amazon prices by hand and still getting undercut.", "solution": "Checkila monitors Amazon pricing continuously and flags changes before they eat your margin." },
+      { "problem": "You don't know which products are actually worth listing.", "solution": "Run a Checkila Analysis on any product to see demand, competition and profit potential before you commit." },
+      { "problem": "Spreadsheets can't keep up once you're managing dozens of listings.", "solution": "Checkila centralizes product research, pricing and listing management in a single workspace." }
+    ],
+    "features": [
+      { "title": "Product Research", "description": "Look up Amazon products and evaluate them for eBay resale before you spend time listing." },
+      { "title": "Amazon Price Tracking", "description": "Get notified when a supplier's price or stock changes so your eBay listings stay accurate." },
+      { "title": "Profit Calculator", "description": "See your real margin after fees, shipping and item cost before you commit to a product." },
+      { "title": "Market Analysis", "description": "Check how a product is performing on eBay — competition, pricing and demand signals." },
+      { "title": "Chrome Extension", "description": "Pull product and pricing data straight from Amazon and eBay product pages as you browse." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Discover", "description": "Find candidate products with Product Research and the Chrome Extension." },
+      { "step": "02", "title": "Decide", "description": "Run a Checkila Analysis and profit calculation to confirm the product is worth listing." },
+      { "step": "03", "title": "Publish", "description": "List to eBay and let Checkila monitor pricing and stock so you can react fast." }
+    ],
+    "faq": [
+      { "q": "What is an eBay dropshipping tool?", "a": "An eBay dropshipping tool helps sellers who list products on eBay without holding inventory find products, track supplier pricing, and manage listings from one place. Checkila combines product research, Amazon price tracking and profit calculation for this exact workflow." },
+      { "q": "How does Checkila help with eBay dropshipping?", "a": "Checkila monitors Amazon prices and stock for the products you source, calculates your real eBay profit after fees, and flags opportunities and risks so you can list and reprice with confidence." },
+      { "q": "Do I need an eBay Store subscription to use Checkila?", "a": "No. Checkila works alongside any eBay selling setup, with or without a Store subscription. Your actual eBay fees still depend on your Store tier and category." },
+      { "q": "Can I use Checkila without coding or technical experience?", "a": "Yes. Checkila is a web dashboard plus a Chrome extension — no setup beyond connecting your accounts is required." },
+      { "q": "Does Checkila work for sellers outside the US?", "a": "Yes. Checkila supports multiple languages and currencies, and tracks Amazon and eBay listings regardless of where you sell from." },
+      { "q": "How is Checkila different from tracking prices in a spreadsheet?", "a": "Spreadsheets require manual checking and don't scale past a handful of products. Checkila automates price and stock monitoring, calculates profit for you, and keeps your research, pricing and listings in one system." }
+    ],
+    "cta": { "title": "Start dropshipping smarter", "description": "Join Checkila and take the guesswork out of eBay dropshipping.", "button": "Start Free" }
+  },
+
+  "productResearch": {
+    "meta": {
+      "title": "eBay Product Research Tool | Find Profitable Products with Checkila",
+      "description": "Find profitable products for eBay with Checkila's product research tool: Amazon lookup, competition analysis, and price comparison in one place."
+    },
+    "hero": {
+      "eyebrow": "eBay Product Research Tool",
+      "h1": "eBay Product Research Tool",
+      "subhead": "Evaluate any product before you list it — demand, competition and pricing, side by side."
+    },
+    "problems": [
+      { "problem": "You spend hours browsing Amazon without knowing what will actually sell.", "solution": "Checkila's product lookup surfaces the data you need to judge a product in minutes, not hours." },
+      { "problem": "A product looks popular, but you can't tell if it's already oversaturated on eBay.", "solution": "Seller intelligence and competition data show you how crowded a listing category already is." },
+      { "problem": "You list a product, then find out the margin was too thin to be worth it.", "solution": "Evaluate opportunity and profit potential before you publish, not after." }
+    ],
+    "features": [
+      { "title": "Amazon Product Lookup", "description": "Pull product details directly from an Amazon listing to start your research." },
+      { "title": "Checkila Analysis", "description": "Run a structured evaluation of demand, competition and pricing for a product." },
+      { "title": "Seller Intelligence", "description": "See how other sellers are pricing and positioning similar products." },
+      { "title": "Price Comparison", "description": "Compare Amazon cost against realistic eBay sale price before you commit." },
+      { "title": "Opportunity Evaluation", "description": "Score a product's potential so you can prioritize what to list first." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Search", "description": "Look up a product by keyword, category or Amazon link." },
+      { "step": "02", "title": "Analyze", "description": "Review demand, competition and estimated margin with Checkila Analysis." },
+      { "step": "03", "title": "Shortlist", "description": "Save the strongest candidates and move them into your listing workflow." }
+    ],
+    "faq": [
+      { "q": "What is an eBay product research tool?", "a": "It's software that helps sellers evaluate whether a product is worth listing on eBay by combining demand, competition and pricing data in one view, instead of checking each source manually." },
+      { "q": "Can Checkila help with eBay seller intelligence?", "a": "Yes. Checkila shows how comparable listings are priced and positioned so you can gauge competition before you list." },
+      { "q": "Does Checkila product research work with Amazon products?", "a": "Yes. You can look up a product directly from Amazon and evaluate it for eBay resale." },
+      { "q": "How does Checkila Analysis work?", "a": "Checkila Analysis reviews a product's pricing, competition and demand signals and returns a structured evaluation you can use to decide whether to list it." },
+      { "q": "Is product research included in every Checkila plan?", "a": "Product research and Checkila Analysis run on a credit-based system; the number of analyses available depends on your plan." },
+      { "q": "Can I compare multiple products at once?", "a": "Yes, you can research and shortlist multiple products before deciding which ones to list." }
+    ],
+    "cta": { "title": "Research products with confidence", "description": "Stop guessing which products are worth listing.", "button": "Start Researching" }
+  },
+
+  "amazonTracking": {
+    "meta": {
+      "title": "Amazon Price Tracking for eBay Dropshipping | Checkila",
+      "description": "Track Amazon price and stock changes automatically with Checkila, and protect your eBay dropshipping margin without manual checks."
+    },
+    "hero": {
+      "eyebrow": "Amazon Price Tracking",
+      "h1": "Amazon Price Tracking for eBay Dropshipping",
+      "subhead": "Track Amazon price changes and stock movement without relying on constant manual checks."
+    },
+    "problems": [
+      { "problem": "Amazon changed a price and your eBay listing is now unprofitable.", "solution": "Checkila monitors Amazon pricing and alerts you before your margin disappears." },
+      { "problem": "A supplier item went out of stock and you kept selling it.", "solution": "Stock alerts tell you the moment a tracked product becomes unavailable." },
+      { "problem": "Manually rechecking dozens of Amazon listings every day isn't sustainable.", "solution": "Checkila automates the monitoring so you only act when something actually changes." }
+    ],
+    "features": [
+      { "title": "Continuous Price Monitoring", "description": "Track the Amazon price of every product you're sourcing from, automatically." },
+      { "title": "Stock Alerts", "description": "Know immediately when a product goes out of stock or becomes available again." },
+      { "title": "Price Change Alerts", "description": "Get notified by Telegram or in the dashboard when a tracked price moves." },
+      { "title": "Historical Price View", "description": "See how a product's price has moved over time before you commit to it." },
+      { "title": "eBay Margin Protection", "description": "Catch price increases early so you can reprice your eBay listing before you lose money." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Add product", "description": "Add the Amazon product you're sourcing from to your tracking list." },
+      { "step": "02", "title": "Monitor Amazon", "description": "Checkila checks the price and stock status on your behalf." },
+      { "step": "03", "title": "Detect changes", "description": "Get an alert the moment price or availability changes." },
+      { "step": "04", "title": "Protect your pricing", "description": "Adjust your eBay listing before a change eats into your profit." }
+    ],
+    "faq": [
+      { "q": "Can I track Amazon prices with Checkila?", "a": "Yes. Checkila continuously monitors the Amazon price of products you add, and alerts you when it changes." },
+      { "q": "Does Checkila monitor Amazon inventory?", "a": "Yes. Stock status is tracked alongside price, so you know when a supplier item runs out." },
+      { "q": "How fast are price change alerts?", "a": "Checkila checks tracked products on a regular schedule and notifies you as soon as a change is detected." },
+      { "q": "Can I receive price and stock alerts on Telegram?", "a": "Yes. Connect the Checkila Telegram bot to receive price, stock and order alerts outside the dashboard." },
+      { "q": "How many products can I track?", "a": "The number of tracked products depends on your Checkila plan." },
+      { "q": "Does price tracking work for any Amazon marketplace?", "a": "Checkila is built around Amazon listings commonly used for eBay dropshipping; check your plan or contact support for marketplace coverage." }
+    ],
+    "cta": { "title": "Never miss a price change again", "description": "Let Checkila watch Amazon so you can focus on selling.", "button": "Track Products" }
+  },
+
+  "profitCalculator": {
+    "meta": {
+      "title": "eBay Profit Calculator for Dropshipping Sellers | Checkila",
+      "description": "Calculate your real eBay dropshipping profit with Checkila's profit calculator — item cost, eBay fees, shipping and ad spend included."
+    },
+    "hero": {
+      "eyebrow": "eBay Profit Calculator",
+      "h1": "eBay Profit Calculator for Dropshipping Sellers",
+      "subhead": "Know your real margin before you list — item cost, eBay fees, shipping and promotion spend, all in one number."
+    },
+    "problems": [
+      { "problem": "You list a product without knowing what you'll actually net after fees.", "solution": "Checkila's profit calculator shows expected profit before you publish the listing." },
+      { "problem": "eBay fees, shipping and ad spend are scattered across different tabs and receipts.", "solution": "Enter your numbers once and see the full breakdown in one place." },
+      { "problem": "A 'profitable' product on paper turns out to be a loss after fees.", "solution": "Factor in final value fees and promoted listing costs before you decide, not after your first sale." }
+    ],
+    "features": [
+      { "title": "Full Fee Breakdown", "description": "See final value fee, per-order fee and promotion cost as separate line items." },
+      { "title": "Real Net Profit", "description": "Get a bottom-line profit and margin percentage, not just a revenue number." },
+      { "title": "Scenario Comparison", "description": "Adjust price, shipping or ad spend to see how profit changes before you list." },
+      { "title": "Break-even Pricing", "description": "Find the minimum price that still covers your costs." },
+      { "title": "Built Into Your Workflow", "description": "Use it alongside product research so you never list blind." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Enter your costs", "description": "Add item cost, shipping and expected sale price." },
+      { "step": "02", "title": "Add fees", "description": "Include eBay final value fee, promotion percentage and other costs." },
+      { "step": "03", "title": "See your profit", "description": "Review net profit, margin and break-even price instantly." }
+    ],
+    "faq": [
+      { "q": "Can Checkila calculate my eBay dropshipping profit?", "a": "Yes. Enter your item cost, shipping and eBay fees, and Checkila shows your net profit and margin." },
+      { "q": "Does the profit calculator include eBay final value fees?", "a": "Yes, along with per-order fees, shipping cost and promoted listing spend so the result reflects your real payout." },
+      { "q": "What is a good profit margin for eBay dropshipping?", "a": "Many sellers target a net margin in the low-to-mid teens after all fees; anything comfortably covering fees, shipping and ad spend while leaving room to reinvest is a reasonable target." },
+      { "q": "Can I compare different pricing scenarios?", "a": "Yes, change your price, shipping or promotion inputs to see how each option affects your final profit." },
+      { "q": "Is the profit calculator the same as the eBay fee calculator?", "a": "They're related but different: the fee calculator focuses purely on eBay's fee structure, while the profit calculator combines fees with your item cost and shipping to show your actual take-home profit." },
+      { "q": "Do I need an account to use the profit calculator?", "a": "The full profit calculator is available inside your Checkila dashboard once you sign up." }
+    ],
+    "cta": { "title": "Know your margin before you list", "description": "Calculate real eBay dropshipping profit in seconds.", "button": "Calculate Profit" }
+  },
+
+  "marketAnalysis": {
+    "meta": {
+      "title": "eBay Market Analysis & Seller Intelligence | Checkila",
+      "description": "Analyze eBay market demand, pricing and competition with Checkila before you list — data-driven seller intelligence for dropshippers."
+    },
+    "hero": {
+      "eyebrow": "eBay Market Analysis",
+      "h1": "eBay Market Analysis & Seller Intelligence",
+      "subhead": "See how a product is really performing on eBay before you commit inventory or time to it."
+    },
+    "problems": [
+      { "problem": "You can't tell if a niche is growing or already saturated.", "solution": "Checkila's market analysis shows demand and competition signals for a category or product." },
+      { "problem": "Competing sellers are pricing differently and you don't know why.", "solution": "See comparable listings side by side to understand where the market actually sits." },
+      { "problem": "You're reacting to the market instead of planning around it.", "solution": "Use trend and demand data to decide what to list next, ahead of the competition." }
+    ],
+    "features": [
+      { "title": "Demand Signals", "description": "Understand how much interest a product or category is getting on eBay." },
+      { "title": "Competitor Pricing", "description": "See how similar listings are priced across active sellers." },
+      { "title": "Category Trends", "description": "Spot categories that are growing before they get crowded." },
+      { "title": "Listing Comparison", "description": "Compare your planned listing against what's already selling." },
+      { "title": "Data-Driven Decisions", "description": "Base listing decisions on market data instead of guesswork." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Pick a market", "description": "Choose a product category or specific listing to analyze." },
+      { "step": "02", "title": "Review the data", "description": "See demand, pricing and competitor signals for that market." },
+      { "step": "03", "title": "Act on it", "description": "Decide what to list, how to price it, or where to look next." }
+    ],
+    "faq": [
+      { "q": "What does eBay market analysis show?", "a": "It shows how a product or category is performing on eBay — demand signals, competitor pricing and how crowded the space is — so you can decide whether it's worth entering." },
+      { "q": "Is market analysis useful for dropshipping specifically?", "a": "Yes. Dropshippers use it to avoid oversaturated categories and to find products with real, sustained demand before committing to sourcing them." },
+      { "q": "Can I see competitor pricing for a specific product?", "a": "Yes, Checkila surfaces comparable listings so you can see how other sellers are pricing similar products." },
+      { "q": "How often is market data updated?", "a": "Market data refreshes regularly so your analysis reflects current listings and pricing rather than stale snapshots." },
+      { "q": "Do I need Market Analysis and Product Research separately?", "a": "They work together: Product Research evaluates a specific product, while Market Analysis looks at the broader category or competitive landscape around it." },
+      { "q": "Is market analysis included in every plan?", "a": "Availability depends on your Checkila plan; check the pricing page for what's included." }
+    ],
+    "cta": { "title": "Understand the market before you list", "description": "Make listing decisions backed by real eBay data.", "button": "Explore Market Analysis" }
+  },
+
+  "inventoryTracking": {
+    "meta": {
+      "title": "eBay Inventory & Order Tracking Software | Checkila",
+      "description": "Track eBay orders, shipments and Amazon supplier stock in one dashboard with Checkila's inventory and order tracking tools."
+    },
+    "hero": {
+      "eyebrow": "Inventory & Order Tracking",
+      "h1": "eBay Inventory & Order Tracking, Without the Spreadsheets",
+      "subhead": "Keep supplier stock and buyer orders in sync so nothing slips through the cracks."
+    },
+    "problems": [
+      { "problem": "A supplier ran out of stock and you didn't find out until a buyer complained.", "solution": "Checkila tracks Amazon supplier stock so you know before it becomes a customer service problem." },
+      { "problem": "You're checking eBay order status manually across multiple tabs.", "solution": "See order and shipment status for your eBay sales in one dashboard." },
+      { "problem": "It's hard to tell product monitoring apart from order tracking.", "solution": "Checkila separates supplier-side product monitoring (price, stock) from buyer-side order tracking (shipment, delivery), so each is clear." }
+    ],
+    "features": [
+      { "title": "Supplier Stock Monitoring", "description": "Track Amazon product availability for everything you're sourcing." },
+      { "title": "Order Status Tracking", "description": "See where each eBay order stands, from payment to delivery." },
+      { "title": "Shipment Visibility", "description": "Keep tabs on shipment progress without leaving the dashboard." },
+      { "title": "New Order Alerts", "description": "Get notified the moment a new eBay order comes in." },
+      { "title": "Centralized View", "description": "Product monitoring and order tracking live in one connected workspace." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Connect your accounts", "description": "Link your eBay and Amazon accounts to Checkila." },
+      { "step": "02", "title": "Track automatically", "description": "Checkila monitors supplier stock and order status continuously." },
+      { "step": "03", "title": "Get alerted", "description": "Receive alerts for new orders, stock issues and shipment updates." }
+    ],
+    "faq": [
+      { "q": "Does Checkila track eBay orders?", "a": "Yes. Checkila shows order and shipment status for your eBay sales, and can alert you when new orders come in." },
+      { "q": "Is inventory tracking the same as order tracking?", "a": "No. Inventory/product tracking monitors your Amazon supplier's price and stock, while order tracking follows your eBay buyer's order from payment through delivery." },
+      { "q": "Can I get notified about new eBay orders?", "a": "Yes, new-order alerts can be delivered in the dashboard or via the Checkila Telegram bot." },
+      { "q": "Does Checkila track Amazon stock for my suppliers?", "a": "Yes, Checkila monitors the availability of Amazon products you add for sourcing." },
+      { "q": "Can I manage multiple eBay accounts?", "a": "Account support depends on your Checkila plan; contact support if you manage multiple stores." },
+      { "q": "Does order tracking replace eBay's own tools?", "a": "Checkila complements eBay's seller tools by giving you a consolidated view alongside product and price monitoring, rather than replacing eBay's own order management." }
+    ],
+    "cta": { "title": "Keep stock and orders in sync", "description": "Stop juggling tabs to track your eBay business.", "button": "Start Tracking" }
+  },
+
+  "chromeExtension": {
+    "meta": {
+      "title": "Checkila Chrome Extension for eBay & Amazon Sellers",
+      "description": "The Checkila Chrome extension pulls product and pricing data from Amazon and eBay as you browse, built for dropshipping product research."
+    },
+    "hero": {
+      "eyebrow": "Chrome Extension",
+      "h1": "Checkila Chrome Extension for eBay & Amazon Sellers",
+      "subhead": "Research products and pricing without leaving the Amazon or eBay page you're already on."
+    },
+    "problems": [
+      { "problem": "Copy-pasting product details between Amazon and your research tool wastes time.", "solution": "The Checkila extension pulls product data directly from the page you're viewing." },
+      { "problem": "You lose your place switching between browsing and analyzing.", "solution": "Run a quick evaluation right from the Amazon or eBay listing, without switching tabs." },
+      { "problem": "Manually tracking a product you found while browsing is easy to forget.", "solution": "Add it to Checkila in one click so it's tracked automatically going forward." }
+    ],
+    "features": [
+      { "title": "One-Click Product Import", "description": "Pull product details from Amazon or eBay pages into Checkila instantly." },
+      { "title": "In-Page Research", "description": "See pricing and analysis data while you're still browsing the listing." },
+      { "title": "Instant Tracking", "description": "Add a product to your Amazon price tracking list without leaving the page." },
+      { "title": "Seller Insight On the Go", "description": "Check competition and pricing context for any listing you find." },
+      { "title": "Lightweight & Fast", "description": "Built to stay out of your way while you browse and research." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Install", "description": "Add the Checkila extension to Chrome in a few seconds." },
+      { "step": "02", "title": "Browse", "description": "Open any Amazon or eBay product page as you normally would." },
+      { "step": "03", "title": "Research instantly", "description": "Pull data into Checkila or start tracking the product with one click." }
+    ],
+    "faq": [
+      { "q": "Does Checkila have a Chrome extension?", "a": "Yes. The Checkila Chrome extension lets you pull product and pricing data from Amazon and eBay pages directly into your Checkila account." },
+      { "q": "What does the Chrome extension do?", "a": "It imports product details for research and lets you start tracking a product's Amazon price without leaving the page you're browsing." },
+      { "q": "Is the Chrome extension free?", "a": "The extension is free to install; the data and analysis you can pull through it depend on your Checkila plan." },
+      { "q": "Does the extension work on both Amazon and eBay?", "a": "Yes, it's built to support product research across both Amazon and eBay listing pages." },
+      { "q": "Do I need a Checkila account to use the extension?", "a": "Yes, sign in with your Checkila account so imported products and tracking sync to your dashboard." },
+      { "q": "Is my data safe with the Checkila extension?", "a": "The extension only reads product page data to support your research; see our extension privacy policy for details." }
+    ],
+    "cta": { "title": "Research without leaving the page", "description": "Add the Checkila Chrome extension and speed up your workflow.", "button": "Get the Extension" }
+  },
+
+  "telegramBot": {
+    "meta": {
+      "title": "Checkila Telegram Bot: eBay & Amazon Alerts On the Go",
+      "description": "Get Amazon price and stock alerts plus new eBay order notifications on Telegram with the Checkila bot."
+    },
+    "hero": {
+      "eyebrow": "Telegram Bot",
+      "h1": "Checkila Telegram Bot for eBay & Amazon Alerts",
+      "subhead": "Get price changes, stock alerts and new orders sent straight to Telegram, so you don't have to keep the dashboard open."
+    },
+    "problems": [
+      { "problem": "You only find out about a price change when you happen to check the dashboard.", "solution": "The Checkila Telegram bot pushes alerts to you the moment something changes." },
+      { "problem": "New eBay orders can sit unnoticed for hours.", "solution": "Get an instant Telegram notification when a new order comes in." },
+      { "problem": "Checking multiple channels for updates slows you down.", "solution": "Consolidate price, stock and order alerts into a single Telegram chat." }
+    ],
+    "features": [
+      { "title": "Price Alerts", "description": "Get notified the moment a tracked Amazon price changes." },
+      { "title": "Stock Alerts", "description": "Know immediately when a sourced product goes out of stock." },
+      { "title": "New Order Alerts", "description": "Receive a Telegram message as soon as a new eBay order comes in." },
+      { "title": "No Dashboard Required", "description": "Stay informed without keeping a browser tab open all day." },
+      { "title": "Simple Setup", "description": "Connect your Checkila account to the bot in a couple of steps." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Open the bot", "description": "Start a chat with the Checkila Telegram bot." },
+      { "step": "02", "title": "Link your account", "description": "Connect it to your Checkila dashboard." },
+      { "step": "03", "title": "Get alerted", "description": "Receive price, stock and order alerts automatically from then on." }
+    ],
+    "faq": [
+      { "q": "Can I receive price and stock alerts on Telegram?", "a": "Yes. Once connected, the Checkila Telegram bot sends price and stock alerts for the products you track." },
+      { "q": "Does the Telegram bot notify me about new eBay orders?", "a": "Yes, new-order notifications can be delivered through the bot as they come in." },
+      { "q": "Is the Telegram bot free to use?", "a": "The bot is free to connect; which alerts you receive depends on your Checkila plan." },
+      { "q": "How do I connect the Checkila Telegram bot?", "a": "Open the bot from your Checkila dashboard settings and follow the linking steps to connect your account." },
+      { "q": "Can I turn off certain alert types?", "a": "Alert preferences can be managed from your Checkila account settings." },
+      { "q": "Does the bot replace the dashboard?", "a": "No, it complements it — the bot is for real-time alerts, while the dashboard is where you do research, analysis and listing management." }
+    ],
+    "cta": { "title": "Get alerts where you already are", "description": "Connect the Checkila Telegram bot in under a minute.", "button": "Open Telegram Bot" }
+  },
+
+  "ebayFeeCalculator": {
+    "meta": {
+      "title": "eBay Fee Calculator & 2026 Fee Guide | Checkila",
+      "description": "See how much eBay actually takes in fees. Current final value fee rates by category and Store tier, the fee formula, and a full FAQ, from Checkila."
+    },
+    "hero": {
+      "eyebrow": "eBay Fees, Explained",
+      "h1": "eBay Fee Calculator & Complete 2026 Fee Guide",
+      "subhead": "How much does eBay take in fees? Here's the current rate structure, the formula behind it, and answers to the questions sellers ask most."
+    },
+    "intro": "Every eBay sale involves more than one fee: a final value fee on the sale, a small per-order fee, insertion fees if you're outside your free listing allowance, and optional costs like promoted listings or payment processing. This page breaks down exactly how those fees are calculated in 2026, by category and Store subscription level, so you can price with confidence. To calculate your exact numbers for a specific listing, use the calculator inside your Checkila dashboard.",
+    "feeTypes": [
+      { "name": "Final value fee (FVF)", "what": "The main marketplace commission charged when an item sells.", "how": "A percentage of the total sale (item price + shipping + tax where applicable), plus a small fixed per-order fee.", "who": "Seller" },
+      { "name": "Per-order fee", "what": "A flat fee applied once per checkout, not per item.", "how": "Typically $0.30 for orders of $10 or less, and $0.40 for orders above $10.", "who": "Seller" },
+      { "name": "Insertion fee", "what": "Charged when you create a listing after your free monthly allowance is used.", "how": "A flat fee per listing that varies by category and Store subscription level.", "who": "Seller" },
+      { "name": "Promoted Listings fee", "what": "Advertising cost for boosting a listing's visibility.", "how": "Usually a percentage of the sale price, charged only when a promoted listing actually sells.", "who": "Seller" },
+      { "name": "Payment processing fee", "what": "Cost of handling the buyer's payment through eBay's managed payments.", "how": "A percentage of the payout plus a small fixed amount, varying by country.", "who": "Seller" },
+      { "name": "International fee", "what": "Applies to cross-border sales or currency conversion.", "how": "A percentage of the sale added when shipping internationally or converting currency.", "who": "Seller" },
+      { "name": "Store subscription fee", "what": "Monthly or annual cost of an eBay Store plan.", "how": "A fixed price by tier (Starter, Basic, Premium, Anchor, Enterprise) that unlocks larger free listing allowances and lower fee tiers.", "who": "Seller" }
+    ],
+    "storeTiers": [
+      { "tier": "No Store", "monthlyFee": "$0", "typicalFvf": "13.6% up to $7,500 + 2.35% over (most categories)" },
+      { "tier": "Starter", "monthlyFee": "$7.95 (or $4.95 annual)", "typicalFvf": "13.6% up to $7,500 + 2.35% over (most categories)" },
+      { "tier": "Basic", "monthlyFee": "$27.95 (or $21.95 annual)", "typicalFvf": "~12.7% up to $2,500 + 2.35% over (many categories)" },
+      { "tier": "Premium", "monthlyFee": "$74.95 (or $59.95 annual)", "typicalFvf": "~12.7% up to $2,500 + 2.35% over (many categories)" },
+      { "tier": "Anchor", "monthlyFee": "$349.95 (or $299.95 annual)", "typicalFvf": "Often 12.7% up to $2,500, lower in specific categories" }
+    ],
+    "formula": [
+      { "label": "Total Sale", "formula": "Item price + buyer-paid shipping + sales tax", "explanation": "This is the base amount eBay applies most fee percentages to." },
+      { "label": "Final Value Fee", "formula": "Total Sale × FVF rate + per-order fixed fee", "explanation": "eBay's core commission on the sale." },
+      { "label": "Promotion Fee", "formula": "Total Sale × promotion %", "explanation": "Only charged when a promoted listing sells." },
+      { "label": "Net Profit", "formula": "Total Sale − Total Fees − Shipping Cost − Item Cost", "explanation": "What you actually keep after every fee and cost is accounted for." }
+    ],
+    "glossary": [
+      { "term": "Final value fee", "definition": "The commission eBay charges when an item sells, as a percentage of the total sale plus a small per-order fee." },
+      { "term": "Insertion fee", "definition": "A fee for creating a listing once your free monthly allowance is used." },
+      { "term": "Per-order fee", "definition": "A flat fee applied once per checkout, regardless of how many items are in the order." },
+      { "term": "Store subscription", "definition": "A monthly or annual plan that gives larger free listing allowances and often lower final value fees." },
+      { "term": "Zero insertion fee", "definition": "The monthly allotment of listings that don't incur an insertion fee." },
+      { "term": "Break-even price", "definition": "The minimum price needed to cover all fees and costs, leaving zero profit." },
+      { "term": "Net profit", "definition": "What's left after subtracting all fees, shipping cost and item cost from the sale price." }
+    ],
+    "faq": [
+      { "q": "How much does eBay take in fees?", "a": "It depends on your category, Store subscription and price. eBay charges a final value fee (commonly in the 9-15% range) plus a small per-order fee, and may add insertion, promotion or international fees on top." },
+      { "q": "How are eBay fees calculated?", "a": "Fees are calculated on the Total Sale — item price plus shipping and tax where applicable. The final value fee applies to that base, and other charges like promotion or insertion fees are added separately." },
+      { "q": "What percentage does eBay take?", "a": "Percentages vary by category and Store tier, commonly landing around 9-15% for the final value fee, with lower bands on higher-value portions of a sale in many categories." },
+      { "q": "Does eBay charge a fee if an item doesn't sell?", "a": "Insertion fees apply when you create a listing and are generally non-refundable even if the item doesn't sell, once your free monthly allowance is used." },
+      { "q": "How do I avoid unnecessary eBay fees?", "a": "Choose the right category and listing format, use your free monthly listing allowance or a Store subscription, and keep promoted listing spend intentional rather than blanket-applied." },
+      { "q": "Is it worth paying for an eBay Store subscription?", "a": "Often yes for higher-volume sellers — Stores unlock larger free listing allowances and lower fee tiers in many categories. Lower-volume sellers should compare the monthly cost against what they'd actually save." },
+      { "q": "Do I still need to worry about PayPal fees?", "a": "Mostly no. eBay's managed payments now handle checkout for most sellers, so PayPal is no longer the default payout method." },
+      { "q": "What is a good profit margin on eBay in 2026?", "a": "Many sellers target a net margin in the low-to-mid teens after all fees, shipping and cost of goods; anything that comfortably clears your costs while leaving room to reinvest is a healthy target." }
+    ],
+    "cta": { "title": "Get your exact number", "description": "This guide covers the general fee structure. For your specific listing, use the full eBay fee calculator inside Checkila.", "button": "Open the Calculator" }
+  }
+}

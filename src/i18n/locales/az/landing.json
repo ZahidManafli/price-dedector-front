@@ -1,17 +1,32 @@
 {
   "navigation": {
+    "home": "Ana səhifə",
     "features": "Xüsusiyyətlər",
     "plans": "Planlar",
     "contact": "Əlaqə",
     "chromeExtension": "Checkila Chrome Uzantısı",
     "telegramBot": "Checkila Telegram Botu"
   },
+  "sections": {
+    "whatsIncluded": "Nələr daxildir",
+    "feeTypesTitle": "eBay komissiya növləri",
+    "storeTiersTitle": "eBay Store abunəlik səviyyələri",
+    "formulaTitle": "Rəqəmlər necə hesablanır",
+    "glossaryTitle": "Bilməli olduğunuz eBay komissiya terminləri"
+  },
   "hero": {
     "eyebrow": "Avtomatlaşdırılmış Reseller Platforması",
-    "title": "Amazon qiymətlərini izləyin. eBay-də yerləşdirin. Təkrarlayın.",
-    "subtitle": "Amazon məhsullarını izləyin, Checkila analitikası ilə imkanları dəyərləndirin və eBay-də paylaşın — hamısı bir platformada.",
+    "title": "eBay Dropshipping Aləti və E-ticarət Avtomatlaşdırma Platforması",
+    "tagline": "Amazon qiymətlərini izləyin. eBay-də yerləşdirin. Təkrarlayın.",
+    "subtitle": "Məhsulları araşdırın, Amazon qiymətlərini izləyin, imkanları analiz edin və eBay iş axınınızı idarə edin — hamısı tək platformada.",
     "cta": "Başla",
     "viewPlans": "Planlara bax"
+  },
+  "featuresSection": {
+    "eyebrow": "Daxildə nə var",
+    "title": "Dörd alət, bir dropshipping iş axını",
+    "description": "Amazon-dan mənbə aldığınız eBay elanlarını araşdırmaq, qiymətləndirmək və idarə etmək üçün lazım olan hər şey.",
+    "learnMore": "Ətraflı öyrən"
   },
   "partners": {
     "eyebrow": "Tərəfdaşlarımız",
@@ -78,7 +93,8 @@
     "trackingDescription": "Abunə olarkən istənilən abunə, analitika və ya Amazon izləmə planına əlavə edə biləcəyiniz izləmə kreditləri.",
     "supportPlans": "Dəstək Planları",
     "supportDescription": "Mentorla birbaşa əlaqə və prioritet dəstək üçün planlar.",
-    "noPlans": "Hələ plan əlavə olunmayıb. Admin paneldən əlavə edin.",
+    "noPlans": "Bu plan qrupu üçün qiymətləri hazırlayırıq. Bizimlə əlaqə saxlayın, iş həcminizə uyğun plan hazırlayaq.",
+    "noPlansCta": "Bizimlə danışın",
     "monthlyDuration": "Aylıq"
   },
   "plans": {
@@ -154,6 +170,7 @@
   },
   "footer": {
     "tagline": "Amazon qiymətlərini izləyin, imkanları qiymətləndirin və eBay-də bir platformadan idarə edin.",
+    "resourcesTitle": "Resurslar",
     "contactTitle": "Əlaqə",
     "taxId": "VÖEN",
     "address": "AZ1038, BAKI ŞƏHƏRİ SABUNÇU RAYONU, ZABRAT ŞTQ",
@@ -165,16 +182,36 @@
     "description": "Dropshipping aləti, məhsul araşdırma axını və ya eBay satıcı analitikası axtaranlar üçün aydın cavablar.",
     "items": [
       {
-        "question": "Checkila dropshipping araşdırması üçün faydalıdırmı?",
-        "answer": "Bəli. Siyahı qərarı verməzdən əvvəl qiymətləri, imkanları və satıcı siqnallarını yoxlamağa kömək edir."
+        "question": "eBay dropshipping aləti nədir?",
+        "answer": "Bu, anbar saxlamadan eBay-də satış edən satıcılara məhsul araşdırmaqda, təchizatçı qiymətini izləməkdə və elanları tək yerdən idarə etməkdə kömək edən proqram təminatıdır. Checkila məhz bu iş axını üçün hazırlanıb."
       },
       {
-        "question": "Checkila eBay satıcı analitikası üçün kömək edirmi?",
-        "answer": "Bəli. eBay-də baxarkən alıcı və siyahı məlumatlarını daha aydın görməyə imkan verir."
+        "question": "Checkila eBay dropshippinginə necə kömək edir?",
+        "answer": "Checkila Amazon qiymətini və stokunu izləyir, komissiyalardan sonra real eBay mənfəətinizi hesablayır və imkanlarla riskləri önə çıxarır ki, əminliklə elan yerləşdirib qiymət dəyişə biləsiniz."
+      },
+      {
+        "question": "Checkila ilə Amazon qiymətlərini izləyə bilərəmmi?",
+        "answer": "Bəli. Checkila Amazon qiymət və stok dəyişikliklərini fasiləsiz izləyir və nəsə dəyişəndə sizi xəbərdar edir."
+      },
+      {
+        "question": "Checkila eBay dropshipping mənfəətimi hesablaya bilərmi?",
+        "answer": "Bəli. Məhsul dəyərini, çatdırılmanı və komissiyaları daxil edin, Checkila elan yerləşdirməzdən əvvəl xalis mənfəətinizi və marjınızı göstərsin."
       },
       {
         "question": "Checkila məhsul araşdırmasına kömək edirmi?",
-        "answer": "Bəli. Məhsulları daha sürətli müqayisə edə və satışa dəyər görünən siyahılara fokuslana bilərsiniz."
+        "answer": "Bəli. Checkila Analitikası tələbi, rəqabəti və qiyməti nəzərdən keçirir ki, məhsulları daha sürətli müqayisə edib satmağa dəyər olan elanlara fokuslana biləsiniz."
+      },
+      {
+        "question": "Checkila eBay satıcı analitikasına kömək edə bilərmi?",
+        "answer": "Bəli. eBay-də gəzərkən rəqib qiymətləri və elan məlumatlarını daha aydın görməyə imkan verir."
+      },
+      {
+        "question": "Checkila-nın Chrome uzantısı varmı?",
+        "answer": "Bəli. Checkila Chrome uzantısı Amazon və eBay səhifələrindən məhsul və qiymət məlumatını birbaşa hesabınıza çəkir."
+      },
+      {
+        "question": "Telegramda qiymət və stok bildirişi ala bilərəmmi?",
+        "answer": "Bəli. Checkila Telegram botunu qoşaraq paneli açıq saxlamadan qiymət, stok və yeni sifariş bildirişləri alın."
       }
     ]
   }

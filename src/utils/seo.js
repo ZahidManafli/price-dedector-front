@@ -30,6 +30,32 @@ function ensureLinkTag(rel, href) {
   tag.setAttribute('href', href);
 }
 
+function ensureAlternateLinks(alternates) {
+  if (typeof document === 'undefined') return;
+
+  document.head.querySelectorAll('link[rel="alternate"][data-seo-alt="1"]').forEach((tag) => tag.remove());
+  if (!alternates || !alternates.length) return;
+
+  alternates.forEach(({ lang, href }) => {
+    const tag = document.createElement('link');
+    tag.setAttribute('rel', 'alternate');
+    tag.setAttribute('hreflang', lang);
+    tag.setAttribute('href', new URL(href, window.location.origin).toString());
+    tag.setAttribute('data-seo-alt', '1');
+    document.head.appendChild(tag);
+  });
+
+  const defaultAlt = alternates.find((a) => a.lang === 'en') || alternates[0];
+  if (defaultAlt) {
+    const tag = document.createElement('link');
+    tag.setAttribute('rel', 'alternate');
+    tag.setAttribute('hreflang', 'x-default');
+    tag.setAttribute('href', new URL(defaultAlt.href, window.location.origin).toString());
+    tag.setAttribute('data-seo-alt', '1');
+    document.head.appendChild(tag);
+  }
+}
+
 function ensureJsonLd(jsonLd) {
   if (typeof document === 'undefined') return;
 
@@ -58,8 +84,14 @@ export function applySeo({
   robots = 'index,follow,max-image-preview:large',
   siteName = DEFAULT_SITE_NAME,
   jsonLd,
+  htmlLang,
+  alternates,
 }) {
   if (typeof document === 'undefined') return;
+
+  if (htmlLang) {
+    document.documentElement.lang = htmlLang;
+  }
 
   if (title) {
     document.title = title;
@@ -94,5 +126,6 @@ export function applySeo({
     ensureMetaTag('property', 'og:url', canonicalUrl);
   }
 
+  ensureAlternateLinks(alternates);
   ensureJsonLd(jsonLd || null);
 }

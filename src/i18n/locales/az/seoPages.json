@@ -1,0 +1,361 @@
+{
+  "dropshippingTool": {
+    "meta": {
+      "title": "eBay Dropshipping Aləti: Məhsul Araşdırması və Avtomatlaşdırma | Checkila",
+      "description": "Checkila eBay dropshipping aləti ilə məhsul araşdırın, Amazon qiymətlərini izləyin, mənfəəti hesablayın və eBay iş axınını tək paneldən idarə edin."
+    },
+    "hero": {
+      "eyebrow": "eBay Dropshipping Aləti",
+      "h1": "eBay Dropshipping Aləti: Ağıllı Məhsul Araşdırması və Avtomatlaşdırma",
+      "subhead": "Məhsul araşdırın, Amazon qiymətlərini izləyin, mənfəəti qiymətləndirin və eBay iş axınınızı — hamısını dropshipperlar üçün hazırlanmış tək paneldən idarə edin."
+    },
+    "problems": [
+      { "problem": "Amazon qiymətlərini əllə yoxlayırsınız, amma yenə də rəqiblər sizi qabaqlayır.", "solution": "Checkila Amazon qiymətlərini fasiləsiz izləyir və marjınızı yeməzdən əvvəl dəyişiklikləri sizə bildirir." },
+      { "problem": "Hansı məhsulun həqiqətən yerləşdirməyə dəyər olduğunu bilmirsiniz.", "solution": "İstənilən məhsul üzərində Checkila Analitikası işə salın və öhdəlik götürmədən əvvəl tələbi, rəqabəti və mənfəət potensialını görün." },
+      { "problem": "Onlarla elanı idarə etməyə başlayan kimi cədvəllər artıq kifayət etmir.", "solution": "Checkila məhsul araşdırmasını, qiymətqoymanı və elan idarəetməsini tək iş məkanında birləşdirir." }
+    ],
+    "features": [
+      { "title": "Məhsul Araşdırması", "description": "Elan yerləşdirməyə vaxt sərf etməzdən əvvəl Amazon məhsullarını axtarın və eBay-də satış potensialını qiymətləndirin." },
+      { "title": "Amazon Qiymət İzləməsi", "description": "Təchizatçının qiyməti və ya stoku dəyişəndə xəbərdar olun ki, eBay elanlarınız həmişə dəqiq qalsın." },
+      { "title": "Mənfəət Kalkulyatoru", "description": "Məhsula öhdəlik götürməzdən əvvəl komissiyalar, çatdırılma və məhsul dəyərindən sonrakı real marjınızı görün." },
+      { "title": "Bazar Analizi", "description": "Məhsulun eBay-də necə performans göstərdiyini yoxlayın — rəqabət, qiymət və tələb siqnalları." },
+      { "title": "Chrome Uzantısı", "description": "Gəzərkən birbaşa Amazon və eBay məhsul səhifələrindən qiymət və məhsul məlumatı çəkin." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Kəşf et", "description": "Məhsul Araşdırması və Chrome uzantısı ilə namizəd məhsulları tapın." },
+      { "step": "02", "title": "Qərar ver", "description": "Məhsulun yerləşdirməyə dəyər olduğunu təsdiqləmək üçün Checkila Analitikası və mənfəət hesablamasını işə salın." },
+      { "step": "03", "title": "Yayımla", "description": "eBay-də yerləşdirin və qiymət ilə stoku Checkila-ya izlətdirin ki, tez reaksiya verə biləsiniz." }
+    ],
+    "faq": [
+      { "q": "eBay dropshipping aləti nədir?", "a": "eBay dropshipping aləti anbar saxlamadan eBay-də məhsul satan satıcılara məhsul tapmaqda, təchizatçı qiymətini izləməkdə və elanları tək yerdən idarə etməkdə kömək edir. Checkila məhz bu iş axını üçün məhsul araşdırmasını, Amazon qiymət izləməsini və mənfəət hesablamasını bir yerə toplayır." },
+      { "q": "Checkila eBay dropshippinginə necə kömək edir?", "a": "Checkila mənbə aldığınız məhsulların Amazon qiymətini və stokunu izləyir, komissiyalardan sonra real eBay mənfəətinizi hesablayır və imkanları ilə riskləri önə çıxarır ki, əminliklə elan yerləşdirib qiymət dəyişə biləsiniz." },
+      { "q": "Checkila-dan istifadə üçün eBay Store abunəliyi lazımdırmı?", "a": "Xeyr. Checkila istənilən eBay satış qurluşu ilə, Store abunəliyi olsun-olmasın, işləyir. Faktiki eBay komissiyalarınız yenə də Store səviyyənizdən və kateqoriyadan asılıdır." },
+      { "q": "Checkila-nı proqramlaşdırma bilmədən istifadə edə bilərəmmi?", "a": "Bəli. Checkila veb panel və Chrome uzantısından ibarətdir — hesablarınızı qoşmaqdan başqa heç bir qurulum tələb olunmur." },
+      { "q": "Checkila ABŞ xaricindəki satıcılar üçün işləyirmi?", "a": "Bəli. Checkila bir neçə dil və valyutanı dəstəkləyir, harada satış etməyinizdən asılı olmayaraq Amazon və eBay elanlarını izləyir." },
+      { "q": "Checkila cədvəldə qiymət izləməkdən nə ilə fərqlənir?", "a": "Cədvəllər əl ilə yoxlama tələb edir və bir neçə məhsuldan sonra artıq işləmir. Checkila qiymət və stok izləməsini avtomatlaşdırır, mənfəəti sizin əvəzinizə hesablayır və araşdırma, qiymətqoyma və elanlarınızı tək sistemdə saxlayır." }
+    ],
+    "cta": { "title": "Dropshippingi daha ağıllı başladın", "description": "Checkila-ya qoşulun və eBay dropshippingində təxmindən qurtulun.", "button": "Pulsuz Başla" }
+  },
+
+  "productResearch": {
+    "meta": {
+      "title": "eBay Məhsul Araşdırma Aləti | Checkila ilə Sərfəli Məhsul Tapın",
+      "description": "Checkila-nın məhsul araşdırma aləti ilə eBay üçün sərfəli məhsullar tapın: Amazon axtarışı, rəqabət analizi və qiymət müqayisəsi tək yerdə."
+    },
+    "hero": {
+      "eyebrow": "eBay Məhsul Araşdırma Aləti",
+      "h1": "eBay Məhsul Araşdırma Aləti",
+      "subhead": "Elan yerləşdirməzdən əvvəl istənilən məhsulu qiymətləndirin — tələb, rəqabət və qiymət yan-yana."
+    },
+    "problems": [
+      { "problem": "Amazon-da saatlarla gəzirsiniz, amma nəyin həqiqətən satılacağını bilmirsiniz.", "solution": "Checkila-nın məhsul axtarışı saatlar yox, dəqiqələr ərzində məhsulu qiymətləndirmək üçün lazım olan məlumatı önə çıxarır." },
+      { "problem": "Məhsul populyar görünür, amma eBay-də artıq doymuş olduğunu bilmirsiniz.", "solution": "Satıcı analitikası və rəqabət məlumatları hazırkı kateqoriyanın nə qədər izdihamlı olduğunu göstərir." },
+      { "problem": "Məhsulu yerləşdirirsiniz, sonra marjın çox az olduğunu öyrənirsiniz.", "solution": "İmkanı və mənfəət potensialını yayımlamazdan əvvəl qiymətləndirin, sonra yox." }
+    ],
+    "features": [
+      { "title": "Amazon Məhsul Axtarışı", "description": "Araşdırmanıza başlamaq üçün Amazon elanından birbaşa məhsul detallarını çəkin." },
+      { "title": "Checkila Analitikası", "description": "Məhsul üçün tələb, rəqabət və qiymətin strukturlaşdırılmış qiymətləndirməsini aparın." },
+      { "title": "Satıcı Analitikası", "description": "Digər satıcıların oxşar məhsulları necə qiymətləndirdiyini və mövqeləndirdiyini görün." },
+      { "title": "Qiymət Müqayisəsi", "description": "Öhdəlik götürməzdən əvvəl Amazon dəyərini real eBay satış qiyməti ilə müqayisə edin." },
+      { "title": "İmkan Qiymətləndirməsi", "description": "Məhsulun potensialını xallandırın ki, nəyi əvvəl yerləşdirəcəyinizə üstünlük verə biləsiniz." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Axtar", "description": "Açar söz, kateqoriya və ya Amazon linki ilə məhsul axtarın." },
+      { "step": "02", "title": "Analiz et", "description": "Checkila Analitikası ilə tələbi, rəqabəti və təxmini marjı nəzərdən keçirin." },
+      { "step": "03", "title": "Siyahıya al", "description": "Ən güclü namizədləri saxlayın və elan iş axınına keçirin." }
+    ],
+    "faq": [
+      { "q": "eBay məhsul araşdırma aləti nədir?", "a": "Bu, hər mənbəni əl ilə yoxlamaq əvəzinə tələb, rəqabət və qiymət məlumatlarını tək ekranda birləşdirərək satıcılara məhsulun eBay-də yerləşdirməyə dəyər olub-olmadığını qiymətləndirməyə kömək edən proqram təminatıdır." },
+      { "q": "Checkila eBay satıcı analitikasına kömək edirmi?", "a": "Bəli. Checkila oxşar elanların necə qiymətləndirildiyini və mövqeləndirildiyini göstərir ki, elan yerləşdirmədən əvvəl rəqabəti qiymətləndirə biləsiniz." },
+      { "q": "Checkila-nın məhsul araşdırması Amazon məhsulları ilə işləyirmi?", "a": "Bəli. Məhsulu birbaşa Amazon-dan axtarıb eBay-də yenidən satış üçün qiymətləndirə bilərsiniz." },
+      { "q": "Checkila Analitikası necə işləyir?", "a": "Checkila Analitikası məhsulun qiymətini, rəqabətini və tələb siqnallarını nəzərdən keçirir və elan etmək qərarı vermək üçün istifadə edə biləcəyiniz strukturlaşdırılmış qiymətləndirmə təqdim edir." },
+      { "q": "Məhsul araşdırması hər Checkila planına daxildirmi?", "a": "Məhsul araşdırması və Checkila Analitikası kredit əsaslı sistemdə işləyir; mövcud analiz sayı planınızdan asılıdır." },
+      { "q": "Bir neçə məhsulu eyni anda müqayisə edə bilərəmmi?", "a": "Bəli, hansı məhsulları yerləşdirəcəyinizə qərar verməzdən əvvəl bir neçə məhsulu araşdırıb siyahıya ala bilərsiniz." }
+    ],
+    "cta": { "title": "Məhsulları əminliklə araşdırın", "description": "Hansı məhsulların dəyərli olduğunu təxmin etməyi dayandırın.", "button": "Araşdırmaya Başla" }
+  },
+
+  "amazonTracking": {
+    "meta": {
+      "title": "eBay Dropshipping üçün Amazon Qiymət İzləməsi | Checkila",
+      "description": "Checkila ilə Amazon qiymət və stok dəyişikliklərini avtomatik izləyin, əl ilə yoxlamadan eBay dropshipping marjınızı qoruyun."
+    },
+    "hero": {
+      "eyebrow": "Amazon Qiymət İzləməsi",
+      "h1": "eBay Dropshipping üçün Amazon Qiymət İzləməsi",
+      "subhead": "Daimi əl ilə yoxlamaya güvənmədən Amazon qiymət dəyişikliklərini və stok hərəkətini izləyin."
+    },
+    "problems": [
+      { "problem": "Amazon qiyməti dəyişdi və eBay elanınız artıq mənfəətsizdir.", "solution": "Checkila Amazon qiymətlərini izləyir və marjınız yox olmazdan əvvəl sizi xəbərdar edir." },
+      { "problem": "Təchizatçı məhsulu bitdi, siz isə satmağa davam etdiniz.", "solution": "Stok bildirişləri izlənən məhsul əlçatmaz olan kimi sizə xəbər verir." },
+      { "problem": "Onlarla Amazon elanını hər gün əl ilə yenidən yoxlamaq davamlı deyil.", "solution": "Checkila izləməni avtomatlaşdırır ki, yalnız həqiqətən nəsə dəyişəndə hərəkət edəsiniz." }
+    ],
+    "features": [
+      { "title": "Fasiləsiz Qiymət İzləməsi", "description": "Mənbə aldığınız hər məhsulun Amazon qiymətini avtomatik izləyin." },
+      { "title": "Stok Bildirişləri", "description": "Məhsul bitəndə və ya yenidən mövcud olanda dərhal bilin." },
+      { "title": "Qiymət Dəyişikliyi Bildirişləri", "description": "İzlənən qiymət dəyişəndə Telegram və ya paneldə bildiriş alın." },
+      { "title": "Tarixi Qiymət Görünüşü", "description": "Öhdəlik götürməzdən əvvəl məhsulun qiymətinin zamanla necə dəyişdiyini görün." },
+      { "title": "eBay Marj Qorunması", "description": "Qiymət artımlarını erkən tutun ki, itki almazdan əvvəl eBay elanınızı yenidən qiymətləndirə biləsiniz." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Məhsul əlavə et", "description": "Mənbə aldığınız Amazon məhsulunu izləmə siyahınıza əlavə edin." },
+      { "step": "02", "title": "Amazonu izlə", "description": "Checkila sizin əvəzinizə qiyməti və stok statusunu yoxlayır." },
+      { "step": "03", "title": "Dəyişiklikləri aşkarla", "description": "Qiymət və ya əlçatanlıq dəyişən kimi bildiriş alın." },
+      { "step": "04", "title": "Qiymətinizi qoruyun", "description": "Dəyişiklik mənfəətinizi yeməzdən əvvəl eBay elanınızı tənzimləyin." }
+    ],
+    "faq": [
+      { "q": "Checkila ilə Amazon qiymətlərini izləyə bilərəmmi?", "a": "Bəli. Checkila əlavə etdiyiniz məhsulların Amazon qiymətini fasiləsiz izləyir və dəyişəndə sizi xəbərdar edir." },
+      { "q": "Checkila Amazon inventarını izləyirmi?", "a": "Bəli. Stok statusu qiymətlə yanaşı izlənir, beləliklə təchizatçı məhsulu bitəndə bilirsiniz." },
+      { "q": "Qiymət dəyişikliyi bildirişləri nə qədər sürətlidir?", "a": "Checkila izlənən məhsulları müntəzəm qrafik əsasında yoxlayır və dəyişiklik aşkar edilən kimi sizə bildiriş göndərir." },
+      { "q": "Telegramda qiymət və stok bildirişi ala bilərəmmi?", "a": "Bəli. Checkila Telegram botunu qoşaraq paneldən kənarda qiymət, stok və sifariş bildirişləri alın." },
+      { "q": "Neçə məhsul izləyə bilərəm?", "a": "İzlənə bilən məhsul sayı Checkila planınızdan asılıdır." },
+      { "q": "Qiymət izləmə istənilən Amazon bazarı üçün işləyirmi?", "a": "Checkila eBay dropshipping üçün ən çox istifadə olunan Amazon elanları ətrafında qurulub; bazar əhatəsi üçün planınızı yoxlayın və ya dəstəklə əlaqə saxlayın." }
+    ],
+    "cta": { "title": "Bir daha qiymət dəyişikliyini qaçırmayın", "description": "Amazon-u izləməyi Checkila-ya həvalə edin, siz isə satışa fokuslanın.", "button": "Məhsulları İzlə" }
+  },
+
+  "profitCalculator": {
+    "meta": {
+      "title": "Dropshipperlar üçün eBay Mənfəət Kalkulyatoru | Checkila",
+      "description": "Checkila-nın mənfəət kalkulyatoru ilə real eBay dropshipping mənfəətinizi hesablayın — məhsul dəyəri, komissiyalar, çatdırılma və reklam xərci daxil."
+    },
+    "hero": {
+      "eyebrow": "eBay Mənfəət Kalkulyatoru",
+      "h1": "Dropshipperlar üçün eBay Mənfəət Kalkulyatoru",
+      "subhead": "Elan yerləşdirməzdən əvvəl real marjınızı bilin — məhsul dəyəri, eBay komissiyaları, çatdırılma və təşviqat xərci, hamısı tək rəqəmdə."
+    },
+    "problems": [
+      { "problem": "Elanı yerləşdirirsiniz, amma komissiyalardan sonra nə qazanacağınızı bilmirsiniz.", "solution": "Checkila-nın mənfəət kalkulyatoru elanı yayımlamazdan əvvəl gözlənilən mənfəəti göstərir." },
+      { "problem": "eBay komissiyaları, çatdırılma və reklam xərcləri müxtəlif səkmələrə və qəbzlərə səpələnib.", "solution": "Rəqəmlərinizi bir dəfə daxil edin, tam ayrılışı tək yerdə görün." },
+      { "problem": "Kağız üzərində 'sərfəli' görünən məhsul komissiyalardan sonra zərər çıxır.", "solution": "Qərar verməzdən əvvəl — ilk satışdan sonra yox — son dəyər komissiyalarını və təşviqatlı elan xərclərini hesaba qatın." }
+    ],
+    "features": [
+      { "title": "Tam Komissiya Ayrılışı", "description": "Son dəyər komissiyasını, sifariş başına komissiyanı və təşviqat xərcini ayrı-ayrı sətir olaraq görün." },
+      { "title": "Real Xalis Mənfəət", "description": "Sadəcə gəlir rəqəmi yox, yekun mənfəət və marj faizini əldə edin." },
+      { "title": "Ssenari Müqayisəsi", "description": "Yerləşdirməzdən əvvəl qiyməti, çatdırılmanı və ya reklam xərcini dəyişərək mənfəətin necə dəyişdiyini görün." },
+      { "title": "Break-even Qiymətqoyma", "description": "Xərclərinizi hələ də qarşılayan minimum qiyməti tapın." },
+      { "title": "İş Axınınıza Qurulmuş", "description": "Kor-koranə elan yerləşdirməmək üçün məhsul araşdırması ilə birlikdə istifadə edin." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Xərclərinizi daxil edin", "description": "Məhsul dəyərini, çatdırılmanı və gözlənilən satış qiymətini əlavə edin." },
+      { "step": "02", "title": "Komissiyaları əlavə edin", "description": "eBay son dəyər komissiyasını, təşviqat faizini və digər xərcləri daxil edin." },
+      { "step": "03", "title": "Mənfəətinizi görün", "description": "Xalis mənfəəti, marjı və break-even qiyməti anında nəzərdən keçirin." }
+    ],
+    "faq": [
+      { "q": "Checkila eBay dropshipping mənfəətimi hesablaya bilərmi?", "a": "Bəli. Məhsul dəyərini, çatdırılmanı və eBay komissiyalarını daxil edin, Checkila xalis mənfəətinizi və marjınızı göstərsin." },
+      { "q": "Mənfəət kalkulyatoru eBay son dəyər komissiyalarını daxil edirmi?", "a": "Bəli, sifariş başına komissiya, çatdırılma xərci və təşviqatlı elan xərci ilə birlikdə, beləliklə nəticə real ödənişinizi əks etdirir." },
+      { "q": "eBay dropshippingi üçün yaxşı mənfəət marjı nə qədərdir?", "a": "Bir çox satıcı bütün komissiyalardan sonra orta səviyyəli xalis marja hədəflənir; komissiyaları, çatdırılmanı və reklam xərcini rahatca qarşılayıb yenidən investisiya üçün yer buraxan hər rəqəm məqbul hədəfdir." },
+      { "q": "Fərqli qiymət ssenarilərini müqayisə edə bilərəmmi?", "a": "Bəli, qiymət, çatdırılma və ya təşviqat dəyərlərini dəyişərək hər variantın yekun mənfəətinizə necə təsir etdiyini görün." },
+      { "q": "Mənfəət kalkulyatoru eBay komissiya kalkulyatoru ilə eynidirmi?", "a": "Əlaqəlidirlər, amma fərqlidirlər: komissiya kalkulyatoru yalnız eBay-in komissiya strukturuna fokuslanır, mənfəət kalkulyatoru isə komissiyaları məhsul dəyəri və çatdırılma ilə birləşdirərək faktiki əldə etdiyiniz mənfəəti göstərir." },
+      { "q": "Mənfəət kalkulyatorundan istifadə üçün hesab lazımdırmı?", "a": "Qeydiyyatdan keçdikdən sonra tam mənfəət kalkulyatoru Checkila panelinizdə mövcuddur." }
+    ],
+    "cta": { "title": "Elan yerləşdirməzdən əvvəl marjınızı bilin", "description": "Real eBay dropshipping mənfəətini saniyələr ərzində hesablayın.", "button": "Mənfəəti Hesabla" }
+  },
+
+  "marketAnalysis": {
+    "meta": {
+      "title": "eBay Bazar Analizi və Satıcı Analitikası | Checkila",
+      "description": "Checkila ilə elan yerləşdirməzdən əvvəl eBay bazar tələbini, qiymətini və rəqabətini analiz edin — dropshipperlar üçün məlumata əsaslanan satıcı analitikası."
+    },
+    "hero": {
+      "eyebrow": "eBay Bazar Analizi",
+      "h1": "eBay Bazar Analizi və Satıcı Analitikası",
+      "subhead": "Anbar və ya vaxt sərf etməzdən əvvəl məhsulun eBay-də əslində necə performans göstərdiyini görün."
+    },
+    "problems": [
+      { "problem": "Nişin böyüdüyünü, yoxsa artıq doyduğunu deyə bilmirsiniz.", "solution": "Checkila-nın bazar analizi kateqoriya və ya məhsul üçün tələb və rəqabət siqnallarını göstərir." },
+      { "problem": "Rəqib satıcılar fərqli qiymət qoyur, siz isə səbəbini bilmirsiniz.", "solution": "Bazarın həqiqətən harada dayandığını anlamaq üçün oxşar elanları yan-yana görün." },
+      { "problem": "Bazarı planlaşdırmaq əvəzinə ona reaksiya verirsiniz.", "solution": "Rəqiblərdən əvvəl növbəti nəyi yerləşdirəcəyinizə qərar vermək üçün trend və tələb məlumatından istifadə edin." }
+    ],
+    "features": [
+      { "title": "Tələb Siqnalları", "description": "Məhsul və ya kateqoriyanın eBay-də nə qədər maraq gördüyünü anlayın." },
+      { "title": "Rəqib Qiymətqoyması", "description": "Oxşar elanların aktiv satıcılar arasında necə qiymətləndirildiyini görün." },
+      { "title": "Kateqoriya Trendləri", "description": "İzdihamlı olmazdan əvvəl böyüyən kateqoriyaları müəyyən edin." },
+      { "title": "Elan Müqayisəsi", "description": "Planlaşdırdığınız elanı artıq satılan elanlarla müqayisə edin." },
+      { "title": "Məlumata Əsaslanan Qərarlar", "description": "Elan qərarlarını təxmin əvəzinə bazar məlumatına əsaslandırın." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Bazar seçin", "description": "Analiz etmək üçün məhsul kateqoriyası və ya konkret elan seçin." },
+      { "step": "02", "title": "Məlumatı nəzərdən keçirin", "description": "O bazar üçün tələb, qiymət və rəqib siqnallarını görün." },
+      { "step": "03", "title": "Ona uyğun hərəkət edin", "description": "Nəyi yerləşdirəcəyinizə, necə qiymətləndirəcəyinizə və ya sonra hara baxacağınıza qərar verin." }
+    ],
+    "faq": [
+      { "q": "eBay bazar analizi nəyi göstərir?", "a": "Məhsul və ya kateqoriyanın eBay-də necə performans göstərdiyini — tələb siqnallarını, rəqib qiymətlərini və sahənin nə qədər izdihamlı olduğunu — göstərir ki, ora girməyə dəyər olub-olmadığına qərar verə biləsiniz." },
+      { "q": "Bazar analizi məhz dropshipping üçün faydalıdırmı?", "a": "Bəli. Dropshipperlar bunu doymuş kateqoriyalardan qaçmaq və mənbə axtarmazdan əvvəl real, davamlı tələbi olan məhsulları tapmaq üçün istifadə edir." },
+      { "q": "Konkret məhsul üçün rəqib qiymətlərini görə bilərəmmi?", "a": "Bəli, Checkila oxşar elanları önə çıxarır ki, digər satıcıların oxşar məhsulları necə qiymətləndirdiyini görə biləsiniz." },
+      { "q": "Bazar məlumatı nə qədər tez-tez yenilənir?", "a": "Bazar məlumatı müntəzəm yenilənir ki, analiziniz köhnəlmiş görüntülər deyil, hazırkı elanları və qiymətləri əks etdirsin." },
+      { "q": "Bazar Analizi və Məhsul Araşdırmasına ayrı-ayrı ehtiyacım varmı?", "a": "Onlar birlikdə işləyir: Məhsul Araşdırması konkret məhsulu qiymətləndirir, Bazar Analizi isə ətrafındakı daha geniş kateqoriya və ya rəqabət mühitinə baxır." },
+      { "q": "Bazar analizi hər plana daxildirmi?", "a": "Əlçatanlıq Checkila planınızdan asılıdır; nəyin daxil olduğunu qiymət səhifəsindən yoxlayın." }
+    ],
+    "cta": { "title": "Elan yerləşdirməzdən əvvəl bazarı anlayın", "description": "Real eBay məlumatına əsaslanan elan qərarları verin.", "button": "Bazar Analizini Kəşf Et" }
+  },
+
+  "inventoryTracking": {
+    "meta": {
+      "title": "eBay Anbar və Sifariş İzləmə Proqramı | Checkila",
+      "description": "Checkila-nın anbar və sifariş izləmə alətləri ilə eBay sifarişlərini, göndərişləri və Amazon təchizatçı stokunu tək paneldə izləyin."
+    },
+    "hero": {
+      "eyebrow": "Anbar və Sifariş İzləməsi",
+      "h1": "Cədvəlsiz eBay Anbar və Sifariş İzləməsi",
+      "subhead": "Heç nəyin gözdən qaçmaması üçün təchizatçı stokunu və alıcı sifarişlərini sinxron saxlayın."
+    },
+    "problems": [
+      { "problem": "Təchizatçının stoku bitdi və siz bunu alıcı şikayət edənə qədər öyrənmədiniz.", "solution": "Checkila Amazon təchizatçı stokunu izləyir ki, bu müştəri xidməti probleminə çevrilməzdən əvvəl bilə biləsiniz." },
+      { "problem": "eBay sifariş statusunu bir neçə səkmədə əl ilə yoxlayırsınız.", "solution": "eBay satışlarınız üçün sifariş və göndəriş statusunu tək paneldə görün." },
+      { "problem": "Məhsul izləməsini sifariş izləməsindən ayırmaq çətindir.", "solution": "Checkila təchizatçı tərəfli məhsul izləməsini (qiymət, stok) alıcı tərəfli sifariş izləməsindən (göndəriş, çatdırılma) ayırır ki, hər biri aydın olsun." }
+    ],
+    "features": [
+      { "title": "Təchizatçı Stok İzləməsi", "description": "Mənbə aldığınız hər şey üçün Amazon məhsul əlçatanlığını izləyin." },
+      { "title": "Sifariş Status İzləməsi", "description": "Hər eBay sifarişinin ödənişdən çatdırılmaya qədər harada olduğunu görün." },
+      { "title": "Göndəriş Görünürlüyü", "description": "Paneldən çıxmadan göndəriş irəliləyişini izləyin." },
+      { "title": "Yeni Sifariş Bildirişləri", "description": "Yeni eBay sifarişi daxil olan kimi bildiriş alın." },
+      { "title": "Mərkəzləşdirilmiş Görünüş", "description": "Məhsul izləməsi və sifariş izləməsi tək bağlı iş məkanında yaşayır." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Hesablarınızı qoşun", "description": "eBay və Amazon hesablarınızı Checkila-ya bağlayın." },
+      { "step": "02", "title": "Avtomatik izləyin", "description": "Checkila təchizatçı stokunu və sifariş statusunu fasiləsiz izləyir." },
+      { "step": "03", "title": "Bildiriş alın", "description": "Yeni sifarişlər, stok problemləri və göndəriş yeniləmələri üçün bildiriş alın." }
+    ],
+    "faq": [
+      { "q": "Checkila eBay sifarişlərini izləyirmi?", "a": "Bəli. Checkila eBay satışlarınız üçün sifariş və göndəriş statusunu göstərir və yeni sifariş daxil olanda sizi xəbərdar edə bilər." },
+      { "q": "Anbar izləməsi sifariş izləməsi ilə eynidirmi?", "a": "Xeyr. Anbar/məhsul izləməsi Amazon təchizatçınızın qiymətini və stokunu izləyir, sifariş izləməsi isə eBay alıcınızın sifarişini ödənişdən çatdırılmaya qədər izləyir." },
+      { "q": "Yeni eBay sifarişləri haqqında bildiriş ala bilərəmmi?", "a": "Bəli, yeni sifariş bildirişləri paneldə və ya Checkila Telegram botu vasitəsilə çatdırıla bilər." },
+      { "q": "Checkila təchizatçılarım üçün Amazon stokunu izləyirmi?", "a": "Bəli, Checkila mənbə üçün əlavə etdiyiniz Amazon məhsullarının əlçatanlığını izləyir." },
+      { "q": "Bir neçə eBay hesabını idarə edə bilərəmmi?", "a": "Hesab dəstəyi Checkila planınızdan asılıdır; bir neçə mağaza idarə edirsinizsə, dəstəklə əlaqə saxlayın." },
+      { "q": "Sifariş izləməsi eBay-in öz alətlərini əvəz edirmi?", "a": "Checkila eBay-in öz sifariş idarəetməsini əvəz etmək əvəzinə, məhsul və qiymət izləməsi ilə yanaşı birləşdirilmiş görünüş verərək eBay satıcı alətlərini tamamlayır." }
+    ],
+    "cta": { "title": "Stok və sifarişləri sinxron saxlayın", "description": "eBay biznesinizi izləmək üçün səkmələr arasında qaçmağı dayandırın.", "button": "İzləməyə Başla" }
+  },
+
+  "chromeExtension": {
+    "meta": {
+      "title": "eBay və Amazon Satıcıları üçün Checkila Chrome Uzantısı",
+      "description": "Checkila Chrome uzantısı gəzərkən Amazon və eBay-dən məhsul və qiymət məlumatı çəkir, dropshipping məhsul araşdırması üçün hazırlanıb."
+    },
+    "hero": {
+      "eyebrow": "Chrome Uzantısı",
+      "h1": "eBay və Amazon Satıcıları üçün Checkila Chrome Uzantısı",
+      "subhead": "Artıq açıq olduğunuz Amazon və ya eBay səhifəsindən çıxmadan məhsul və qiymət araşdırın."
+    },
+    "problems": [
+      { "problem": "Amazon ilə araşdırma alətiniz arasında məhsul detallarını köçürtmək vaxt itkisidir.", "solution": "Checkila uzantısı baxdığınız səhifədən birbaşa məhsul məlumatını çəkir." },
+      { "problem": "Gəzinti ilə analiz arasında keçəndə diqqətinizi itirirsiniz.", "solution": "Səkmə dəyişmədən birbaşa Amazon və ya eBay elanından tez qiymətləndirmə aparın." },
+      { "problem": "Gəzərkən tapdığınız məhsulu əl ilə izləmək asanlıqla unudulur.", "solution": "Bir kliklə Checkila-ya əlavə edin ki, bundan sonra avtomatik izlənsin." }
+    ],
+    "features": [
+      { "title": "Bir Kliklə Məhsul İdxalı", "description": "Amazon və ya eBay səhifələrindən məhsul detallarını dərhal Checkila-ya çəkin." },
+      { "title": "Səhifə Daxilində Araşdırma", "description": "Hələ elana baxarkən qiymət və analiz məlumatını görün." },
+      { "title": "Ani İzləmə", "description": "Səhifədən çıxmadan məhsulu Amazon qiymət izləmə siyahınıza əlavə edin." },
+      { "title": "Gəzərkən Satıcı Anlayışı", "description": "Tapdığınız istənilən elan üçün rəqabət və qiymət kontekstini yoxlayın." },
+      { "title": "Yüngül və Sürətli", "description": "Araşdırma və gəzinti zamanı yolunuzda maneə olmamaq üçün qurulub." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Quraşdır", "description": "Checkila uzantısını bir neçə saniyəyə Chrome-a əlavə edin." },
+      { "step": "02", "title": "Gəz", "description": "Adətən etdiyiniz kimi istənilən Amazon və ya eBay məhsul səhifəsini açın." },
+      { "step": "03", "title": "Ani araşdır", "description": "Məlumatı Checkila-ya çəkin və ya bir kliklə məhsulu izləməyə başlayın." }
+    ],
+    "faq": [
+      { "q": "Checkila-nın Chrome uzantısı varmı?", "a": "Bəli. Checkila Chrome uzantısı Amazon və eBay səhifələrindən məhsul və qiymət məlumatını birbaşa Checkila hesabınıza çəkməyə imkan verir." },
+      { "q": "Chrome uzantısı nə edir?", "a": "Araşdırma üçün məhsul detallarını idxal edir və gəzdiyiniz səhifədən çıxmadan məhsulun Amazon qiymətini izləməyə başlamağa imkan verir." },
+      { "q": "Chrome uzantısı pulsuzdurmu?", "a": "Uzantını quraşdırmaq pulsuzdur; onun vasitəsilə çəkə biləcəyiniz məlumat və analiz Checkila planınızdan asılıdır." },
+      { "q": "Uzantı həm Amazon, həm də eBay-də işləyirmi?", "a": "Bəli, həm Amazon, həm də eBay elan səhifələrində məhsul araşdırmasını dəstəkləmək üçün qurulub." },
+      { "q": "Uzantıdan istifadə üçün Checkila hesabı lazımdırmı?", "a": "Bəli, idxal edilən məhsullar və izləmə panelinizlə sinxronlaşsın deyə Checkila hesabınızla daxil olun." },
+      { "q": "Checkila uzantısı ilə məlumatlarım təhlükəsizdirmi?", "a": "Uzantı yalnız araşdırmanızı dəstəkləmək üçün məhsul səhifəsi məlumatını oxuyur; detallar üçün uzantı məxfilik siyasətimizə baxın." }
+    ],
+    "cta": { "title": "Səhifədən çıxmadan araşdırın", "description": "Checkila Chrome uzantısını əlavə edin və iş axınınızı sürətləndirin.", "button": "Uzantını Əldə Et" }
+  },
+
+  "telegramBot": {
+    "meta": {
+      "title": "Checkila Telegram Botu: eBay və Amazon Bildirişləri Yanınızda",
+      "description": "Checkila botu ilə Telegramda Amazon qiymət və stok bildirişləri, həmçinin yeni eBay sifariş bildirişləri alın."
+    },
+    "hero": {
+      "eyebrow": "Telegram Botu",
+      "h1": "eBay və Amazon Bildirişləri üçün Checkila Telegram Botu",
+      "subhead": "Paneli açıq saxlamadan qiymət dəyişikliklərini, stok bildirişlərini və yeni sifarişləri birbaşa Telegrama alın."
+    },
+    "problems": [
+      { "problem": "Qiymət dəyişikliyi haqqında yalnız təsadüfən paneli yoxlayanda bilirsiniz.", "solution": "Checkila Telegram botu nəsə dəyişən kimi bildirişi sizə göndərir." },
+      { "problem": "Yeni eBay sifarişləri saatlarla diqqətdən kənar qala bilir.", "solution": "Yeni sifariş daxil olan kimi ani Telegram bildirişi alın." },
+      { "problem": "Yeniləmələr üçün bir neçə kanalı yoxlamaq sizi ləngidir.", "solution": "Qiymət, stok və sifariş bildirişlərini tək Telegram söhbətində birləşdirin." }
+    ],
+    "features": [
+      { "title": "Qiymət Bildirişləri", "description": "İzlənən Amazon qiyməti dəyişən kimi bildiriş alın." },
+      { "title": "Stok Bildirişləri", "description": "Mənbə aldığınız məhsul bitəndə dərhal bilin." },
+      { "title": "Yeni Sifariş Bildirişləri", "description": "Yeni eBay sifarişi daxil olan kimi Telegram mesajı alın." },
+      { "title": "Panel Tələb Olunmur", "description": "Bütün gün brauzer səkməsini açıq saxlamadan xəbərdar qalın." },
+      { "title": "Sadə Qurulum", "description": "Checkila hesabınızı bir neçə addımda bota qoşun." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Botu açın", "description": "Checkila Telegram botu ilə söhbətə başlayın." },
+      { "step": "02", "title": "Hesabınızı bağlayın", "description": "Onu Checkila panelinizə qoşun." },
+      { "step": "03", "title": "Bildiriş alın", "description": "Bundan sonra qiymət, stok və sifariş bildirişlərini avtomatik alın." }
+    ],
+    "faq": [
+      { "q": "Telegramda qiymət və stok bildirişi ala bilərəmmi?", "a": "Bəli. Qoşulduqdan sonra Checkila Telegram botu izlədiyiniz məhsullar üçün qiymət və stok bildirişi göndərir." },
+      { "q": "Telegram botu yeni eBay sifarişləri haqqında bildiriş verirmi?", "a": "Bəli, yeni sifariş bildirişləri daxil olduğu kimi bot vasitəsilə çatdırıla bilər." },
+      { "q": "Telegram botu pulsuz istifadə üçündürmü?", "a": "Botu qoşmaq pulsuzdur; hansı bildirişləri alacağınız Checkila planınızdan asılıdır." },
+      { "q": "Checkila Telegram botunu necə qoşum?", "a": "Botu Checkila panel tənzimləmələrindən açın və hesabınızı qoşmaq üçün bağlama addımlarını izləyin." },
+      { "q": "Müəyyən bildiriş növlərini söndürə bilərəmmi?", "a": "Bildiriş üstünlükləri Checkila hesab tənzimləmələrinizdən idarə oluna bilər." },
+      { "q": "Bot paneli əvəz edirmi?", "a": "Xeyr, onu tamamlayır — bot real vaxt bildirişləri üçündür, panel isə araşdırma, analiz və elan idarəetməsini etdiyiniz yerdir." }
+    ],
+    "cta": { "title": "Artıq olduğunuz yerdə bildiriş alın", "description": "Checkila Telegram botunu bir dəqiqədən az müddətdə qoşun.", "button": "Telegram Botunu Aç" }
+  },
+
+  "ebayFeeCalculator": {
+    "meta": {
+      "title": "eBay Komissiya Kalkulyatoru və 2026 Komissiya Bələdçisi | Checkila",
+      "description": "eBay-in komissiyalarda əslində nə qədər götürdüyünü görün. Kateqoriya və Store səviyyəsi üzrə son dəyər komissiya dərəcələri, düstur və tam FAQ."
+    },
+    "hero": {
+      "eyebrow": "eBay Komissiyaları İzah Edilir",
+      "h1": "eBay Komissiya Kalkulyatoru və Tam 2026 Komissiya Bələdçisi",
+      "subhead": "eBay komissiyalarda nə qədər götürür? Budur hazırkı dərəcə strukturu, onun arxasındakı düstur və satıcıların ən çox verdiyi sualların cavabları."
+    },
+    "intro": "Hər eBay satışında birdən çox komissiya iştirak edir: satışdan son dəyər komissiyası, kiçik sifariş başına komissiya, pulsuz elan limitindən kənara çıxdıqda yerləşdirmə komissiyası və təşviqatlı elanlar və ya ödəniş emalı kimi könüllü xərclər. Bu səhifə 2026-cı ildə bu komissiyaların kateqoriya və Store abunəlik səviyyəsi üzrə necə hesablandığını dəqiq izah edir ki, əminliklə qiymət qoya biləsiniz. Konkret elanınız üçün dəqiq rəqəmləri hesablamaq üçün Checkila panelinizdəki kalkulyatordan istifadə edin.",
+    "feeTypes": [
+      { "name": "Son dəyər komissiyası (FVF)", "what": "Məhsul satıldıqda tutulan əsas bazar komissiyası.", "how": "Ümumi satışın (məhsul qiyməti + çatdırılma + aidiyyəti olduqda vergi) faizi, üstəgəl kiçik sabit sifariş başına komissiya.", "who": "Satıcı" },
+      { "name": "Sifariş başına komissiya", "what": "Hər ödəniş əməliyyatına bir dəfə tətbiq olunan sabit komissiya, məhsul başına deyil.", "how": "Adətən $10-dək sifarişlər üçün $0.30, $10-dan yuxarı sifarişlər üçün $0.40.", "who": "Satıcı" },
+      { "name": "Yerləşdirmə komissiyası", "what": "Aylıq pulsuz limitiniz bitdikdən sonra elan yaratdıqda tutulur.", "how": "Kateqoriya və Store abunəlik səviyyəsindən asılı olaraq dəyişən, elan başına sabit komissiya.", "who": "Satıcı" },
+      { "name": "Təşviqatlı Elanlar komissiyası", "what": "Elanın görünürlüyünü artırmaq üçün reklam xərci.", "how": "Adətən satış qiymətinin faizi, yalnız təşviqatlı elan həqiqətən satıldıqda tutulur.", "who": "Satıcı" },
+      { "name": "Ödəniş emalı komissiyası", "what": "Alıcının ödənişini eBay-in idarə olunan ödənişləri vasitəsilə emal etmə dəyəri.", "how": "Ölkəyə görə dəyişən, ödənişin faizi üstəgəl kiçik sabit məbləğ.", "who": "Satıcı" },
+      { "name": "Beynəlxalq komissiya", "what": "Sərhədlərarası satışlara və ya valyuta konversiyasına tətbiq olunur.", "how": "Beynəlxalq göndəriş və ya valyuta konversiyası zamanı əlavə olunan satışın faizi.", "who": "Satıcı" },
+      { "name": "Store abunəlik komissiyası", "what": "eBay Store planının aylıq və ya illik dəyəri.", "how": "Daha böyük pulsuz elan limiti və daha aşağı komissiya səviyyələri açan, səviyyəyə görə sabit qiymət (Starter, Basic, Premium, Anchor, Enterprise).", "who": "Satıcı" }
+    ],
+    "storeTiers": [
+      { "tier": "Store Yoxdur", "monthlyFee": "$0", "typicalFvf": "$7,500-ə qədər 13.6% + üstü üçün 2.35% (əksər kateqoriyalarda)" },
+      { "tier": "Starter", "monthlyFee": "$7.95 (illik ödənişdə $4.95)", "typicalFvf": "$7,500-ə qədər 13.6% + üstü üçün 2.35% (əksər kateqoriyalarda)" },
+      { "tier": "Basic", "monthlyFee": "$27.95 (illik ödənişdə $21.95)", "typicalFvf": "~$2,500-ə qədər 12.7% + üstü üçün 2.35% (bir çox kateqoriyada)" },
+      { "tier": "Premium", "monthlyFee": "$74.95 (illik ödənişdə $59.95)", "typicalFvf": "~$2,500-ə qədər 12.7% + üstü üçün 2.35% (bir çox kateqoriyada)" },
+      { "tier": "Anchor", "monthlyFee": "$349.95 (illik ödənişdə $299.95)", "typicalFvf": "Çox vaxt $2,500-ə qədər 12.7%, müəyyən kateqoriyalarda daha aşağı" }
+    ],
+    "formula": [
+      { "label": "Ümumi Satış", "formula": "Məhsul qiyməti + alıcının ödədiyi çatdırılma + satış vergisi", "explanation": "eBay-in komissiya faizlərinin əksəriyyətini tətbiq etdiyi əsas məbləğ budur." },
+      { "label": "Son Dəyər Komissiyası", "formula": "Ümumi Satış × FVF dərəcəsi + sabit sifariş başına komissiya", "explanation": "eBay-in satışdan aldığı əsas komissiya." },
+      { "label": "Təşviqat Komissiyası", "formula": "Ümumi Satış × təşviqat %", "explanation": "Yalnız təşviqatlı elan satıldıqda tutulur." },
+      { "label": "Xalis Mənfəət", "formula": "Ümumi Satış − Ümumi Komissiyalar − Çatdırılma Xərci − Məhsul Dəyəri", "explanation": "Bütün komissiya və xərclər hesablandıqdan sonra faktiki əldə etdiyiniz məbləğ." }
+    ],
+    "glossary": [
+      { "term": "Son dəyər komissiyası", "definition": "Məhsul satıldıqda eBay-in tutduğu komissiya, ümumi satışın faizi üstəgəl kiçik sifariş başına komissiya şəklində." },
+      { "term": "Yerləşdirmə komissiyası", "definition": "Aylıq pulsuz limitiniz bitdikdən sonra elan yaratmaq üçün alınan komissiya." },
+      { "term": "Sifariş başına komissiya", "definition": "Sifarişdə neçə məhsul olmasından asılı olmayaraq, hər ödəniş əməliyyatına bir dəfə tətbiq olunan sabit komissiya." },
+      { "term": "Store abunəliyi", "definition": "Daha böyük pulsuz elan limiti və çox vaxt daha aşağı son dəyər komissiyaları verən aylıq və ya illik plan." },
+      { "term": "Sıfır yerləşdirmə komissiyası", "definition": "Yerləşdirmə komissiyası tutulmayan aylıq elan sayı." },
+      { "term": "Break-even qiymət", "definition": "Bütün komissiya və xərcləri qarşılayan, sıfır mənfəət qoyan minimum qiymət." },
+      { "term": "Xalis mənfəət", "definition": "Satış qiymətindən bütün komissiyalar, çatdırılma xərci və məhsul dəyəri çıxıldıqdan sonra qalan məbləğ." }
+    ],
+    "faq": [
+      { "q": "eBay komissiyalarda nə qədər götürür?", "a": "Kateqoriyanızdan, Store abunəliyinizdən və qiymətdən asılıdır. eBay adətən 9-15% aralığında son dəyər komissiyası, üstəgəl kiçik sifariş başına komissiya alır və buna əlavə olaraq yerləşdirmə, təşviqat və ya beynəlxalq komissiyalar əlavə edə bilər." },
+      { "q": "eBay komissiyaları necə hesablanır?", "a": "Komissiyalar Ümumi Satış — məhsul qiyməti üstəgəl aidiyyəti olduqda çatdırılma və vergi — üzərindən hesablanır. Son dəyər komissiyası bu baza üzərinə tətbiq olunur, təşviqat və ya yerləşdirmə komissiyası kimi digər xərclər isə ayrıca əlavə olunur." },
+      { "q": "eBay hansı faizi götürür?", "a": "Faizlər kateqoriya və Store səviyyəsinə görə dəyişir, son dəyər komissiyası üçün adətən 9-15% ətrafında olur, bir çox kateqoriyada satışın daha yüksək dəyərli hissəsi üçün isə daha aşağı dərəcə tətbiq olunur." },
+      { "q": "Məhsul satılmasa eBay komissiya alırmı?", "a": "Yerləşdirmə komissiyaları elan yaratdığınızda tətbiq olunur və aylıq pulsuz limitiniz bitdikdən sonra, məhsul satılmasa belə, adətən geri qaytarılmır." },
+      { "q": "Lazımsız eBay komissiyalarından necə qaçmaq olar?", "a": "Düzgün kateqoriya və elan formatını seçin, aylıq pulsuz elan limitinizdən və ya Store abunəliyindən istifadə edin, təşviqatlı elan xərcini hər şeyə tətbiq etmək əvəzinə məqsədyönlü saxlayın." },
+      { "q": "eBay Store abunəliyinə pul ödəmək dəyərmi?", "a": "Yüksək həcmli satıcılar üçün çox vaxt bəli — Store-lar bir çox kateqoriyada daha böyük pulsuz elan limiti və daha aşağı komissiya səviyyələri açır. Aşağı həcmli satıcılar aylıq xərci real qənaətlə müqayisə etməlidir." },
+      { "q": "Hələ də PayPal komissiyaları haqqında narahat olmalıyammı?", "a": "Əsasən yox. eBay-in idarə olunan ödənişləri artıq əksər satıcılar üçün ödənişi idarə edir, ona görə PayPal artıq standart ödəniş metodu deyil." },
+      { "q": "2026-cı ildə eBay-də yaxşı mənfəət marjı nə qədərdir?", "a": "Bir çox satıcı bütün komissiyalar, çatdırılma və məhsul dəyərindən sonra orta səviyyəli xalis marja hədəflənir; xərclərinizi rahatca qarşılayıb yenidən investisiya üçün yer buraxan hər rəqəm sağlam hədəfdir." }
+    ],
+    "cta": { "title": "Dəqiq rəqəminizi əldə edin", "description": "Bu bələdçi ümumi komissiya strukturunu əhatə edir. Konkret elanınız üçün Checkila daxilindəki tam eBay komissiya kalkulyatorundan istifadə edin.", "button": "Kalkulyatoru Aç" }
+  }
+}

@@ -1,17 +1,32 @@
 {
   "navigation": {
+    "home": "Ana Sayfa",
     "features": "Özellikler",
     "plans": "Planlar",
     "contact": "İletişim",
     "chromeExtension": "Checkila Chrome Uzantısı",
     "telegramBot": "Checkila Telegram Botu"
   },
+  "sections": {
+    "whatsIncluded": "Nelerin Dahil Olduğu",
+    "feeTypesTitle": "eBay komisyon türleri",
+    "storeTiersTitle": "eBay Store abonelik seviyeleri",
+    "formulaTitle": "Rakamlar nasıl hesaplanıyor",
+    "glossaryTitle": "Bilmeniz gereken eBay komisyon terimleri"
+  },
   "hero": {
     "eyebrow": "Otomatik Reseller Platformu",
-    "title": "Amazon fiyatlarını takip edin. eBay'de listeleyin. Tekrarlayın.",
-    "subtitle": "Amazon ürünlerini takip edin, Checkila analitiği ile fırsatları analiz edin ve eBay'de yayınlayın — hepsi tek bir iş akışında.",
+    "title": "eBay Dropshipping Aracı ve E-Ticaret Otomasyon Platformu",
+    "tagline": "Amazon fiyatlarını takip edin. eBay'de listeleyin. Tekrarlayın.",
+    "subtitle": "Ürünleri araştırın, Amazon fiyatlarını takip edin, fırsatları analiz edin ve eBay iş akışınızı yönetin — hepsi tek bir platformda.",
     "cta": "Başla",
     "viewPlans": "Planları görüntüle"
+  },
+  "featuresSection": {
+    "eyebrow": "Platformda Neler Var",
+    "title": "Dört araç, tek bir dropshipping iş akışı",
+    "description": "Amazon'dan tedarik ettiğiniz ürünleri araştırmak, fiyatlandırmak ve eBay ilanlarınızı yönetmek için ihtiyacınız olan her şey.",
+    "learnMore": "Daha fazla bilgi"
   },
   "partners": {
     "eyebrow": "Ortaklarımız",
@@ -78,7 +93,8 @@
     "trackingDescription": "Abone olurken herhangi bir abonelik, analiz veya Amazon takip planına ekleyebileceğiniz takip kredileri.",
     "supportPlans": "Destek Planları",
     "supportDescription": "Mentörle doğrudan iletişim ve öncelikli destek için planlar.",
-    "noPlans": "Henüz plan eklenmedi. Lütfen yöneticiye başvurun.",
+    "noPlans": "Bu plan grubu için fiyatlandırmayı sonlandırıyoruz. Bize ulaşın, hacminize uygun bir plan birlikte oluşturalım.",
+    "noPlansCta": "Bize Ulaşın",
     "monthlyDuration": "Aylık"
   },
   "plans": {
@@ -154,6 +170,7 @@
   },
   "footer": {
     "tagline": "Amazon fiyatlarını takip edin, fırsatları değerlendirin ve eBay ilanlarını tek platformdan yönetin.",
+    "resourcesTitle": "Kaynaklar",
     "contactTitle": "İletişim",
     "taxId": "VÖEN",
     "address": "Ahmad Recebli 225, Narimanov, Bakü, AZ1075",
@@ -165,16 +182,36 @@
     "description": "Dropshipping aracı, ürün araştırma iş akışı veya eBay satıcı analitiği arayanlar için net yanıtlar.",
     "items": [
       {
-        "question": "Checkila dropshipping araştırması için faydalı mı?",
-        "answer": "Evet. İlan kararı vermeden önce fiyatları, fırsatları ve satıcı sinyallerini incelemenize yardımcı olur."
+        "question": "eBay dropshipping aracı nedir?",
+        "answer": "Stok tutmadan eBay'de satış yapan satıcıların ürün araştırması yapmasına, tedarikçi fiyatlarını takip etmesine ve ilanlarını tek yerden yönetmesine yardımcı olan bir yazılımdır. Checkila, tam olarak bu iş akışı için tasarlandı."
       },
       {
-        "question": "Checkila eBay satıcı analitiğine yardımcı olur mu?",
-        "answer": "Evet. eBay'de gezerken alıcı ve ilan bilgilerini daha net görmenizi sağlar."
+        "question": "Checkila eBay dropshipping konusunda nasıl yardımcı olur?",
+        "answer": "Checkila, Amazon fiyat ve stok değişikliklerini izler, komisyonlar sonrası gerçek eBay kârınızı hesaplar; fırsatları ve riskleri öne çıkararak güvenle listeleme ve fiyat güncelleme yapmanızı sağlar."
+      },
+      {
+        "question": "Checkila ile Amazon fiyatlarını takip edebilir miyim?",
+        "answer": "Evet. Checkila, Amazon fiyat ve stok değişikliklerini sürekli takip eder ve bir şey değiştiğinde sizi uyarır."
+      },
+      {
+        "question": "Checkila eBay dropshipping kârımı hesaplayabilir mi?",
+        "answer": "Evet. Ürün maliyetinizi, kargo ve komisyonları girin; Checkila listelemeden önce net kârınızı ve marjınızı gösterir."
       },
       {
         "question": "Checkila ürün araştırmasına yardımcı olur mu?",
-        "answer": "Evet. Ürünleri daha hızlı karşılaştırabilir ve satmaya değer görünen ilanlara odaklanabilirsiniz."
+        "answer": "Evet. Checkila Analizi; talebi, rekabeti ve fiyatlandırmayı inceleyerek ürünleri daha hızlı karşılaştırmanızı ve satmaya değer ilanlara odaklanmanızı sağlar."
+      },
+      {
+        "question": "Checkila eBay satıcı zekasına yardımcı olur mu?",
+        "answer": "Evet. eBay'de gezinirken rakip fiyatlandırması ve ilan bilgileri hakkında daha net bir görünüm sunar."
+      },
+      {
+        "question": "Checkila'nın Chrome uzantısı var mı?",
+        "answer": "Evet. Checkila Chrome uzantısı, Amazon ve eBay sayfalarından ürün ve fiyat verisini doğrudan hesabınıza çeker."
+      },
+      {
+        "question": "Telegram üzerinden fiyat ve stok uyarısı alabilir miyim?",
+        "answer": "Evet. Checkila Telegram botunu bağlayarak paneli açık tutmadan fiyat, stok ve yeni sipariş uyarıları alabilirsiniz."
       }
     ]
   }

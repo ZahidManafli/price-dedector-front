@@ -52,6 +52,7 @@ import PaymentErrorPage from './pages/PaymentErrorPage';
 import EpointRedirectPage from './pages/EpointRedirectPage';
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
+import { buildSeoRoutes } from './routes/seoRoutes';
 
 // Routes that stay reachable even for a user whose plan has expired, so they can
 // still see the notice and renew instead of getting redirected in a loop.
@@ -147,6 +148,9 @@ function AppContent() {
             <Route path="/error" element={<PaymentErrorPage />} />
             <Route path="/payments/epoint/checkout/:requestId" element={<EpointRedirectPage kind="checkout" />} />
             <Route path="/payments/epoint/card/register/:attemptId" element={<EpointRedirectPage kind="card" />} />
+
+            {/* SEO landing pages (public, locale-prefixed) */}
+            {buildSeoRoutes()}
 
             {/* Protected Routes */}
             <Route
