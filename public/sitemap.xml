@@ -295,6 +295,50 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://checkila.com/ebay-inventory-tracking" />
   </url>
   <url>
+    <loc>https://checkila.com/convert-amazon-tracking-to-ebay</loc>
+    <lastmod>2026-09-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://checkila.com/convert-amazon-tracking-to-ebay" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://checkila.com/tr/amazon-ebay-takip-donusturucu" />
+    <xhtml:link rel="alternate" hreflang="az" href="https://checkila.com/az/amazon-ebay-izleme-cevirici" />
+    <xhtml:link rel="alternate" hreflang="ru" href="https://checkila.com/ru/konverter-tracking-nomera-amazon-ebay" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://checkila.com/convert-amazon-tracking-to-ebay" />
+  </url>
+  <url>
+    <loc>https://checkila.com/tr/amazon-ebay-takip-donusturucu</loc>
+    <lastmod>2026-09-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://checkila.com/convert-amazon-tracking-to-ebay" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://checkila.com/tr/amazon-ebay-takip-donusturucu" />
+    <xhtml:link rel="alternate" hreflang="az" href="https://checkila.com/az/amazon-ebay-izleme-cevirici" />
+    <xhtml:link rel="alternate" hreflang="ru" href="https://checkila.com/ru/konverter-tracking-nomera-amazon-ebay" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://checkila.com/convert-amazon-tracking-to-ebay" />
+  </url>
+  <url>
+    <loc>https://checkila.com/az/amazon-ebay-izleme-cevirici</loc>
+    <lastmod>2026-09-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://checkila.com/convert-amazon-tracking-to-ebay" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://checkila.com/tr/amazon-ebay-takip-donusturucu" />
+    <xhtml:link rel="alternate" hreflang="az" href="https://checkila.com/az/amazon-ebay-izleme-cevirici" />
+    <xhtml:link rel="alternate" hreflang="ru" href="https://checkila.com/ru/konverter-tracking-nomera-amazon-ebay" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://checkila.com/convert-amazon-tracking-to-ebay" />
+  </url>
+  <url>
+    <loc>https://checkila.com/ru/konverter-tracking-nomera-amazon-ebay</loc>
+    <lastmod>2026-09-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://checkila.com/convert-amazon-tracking-to-ebay" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://checkila.com/tr/amazon-ebay-takip-donusturucu" />
+    <xhtml:link rel="alternate" hreflang="az" href="https://checkila.com/az/amazon-ebay-izleme-cevirici" />
+    <xhtml:link rel="alternate" hreflang="ru" href="https://checkila.com/ru/konverter-tracking-nomera-amazon-ebay" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://checkila.com/convert-amazon-tracking-to-ebay" />
+  </url>
+  <url>
     <loc>https://checkila.com/chrome-extension</loc>
     <lastmod>2026-09-18</lastmod>
     <changefreq>monthly</changefreq>

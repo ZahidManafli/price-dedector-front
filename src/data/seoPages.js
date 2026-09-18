@@ -70,6 +70,20 @@ export const SEO_PAGES = [
     },
   },
   {
+    key: 'trackingConverter',
+    jsonLdType: 'SoftwareApplication',
+    // "Checkila Tracking": converts Amazon (incl. TBA) tracking numbers into
+    // eBay-recognized carrier codes, auto-uploads them to the eBay order, and
+    // auto-messages the buyer on every label update. Targets high-intent
+    // queries like "convert amazon tracking number to ebay" / "TBA tracking".
+    slugs: {
+      en: 'convert-amazon-tracking-to-ebay',
+      tr: 'amazon-ebay-takip-donusturucu',
+      az: 'amazon-ebay-izleme-cevirici',
+      ru: 'konverter-tracking-nomera-amazon-ebay',
+    },
+  },
+  {
     key: 'chromeExtension',
     jsonLdType: 'SoftwareApplication',
     slugs: {

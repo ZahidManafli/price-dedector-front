@@ -154,13 +154,13 @@
 
   "marketAnalysis": {
     "meta": {
-      "title": "eBay Market Analysis & Seller Intelligence | Checkila",
-      "description": "Analyze eBay market demand, pricing and competition with Checkila before you list — data-driven seller intelligence for dropshippers."
+      "title": "eBay Marketplace, Product & Seller Analysis | Checkila",
+      "description": "Analyze the eBay marketplace, competing products and individual sellers with Checkila before you list — data-driven market and seller intelligence for dropshippers."
     },
     "hero": {
       "eyebrow": "eBay Market Analysis",
-      "h1": "eBay Market Analysis & Seller Intelligence",
-      "subhead": "See how a product is really performing on eBay before you commit inventory or time to it."
+      "h1": "eBay Marketplace, Product & Seller Analysis",
+      "subhead": "Analyze eBay marketplace demand, competing products and the sellers behind them before you commit inventory or time."
     },
     "problems": [
       { "problem": "You can't tell if a niche is growing or already saturated.", "solution": "Checkila's market analysis shows demand and competition signals for a category or product." },
@@ -170,6 +170,7 @@
     "features": [
       { "title": "Demand Signals", "description": "Understand how much interest a product or category is getting on eBay." },
       { "title": "Competitor Pricing", "description": "See how similar listings are priced across active sellers." },
+      { "title": "Seller Analysis", "description": "Look into a specific eBay seller's listings, pricing and activity to understand how they operate." },
       { "title": "Category Trends", "description": "Spot categories that are growing before they get crowded." },
       { "title": "Listing Comparison", "description": "Compare your planned listing against what's already selling." },
       { "title": "Data-Driven Decisions", "description": "Base listing decisions on market data instead of guesswork." }
@@ -183,6 +184,7 @@
       { "q": "What does eBay market analysis show?", "a": "It shows how a product or category is performing on eBay — demand signals, competitor pricing and how crowded the space is — so you can decide whether it's worth entering." },
       { "q": "Is market analysis useful for dropshipping specifically?", "a": "Yes. Dropshippers use it to avoid oversaturated categories and to find products with real, sustained demand before committing to sourcing them." },
       { "q": "Can I see competitor pricing for a specific product?", "a": "Yes, Checkila surfaces comparable listings so you can see how other sellers are pricing similar products." },
+      { "q": "Can Checkila analyze a specific eBay seller?", "a": "Yes. You can look at a seller's listings, pricing patterns and activity to understand their strategy before deciding how to compete or source similarly." },
       { "q": "How often is market data updated?", "a": "Market data refreshes regularly so your analysis reflects current listings and pricing rather than stale snapshots." },
       { "q": "Do I need Market Analysis and Product Research separately?", "a": "They work together: Product Research evaluates a specific product, while Market Analysis looks at the broader category or competitive landscape around it." },
       { "q": "Is market analysis included in every plan?", "a": "Availability depends on your Checkila plan; check the pricing page for what's included." }
@@ -302,6 +304,46 @@
       { "q": "Does the bot replace the dashboard?", "a": "No, it complements it — the bot is for real-time alerts, while the dashboard is where you do research, analysis and listing management." }
     ],
     "cta": { "title": "Get alerts where you already are", "description": "Connect the Checkila Telegram bot in under a minute.", "button": "Open Telegram Bot" }
+  },
+
+  "trackingConverter": {
+    "meta": {
+      "title": "Amazon to eBay Tracking Number Converter | Checkila Tracking",
+      "description": "Checkila Tracking automatically converts Amazon (TBA) tracking numbers into eBay-recognized carrier codes, uploads them to your eBay order, and messages buyers on every update."
+    },
+    "hero": {
+      "eyebrow": "Checkila Tracking",
+      "h1": "Amazon to eBay Tracking Number Converter, Fully Automated",
+      "subhead": "Checkila Tracking converts Amazon tracking numbers into eBay-recognized carrier codes, uploads them to your eBay orders automatically, and messages your buyer every time the label updates."
+    },
+    "problems": [
+      { "problem": "Amazon tracking numbers, like TBA codes, aren't recognized by eBay, so buyers can't see real shipping progress.", "solution": "Checkila Tracking converts the Amazon tracking number into a carrier format eBay actually recognizes." },
+      { "problem": "You're manually copying tracking numbers from Amazon orders into eBay, order by order.", "solution": "Checkila uploads the converted tracking number to the matching eBay order automatically." },
+      { "problem": "Buyers message you asking where their order is, over and over.", "solution": "Checkila messages the buyer automatically every time the tracking label updates, so you don't have to." }
+    ],
+    "features": [
+      { "title": "TBA Tracking Number Conversion", "description": "Automatically converts Amazon TBA and carrier tracking numbers into a format eBay recognizes." },
+      { "title": "Automatic eBay Upload", "description": "Pushes the converted tracking number to the matching eBay order without manual entry." },
+      { "title": "Automatic Buyer Messages", "description": "Sends the buyer an update automatically every time the tracking label changes status." },
+      { "title": "Fewer 'Where Is My Order' Messages", "description": "Buyers stay informed on their own, cutting down support requests." },
+      { "title": "Works With Your Existing Workflow", "description": "Runs on top of your existing Amazon-to-eBay dropshipping process — no extra steps to source products." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Order comes in", "description": "A buyer orders on eBay and you fulfill it from Amazon as usual." },
+      { "step": "02", "title": "Checkila converts the tracking", "description": "Checkila detects the Amazon tracking number and converts it into an eBay-recognized carrier code." },
+      { "step": "03", "title": "Auto-upload to eBay", "description": "The converted tracking number is uploaded to the eBay order automatically." },
+      { "step": "04", "title": "Buyer gets notified", "description": "Checkila messages the buyer with tracking updates automatically, every time the label changes." }
+    ],
+    "faq": [
+      { "q": "How do I convert an Amazon tracking number for eBay?", "a": "Checkila does this automatically: once you fulfill an eBay order from Amazon, Checkila detects the Amazon (including TBA) tracking number, converts it into a format eBay recognizes, and uploads it to the order — no manual conversion needed." },
+      { "q": "What is a TBA tracking number?", "a": "TBA is a common prefix Amazon uses for logistics tracking numbers on its own delivery network. These aren't always recognized directly by eBay, which is why they need to be converted into a supported carrier format before they're useful to eBay buyers." },
+      { "q": "Does Checkila upload tracking numbers to eBay automatically?", "a": "Yes. Once the tracking number is converted, Checkila uploads it to the matching eBay order automatically, without manual copy-pasting." },
+      { "q": "Will my buyers be notified automatically?", "a": "Yes. Checkila sends the buyer a message automatically every time the tracking label updates, so they stay informed without contacting you." },
+      { "q": "Does this work for every Amazon tracking number?", "a": "Checkila is built to handle standard Amazon and TBA-prefixed tracking numbers used in dropshipping fulfillment; coverage can vary by carrier and route." },
+      { "q": "Does this replace eBay's own tracking upload?", "a": "No, it automates it — Checkila still uses eBay's own tracking fields, it just fills them in and keeps them updated automatically." },
+      { "q": "Can I turn off automatic buyer messages?", "a": "Yes, notification preferences can be managed from your Checkila account settings." }
+    ],
+    "cta": { "title": "Stop converting tracking numbers by hand", "description": "Let Checkila convert, upload and notify — automatically, on every order.", "button": "Automate My Tracking" }
   },
 
   "ebayFeeCalculator": {

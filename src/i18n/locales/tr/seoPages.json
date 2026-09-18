@@ -154,13 +154,13 @@
 
   "marketAnalysis": {
     "meta": {
-      "title": "eBay Pazar Analizi ve Satıcı Zekası | Checkila",
-      "description": "Listelemeden önce Checkila ile eBay pazar talebini, fiyatlandırmasını ve rekabetini analiz edin — dropshipper'lar için veriye dayalı satıcı zekası."
+      "title": "eBay Pazar Yeri, Ürün ve Satıcı Analizi | Checkila",
+      "description": "Listelemeden önce Checkila ile eBay pazar yerini, rakip ürünleri ve belirli satıcıları analiz edin — dropshipper'lar için veriye dayalı pazar ve satıcı zekası."
     },
     "hero": {
       "eyebrow": "eBay Pazar Analizi",
-      "h1": "eBay Pazar Analizi ve Satıcı Zekası",
-      "subhead": "Envanter veya zaman ayırmadan önce bir ürünün eBay'de gerçekte nasıl performans gösterdiğini görün."
+      "h1": "eBay Pazar Yeri, Ürün ve Satıcı Analizi",
+      "subhead": "Envanter veya zaman ayırmadan önce eBay pazar yerindeki talebi, rakip ürünleri ve arkalarındaki satıcıları analiz edin."
     },
     "problems": [
       { "problem": "Bir nişin büyüdüğünü mü yoksa zaten doymuş mu olduğunu anlayamıyorsunuz.", "solution": "Checkila'nın pazar analizi, bir kategori veya ürün için talep ve rekabet sinyallerini gösterir." },
@@ -170,6 +170,7 @@
     "features": [
       { "title": "Talep Sinyalleri", "description": "Bir ürünün veya kategorinin eBay'de ne kadar ilgi gördüğünü anlayın." },
       { "title": "Rakip Fiyatlandırması", "description": "Benzer ilanların aktif satıcılar arasında nasıl fiyatlandırıldığını görün." },
+      { "title": "Satıcı Analizi", "description": "Belirli bir eBay satıcısının ilanlarına, fiyatlandırmasına ve faaliyetine bakarak nasıl çalıştığını anlayın." },
       { "title": "Kategori Trendleri", "description": "Kalabalıklaşmadan önce büyüyen kategorileri yakalayın." },
       { "title": "İlan Karşılaştırması", "description": "Planladığınız ilanı hâlihazırda satan ürünlerle karşılaştırın." },
       { "title": "Veriye Dayalı Kararlar", "description": "İlan kararlarınızı tahmin yerine pazar verisine dayandırın." }
@@ -183,6 +184,7 @@
       { "q": "eBay pazar analizi neyi gösterir?", "a": "Bir ürün veya kategorinin eBay'de nasıl performans gösterdiğini gösterir — talep sinyalleri, rakip fiyatlandırması ve alanın ne kadar kalabalık olduğu — böylece girmeye değer olup olmadığına karar verebilirsiniz." },
       { "q": "Pazar analizi özellikle dropshipping için yararlı mı?", "a": "Evet. Dropshipper'lar, tedarik etmeye karar vermeden önce aşırı doymuş kategorilerden kaçınmak ve gerçek, sürdürülebilir talebi olan ürünleri bulmak için kullanır." },
       { "q": "Belirli bir ürün için rakip fiyatlandırmasını görebilir miyim?", "a": "Evet, Checkila diğer satıcıların benzer ürünleri nasıl fiyatlandırdığını görebilmeniz için benzer ilanları ortaya çıkarır." },
+      { "q": "Checkila belirli bir eBay satıcısını analiz edebilir mi?", "a": "Evet. Rekabet etmeye veya benzer şekilde tedarik etmeye karar vermeden önce bir satıcının ilanlarına, fiyatlandırma kalıplarına ve faaliyetine bakarak stratejisini anlayabilirsiniz." },
       { "q": "Pazar verisi ne sıklıkla güncelleniyor?", "a": "Pazar verisi düzenli olarak yenilenir; böylece analiziniz eski anlık görüntüleri değil, güncel ilanları ve fiyatlandırmayı yansıtır." },
       { "q": "Pazar Analizi ve Ürün Araştırmasına ayrı ayrı ihtiyacım var mı?", "a": "Birlikte çalışırlar: Ürün Araştırması belirli bir ürünü değerlendirirken, Pazar Analizi onun etrafındaki daha geniş kategoriye veya rekabet ortamına bakar." },
       { "q": "Pazar analizi her plana dahil mi?", "a": "Kullanılabilirlik Checkila planınıza bağlıdır; nelerin dahil olduğunu görmek için fiyatlandırma sayfasını kontrol edin." }
@@ -302,6 +304,46 @@
       { "q": "Bot panelin yerini mi alıyor?", "a": "Hayır, onu tamamlıyor — bot anlık uyarılar içindir, panel ise araştırma, analiz ve ilan yönetimi yaptığınız yerdir." }
     ],
     "cta": { "title": "Zaten olduğunuz yerde uyarı alın", "description": "Checkila Telegram botunu bir dakikadan kısa sürede bağlayın.", "button": "Telegram Botunu Aç" }
+  },
+
+  "trackingConverter": {
+    "meta": {
+      "title": "Amazon'dan eBay'e Kargo Takip Numarası Dönüştürücü | Checkila Tracking",
+      "description": "Checkila Tracking, Amazon (TBA) takip numaralarını eBay'in tanıdığı kargo koduna otomatik dönüştürür, siparişe yükler ve her etiket güncellemesinde alıcıya otomatik mesaj gönderir."
+    },
+    "hero": {
+      "eyebrow": "Checkila Tracking",
+      "h1": "Amazon Takip Numarasını eBay İçin Otomatik Dönüştüren Sistem",
+      "subhead": "Checkila Tracking, Amazon takip numaralarını eBay'in tanıdığı kargo koduna dönüştürür, otomatik olarak eBay siparişinize yükler ve etiket her güncellendiğinde alıcıyla otomatik iletişime geçer."
+    },
+    "problems": [
+      { "problem": "Amazon'un TBA takip numaraları eBay tarafından tanınmıyor, bu yüzden alıcı gerçek kargo durumunu göremiyor.", "solution": "Checkila Tracking, Amazon takip numarasını eBay'in tanıdığı kargo formatına dönüştürür." },
+      { "problem": "Amazon siparişinden takip numarasını elle kopyalayıp eBay'e yüklüyorsunuz, her sipariş için ayrı ayrı.", "solution": "Checkila, dönüştürülen takip numarasını ilgili eBay siparişine otomatik olarak yükler." },
+      { "problem": "Alıcılar siparişin nerede olduğunu sormak için defalarca size yazıyor.", "solution": "Checkila, etiket her güncellendiğinde alıcıya otomatik mesaj gönderir, sizin uğraşmanıza gerek kalmaz." }
+    ],
+    "features": [
+      { "title": "TBA Takip Numarası Dönüştürme", "description": "Amazon TBA ve kargo takip numaralarını eBay'in tanıdığı formata otomatik dönüştürür." },
+      { "title": "Otomatik eBay Yüklemesi", "description": "Dönüştürülen takip numarasını elle girmeden ilgili eBay siparişine gönderir." },
+      { "title": "Otomatik Alıcı Mesajları", "description": "Takip durumu her değiştiğinde alıcıya otomatik güncelleme gönderir." },
+      { "title": "Daha Az 'Siparişim Nerede' Mesajı", "description": "Alıcılar kendi kendine bilgilenir, destek talepleri azalır." },
+      { "title": "Mevcut İş Akışınızla Çalışır", "description": "Amazon'dan eBay'e mevcut dropshipping iş akışınızın üzerine kurulur, ekstra adım gerektirmez." }
+    ],
+    "howItWorks": [
+      { "step": "01", "title": "Sipariş gelir", "description": "Alıcı eBay'de sipariş verir, siz her zamanki gibi Amazon'dan tedarik edersiniz." },
+      { "step": "02", "title": "Checkila takibi dönüştürür", "description": "Checkila Amazon takip numarasını tespit eder ve eBay'in tanıdığı kargo koduna dönüştürür." },
+      { "step": "03", "title": "eBay'e otomatik yüklenir", "description": "Dönüştürülen takip numarası eBay siparişine otomatik olarak yüklenir." },
+      { "step": "04", "title": "Alıcıya bildirim gider", "description": "Checkila her etiket değişikliğinde alıcıya otomatik mesaj gönderir." }
+    ],
+    "faq": [
+      { "q": "Amazon takip numarası eBay için nasıl dönüştürülür?", "a": "Checkila bunu otomatik yapar: eBay siparişini Amazon'dan tedarik ettikten sonra, Checkila Amazon (TBA dahil) takip numarasını tespit eder, eBay'in tanıdığı formata dönüştürür ve siparişe yükler — elle dönüştürmeye gerek kalmaz." },
+      { "q": "TBA takip numarası nedir?", "a": "TBA, Amazon'un kendi teslimat ağında kullandığı takip numaraları için yaygın bir önektir. Bunlar her zaman doğrudan eBay tarafından tanınmaz, bu yüzden eBay alıcıları için faydalı olmadan önce desteklenen bir kargo formatına dönüştürülmesi gerekir." },
+      { "q": "Checkila takip numaralarını eBay'e otomatik yüklüyor mu?", "a": "Evet. Takip numarası dönüştürüldükten sonra, Checkila onu elle kopyalamadan ilgili eBay siparişine otomatik olarak yükler." },
+      { "q": "Alıcılarım otomatik bildirim alacak mı?", "a": "Evet. Takip etiketi her güncellendiğinde Checkila alıcıya otomatik mesaj gönderir, böylece sizinle iletişime geçmeden bilgi sahibi olurlar." },
+      { "q": "Bu, tüm Amazon takip numaraları için çalışır mı?", "a": "Checkila, dropshipping tedarikinde kullanılan standart Amazon ve TBA önekli takip numaralarını desteklemek üzere tasarlandı; kapsam kargo şirketine ve rotaya göre değişebilir." },
+      { "q": "Bu, eBay'in kendi takip yüklemesinin yerini mi alıyor?", "a": "Hayır, onu otomatikleştirir — Checkila yine eBay'in kendi takip alanlarını kullanır, sadece bunları otomatik doldurur ve günceller." },
+      { "q": "Otomatik alıcı mesajlarını kapatabilir miyim?", "a": "Evet, bildirim tercihleri Checkila hesap ayarlarınızdan yönetilebilir." }
+    ],
+    "cta": { "title": "Takip numaralarını elle dönüştürmeyi bırakın", "description": "Dönüştürmeyi, yüklemeyi ve bildirimi Checkila'ya bırakın — her siparişte otomatik.", "button": "Takibimi Otomatikleştir" }
   },
 
   "ebayFeeCalculator": {
