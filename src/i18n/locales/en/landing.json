@@ -62,7 +62,9 @@
     "analysis": "Checkila Analysis",
     "analysisValue": "Credit-based intelligence",
     "ebay": "eBay account workflow",
-    "ebayValue": "Built for multi-account use"
+    "ebayValue": "Built for multi-account use",
+    "orderTracking": "Checkila Tracking",
+    "orderTrackingValue": "Converts Amazon tracking numbers to eBay codes"
   },
   "workflow": {
     "discover": {
@@ -132,8 +134,8 @@
   },
   "seo": {
     "title": "Checkila | Dropshipping Tool for eBay Sellers",
-    "description": "Checkila helps dropshippers and eBay sellers research products, track Amazon pricing, compare opportunities, and make faster listing decisions.",
-    "keywords": "dropshipping tool, eBay dropshipping, product research, seller intelligence, Amazon price tracking"
+    "description": "Checkila helps dropshippers and eBay sellers research products, track Amazon pricing, automatically convert Amazon tracking numbers into eBay-recognized tracking codes, and make faster listing decisions.",
+    "keywords": "dropshipping tool, eBay dropshipping, product research, seller intelligence, Amazon price tracking, convert Amazon tracking number to eBay, TBA tracking number converter, eBay tracking automation"
   },
   "dropshippingSection": {
     "eyebrow": "Dropshipping research",
@@ -227,6 +229,10 @@
       {
         "question": "Can I receive price and stock alerts on Telegram?",
         "answer": "Yes. Connect the Checkila Telegram bot to get price, stock and new-order alerts without keeping the dashboard open."
+      },
+      {
+        "question": "Does Checkila convert Amazon tracking numbers for eBay?",
+        "answer": "Yes. Checkila Tracking automatically converts Amazon tracking numbers, including TBA-prefixed codes, into a carrier format eBay recognizes, uploads the converted number to the matching eBay order, and messages the buyer automatically every time the tracking label updates."
       }
     ]
   }

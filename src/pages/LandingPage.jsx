@@ -16,6 +16,7 @@ import {
   Phone,
   Mail,
   MapPin,
+  Truck,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { partnerAPI, settingsAPI } from '../services/api';
@@ -280,7 +281,7 @@ export default function LandingPage() {
 
   const faqItems = useMemo(
     () =>
-      Array.from({ length: 8 }, (_, idx) => ({
+      Array.from({ length: 9 }, (_, idx) => ({
         question: t(`landing:faq.items.${idx}.question`),
         answer: t(`landing:faq.items.${idx}.answer`),
       })).filter((item) => item.question && !item.question.startsWith('landing:faq')),
@@ -457,6 +458,7 @@ export default function LandingPage() {
 
   const heroStats = [
     { label: t('landing:stats.tracking'), value: t('landing:stats.trackingValue'), icon: Globe2 },
+    { label: t('landing:stats.orderTracking'), value: t('landing:stats.orderTrackingValue'), icon: Truck },
     { label: t('landing:stats.analysis'), value: t('landing:stats.analysisValue'), icon: BarChart3 },
     { label: t('landing:stats.ebay'), value: t('landing:stats.ebayValue'), icon: BadgeCheck },
   ];
@@ -607,7 +609,7 @@ export default function LandingPage() {
                 </a>
               </div>
 
-              <div className="mt-10 grid gap-4 sm:grid-cols-3">
+              <div className="mt-10 grid grid-cols-2 gap-4">
                 {heroStats.map((stat) => (
                   <article
                     key={stat.label}

@@ -62,7 +62,9 @@
     "analysis": "Checkila Analitikası",
     "analysisValue": "Kredit əsaslı analiz",
     "ebay": "eBay iş axını",
-    "ebayValue": "Çox hesab üçün optimallaşdırılıb"
+    "ebayValue": "Çox hesab üçün optimallaşdırılıb",
+    "orderTracking": "Checkila Tracking",
+    "orderTrackingValue": "Amazon tracking nömrələrini eBay koduna çevirir"
   },
   "workflow": {
     "discover": {
@@ -132,8 +134,8 @@
   },
   "seo": {
     "title": "Checkila | eBay satıcıları üçün dropshipping aləti",
-    "description": "Checkila dropshipper və eBay satıcılarına məhsul araşdırmaq, Amazon qiymətlərini izləmək, imkanları müqayisə etmək və daha sürətli siyahı qərarları verməkdə kömək edir.",
-    "keywords": "dropshipping aləti, eBay dropshipping, məhsul araşdırması, satıcı analitikası, Amazon qiymət izləmə"
+    "description": "Checkila dropshipper və eBay satıcılarına məhsul araşdırmaq, Amazon qiymətlərini izləmək, Amazon tracking nömrələrini eBay-in tanıdığı koda aftomatik çevirmək və daha sürətli siyahı qərarları verməkdə kömək edir.",
+    "keywords": "dropshipping aləti, eBay dropshipping, məhsul araşdırması, satıcı analitikası, Amazon qiymət izləmə, Amazon tracking nömrəsini eBay üçün çevirmək, TBA tracking nömrəsi çevirici, eBay tracking aftomatlaşdırması"
   },
   "dropshippingSection": {
     "eyebrow": "Dropshipping araşdırması",
@@ -227,6 +229,10 @@
       {
         "question": "Telegramda qiymət və stok bildirişi ala bilərəmmi?",
         "answer": "Bəli. Checkila Telegram botunu qoşaraq paneli açıq saxlamadan qiymət, stok və yeni sifariş bildirişləri alın."
+      },
+      {
+        "question": "Checkila Amazon tracking nömrələrini eBay üçün çevirirmi?",
+        "answer": "Bəli. Checkila Tracking Amazon tracking nömrələrini, TBA prefiksli kodlar daxil olmaqla, eBay-in tanıdığı daşıyıcı formatına aftomatik çevirir, çevrilmiş nömrəni müvafiq eBay sifarişinə yükləyir və hər label yeniləndikdə müştəriyə aftomatik mesaj göndərir."
       }
     ]
   }

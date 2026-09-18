@@ -6,9 +6,9 @@
     <title>Checkila | Dropshipping Tool for eBay Sellers</title>
     <meta
       name="description"
-      content="Checkila helps dropshippers and eBay sellers research products, track Amazon pricing, compare opportunities, and make faster listing decisions."
+      content="Checkila helps dropshippers and eBay sellers research products, track Amazon pricing, automatically convert Amazon tracking numbers into eBay-recognized tracking codes, and make faster listing decisions."
     />
-    <meta name="keywords" content="dropshipping tool, eBay dropshipping, product research, seller intelligence, Amazon price tracking" />
+    <meta name="keywords" content="dropshipping tool, eBay dropshipping, product research, seller intelligence, Amazon price tracking, convert Amazon tracking number to eBay, TBA tracking number converter, eBay tracking automation" />
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <meta name="theme-color" content="#081120" />
     <link rel="canonical" href="https://checkila.com/" />
@@ -17,7 +17,7 @@
     <meta property="og:title" content="Checkila | Dropshipping Tool for eBay Sellers" />
     <meta
       property="og:description"
-      content="Track pricing, compare listings, and automate smarter dropshipping and eBay workflows with Checkila."
+      content="Track pricing, convert Amazon tracking numbers into eBay-ready codes automatically, and automate smarter dropshipping and eBay workflows with Checkila."
     />
     <meta property="og:url" content="https://checkila.com/" />
     <meta property="og:image" content="https://checkila.com/checkila-analysis.png" />
@@ -29,11 +29,47 @@
     <meta name="twitter:title" content="Checkila | Dropshipping Tool for eBay Sellers" />
     <meta
       name="twitter:description"
-      content="Track pricing, compare listings, and automate smarter dropshipping and eBay workflows with Checkila."
+      content="Track pricing, convert Amazon tracking numbers into eBay-ready codes automatically, and automate smarter dropshipping and eBay workflows with Checkila."
     />
     <meta name="twitter:image" content="https://checkila.com/checkila-analysis.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/logo-2.png" />
     <link rel="apple-touch-icon" href="/logo-2.png" />
+    <!--
+      Baseline structured data, present in the raw HTML before any JavaScript
+      runs. React (src/utils/seo.js -> applySeo) finds this same element by id
+      and overwrites/extends it once the app mounts, but crawlers or AI answer
+      engines that don't execute JavaScript still see this version. It exists
+      specifically so "does Checkila convert Amazon tracking numbers" has a
+      clear, structured answer even from a non-JS fetch of the homepage.
+    -->
+    <script id="checkila-jsonld" type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "SoftwareApplication",
+            "name": "Checkila",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web",
+            "url": "https://checkila.com/",
+            "description": "Checkila helps dropshippers and eBay sellers research products, track Amazon pricing, automatically convert Amazon tracking numbers into eBay-recognized tracking codes, upload them to eBay orders, and message buyers automatically on every update."
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Does Checkila convert Amazon tracking numbers for eBay?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Checkila Tracking automatically converts Amazon tracking numbers, including TBA-prefixed codes, into a carrier format eBay recognizes, uploads the converted number to the matching eBay order, and messages the buyer automatically every time the tracking label updates."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
     <!-- Meta Pixel Code -->
     <script>
     !function(f,b,e,v,n,t,s)

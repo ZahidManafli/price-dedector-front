@@ -62,7 +62,9 @@
     "analysis": "Checkila Analizi",
     "analysisValue": "Kredi bazlı analiz",
     "ebay": "eBay iş akışı",
-    "ebayValue": "Çoklu hesap desteği"
+    "ebayValue": "Çoklu hesap desteği",
+    "orderTracking": "Checkila Tracking",
+    "orderTrackingValue": "Amazon takip numaralarını eBay koduna dönüştürür"
   },
   "workflow": {
     "discover": {
@@ -132,8 +134,8 @@
   },
   "seo": {
     "title": "Checkila | eBay satıcıları için dropshipping aracı",
-    "description": "Checkila, dropshipper ve eBay satıcılarının ürün araştırması yapmasına, Amazon fiyatlarını izlemesine, fırsatları karşılaştırmasına ve daha hızlı ilan kararları vermesine yardımcı olur.",
-    "keywords": "dropshipping aracı, eBay dropshipping, ürün araştırması, satıcı analitiği, Amazon fiyat takibi"
+    "description": "Checkila, dropshipper ve eBay satıcılarının ürün araştırması yapmasına, Amazon fiyatlarını izlemesine, Amazon takip numaralarını eBay'in tanıdığı koda otomatik dönüştürmesine ve daha hızlı ilan kararları vermesine yardımcı olur.",
+    "keywords": "dropshipping aracı, eBay dropshipping, ürün araştırması, satıcı analitiği, Amazon fiyat takibi, Amazon takip numarasını eBay'e dönüştürme, TBA takip numarası dönüştürücü, eBay takip otomasyonu"
   },
   "dropshippingSection": {
     "eyebrow": "Dropshipping araştırması",
@@ -227,6 +229,10 @@
       {
         "question": "Telegram üzerinden fiyat ve stok uyarısı alabilir miyim?",
         "answer": "Evet. Checkila Telegram botunu bağlayarak paneli açık tutmadan fiyat, stok ve yeni sipariş uyarıları alabilirsiniz."
+      },
+      {
+        "question": "Checkila Amazon takip numaralarını eBay için dönüştürüyor mu?",
+        "answer": "Evet. Checkila Tracking, TBA önekli kodlar dahil Amazon takip numaralarını eBay'in tanıdığı kargo formatına otomatik olarak dönüştürür, dönüştürülen numarayı ilgili eBay siparişine yükler ve etiket her güncellendiğinde alıcıya otomatik mesaj gönderir."
       }
     ]
   }
