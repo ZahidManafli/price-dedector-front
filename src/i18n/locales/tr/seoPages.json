@@ -160,7 +160,8 @@
     "hero": {
       "eyebrow": "eBay Pazar Analizi",
       "h1": "eBay Pazar Yeri, Ürün ve Satıcı Analizi",
-      "subhead": "Envanter veya zaman ayırmadan önce eBay pazar yerindeki talebi, rakip ürünleri ve arkalarındaki satıcıları analiz edin."
+      "subhead": "Envanter veya zaman ayırmadan önce eBay pazar yerindeki talebi, rakip ürünleri ve arkalarındaki satıcıları analiz edin.",
+      "imageAlt": "Satış oranı, satış geliri, satıcıya göre pazar payı, satış trendi grafiği ve ürün karşılaştırma tablosunu gösteren Checkila Pazar Analizi paneli"
     },
     "problems": [
       { "problem": "Bir nişin büyüdüğünü mü yoksa zaten doymuş mu olduğunu anlayamıyorsunuz.", "solution": "Checkila'nın pazar analizi, bir kategori veya ürün için talep ve rekabet sinyallerini gösterir." },
@@ -314,7 +315,8 @@
     "hero": {
       "eyebrow": "Checkila Tracking",
       "h1": "Amazon Takip Numarasını eBay İçin Otomatik Dönüştüren Sistem",
-      "subhead": "Checkila Tracking, Amazon takip numaralarını eBay'in tanıdığı kargo koduna dönüştürür, otomatik olarak eBay siparişinize yükler ve etiket her güncellendiğinde alıcıyla otomatik iletişime geçer."
+      "subhead": "Checkila Tracking, Amazon takip numaralarını eBay'in tanıdığı kargo koduna dönüştürür, otomatik olarak eBay siparişinize yükler ve etiket her güncellendiğinde alıcıyla otomatik iletişime geçer.",
+      "imageAlt": "Amazon sipariş numaraları, dönüştürülmüş takip kodları, yükleme durumu ve otomatik alıcı bildirimlerini gösteren Checkila Tracking paneli"
     },
     "problems": [
       { "problem": "Amazon'un TBA takip numaraları eBay tarafından tanınmıyor, bu yüzden alıcı gerçek kargo durumunu göremiyor.", "solution": "Checkila Tracking, Amazon takip numarasını eBay'in tanıdığı kargo formatına dönüştürür." },

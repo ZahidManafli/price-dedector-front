@@ -153,6 +153,21 @@
     "sideHighlightTitle": "Ən vacib məqamlar",
     "sideHighlightDescription": "Sürətli müqayisə, aydın satıcı siqnalları və daha yaxşı siyahı qərarlarını dəstəkləyən iş axını."
   },
+  "showcase": {
+    "eyebrow": "Əməldə görün",
+    "title": "Tracking və analiz, həqiqətən aftomatlaşdırılıb",
+    "description": "Ən çox vaxtınıza qənaət edən iki alətə qısa baxış: aftomatik tracking çevrilməsi və eBay bazar analizi.",
+    "tracking": {
+      "title": "Checkila Tracking",
+      "description": "Amazon tracking nömrələri eBay-in tanıdığı koda çevrilir, sifarişə aftomatik yüklənir və müştəri hər yeniləmədə bildiriş alır.",
+      "cta": "Checkila Tracking-ə bax"
+    },
+    "marketAnalysis": {
+      "title": "Bazar Analizi",
+      "description": "Satış nisbəti, satıcı üzrə bazar payı, satış trendləri və elan müqayisəsi — elan yerləşdirməzdən əvvəl hamısı tək ekranda.",
+      "cta": "Bazar Analizinə bax"
+    }
+  },
   "companion": {
     "eyebrow": "Hər Yerdə Əlçatan",
     "title": "Checkila-nı özünüzlə aparın — brauzer və Telegram-da",

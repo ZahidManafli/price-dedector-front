@@ -160,7 +160,8 @@
     "hero": {
       "eyebrow": "eBay Market Analysis",
       "h1": "eBay Marketplace, Product & Seller Analysis",
-      "subhead": "Analyze eBay marketplace demand, competing products and the sellers behind them before you commit inventory or time."
+      "subhead": "Analyze eBay marketplace demand, competing products and the sellers behind them before you commit inventory or time.",
+      "imageAlt": "Checkila Market Analysis dashboard showing eBay sell-through rate, sales earnings, market share by seller, sales trend chart and a product listing comparison table"
     },
     "problems": [
       { "problem": "You can't tell if a niche is growing or already saturated.", "solution": "Checkila's market analysis shows demand and competition signals for a category or product." },
@@ -314,7 +315,8 @@
     "hero": {
       "eyebrow": "Checkila Tracking",
       "h1": "Amazon to eBay Tracking Number Converter, Fully Automated",
-      "subhead": "Checkila Tracking converts Amazon tracking numbers into eBay-recognized carrier codes, uploads them to your eBay orders automatically, and messages your buyer every time the label updates."
+      "subhead": "Checkila Tracking converts Amazon tracking numbers into eBay-recognized carrier codes, uploads them to your eBay orders automatically, and messages your buyer every time the label updates.",
+      "imageAlt": "Checkila Tracking dashboard showing eBay orders with Amazon order IDs, converted tracking codes, upload status and automatic buyer update controls"
     },
     "problems": [
       { "problem": "Amazon tracking numbers, like TBA codes, aren't recognized by eBay, so buyers can't see real shipping progress.", "solution": "Checkila Tracking converts the Amazon tracking number into a carrier format eBay actually recognizes." },

@@ -4,7 +4,7 @@ import { ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
 import i18n from '../../i18n';
 import { useTheme } from '../../context/ThemeContext';
 import { applySeo } from '../../utils/seo';
-import { SEO_PAGES, pathFor, alternatesFor } from '../../data/seoPages';
+import { SEO_PAGES, pathFor, alternatesFor, imageFor } from '../../data/seoPages';
 import PublicNavbar from '../../components/marketing/PublicNavbar';
 import PublicFooter from '../../components/marketing/PublicFooter';
 import LocaleSwitcher from '../../components/marketing/LocaleSwitcher';
@@ -38,6 +38,7 @@ export default function FeatureLandingPage({ pageKey, lang }) {
 
   const page = useMemo(() => t(pageKey, { returnObjects: true }), [t, pageKey]);
   const pagePath = pathFor(pageKey, lang);
+  const screenshot = imageFor(pageKey);
   const canonicalUrl = `${SITE_ORIGIN}${pagePath}`;
 
   useEffect(() => {
@@ -120,6 +121,24 @@ export default function FeatureLandingPage({ pageKey, lang }) {
               </Link>
             </div>
           </div>
+
+          {screenshot && (
+            <div className="relative mx-auto mt-14 max-w-6xl">
+              <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-cyan-400/15 via-blue-500/10 to-transparent blur-2xl md:-inset-6" />
+              <div className="relative rounded-[1.75rem] border border-slate-200 bg-white/80 p-2.5 shadow-2xl shadow-slate-300/40 backdrop-blur-xl md:p-3 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-black/40">
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-slate-950/60">
+                  <img
+                    src={screenshot.src}
+                    alt={page.hero?.imageAlt || page.hero?.h1}
+                    width={screenshot.width}
+                    height={screenshot.height}
+                    loading="lazy"
+                    className="h-auto w-full"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         {!!page.problems?.length && (

@@ -24,7 +24,7 @@ import { useTheme } from '../context/ThemeContext';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import PartnersSection from '../components/PartnersSection';
 import { applySeo } from '../utils/seo';
-import { pathFor, SUPPORTED_LANGS, SEO_PAGES } from '../data/seoPages';
+import { pathFor, SUPPORTED_LANGS, SEO_PAGES, imageFor } from '../data/seoPages';
 
 const CHROME_EXTENSION_URL =
   'https://chromewebstore.google.com/detail/checkila-extension/mokpdmidbgchibehajdblfkjcgcibcbb';
@@ -461,6 +461,23 @@ export default function LandingPage() {
     { label: t('landing:stats.ebay'), value: t('landing:stats.ebayValue'), icon: BadgeCheck },
   ];
 
+  const showcaseCards = [
+    {
+      key: 'trackingConverter',
+      image: imageFor('trackingConverter'),
+      title: t('landing:showcase.tracking.title'),
+      description: t('landing:showcase.tracking.description'),
+      cta: t('landing:showcase.tracking.cta'),
+    },
+    {
+      key: 'marketAnalysis',
+      image: imageFor('marketAnalysis'),
+      title: t('landing:showcase.marketAnalysis.title'),
+      description: t('landing:showcase.marketAnalysis.description'),
+      cta: t('landing:showcase.marketAnalysis.cta'),
+    },
+  ];
+
   const workflowSteps = [
     {
       title: t('landing:workflow.discover.title'),
@@ -745,6 +762,48 @@ export default function LandingPage() {
                 </li>
               </ul>
             </div>
+          </div>
+        </section>
+
+        <section id="showcase" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
+          <SectionHeader
+            eyebrow={t('landing:showcase.eyebrow')}
+            title={t('landing:showcase.title')}
+            description={t('landing:showcase.description')}
+            align="center"
+          />
+
+          <div className="mt-10 grid gap-6 lg:grid-cols-2">
+            {showcaseCards.map((card) => (
+              <article
+                key={card.key}
+                className="group flex flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-lg shadow-slate-200/60 backdrop-blur transition hover:-translate-y-1 hover:border-cyan-300/60 dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none dark:hover:border-cyan-300/30"
+              >
+                {card.image && (
+                  <div className="overflow-hidden border-b border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-slate-950/60">
+                    <img
+                      src={card.image.src}
+                      alt={card.title}
+                      width={card.image.width}
+                      height={card.image.height}
+                      loading="lazy"
+                      className="h-auto w-full transition duration-300 group-hover:scale-[1.02]"
+                    />
+                  </div>
+                )}
+                <div className="flex flex-1 flex-col p-6">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{card.title}</h3>
+                  <p className="mt-2 flex-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{card.description}</p>
+                  <Link
+                    to={pathFor(card.key, activeLang)}
+                    className="mt-4 inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-cyan-700 transition hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
+                  >
+                    {card.cta}
+                    <ArrowRight size={13} />
+                  </Link>
+                </div>
+              </article>
+            ))}
           </div>
         </section>
 

@@ -153,6 +153,21 @@
     "sideHighlightTitle": "What matters most",
     "sideHighlightDescription": "Fast comparison, clear seller signals, and a workflow that supports better listing decisions."
   },
+  "showcase": {
+    "eyebrow": "See it in action",
+    "title": "Tracking and analysis, actually automated",
+    "description": "A quick look at two of the tools that save the most time: automatic tracking conversion and eBay marketplace analysis.",
+    "tracking": {
+      "title": "Checkila Tracking",
+      "description": "Amazon tracking numbers are converted into eBay-recognized codes, uploaded to the order automatically, and buyers get notified on every update.",
+      "cta": "See Checkila Tracking"
+    },
+    "marketAnalysis": {
+      "title": "Market Analysis",
+      "description": "Sell-through rate, market share by seller, sales trends and listing comparisons — all in one view before you list.",
+      "cta": "See Market Analysis"
+    }
+  },
   "companion": {
     "eyebrow": "Available Everywhere",
     "title": "Take Checkila with you — browser and Telegram",

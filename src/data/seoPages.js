@@ -52,6 +52,7 @@ export const SEO_PAGES = [
   {
     key: 'marketAnalysis',
     jsonLdType: 'SoftwareApplication',
+    image: { src: '/market_analysis_example.png', width: 1856, height: 921 },
     slugs: {
       en: 'ebay-market-analysis',
       tr: 'ebay-pazar-analizi',
@@ -76,6 +77,7 @@ export const SEO_PAGES = [
     // eBay-recognized carrier codes, auto-uploads them to the eBay order, and
     // auto-messages the buyer on every label update. Targets high-intent
     // queries like "convert amazon tracking number to ebay" / "TBA tracking".
+    image: { src: '/example_tracking_page.png', width: 1840, height: 921 },
     slugs: {
       en: 'convert-amazon-tracking-to-ebay',
       tr: 'amazon-ebay-takip-donusturucu',
@@ -126,4 +128,9 @@ export function pathFor(pageKey, lang) {
 
 export function alternatesFor(pageKey) {
   return SUPPORTED_LANGS.map((lang) => ({ lang, href: pathFor(pageKey, lang) }));
+}
+
+export function imageFor(pageKey) {
+  const page = SEO_PAGES.find((p) => p.key === pageKey);
+  return page?.image || null;
 }

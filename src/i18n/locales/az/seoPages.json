@@ -160,7 +160,8 @@
     "hero": {
       "eyebrow": "eBay Bazar Analizi",
       "h1": "eBay Bazarı, Məhsul və Satıcı Analizi",
-      "subhead": "Anbar və ya vaxt sərf etməzdən əvvəl eBay bazarındakı tələbi, rəqib məhsulları və onların arxasındakı satıcıları analiz edin."
+      "subhead": "Anbar və ya vaxt sərf etməzdən əvvəl eBay bazarındakı tələbi, rəqib məhsulları və onların arxasındakı satıcıları analiz edin.",
+      "imageAlt": "Satış nisbəti, satış gəliri, satıcılar üzrə bazar payı, satış trendi qrafiki və məhsul müqayisə cədvəlini göstərən Checkila Bazar Analizi paneli"
     },
     "problems": [
       { "problem": "Nişin böyüdüyünü, yoxsa artıq doyduğunu deyə bilmirsiniz.", "solution": "Checkila-nın bazar analizi kateqoriya və ya məhsul üçün tələb və rəqabət siqnallarını göstərir." },
@@ -314,7 +315,8 @@
     "hero": {
       "eyebrow": "Checkila Tracking",
       "h1": "Amazon Tracking Nömrəsini eBay üçün Aftomatik Çevirən Sistem",
-      "subhead": "Checkila Tracking Amazon tracking nömrələrini eBay-in tanıdığı daşıyıcı koduna çevirir, aftomatik eBay sifarişinizə yükləyir və hər label yeniləndikdə müştəri ilə aftomatik əlaqə saxlayır."
+      "subhead": "Checkila Tracking Amazon tracking nömrələrini eBay-in tanıdığı daşıyıcı koduna çevirir, aftomatik eBay sifarişinizə yükləyir və hər label yeniləndikdə müştəri ilə aftomatik əlaqə saxlayır.",
+      "imageAlt": "Amazon sifariş nömrələri, çevrilmiş tracking kodları, yükləmə statusu və aftomatik müştəri bildirişlərini göstərən Checkila Tracking paneli"
     },
     "problems": [
       { "problem": "Amazon-ın TBA tracking nömrələri eBay tərəfindən tanınmır, ona görə müştəri real çatdırılma statusunu görə bilmir.", "solution": "Checkila Tracking Amazon tracking nömrəsini eBay-in tanıdığı daşıyıcı formatına çevirir." },

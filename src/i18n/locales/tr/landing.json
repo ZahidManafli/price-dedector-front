@@ -153,6 +153,21 @@
     "sideHighlightTitle": "En önemli nokta",
     "sideHighlightDescription": "Hızlı karşılaştırma, net satıcı sinyalleri ve daha iyi ilan kararlarını destekleyen bir iş akışı."
   },
+  "showcase": {
+    "eyebrow": "Uygulamada görün",
+    "title": "Takip ve analiz, gerçekten otomatik",
+    "description": "En çok zaman kazandıran iki araca hızlı bir bakış: otomatik takip dönüştürme ve eBay pazar analizi.",
+    "tracking": {
+      "title": "Checkila Tracking",
+      "description": "Amazon takip numaraları eBay'in tanıdığı koda dönüştürülür, siparişe otomatik yüklenir ve alıcı her güncellemede bildirim alır.",
+      "cta": "Checkila Tracking'i incele"
+    },
+    "marketAnalysis": {
+      "title": "Pazar Analizi",
+      "description": "Satış oranı, satıcıya göre pazar payı, satış trendleri ve ilan karşılaştırması — listelemeden önce hepsi tek ekranda.",
+      "cta": "Pazar Analizini incele"
+    }
+  },
   "companion": {
     "eyebrow": "Her Yerde Kullanılabilir",
     "title": "Checkila her zaman yanınızda — tarayıcıda ve Telegram'da",
