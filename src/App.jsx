@@ -10,49 +10,64 @@ import Sidebar from './components/Sidebar';
 import { TourProvider } from './context/TourContext';
 
 // Pages
-import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import ProductsPage from './pages/ProductsPage';
-import ProductFormPage from './pages/ProductFormPage';
-import ProductDetailPage from './pages/ProductDetailPage';
-import SettingsPage from './pages/SettingsPage';
-import EbayCallbackPage from './pages/EbayCallbackPage';
-import AmazonCallbackPage from './pages/AmazonCallbackPage';
-import AmazonLookupPage from './pages/AmazonLookupPage';
-import AdminPanelPage from './pages/AdminPanelPage';
-import PrivacyPage from './pages/PrivacyPage';
-import ExtensionPrivacyPage from './pages/ExtensionPrivacyPage';
-import AboutPage from './pages/AboutPage';
-import MaintenancePage from './pages/MaintenancePage';
-import PlanExpiredPage from './pages/PlanExpiredPage';
-import ListingsPage from './pages/ListingsPage';
-import OrdersPage from './pages/OrdersPage';
-import ListingDetailPage from './pages/ListingDetailPage';
-import OrderDetailPage from './pages/OrderDetailPage';
-import EbayCalculatorPage from './pages/EbayCalculatorPage';
-import DewisoPage from './pages/DewisoPage';
-import MarketAnalysisPage from './pages/MarketAnalysisPage';
-import MarketInsightPage from './pages/MarketInsightPage';
-import MarketListingDetailPage from './pages/MarketListingDetailPage';
+// LandingPage is the site's entry point and stays a static import so the
+// homepage never waits on an extra lazy-chunk round trip. Every other page
+// is lazy-loaded: without this, a single ~1MB bundle containing the entire
+// authenticated dashboard/admin app shipped to every anonymous visitor of the
+// homepage and every public SEO landing page, which is both a Core Web
+// Vitals problem (Google ranking factor) and pure waste for a page a
+// crawler or first-time visitor never needed most of.
 import LandingPage from './pages/LandingPage';
-import SignupPage from './pages/SignupPage';
-import ReferralLandingPage from './pages/ReferralLandingPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import BuyersPage from './pages/BuyersPage';
-import ReferralDashboardPage from './pages/ReferralDashboardPage';
-import LearningVideosPage from './pages/LearningVideosPage';
-import ProfitTablePage from './pages/ProfitTablePage';
-import TrackingPage from './pages/TrackingPage';
-import CasesPage from './pages/CasesPage';
-import SupportPage from './pages/SupportPage';
-import UpgradePlanPage from './pages/UpgradePlanPage';
-import PaymentSuccessPage from './pages/PaymentSuccessPage';
-import PaymentErrorPage from './pages/PaymentErrorPage';
-import EpointRedirectPage from './pages/EpointRedirectPage';
+
+const LoginPage = React.lazy(() => import('./pages/LoginPage'));
+const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
+const ProductsPage = React.lazy(() => import('./pages/ProductsPage'));
+const ProductFormPage = React.lazy(() => import('./pages/ProductFormPage'));
+const ProductDetailPage = React.lazy(() => import('./pages/ProductDetailPage'));
+const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
+const EbayCallbackPage = React.lazy(() => import('./pages/EbayCallbackPage'));
+const AmazonCallbackPage = React.lazy(() => import('./pages/AmazonCallbackPage'));
+const AmazonLookupPage = React.lazy(() => import('./pages/AmazonLookupPage'));
+const AdminPanelPage = React.lazy(() => import('./pages/AdminPanelPage'));
+const PrivacyPage = React.lazy(() => import('./pages/PrivacyPage'));
+const ExtensionPrivacyPage = React.lazy(() => import('./pages/ExtensionPrivacyPage'));
+const AboutPage = React.lazy(() => import('./pages/AboutPage'));
+const MaintenancePage = React.lazy(() => import('./pages/MaintenancePage'));
+const PlanExpiredPage = React.lazy(() => import('./pages/PlanExpiredPage'));
+const ListingsPage = React.lazy(() => import('./pages/ListingsPage'));
+const OrdersPage = React.lazy(() => import('./pages/OrdersPage'));
+const ListingDetailPage = React.lazy(() => import('./pages/ListingDetailPage'));
+const OrderDetailPage = React.lazy(() => import('./pages/OrderDetailPage'));
+const EbayCalculatorPage = React.lazy(() => import('./pages/EbayCalculatorPage'));
+const DewisoPage = React.lazy(() => import('./pages/DewisoPage'));
+const MarketAnalysisPage = React.lazy(() => import('./pages/MarketAnalysisPage'));
+const MarketInsightPage = React.lazy(() => import('./pages/MarketInsightPage'));
+const MarketListingDetailPage = React.lazy(() => import('./pages/MarketListingDetailPage'));
+const SignupPage = React.lazy(() => import('./pages/SignupPage'));
+const ReferralLandingPage = React.lazy(() => import('./pages/ReferralLandingPage'));
+const ForgotPasswordPage = React.lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = React.lazy(() => import('./pages/ResetPasswordPage'));
+const BuyersPage = React.lazy(() => import('./pages/BuyersPage'));
+const ReferralDashboardPage = React.lazy(() => import('./pages/ReferralDashboardPage'));
+const LearningVideosPage = React.lazy(() => import('./pages/LearningVideosPage'));
+const ProfitTablePage = React.lazy(() => import('./pages/ProfitTablePage'));
+const TrackingPage = React.lazy(() => import('./pages/TrackingPage'));
+const CasesPage = React.lazy(() => import('./pages/CasesPage'));
+const SupportPage = React.lazy(() => import('./pages/SupportPage'));
+const UpgradePlanPage = React.lazy(() => import('./pages/UpgradePlanPage'));
+const PaymentSuccessPage = React.lazy(() => import('./pages/PaymentSuccessPage'));
+const PaymentErrorPage = React.lazy(() => import('./pages/PaymentErrorPage'));
+const EpointRedirectPage = React.lazy(() => import('./pages/EpointRedirectPage'));
+
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
 import { buildSeoRoutes } from './routes/seoRoutes';
+
+const RouteFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
+  </div>
+);
 
 // Routes that stay reachable even for a user whose plan has expired, so they can
 // still see the notice and renew instead of getting redirected in a loop.
@@ -129,6 +144,7 @@ function AppContent() {
       {isAuthenticated && hasToken && <Sidebar />}
       <main className={`flex-1 overflow-auto transition-all duration-300 ${isAuthenticated && hasToken ? '' : 'w-full'}`}>
         <div className="min-h-screen">
+          <React.Suspense fallback={<RouteFallback />}>
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
@@ -371,6 +387,7 @@ function AppContent() {
             {/* Fallback */}
             <Route path="*" element={<Navigate to={isAuthenticated && hasToken ? '/dashboard' : '/'} replace />} />
           </Routes>
+          </React.Suspense>
         </div>
       </main>
       </div>

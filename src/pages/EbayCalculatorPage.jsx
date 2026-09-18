@@ -1,12 +1,30 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { formatCurrency, calculateProfit } from '../utils/helpers';
 import { useTranslation } from 'react-i18next';
 import { Calculator, Sparkles, TrendingUp } from 'lucide-react';
+import { applySeo } from '../utils/seo';
 
 export default function EbayCalculatorPage() {
   const { isDark } = useTheme();
   const { t } = useTranslation();
+
+  useEffect(() => {
+    applySeo({
+      title: `${t('ebayCalculatorPage.title')} | Checkila`,
+      description: t('ebayCalculatorPage.subtitle'),
+      canonical: '/ebay-calculator',
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: `Checkila — ${t('ebayCalculatorPage.title')}`,
+        description: t('ebayCalculatorPage.subtitle'),
+        url: 'https://checkila.com/ebay-calculator',
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Web',
+      },
+    });
+  }, [t]);
 
   const [amazonCost, setAmazonCost] = useState('23.99');
   const [ebayPrice, setEbayPrice] = useState('29.99');

@@ -1,5 +1,5 @@
 const DEFAULT_SITE_NAME = 'Checkila';
-const DEFAULT_IMAGE = 'https://checkila.com/checkila-analysis.png';
+const DEFAULT_IMAGE = 'https://checkila.com/checkila-analysis.jpg';
 const JSON_LD_ID = 'checkila-jsonld';
 
 function ensureMetaTag(attributeName, attributeValue, content) {
