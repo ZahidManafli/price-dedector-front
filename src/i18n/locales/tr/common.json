@@ -9,6 +9,7 @@
     "ebayCalculator": "eBay Hesaplayıcı",
     "marketAnalysis": "Checkila Analizi",
     "dewiso": "Dewiso",
+    "canva": "Canva",
     "settings": "Ayarlar",
     "adminPanel": "Admin Paneli",
     "learning": "Öğrenme",
@@ -455,6 +456,58 @@
     "statusCancelled": "İptal edildi",
     "cancelAction": "İptal et",
     "viewOnEbay": "eBay'de görüntüle"
+  },
+  "canvaPage": {
+    "title": "Canva",
+    "subtitle": "Canva ile tasarımlar oluşturun ve düzenleyin",
+    "connectTitle": "Canva hesabınızı bağlayın",
+    "connectSubtitle": "Tasarım oluşturmadan önce Canva hesabınızı bağlamanız gerekir.",
+    "connectButton": "Canva'ya bağlan",
+    "disconnectButton": "Canva bağlantısını kes",
+    "newDesign": "Yeni Tasarım",
+    "newDesignModalTitle": "Tasarım boyutu seçin",
+    "presetSquare": "Kare Gönderi",
+    "presetInstagramStory": "Instagram Hikaye",
+    "presetFacebookPost": "Facebook Gönderisi",
+    "presetProductImage": "Ürün Görseli",
+    "presetCustom": "Özel boyut",
+    "customWidth": "Genişlik (px)",
+    "customHeight": "Yükseklik (px)",
+    "create": "Oluştur",
+    "creating": "Oluşturuluyor...",
+    "cancel": "Vazgeç",
+    "emptyState": "Henüz bir tasarım oluşturmadınız",
+    "statusEditing": "Düzenleniyor",
+    "statusExporting": "Dışa aktarılıyor",
+    "statusReady": "Hazır",
+    "statusFailed": "Başarısız",
+    "editAction": "Düzenle",
+    "downloadAction": "İndir",
+    "deleteAction": "Sil",
+    "confirmDelete": "Bu tasarımı silmek istiyor musunuz?",
+    "failedToLoad": "Tasarımlar yüklenemedi",
+    "failedToCreate": "Tasarım oluşturulamadı",
+    "failedToConnect": "Canva bağlantısı kurulamadı"
+  },
+  "canvaCallbackPage": {
+    "connecting": "Canva hesabınız bağlanıyor",
+    "connectingHint": "Canva yetkilendirmesi tamamlanıyor...",
+    "success": "Başarıyla bağlandı",
+    "successHint": "Canva hesabınız bağlandı. Yönlendiriliyorsunuz...",
+    "failed": "Bağlantı başarısız",
+    "failedHint": "Canva bağlantısını tamamlayamadık. Lütfen tekrar deneyin.",
+    "tryAgain": "Tekrar dene",
+    "backToDashboard": "Panele dön"
+  },
+  "canvaReturnPage": {
+    "processing": "Tasarımınız hazırlanıyor",
+    "processingHint": "Lütfen bekleyin, tasarımınız dışa aktarılıyor...",
+    "ready": "Tasarımınız hazır!",
+    "readyHint": "Tasarımınız başarıyla dışa aktarıldı.",
+    "failed": "Bir şeyler ters gitti",
+    "failedHint": "Tasarımınızı hazırlayamadık.",
+    "download": "İndir",
+    "closeTab": "Bu sekmeyi kapat"
   },
   "listingsPage": {
     "title": "İlanlar",
@@ -1239,7 +1292,8 @@
       "profit_table": "Kâr Tablosu",
       "buyer_crm": "Alıcı CRM",
       "tracking": "Takip",
-      "cases": "Vakalar"
+      "cases": "Vakalar",
+      "canva": "Canva"
     }
   },
   "back": "Geri"

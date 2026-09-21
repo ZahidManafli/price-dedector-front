@@ -9,6 +9,7 @@
     "ebayCalculator": "eBay Calculator",
     "marketAnalysis": "Checkila Analysis",
     "dewiso": "Dewiso",
+    "canva": "Canva",
     "settings": "Settings",
     "adminPanel": "Admin Panel",
     "learning": "Learning",
@@ -342,6 +343,58 @@
     "statusCancelled": "Cancelled",
     "cancelAction": "Cancel",
     "viewOnEbay": "View on eBay"
+  },
+  "canvaPage": {
+    "title": "Canva",
+    "subtitle": "Create and edit designs with Canva",
+    "connectTitle": "Connect your Canva account",
+    "connectSubtitle": "You need to connect your Canva account before creating a design.",
+    "connectButton": "Connect Canva",
+    "disconnectButton": "Disconnect Canva",
+    "newDesign": "New Design",
+    "newDesignModalTitle": "Choose a design size",
+    "presetSquare": "Square Post",
+    "presetInstagramStory": "Instagram Story",
+    "presetFacebookPost": "Facebook Post",
+    "presetProductImage": "Product Image",
+    "presetCustom": "Custom size",
+    "customWidth": "Width (px)",
+    "customHeight": "Height (px)",
+    "create": "Create",
+    "creating": "Creating...",
+    "cancel": "Cancel",
+    "emptyState": "You haven't created any designs yet",
+    "statusEditing": "Editing",
+    "statusExporting": "Exporting",
+    "statusReady": "Ready",
+    "statusFailed": "Failed",
+    "editAction": "Edit",
+    "downloadAction": "Download",
+    "deleteAction": "Delete",
+    "confirmDelete": "Delete this design?",
+    "failedToLoad": "Failed to load designs",
+    "failedToCreate": "Failed to create design",
+    "failedToConnect": "Failed to connect Canva"
+  },
+  "canvaCallbackPage": {
+    "connecting": "Connecting your Canva account",
+    "connectingHint": "Finalizing your Canva authorization...",
+    "success": "Connected successfully",
+    "successHint": "Your Canva account is now linked. Redirecting...",
+    "failed": "Connection failed",
+    "failedHint": "We could not complete your Canva connection. Please try again.",
+    "tryAgain": "Try again",
+    "backToDashboard": "Back to dashboard"
+  },
+  "canvaReturnPage": {
+    "processing": "Preparing your design",
+    "processingHint": "Please wait while your design is being exported...",
+    "ready": "Your design is ready!",
+    "readyHint": "Your design was exported successfully.",
+    "failed": "Something went wrong",
+    "failedHint": "We could not prepare your design.",
+    "download": "Download",
+    "closeTab": "Close this tab"
   },
   "productsPage": {
     "title": "Products",
@@ -1306,7 +1359,8 @@
       "profit_table": "Profit Table",
       "buyer_crm": "Buyer CRM",
       "tracking": "Tracking",
-      "cases": "Cases"
+      "cases": "Cases",
+      "canva": "Canva"
     }
   },
   "back": "Back"

@@ -79,6 +79,7 @@ const PLAN_TAB_KEYS = [
   TAB_KEYS.BUYER_CRM,
   TAB_KEYS.TRACKING,
   TAB_KEYS.CASES,
+  TAB_KEYS.CANVA,
 ];
 
 function defaultPlanForm() {

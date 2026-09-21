@@ -291,6 +291,19 @@ export const ebayAPI = {
   bootstrap: () => api.get('/ebay/bootstrap'),
 };
 
+export const canvaAPI = {
+  getStatus: () => api.get('/canva/status'),
+  getConnectUrl: () => api.get('/canva/connect'),
+  completeCallback: (code, state) => api.post('/canva/callback', { code, state }),
+  disconnect: () => api.delete('/canva/disconnect'),
+  createDesign: (payload) => api.post('/canva/designs', payload),
+  listDesigns: () => api.get('/canva/designs'),
+  reopenDesign: (id) => api.post(`/canva/designs/${encodeURIComponent(id)}/reopen`),
+  resolveReturn: (correlationJwt) => api.post('/canva/return', { correlationJwt }),
+  getExportStatus: (id) => api.get(`/canva/designs/${encodeURIComponent(id)}/export-status`),
+  deleteDesign: (id) => api.delete(`/canva/designs/${encodeURIComponent(id)}`),
+};
+
 // eBay Post-Order API (cancellations, case management, inquiries) — gated behind the
 // "cases" plan tab, same pattern as ebayAPI above (mounted under /ebay so it shares
 // that router's auth + eBay-token resolution). Only exposes endpoints we have exact

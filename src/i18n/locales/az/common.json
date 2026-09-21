@@ -9,6 +9,7 @@
     "ebayCalculator": "eBay Kalkulyator",
     "marketAnalysis": "Checkila Analizi",
     "dewiso": "Dewiso",
+    "canva": "Canva",
     "settings": "Ayarlar",
     "adminPanel": "Admin Paneli",
     "learning": "Dərslik Videoları",
@@ -455,6 +456,58 @@
     "statusCancelled": "Ləğv edildi",
     "cancelAction": "Ləğv et",
     "viewOnEbay": "eBay-də bax"
+  },
+  "canvaPage": {
+    "title": "Canva",
+    "subtitle": "Dizaynlarınızı Canva ilə yaradın və redaktə edin",
+    "connectTitle": "Canva hesabınızı qoşun",
+    "connectSubtitle": "Dizayn yaratmaq üçün əvvəlcə Canva hesabınızı qoşmalısınız.",
+    "connectButton": "Canva ilə qoşul",
+    "disconnectButton": "Canva hesabını ayır",
+    "newDesign": "Yeni Dizayn",
+    "newDesignModalTitle": "Yeni dizayn ölçüsü seçin",
+    "presetSquare": "Kvadrat Post",
+    "presetInstagramStory": "Instagram Story",
+    "presetFacebookPost": "Facebook Post",
+    "presetProductImage": "Məhsul Şəkli",
+    "presetCustom": "Sərbəst ölçü",
+    "customWidth": "En (px)",
+    "customHeight": "Hündürlük (px)",
+    "create": "Yarat",
+    "creating": "Yaradılır...",
+    "cancel": "Ləğv et",
+    "emptyState": "Hələ heç bir dizayn yaratmamısınız",
+    "statusEditing": "Redaktə olunur",
+    "statusExporting": "Eksport olunur",
+    "statusReady": "Hazırdır",
+    "statusFailed": "Uğursuz",
+    "editAction": "Redaktə et",
+    "downloadAction": "Yüklə",
+    "deleteAction": "Sil",
+    "confirmDelete": "Bu dizaynı silmək istəyirsiniz?",
+    "failedToLoad": "Dizaynlar yüklənmədi",
+    "failedToCreate": "Dizayn yaradıla bilmədi",
+    "failedToConnect": "Canva qoşulması alınmadı"
+  },
+  "canvaCallbackPage": {
+    "connecting": "Canva hesabınız qoşulur",
+    "connectingHint": "Canva icazəsi tamamlanır...",
+    "success": "Uğurla qoşuldu",
+    "successHint": "Canva hesabınız qoşuldu. Yönləndirilirsiniz...",
+    "failed": "Qoşulma alınmadı",
+    "failedHint": "Canva qoşulmasını tamamlaya bilmədik. Yenidən cəhd edin.",
+    "tryAgain": "Yenidən cəhd et",
+    "backToDashboard": "Panelə qayıt"
+  },
+  "canvaReturnPage": {
+    "processing": "Dizaynınız hazırlanır",
+    "processingHint": "Zəhmət olmasa gözləyin, dizaynınız eksport olunur...",
+    "ready": "Dizayn hazırdır!",
+    "readyHint": "Dizaynınız uğurla hazırlandı.",
+    "failed": "Xəta baş verdi",
+    "failedHint": "Dizaynınızı hazırlaya bilmədik.",
+    "download": "Yüklə",
+    "closeTab": "Bu tabı bağla"
   },
   "listingsPage": {
     "title": "Siyahılar",
@@ -1239,7 +1292,8 @@
       "profit_table": "Mənfəət Cədvəli",
       "buyer_crm": "Alıcı CRM",
       "tracking": "İzləmə",
-      "cases": "İddialar"
+      "cases": "İddialar",
+      "canva": "Canva"
     }
   },
   "back": "Geri"

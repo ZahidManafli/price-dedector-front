@@ -18,6 +18,7 @@ export const TAB_KEYS = {
   TRACKING: 'tracking',
   CASES: 'cases',
   SUPPORT: 'support',
+  CANVA: 'canva',
 };
 
 export const USER_DEFAULT_ALLOWED_TABS = [
@@ -70,6 +71,7 @@ const TAB_ALIASES = {
   tracking: TAB_KEYS.TRACKING,
   cases: TAB_KEYS.CASES,
   support: TAB_KEYS.SUPPORT,
+  canva: TAB_KEYS.CANVA,
 };
 
 export function normalizeTabKey(value) {

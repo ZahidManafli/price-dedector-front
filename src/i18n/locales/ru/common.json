@@ -9,6 +9,7 @@
     "ebayCalculator": "Калькулятор eBay",
     "marketAnalysis": "Анализ Checkila",
     "dewiso": "Dewiso",
+    "canva": "Canva",
     "settings": "Настройки",
     "adminPanel": "Админ панель",
     "learning": "Обучение",
@@ -455,6 +456,58 @@
     "statusCancelled": "Отменено",
     "cancelAction": "Отменить",
     "viewOnEbay": "Смотреть на eBay"
+  },
+  "canvaPage": {
+    "title": "Canva",
+    "subtitle": "Создавайте и редактируйте дизайны с помощью Canva",
+    "connectTitle": "Подключите аккаунт Canva",
+    "connectSubtitle": "Перед созданием дизайна нужно подключить аккаунт Canva.",
+    "connectButton": "Подключить Canva",
+    "disconnectButton": "Отключить Canva",
+    "newDesign": "Новый дизайн",
+    "newDesignModalTitle": "Выберите размер дизайна",
+    "presetSquare": "Квадратный пост",
+    "presetInstagramStory": "Instagram Story",
+    "presetFacebookPost": "Facebook пост",
+    "presetProductImage": "Изображение товара",
+    "presetCustom": "Произвольный размер",
+    "customWidth": "Ширина (px)",
+    "customHeight": "Высота (px)",
+    "create": "Создать",
+    "creating": "Создание...",
+    "cancel": "Отмена",
+    "emptyState": "Вы ещё не создали ни одного дизайна",
+    "statusEditing": "Редактируется",
+    "statusExporting": "Экспортируется",
+    "statusReady": "Готово",
+    "statusFailed": "Ошибка",
+    "editAction": "Редактировать",
+    "downloadAction": "Скачать",
+    "deleteAction": "Удалить",
+    "confirmDelete": "Удалить этот дизайн?",
+    "failedToLoad": "Не удалось загрузить дизайны",
+    "failedToCreate": "Не удалось создать дизайн",
+    "failedToConnect": "Не удалось подключить Canva"
+  },
+  "canvaCallbackPage": {
+    "connecting": "Подключаем ваш аккаунт Canva",
+    "connectingHint": "Завершаем авторизацию Canva...",
+    "success": "Успешно подключено",
+    "successHint": "Ваш аккаунт Canva подключён. Перенаправление...",
+    "failed": "Не удалось подключиться",
+    "failedHint": "Не удалось завершить подключение Canva. Попробуйте снова.",
+    "tryAgain": "Попробовать снова",
+    "backToDashboard": "На главную"
+  },
+  "canvaReturnPage": {
+    "processing": "Подготавливаем ваш дизайн",
+    "processingHint": "Пожалуйста, подождите, дизайн экспортируется...",
+    "ready": "Дизайн готов!",
+    "readyHint": "Ваш дизайн успешно экспортирован.",
+    "failed": "Произошла ошибка",
+    "failedHint": "Не удалось подготовить дизайн.",
+    "download": "Скачать",
+    "closeTab": "Закрыть вкладку"
   },
   "listingsPage": {
     "title": "Объявления",
@@ -1239,7 +1292,8 @@
       "profit_table": "Таблица прибыли",
       "buyer_crm": "CRM покупателей",
       "tracking": "Отслеживание",
-      "cases": "Дела"
+      "cases": "Дела",
+      "canva": "Canva"
     }
   },
   "back": "Назад"

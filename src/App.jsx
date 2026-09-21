@@ -40,6 +40,9 @@ const ListingDetailPage = React.lazy(() => import('./pages/ListingDetailPage'));
 const OrderDetailPage = React.lazy(() => import('./pages/OrderDetailPage'));
 const EbayCalculatorPage = React.lazy(() => import('./pages/EbayCalculatorPage'));
 const DewisoPage = React.lazy(() => import('./pages/DewisoPage'));
+const CanvaPage = React.lazy(() => import('./pages/CanvaPage'));
+const CanvaCallbackPage = React.lazy(() => import('./pages/CanvaCallbackPage'));
+const CanvaReturnPage = React.lazy(() => import('./pages/CanvaReturnPage'));
 const MarketAnalysisPage = React.lazy(() => import('./pages/MarketAnalysisPage'));
 const MarketInsightPage = React.lazy(() => import('./pages/MarketInsightPage'));
 const MarketListingDetailPage = React.lazy(() => import('./pages/MarketListingDetailPage'));
@@ -287,6 +290,30 @@ function AppContent() {
               element={
                 <ProtectedRoute requiredTab={TAB_KEYS.DEWISO}>
                   <DewisoPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/canva"
+              element={
+                <ProtectedRoute requiredTab={TAB_KEYS.CANVA}>
+                  <CanvaPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/canva/callback"
+              element={
+                <ProtectedRoute requiredTab={TAB_KEYS.CANVA}>
+                  <CanvaCallbackPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/canva/return"
+              element={
+                <ProtectedRoute requiredTab={TAB_KEYS.CANVA}>
+                  <CanvaReturnPage />
                 </ProtectedRoute>
               }
             />
