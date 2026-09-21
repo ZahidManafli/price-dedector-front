@@ -32,7 +32,9 @@ function normalizeEbayListingUrl(url) {
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { CalendarClock } from 'lucide-react';
 import { ebayAPI, dewisoAPI } from '../services/api';
+import ScheduleListingModal from './ScheduleListingModal';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 
@@ -343,6 +345,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
   const [loadingSpecifics, setLoadingSpecifics] = useState(false);
   const [editingImageIdx, setEditingImageIdx] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   // Guards against the slow background scrapeItemDetails() call (below) landing
   // AFTER the user has already added/reordered their own images and clobbering
   // the gallery with just the original source listing's own picture count —
@@ -613,14 +616,64 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
     });
   };
 
+  // Shared basic validation — used by both the immediate "List" submit and the
+  // "Planlaşdırılmış Listing" button, so a user can't schedule an incomplete listing.
+  const validateBasicFields = () => {
+    if (!form.title.trim()) return 'Title is required';
+    if (!form.price || Number(form.price) <= 0) return 'Price must be a positive number';
+    if (!form.categoryId.trim()) return 'Category ID is required';
+    return null;
+  };
+
+  // Builds the exact payload sent to POST /ebay/quick-list — also reused, as-is,
+  // by the "Planlaşdırılmış Listing" flow (POST /ebay/scheduled-listings expects
+  // the identical shape plus scheduledFor/ebayAccountId).
+  const buildListingPayload = () => {
+    const pictureUrlsHiRes = [...new Set(maxDimensionImageUrls.filter(Boolean))];
+    const EXCLUDED_SPECIFICS = new Set(['condition', 'item condition']);
+    const itemSpecificsMap = {};
+    itemSpecifics.forEach(({ name, label, value }) => {
+      const key = name || label;
+      if (key && value && !EXCLUDED_SPECIFICS.has(String(key).toLowerCase().trim())) {
+        itemSpecificsMap[key] = value;
+      }
+    });
+
+    return {
+      title: form.title.trim(),
+      description: form.useRawDewisoHtml
+        ? (getDescriptionHtml() || markdownToPlainText(form.title.trim()))
+        : (getDescriptionPlainText() || form.title.trim()),
+      useRawDewisoHtml: !!form.useRawDewisoHtml,
+      price: Number(form.price),
+      quantity: Math.max(1, Number(form.quantity) || 1),
+      categoryId: form.categoryId.trim(),
+      conditionId: Number(form.conditionId),
+      freeShipping: form.freeShipping,
+      dispatchTimeMax: Number(form.dispatchTimeMax) || 3,
+      currency: 'USD',
+      pictureUrls: pictureUrlsHiRes,
+      itemSpecifics: Object.keys(itemSpecificsMap).length > 0 ? itemSpecificsMap : null,
+      ...(form.paymentPolicyId ? { paymentPolicyId: form.paymentPolicyId } : {}),
+      ...(form.returnPolicyId ? { returnPolicyId: form.returnPolicyId } : {}),
+      ...(form.fulfillmentPolicyId ? { fulfillmentPolicyId: form.fulfillmentPolicyId } : {}),
+    };
+  };
+
+  const handleOpenSchedule = () => {
+    const validationError = validateBasicFields();
+    if (validationError) { setError(validationError); return; }
+    setError(null);
+    setShowScheduleModal(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setResult(null);
 
-    if (!form.title.trim()) return setError('Title is required');
-    if (!form.price || Number(form.price) <= 0) return setError('Price must be a positive number');
-    if (!form.categoryId.trim()) return setError('Category ID is required');
+    const validationError = validateBasicFields();
+    if (validationError) return setError(validationError);
 
     if (isEditBucketItem) {
       // Save changes to bucket item only
@@ -659,35 +712,7 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
     // Normal listing flow
     try {
       setSubmitting(true);
-      const pictureUrlsHiRes = [...new Set(maxDimensionImageUrls.filter(Boolean))];
-      const EXCLUDED_SPECIFICS = new Set(['condition', 'item condition']);
-      const itemSpecificsMap = {};
-      itemSpecifics.forEach(({ name, label, value }) => {
-        const key = name || label;
-        if (key && value && !EXCLUDED_SPECIFICS.has(String(key).toLowerCase().trim())) {
-          itemSpecificsMap[key] = value;
-        }
-      });
-
-      const res = await ebayAPI.quickList({
-      title: form.title.trim(),
-      description: form.useRawDewisoHtml
-        ? (getDescriptionHtml() || markdownToPlainText(form.title.trim()))
-        : (getDescriptionPlainText() || form.title.trim()),
-      useRawDewisoHtml: !!form.useRawDewisoHtml,
-        price: Number(form.price),
-        quantity: Math.max(1, Number(form.quantity) || 1),
-        categoryId: form.categoryId.trim(),
-        conditionId: Number(form.conditionId),
-        freeShipping: form.freeShipping,
-        dispatchTimeMax: Number(form.dispatchTimeMax) || 3,
-        currency: 'USD',
-        pictureUrls: pictureUrlsHiRes,
-        itemSpecifics: Object.keys(itemSpecificsMap).length > 0 ? itemSpecificsMap : null,
-        ...(form.paymentPolicyId ? { paymentPolicyId: form.paymentPolicyId } : {}),
-        ...(form.returnPolicyId ? { returnPolicyId: form.returnPolicyId } : {}),
-        ...(form.fulfillmentPolicyId ? { fulfillmentPolicyId: form.fulfillmentPolicyId } : {}),
-      });
+      const res = await ebayAPI.quickList(buildListingPayload());
 
       const listingResult = res?.data || {};
       setResult(listingResult);
@@ -1031,6 +1056,23 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
                 </div>
               )}
 
+              {/* Schedule for later — a secondary alternative to listing immediately */}
+              {!isEditBucketItem && (
+                <button
+                  type="button"
+                  onClick={handleOpenSchedule}
+                  disabled={submitting}
+                  className={`w-full py-2.5 rounded-lg border border-dashed text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60 ${
+                    isDark
+                      ? 'border-slate-600 text-slate-300 hover:border-blue-500 hover:text-blue-400'
+                      : 'border-slate-300 text-slate-600 hover:border-blue-400 hover:text-blue-600'
+                  }`}
+                >
+                  <CalendarClock size={16} />
+                  {t('scheduleListing.button')}
+                </button>
+              )}
+
               {/* Actions */}
               <div className="flex gap-2 pt-1">
                 <button type="button" onClick={onClose} disabled={submitting} className="btn-secondary flex-1 py-2.5 disabled:opacity-60">{t('listingModal.cancel')}</button>
@@ -1074,6 +1116,15 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
           mode={editingImageIdx >= displayUrls.length ? 'add' : 'edit'}
           onConfirm={handleImageEdited}
           onClose={() => setEditingImageIdx(null)}
+        />
+      )}
+
+      {/* Schedule Listing Sub-Modal */}
+      {showScheduleModal && (
+        <ScheduleListingModal
+          isDark={isDark}
+          listingPayload={buildListingPayload()}
+          onClose={() => setShowScheduleModal(false)}
         />
       )}
     </>

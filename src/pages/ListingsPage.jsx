@@ -8,6 +8,7 @@ import {
   Pencil, Search, SlidersHorizontal, Trash2, AlertTriangle, X,
 } from 'lucide-react';
 import FeedbackSidebar from '../components/FeedbackSidebar';
+import ScheduledListingsPanel from '../components/ScheduledListingsPanel';
 import EbayAccountSwitcher from '../components/EbayAccountSwitcher';
 import { useTheme } from '../context/ThemeContext';
 
@@ -1196,6 +1197,8 @@ export default function ListingsPage() {
           onClose={() => setFeedbackListing(null)}
         />
       )}
+
+      {ebayStatus.connected && <ScheduledListingsPanel isDark={isDark} />}
     </div>
   );
 }
