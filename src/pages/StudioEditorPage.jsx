@@ -92,6 +92,7 @@ export default function StudioEditorPage() {
   const navigate = useNavigate();
 
   const canvasElRef = useRef(null);
+  const canvasAreaRef = useRef(null);
   const fabricCanvasRef = useRef(null);
   const historyRef = useRef({ stack: [], index: -1, suppress: false, timer: null });
   const autosaveTimerRef = useRef(null);
@@ -104,7 +105,6 @@ export default function StudioEditorPage() {
   const [dims, setDims] = useState({ widthPx: 1080, heightPx: 1080 });
   const [title, setTitle] = useState('');
   const [zoom, setZoom] = useState(1);
-  const [fitZoom, setFitZoom] = useState(1);
   const [activePanel, setActivePanel] = useState('shapes');
   const [selected, setSelected] = useState(null);
   const [toolbarPos, setToolbarPos] = useState(null);
@@ -116,6 +116,19 @@ export default function StudioEditorPage() {
   const [uploadedImages, setUploadedImages] = useState([]);
 
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+
+  // How much the design should fill the available canvas viewport — measured
+  // from the actual scroll container (not a fixed guess), the same way a real
+  // design tool fits the page to whatever screen space it's given rather than
+  // a small constant that looks tiny on a large monitor. Never zooms IN past
+  // 100% for the initial/"Fit" view, matching standard editor conventions.
+  const computeFitZoom = useCallback((widthPx, heightPx) => {
+    const el = canvasAreaRef.current;
+    const padding = 80; // matches this container's p-10 (40px each side)
+    const availW = Math.max(200, (el?.clientWidth || 1000) - padding);
+    const availH = Math.max(200, (el?.clientHeight || 700) - padding);
+    return Math.min(1, availW / widthPx, availH / heightPx);
+  }, []);
 
   // ── Export (download / thumbnail) ───────────────────────────────────────
   // toDataURL renders at the canvas's CURRENT pixel size, which tracks the
@@ -278,8 +291,7 @@ export default function StudioEditorPage() {
 
         setTitle(data.title || '');
         setDims({ widthPx: safeWidth, heightPx: safeHeight });
-        const initialFit = Math.min(1, 720 / Math.max(safeWidth, safeHeight));
-        setFitZoom(initialFit);
+        const initialFit = computeFitZoom(safeWidth, safeHeight);
         setZoom(initialFit);
         // Zoom is implemented via Fabric's own viewport transform (setZoom), not
         // CSS transforms — setDimensions sets the canvas element's actual pixel
@@ -494,7 +506,10 @@ export default function StudioEditorPage() {
     setZoom(clamped);
   };
   const adjustZoom = (delta) => applyZoom(zoomRef.current + delta);
-  const resetZoom = () => applyZoom(fitZoom);
+  // Recomputes from the container's CURRENT size rather than replaying the
+  // stale value captured at load, so it still fits correctly if the window
+  // was resized since.
+  const resetZoom = () => applyZoom(computeFitZoom(dims.widthPx, dims.heightPx));
 
   const panelBase = isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200';
   const toggleColorPopover = (key) => setOpenColorPopover((cur) => (cur === key ? null : key));
@@ -691,7 +706,7 @@ export default function StudioEditorPage() {
 
         {/* Canvas area */}
         <div className="flex-1 flex flex-col min-w-0">
-          <div className="flex-1 overflow-auto flex items-center justify-center p-10">
+          <div ref={canvasAreaRef} className="flex-1 overflow-auto flex items-center justify-center p-10">
             {/* No CSS transform here — zoom is applied via Fabric's own setZoom()/
                 setDimensions() (see applyZoom), so this wrapper just hugs the
                 canvas element at whatever pixel size Fabric has already set it to. */}
