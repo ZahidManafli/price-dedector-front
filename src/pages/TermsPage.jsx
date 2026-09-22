@@ -22,7 +22,7 @@ export default function TermsPage() {
             <p>
               Checkila is a platform that helps online resellers track product prices, manage
               marketplace listings, and connect optional third-party integrations (such as eBay,
-              Amazon, and Canva) to assist with their reselling workflow.
+              Amazon) to assist with their reselling workflow.
             </p>
           </section>
 
@@ -38,7 +38,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-slate-900 mb-2">4. Third-Party Integrations</h2>
             <p>
-              Features that connect to third-party services (including eBay, Amazon, and Canva) are
+              Features that connect to third-party services (including eBay and Amazon) are
               subject to those providers' own terms of service. Checkila is not responsible for the
               availability, accuracy, or policies of third-party services.
             </p>

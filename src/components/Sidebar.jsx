@@ -130,7 +130,7 @@ export default function Sidebar() {
     { label: t('nav.marketAnalysis'), path: '/market-analysis', icon: BarChart3, tab: TAB_KEYS.MARKET_ANALYSIS, tour: 'sidebar-market-analysis' },
     { label: 'Market Insight', path: '/market-insight', icon: Sparkles, tab: TAB_KEYS.MARKET_INSIGHT },
     { label: t('nav.dewiso'), path: '/dewiso', icon: Code2, tab: TAB_KEYS.DEWISO },
-    { label: t('nav.canva'), path: '/canva', icon: Palette, tab: TAB_KEYS.CANVA },
+    { label: t('nav.designStudio'), path: '/studio', icon: Palette, tab: TAB_KEYS.DESIGN_STUDIO },
     { label: t('nav.learning'), path: '/learning', icon: BookOpen, tab: TAB_KEYS.LEARNING },
     { label: t('nav.profitTable'), path: '/profit-table', icon: TrendingUp, tab: TAB_KEYS.PROFIT_TABLE },
     ...(user?.role === 'admin' || user?.permissions?.referralAdmin

@@ -42,9 +42,8 @@ const ListingDetailPage = React.lazy(() => import('./pages/ListingDetailPage'));
 const OrderDetailPage = React.lazy(() => import('./pages/OrderDetailPage'));
 const EbayCalculatorPage = React.lazy(() => import('./pages/EbayCalculatorPage'));
 const DewisoPage = React.lazy(() => import('./pages/DewisoPage'));
-const CanvaPage = React.lazy(() => import('./pages/CanvaPage'));
-const CanvaCallbackPage = React.lazy(() => import('./pages/CanvaCallbackPage'));
-const CanvaReturnPage = React.lazy(() => import('./pages/CanvaReturnPage'));
+const StudioGalleryPage = React.lazy(() => import('./pages/StudioGalleryPage'));
+const StudioEditorPage = React.lazy(() => import('./pages/StudioEditorPage'));
 const MarketAnalysisPage = React.lazy(() => import('./pages/MarketAnalysisPage'));
 const MarketInsightPage = React.lazy(() => import('./pages/MarketInsightPage'));
 const MarketListingDetailPage = React.lazy(() => import('./pages/MarketListingDetailPage'));
@@ -134,6 +133,11 @@ function AppContent() {
   const { isAuthenticated, loading } = useAuth();
   const { isCollapsed } = useSidebar();
   const hasToken = typeof window !== 'undefined' ? !!localStorage.getItem('authToken') : false;
+  // The Studio editor (not its gallery) wants full screen real estate for the
+  // canvas, matching how design tools normally maximize canvas space — the
+  // editor's own compact top bar provides a "back" link, so navigation isn't lost.
+  const location = useLocation();
+  const hideSidebar = location.pathname.startsWith('/studio/');
 
   if (loading) {
     return (
@@ -146,8 +150,8 @@ function AppContent() {
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-slate-950">
       <ActivityTracker />
-      {isAuthenticated && hasToken && <Sidebar />}
-      <main className={`flex-1 overflow-auto transition-all duration-300 ${isAuthenticated && hasToken ? '' : 'w-full'}`}>
+      {isAuthenticated && hasToken && !hideSidebar && <Sidebar />}
+      <main className={`flex-1 overflow-auto transition-all duration-300 ${isAuthenticated && hasToken && !hideSidebar ? '' : 'w-full'}`}>
         <div className="min-h-screen">
           <React.Suspense fallback={<RouteFallback />}>
           <Routes>
@@ -298,26 +302,18 @@ function AppContent() {
               }
             />
             <Route
-              path="/canva"
+              path="/studio"
               element={
-                <ProtectedRoute requiredTab={TAB_KEYS.CANVA}>
-                  <CanvaPage />
+                <ProtectedRoute requiredTab={TAB_KEYS.DESIGN_STUDIO}>
+                  <StudioGalleryPage />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="/canva/callback"
+              path="/studio/:projectId"
               element={
-                <ProtectedRoute requiredTab={TAB_KEYS.CANVA}>
-                  <CanvaCallbackPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/canva/return"
-              element={
-                <ProtectedRoute requiredTab={TAB_KEYS.CANVA}>
-                  <CanvaReturnPage />
+                <ProtectedRoute requiredTab={TAB_KEYS.DESIGN_STUDIO}>
+                  <StudioEditorPage />
                 </ProtectedRoute>
               }
             />

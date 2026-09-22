@@ -291,17 +291,14 @@ export const ebayAPI = {
   bootstrap: () => api.get('/ebay/bootstrap'),
 };
 
-export const canvaAPI = {
-  getStatus: () => api.get('/canva/status'),
-  getConnectUrl: () => api.get('/canva/connect'),
-  completeCallback: (code, state) => api.post('/canva/callback', { code, state }),
-  disconnect: () => api.delete('/canva/disconnect'),
-  createDesign: (payload) => api.post('/canva/designs', payload),
-  listDesigns: () => api.get('/canva/designs'),
-  reopenDesign: (id) => api.post(`/canva/designs/${encodeURIComponent(id)}/reopen`),
-  resolveReturn: (correlationJwt) => api.post('/canva/return', { correlationJwt }),
-  getExportStatus: (id) => api.get(`/canva/designs/${encodeURIComponent(id)}/export-status`),
-  deleteDesign: (id) => api.delete(`/canva/designs/${encodeURIComponent(id)}`),
+export const studioAPI = {
+  listProjects: () => api.get('/studio/projects'),
+  createProject: (payload) => api.post('/studio/projects', payload),
+  getProject: (id) => api.get(`/studio/projects/${encodeURIComponent(id)}`),
+  saveProject: (id, payload) => api.put(`/studio/projects/${encodeURIComponent(id)}`, payload),
+  deleteProject: (id) => api.delete(`/studio/projects/${encodeURIComponent(id)}`),
+  uploadImage: (formData) =>
+    api.post('/studio/upload-image', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
 };
 
 // eBay Post-Order API (cancellations, case management, inquiries) — gated behind the

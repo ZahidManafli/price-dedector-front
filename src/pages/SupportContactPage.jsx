@@ -4,8 +4,7 @@ import { Mail } from 'lucide-react';
 
 // A public (no login required) support/contact page — the in-app /support
 // ticketing page requires an account, so it can't be linked as a public
-// "Support URL" (e.g. in the Canva app listing) for people who aren't
-// registered yet.
+// "Support URL" for people who aren't registered yet.
 export default function SupportContactPage() {
   return (
     <div className="page-shell">
@@ -17,7 +16,7 @@ export default function SupportContactPage() {
         </div>
         <h1 className="text-2xl font-semibold text-slate-900 mb-2">Support</h1>
         <p className="text-slate-600 mb-6">
-          Need help with Checkila or any of its integrations (eBay, Amazon, Canva)? Reach out and
+          Need help with Checkila or any of its integrations (eBay, Amazon)? Reach out and
           we'll get back to you.
         </p>
         <a
