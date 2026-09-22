@@ -30,6 +30,8 @@ const AmazonCallbackPage = React.lazy(() => import('./pages/AmazonCallbackPage')
 const AmazonLookupPage = React.lazy(() => import('./pages/AmazonLookupPage'));
 const AdminPanelPage = React.lazy(() => import('./pages/AdminPanelPage'));
 const PrivacyPage = React.lazy(() => import('./pages/PrivacyPage'));
+const TermsPage = React.lazy(() => import('./pages/TermsPage'));
+const SupportContactPage = React.lazy(() => import('./pages/SupportContactPage'));
 const ExtensionPrivacyPage = React.lazy(() => import('./pages/ExtensionPrivacyPage'));
 const AboutPage = React.lazy(() => import('./pages/AboutPage'));
 const MaintenancePage = React.lazy(() => import('./pages/MaintenancePage'));
@@ -156,6 +158,8 @@ function AppContent() {
               element={isAuthenticated && hasToken ? <Navigate to="/dashboard" replace /> : <LoginPage />}
             />
             <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/help" element={<SupportContactPage />} />
             <Route path="/extension-privacy" element={<ExtensionPrivacyPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/maintenance" element={<MaintenancePage />} />
