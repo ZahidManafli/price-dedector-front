@@ -2,11 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Palette, Loader2, Plus, Pencil, Download, Trash2, ImageOff,
-  CheckCircle2, XCircle,
+  CheckCircle2, XCircle, Unlink,
 } from 'lucide-react';
 import { canvaAPI } from '../services/api';
 import Alert from '../components/Alert';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const SIZE_PRESETS = [
   { key: 'square', labelKey: 'presetSquare', width: 1080, height: 1080 },
@@ -126,6 +127,8 @@ function NewDesignModal({ isDark, onClose, onCreate, creating, error }) {
 export default function CanvaPage() {
   const { t } = useTranslation();
   const { isDark } = useTheme();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
@@ -215,6 +218,17 @@ export default function CanvaPage() {
     }
   };
 
+  const handleDisconnect = async () => {
+    if (!window.confirm(t('canvaPage.confirmDisconnect'))) return;
+    try {
+      await canvaAPI.disconnect();
+      setConnected(false);
+      setDesigns([]);
+    } catch {
+      setError(t('canvaPage.failedToConnect'));
+    }
+  };
+
   const handleCreate = async ({ title, widthPx, heightPx }) => {
     setCreating(true);
     setCreateError(null);
@@ -270,9 +284,23 @@ export default function CanvaPage() {
           <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('canvaPage.subtitle')}</p>
         </div>
         {connected && (
-          <button type="button" onClick={() => { setCreateError(null); setShowNewDesignModal(true); }} className="btn-primary inline-flex items-center gap-2">
-            <Plus size={16} /> {t('canvaPage.newDesign')}
-          </button>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => { setCreateError(null); setShowNewDesignModal(true); }} className="btn-primary inline-flex items-center gap-2">
+              <Plus size={16} /> {t('canvaPage.newDesign')}
+            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleDisconnect}
+                title={t('canvaPage.disconnectButton')}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium border transition-colors ${
+                  isDark ? 'border-slate-700 text-slate-400 hover:border-red-700 hover:text-red-400' : 'border-slate-200 text-slate-500 hover:border-red-300 hover:text-red-600'
+                }`}
+              >
+                <Unlink size={14} /> {t('canvaPage.disconnectButton')}
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -289,11 +317,17 @@ export default function CanvaPage() {
               <Palette className={isDark ? 'text-purple-400' : 'text-purple-600'} size={24} />
             </div>
           </div>
-          <h2 className={`text-lg font-semibold mb-1 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('canvaPage.connectTitle')}</h2>
-          <p className={`${isDark ? 'text-slate-400' : 'text-slate-600'} mb-4 text-sm`}>{t('canvaPage.connectSubtitle')}</p>
-          <button type="button" onClick={handleConnect} className="btn-primary inline-flex items-center gap-2">
-            <Palette size={16} /> {t('canvaPage.connectButton')}
-          </button>
+          <h2 className={`text-lg font-semibold mb-1 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+            {isAdmin ? t('canvaPage.connectTitle') : t('canvaPage.notReadyTitle')}
+          </h2>
+          <p className={`${isDark ? 'text-slate-400' : 'text-slate-600'} mb-4 text-sm`}>
+            {isAdmin ? t('canvaPage.connectSubtitle') : t('canvaPage.notReadySubtitle')}
+          </p>
+          {isAdmin && (
+            <button type="button" onClick={handleConnect} className="btn-primary inline-flex items-center gap-2">
+              <Palette size={16} /> {t('canvaPage.connectButton')}
+            </button>
+          )}
         </div>
       ) : loadingDesigns ? (
         <div className="flex items-center justify-center py-16">
