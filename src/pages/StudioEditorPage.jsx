@@ -118,16 +118,19 @@ export default function StudioEditorPage() {
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
 
   // How much the design should fill the available canvas viewport — measured
-  // from the actual scroll container (not a fixed guess), the same way a real
-  // design tool fits the page to whatever screen space it's given rather than
-  // a small constant that looks tiny on a large monitor. Never zooms IN past
-  // 100% for the initial/"Fit" view, matching standard editor conventions.
+  // from the actual scroll container (not a fixed guess), the same way Canva
+  // itself fits the page to whatever screen space it's given. Deliberately NOT
+  // capped at 100%: Canva zooms IN past 100% for small designs too — a 1080px
+  // square on a modest browser window capped at "never zoom past 100%" ends up
+  // looking noticeably smaller than Canva's own canvas, which is exactly what
+  // was reported. Only an upper sanity bound (avoid comically over-zooming a
+  // tiny custom size) and a lower one (never shrink a huge design to nothing).
   const computeFitZoom = useCallback((widthPx, heightPx) => {
     const el = canvasAreaRef.current;
-    const padding = 80; // matches this container's p-10 (40px each side)
-    const availW = Math.max(200, (el?.clientWidth || 1000) - padding);
-    const availH = Math.max(200, (el?.clientHeight || 700) - padding);
-    return Math.min(1, availW / widthPx, availH / heightPx);
+    const padding = 24; // small breathing room only — the canvas should fill most of the panel, like Canva's own editor
+    const availW = Math.max(200, (el?.clientWidth || 1200) - padding);
+    const availH = Math.max(200, (el?.clientHeight || 800) - padding);
+    return Math.min(4, Math.max(0.1, Math.min(availW / widthPx, availH / heightPx)));
   }, []);
 
   // ── Export (download / thumbnail) ───────────────────────────────────────
@@ -490,7 +493,7 @@ export default function StudioEditorPage() {
   // driving the on-screen % label can never drift apart from each other.
   const applyZoom = (z) => {
     const canvas = fabricCanvasRef.current;
-    const clamped = Math.min(2, Math.max(0.1, Math.round(z * 100) / 100));
+    const clamped = Math.min(4, Math.max(0.1, Math.round(z * 100) / 100));
     const w = Math.max(40, dims.widthPx || 1080);
     const h = Math.max(40, dims.heightPx || 1080);
     if (canvas) {
@@ -706,7 +709,7 @@ export default function StudioEditorPage() {
 
         {/* Canvas area */}
         <div className="flex-1 flex flex-col min-w-0">
-          <div ref={canvasAreaRef} className="flex-1 overflow-auto flex items-center justify-center p-10">
+          <div ref={canvasAreaRef} className="flex-1 overflow-auto flex items-center justify-center p-3">
             {/* No CSS transform here — zoom is applied via Fabric's own setZoom()/
                 setDimensions() (see applyZoom), so this wrapper just hugs the
                 canvas element at whatever pixel size Fabric has already set it to. */}
