@@ -119,17 +119,21 @@ export default function StudioEditorPage() {
 
   // How much the design should fill the available canvas viewport — measured
   // from the actual scroll container (not a fixed guess), the same way Canva
-  // itself fits the page to whatever screen space it's given. Deliberately NOT
-  // capped at 100%: Canva zooms IN past 100% for small designs too — a 1080px
-  // square on a modest browser window capped at "never zoom past 100%" ends up
-  // looking noticeably smaller than Canva's own canvas, which is exactly what
-  // was reported. Only an upper sanity bound (avoid comically over-zooming a
+  // itself fits the page to whatever screen space it's given, but never
+  // displayed larger than a fixed 40rem × 50rem "page" cap regardless of how
+  // much room a large monitor actually has. Deliberately NOT capped at 100%
+  // zoom below that: a 1080px square on a modest browser window capped at
+  // "never zoom past 100%" ends up looking noticeably smaller than Canva's
+  // own canvas. Only an upper sanity bound (avoid comically over-zooming a
   // tiny custom size) and a lower one (never shrink a huge design to nothing).
   const computeFitZoom = useCallback((widthPx, heightPx) => {
     const el = canvasAreaRef.current;
+    const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const maxW = 40 * rootPx; // 40rem
+    const maxH = 50 * rootPx; // 50rem
     const padding = 24; // small breathing room only — the canvas should fill most of the panel, like Canva's own editor
-    const availW = Math.max(200, (el?.clientWidth || 1200) - padding);
-    const availH = Math.max(200, (el?.clientHeight || 800) - padding);
+    const availW = Math.min(maxW, Math.max(200, (el?.clientWidth || 1200) - padding));
+    const availH = Math.min(maxH, Math.max(200, (el?.clientHeight || 800) - padding));
     return Math.min(4, Math.max(0.1, Math.min(availW / widthPx, availH / heightPx)));
   }, []);
 
