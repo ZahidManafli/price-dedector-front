@@ -400,16 +400,31 @@ export default function StudioEditorPage() {
     canvas.requestRenderAll();
   };
 
-  const addHeading = () => addObject(new Textbox(t('studioEditorPage.addHeading'), {
-    left: 60, top: 60, fontSize: 48, fontWeight: 'bold', fill: '#111827', fontFamily: 'Arial', width: Math.min(400, dims.widthPx - 120),
-  }));
-  const addText = () => addObject(new Textbox(t('studioEditorPage.addText'), {
-    left: 60, top: 140, fontSize: 24, fill: '#111827', fontFamily: 'Arial', width: Math.min(300, dims.widthPx - 120),
-  }));
-  const addRectangle = () => addObject(new Rect({ left: 80, top: 80, width: 180, height: 120, fill: '#6366F1' }));
-  const addCircle = () => addObject(new Circle({ left: 80, top: 80, radius: 70, fill: '#22C55E' }));
-  const addTriangleShape = () => addObject(new Triangle({ left: 80, top: 80, width: 150, height: 130, fill: '#F97316' }));
-  const addLine = () => addObject(new Line([60, 100, 260, 100], { stroke: '#111827', strokeWidth: 4 }));
+  // New elements are placed at the CANVAS's own center (matching Canva's own
+  // behavior) rather than a small fixed offset from the top-left corner —
+  // the latter tucked every new object into the corner, easy to miss on a
+  // large canvas and confusing to find ("appears far to the left").
+  const addHeading = () => {
+    const width = Math.min(400, dims.widthPx - 120);
+    addObject(new Textbox(t('studioEditorPage.addHeading'), {
+      left: (dims.widthPx - width) / 2, top: dims.heightPx / 2 - 32,
+      fontSize: 48, fontWeight: 'bold', fill: '#111827', fontFamily: 'Arial', width,
+    }));
+  };
+  const addText = () => {
+    const width = Math.min(300, dims.widthPx - 120);
+    addObject(new Textbox(t('studioEditorPage.addText'), {
+      left: (dims.widthPx - width) / 2, top: dims.heightPx / 2 - 14,
+      fontSize: 24, fill: '#111827', fontFamily: 'Arial', width,
+    }));
+  };
+  const addRectangle = () => addObject(new Rect({ left: dims.widthPx / 2 - 90, top: dims.heightPx / 2 - 60, width: 180, height: 120, fill: '#6366F1' }));
+  const addCircle = () => addObject(new Circle({ left: dims.widthPx / 2 - 70, top: dims.heightPx / 2 - 70, radius: 70, fill: '#22C55E' }));
+  const addTriangleShape = () => addObject(new Triangle({ left: dims.widthPx / 2 - 75, top: dims.heightPx / 2 - 65, width: 150, height: 130, fill: '#F97316' }));
+  const addLine = () => addObject(new Line(
+    [dims.widthPx / 2 - 100, dims.heightPx / 2, dims.widthPx / 2 + 100, dims.heightPx / 2],
+    { stroke: '#111827', strokeWidth: 4 }
+  ));
 
   const addImageFromUrl = async (url) => {
     const canvas = fabricCanvasRef.current;
