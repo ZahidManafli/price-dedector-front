@@ -92,12 +92,12 @@ export default function StudioEditorPage() {
   const navigate = useNavigate();
 
   const canvasElRef = useRef(null);
-  const canvasAreaRef = useRef(null);
   const fabricCanvasRef = useRef(null);
   const historyRef = useRef({ stack: [], index: -1, suppress: false, timer: null });
   const autosaveTimerRef = useRef(null);
   const uploadInputRef = useRef(null);
   const zoomRef = useRef(1);
+  const dimsRef = useRef({ widthPx: 1080, heightPx: 1080 });
   const rafRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
@@ -116,26 +116,36 @@ export default function StudioEditorPage() {
   const [uploadedImages, setUploadedImages] = useState([]);
 
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  useEffect(() => { dimsRef.current = dims; }, [dims]);
 
-  // How much the design should fill the available canvas viewport — measured
-  // from the actual scroll container (not a fixed guess), the same way Canva
-  // itself fits the page to whatever screen space it's given, but never
-  // displayed larger than a fixed 40rem × 50rem "page" cap regardless of how
-  // much room a large monitor actually has. Deliberately NOT capped at 100%
-  // zoom below that: a 1080px square on a modest browser window capped at
-  // "never zoom past 100%" ends up looking noticeably smaller than Canva's
-  // own canvas. Only an upper sanity bound (avoid comically over-zooming a
-  // tiny custom size) and a lower one (never shrink a huge design to nothing).
-  const computeFitZoom = useCallback((widthPx, heightPx) => {
-    const el = canvasAreaRef.current;
+  // The canvas always displays inside a fixed 40rem × 50rem "page" frame —
+  // not a dynamic fit-to-window range. Reads the root font-size so it still
+  // respects a user's browser zoom/accessibility font-size settings.
+  const getFramePx = () => {
     const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    const maxW = 40 * rootPx; // 40rem
-    const maxH = 50 * rootPx; // 50rem
-    const padding = 24; // small breathing room only — the canvas should fill most of the panel, like Canva's own editor
-    const availW = Math.min(maxW, Math.max(200, (el?.clientWidth || 1200) - padding));
-    const availH = Math.min(maxH, Math.max(200, (el?.clientHeight || 800) - padding));
-    return Math.min(4, Math.max(0.1, Math.min(availW / widthPx, availH / heightPx)));
+    return { w: 40 * rootPx, h: 50 * rootPx };
+  };
+
+  // The design is scaled to fit exactly within the fixed frame (whichever
+  // dimension is the tighter constraint), then centered — a design whose
+  // aspect ratio doesn't match 40:50 fills one axis exactly and leaves even
+  // margins on the other, like a page frame around a differently-shaped print.
+  const computeFitZoom = useCallback((widthPx, heightPx) => {
+    const { w, h } = getFramePx();
+    return Math.min(4, Math.max(0.05, Math.min(w / widthPx, h / heightPx)));
   }, []);
+
+  // How far the (possibly smaller, due to aspect ratio) zoomed canvas must be
+  // offset from the frame's top-left corner to sit centered inside it — used
+  // to keep the floating selection toolbar aligned with the actual object,
+  // not with the fixed frame's corner.
+  const getCanvasOffset = (z, widthPx, heightPx) => {
+    const { w, h } = getFramePx();
+    return {
+      offsetX: Math.max(0, (w - widthPx * z) / 2),
+      offsetY: Math.max(0, (h - heightPx * z) / 2),
+    };
+  };
 
   // ── Export (download / thumbnail) ───────────────────────────────────────
   // toDataURL renders at the canvas's CURRENT pixel size, which tracks the
@@ -262,9 +272,10 @@ export default function StudioEditorPage() {
       if (!obj) { setToolbarPos(null); return; }
       const rect = obj.getBoundingRect();
       const z = zoomRef.current;
+      const { offsetX, offsetY } = getCanvasOffset(z, dimsRef.current.widthPx, dimsRef.current.heightPx);
       setToolbarPos({
-        left: (rect.left + rect.width / 2) * z,
-        top: Math.max(0, rect.top * z - 46),
+        left: offsetX + (rect.left + rect.width / 2) * z,
+        top: Math.max(0, offsetY + rect.top * z - 46),
       });
     };
     const scheduleToolbarUpdate = () => {
@@ -507,15 +518,15 @@ export default function StudioEditorPage() {
       const active = canvas.getActiveObject();
       if (active) {
         const rect = active.getBoundingRect();
-        setToolbarPos({ left: (rect.left + rect.width / 2) * clamped, top: Math.max(0, rect.top * clamped - 46) });
+        const { offsetX, offsetY } = getCanvasOffset(clamped, w, h);
+        setToolbarPos({ left: offsetX + (rect.left + rect.width / 2) * clamped, top: Math.max(0, offsetY + rect.top * clamped - 46) });
       }
     }
     setZoom(clamped);
   };
   const adjustZoom = (delta) => applyZoom(zoomRef.current + delta);
-  // Recomputes from the container's CURRENT size rather than replaying the
-  // stale value captured at load, so it still fits correctly if the window
-  // was resized since.
+  // Recomputes the fit-to-frame zoom (the frame itself is a fixed 40rem ×
+  // 50rem — see getFramePx — so this doesn't depend on window size at all).
   const resetZoom = () => applyZoom(computeFitZoom(dims.widthPx, dims.heightPx));
 
   const panelBase = isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200';
@@ -709,11 +720,21 @@ export default function StudioEditorPage() {
 
         {/* Canvas area */}
         <div className="flex-1 flex flex-col min-w-0">
-          <div ref={canvasAreaRef} className="flex-1 overflow-auto flex items-center justify-center p-3">
-            {/* No CSS transform here — zoom is applied via Fabric's own setZoom()/
-                setDimensions() (see applyZoom), so this wrapper just hugs the
-                canvas element at whatever pixel size Fabric has already set it to. */}
-            <div className="relative inline-block" style={{ boxShadow: '0 8px 30px rgba(0,0,0,0.18)', borderRadius: 2, overflow: 'hidden' }}>
+          <div className="flex-1 overflow-auto flex items-center justify-center p-6">
+            {/* Fixed 40rem × 50rem "page" frame — always this size, regardless
+                of the design's own pixel dimensions or the browser window.
+                The canvas inside is scaled to fit within it (computeFitZoom)
+                and centered (flex + getCanvasOffset for the floating toolbar's
+                math) — a design whose aspect ratio isn't 40:50 fills one axis
+                exactly and leaves even margins on the other, like a real page
+                frame around a differently-shaped print. No CSS transform is
+                used for the zoom itself — that's Fabric's own setZoom()/
+                setDimensions() (see applyZoom) — this wrapper only centers
+                whatever pixel size Fabric has already rendered the canvas at. */}
+            <div
+              className="relative bg-white flex items-center justify-center shrink-0"
+              style={{ width: '40rem', height: '50rem', boxShadow: '0 8px 30px rgba(0,0,0,0.18)', borderRadius: 2, overflow: 'auto' }}
+            >
               <canvas ref={canvasElRef} />
 
               {/* Floating action cluster above the selected object */}
