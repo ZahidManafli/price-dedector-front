@@ -117,6 +117,27 @@ export default function StudioEditorPage() {
 
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
 
+  // ── Export (download / thumbnail) ───────────────────────────────────────
+  // toDataURL renders at the canvas's CURRENT pixel size, which tracks the
+  // on-screen zoom level (see setZoom/setDimensions above) — exporting at
+  // 67% zoom would silently produce a 67%-resolution file. Reset to 1:1
+  // design resolution for the export, then restore whatever zoom the user
+  // was looking at.
+  const exportDataUrl = useCallback((multiplier = 1) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return null;
+    const currentZoom = canvas.getZoom();
+    canvas.discardActiveObject();
+    canvas.setZoom(1);
+    canvas.setDimensions({ width: dims.widthPx, height: dims.heightPx });
+    canvas.renderAll();
+    const dataUrl = canvas.toDataURL({ format: 'png', multiplier });
+    canvas.setZoom(currentZoom);
+    canvas.setDimensions({ width: dims.widthPx * currentZoom, height: dims.heightPx * currentZoom });
+    canvas.renderAll();
+    return dataUrl;
+  }, [dims]);
+
   // ── Save ─────────────────────────────────────────────────────────────────
   const saveProject = useCallback(async () => {
     const canvas = fabricCanvasRef.current;
@@ -125,7 +146,7 @@ export default function StudioEditorPage() {
     try {
       const canvasJson = JSON.stringify(canvas.toJSON());
       const maxDim = Math.max(dims.widthPx, dims.heightPx);
-      const thumbnailDataUrl = canvas.toDataURL({ format: 'png', multiplier: Math.min(1, 400 / maxDim) });
+      const thumbnailDataUrl = exportDataUrl(Math.min(1, 400 / maxDim));
       await studioAPI.saveProject(projectId, { title: title || undefined, canvasJson, thumbnailDataUrl });
     } catch {
       // best-effort — local edits stay in the canvas either way; next autosave/Save retries
@@ -253,7 +274,15 @@ export default function StudioEditorPage() {
         const initialFit = Math.min(1, 720 / Math.max(data.widthPx, data.heightPx));
         setFitZoom(initialFit);
         setZoom(initialFit);
-        canvas.setDimensions({ width: data.widthPx, height: data.heightPx });
+        // Zoom is implemented via Fabric's own viewport transform (setZoom), not
+        // CSS transforms — setDimensions sets the canvas element's actual pixel
+        // size to the already-zoomed size, while object coordinates (left/top)
+        // stay in un-zoomed "design space" the whole time. Mixing in an extra
+        // CSS `transform: scale()` on top of Fabric's own canvas sizing was
+        // fought with Fabric's internal DPI/sizing handling and was the actual
+        // cause of newly-added objects failing to paint.
+        canvas.setDimensions({ width: data.widthPx * initialFit, height: data.heightPx * initialFit });
+        canvas.setZoom(initialFit);
 
         let initialJson = data.canvasJson;
         try {
@@ -419,19 +448,31 @@ export default function StudioEditorPage() {
   };
 
   const handleDownload = () => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    canvas.discardActiveObject();
-    canvas.requestRenderAll();
-    const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 1 });
+    const dataUrl = exportDataUrl(1);
+    if (!dataUrl) return;
     const a = document.createElement('a');
     a.href = dataUrl;
     a.download = `${title || t('studioEditorPage.untitled')}.png`;
     a.click();
   };
 
-  const adjustZoom = (delta) => setZoom((z) => Math.min(2, Math.max(0.1, Math.round((z + delta) * 100) / 100)));
-  const resetZoom = () => setZoom(fitZoom);
+  const applyZoom = (z) => {
+    const canvas = fabricCanvasRef.current;
+    const clamped = Math.min(2, Math.max(0.1, Math.round(z * 100) / 100));
+    if (canvas) {
+      canvas.setZoom(clamped);
+      canvas.setDimensions({ width: dims.widthPx * clamped, height: dims.heightPx * clamped });
+      canvas.requestRenderAll();
+      const active = canvas.getActiveObject();
+      if (active) {
+        const rect = active.getBoundingRect();
+        setToolbarPos({ left: (rect.left + rect.width / 2) * clamped, top: Math.max(0, rect.top * clamped - 46) });
+      }
+    }
+    setZoom(clamped);
+  };
+  const adjustZoom = (delta) => applyZoom(zoomRef.current + delta);
+  const resetZoom = () => applyZoom(fitZoom);
 
   const panelBase = isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200';
   const toggleColorPopover = (key) => setOpenColorPopover((cur) => (cur === key ? null : key));
@@ -629,10 +670,11 @@ export default function StudioEditorPage() {
         {/* Canvas area */}
         <div className="flex-1 flex flex-col min-w-0">
           <div className="flex-1 overflow-auto flex items-center justify-center p-10">
-            <div className="relative" style={{ width: dims.widthPx * zoom, height: dims.heightPx * zoom }}>
-              <div style={{ width: dims.widthPx, height: dims.heightPx, transform: `scale(${zoom})`, transformOrigin: 'top left', boxShadow: '0 8px 30px rgba(0,0,0,0.18)', borderRadius: 2, overflow: 'hidden' }}>
-                <canvas ref={canvasElRef} />
-              </div>
+            {/* No CSS transform here — zoom is applied via Fabric's own setZoom()/
+                setDimensions() (see applyZoom), so this wrapper just hugs the
+                canvas element at whatever pixel size Fabric has already set it to. */}
+            <div className="relative inline-block" style={{ boxShadow: '0 8px 30px rgba(0,0,0,0.18)', borderRadius: 2, overflow: 'hidden' }}>
+              <canvas ref={canvasElRef} />
 
               {/* Floating action cluster above the selected object */}
               {toolbarPos && (
