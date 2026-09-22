@@ -729,6 +729,8 @@ export default function StudioEditorPage() {
             </div>
           </div>
           <div className={`flex items-center justify-center gap-3 py-2 border-t shrink-0 ${panelBase}`}>
+            <span className={`text-xs font-mono ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{dims.widthPx} × {dims.heightPx}px</span>
+            <div className={`w-px h-4 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
             <button type="button" onClick={() => adjustZoom(-0.1)} className={isDark ? 'text-slate-300' : 'text-slate-600'}><ZoomOut size={16} /></button>
             <span className={`text-xs w-10 text-center ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{Math.round(zoom * 100)}%</span>
             <button type="button" onClick={() => adjustZoom(0.1)} className={isDark ? 'text-slate-300' : 'text-slate-600'}><ZoomIn size={16} /></button>
