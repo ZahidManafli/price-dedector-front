@@ -517,23 +517,19 @@ export default function StudioEditorPage() {
   const panelBase = isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200';
   const toggleColorPopover = (key) => setOpenColorPopover((cur) => (cur === key ? null : key));
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="animate-spin text-purple-600" size={28} />
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen gap-3">
-        <p className={isDark ? 'text-slate-300' : 'text-slate-600'}>{loadError}</p>
-        <button type="button" onClick={() => navigate('/studio')} className="btn-primary">{t('studioEditorPage.back')}</button>
-      </div>
-    );
-  }
-
+  // IMPORTANT: the <canvas> element below must be present in the DOM on the
+  // very first render, unconditionally — the mount effect above creates the
+  // Fabric Canvas synchronously against canvasElRef.current, and Fabric does
+  // NOT bind to a ref reactively. If this whole tree were replaced by a
+  // loading-only placeholder (as it used to be, via an early `if (loading)
+  // return <spinner/>`), canvasElRef.current would be null when the effect
+  // runs — Fabric silently creates a detached, invisible canvas instead of
+  // throwing, and every add/select/zoom call afterwards keeps controlling
+  // that detached canvas while the *real* one (mounted later, once loading
+  // flips false) sits untouched at the browser's default 300×150 size. That
+  // was the actual root cause of every "nothing renders at the right size"
+  // report — not the zoom math itself. Loading/error states are now rendered
+  // as an overlay INSIDE this same tree instead of replacing it.
   return (
     <div className={`flex flex-col h-screen ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
       {/* Top bar */}
@@ -741,6 +737,20 @@ export default function StudioEditorPage() {
           </div>
         </div>
       </div>
+
+      {/* Loading / error overlays — sit on top of the always-mounted canvas,
+          never replace it (see the comment above this return). */}
+      {loading && !loadError && (
+        <div className={`fixed inset-0 z-[60] flex items-center justify-center ${isDark ? 'bg-slate-950/80' : 'bg-white/80'}`}>
+          <Loader2 className="animate-spin text-purple-600" size={28} />
+        </div>
+      )}
+      {loadError && (
+        <div className={`fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 ${isDark ? 'bg-slate-950' : 'bg-white'}`}>
+          <p className={isDark ? 'text-slate-300' : 'text-slate-600'}>{loadError}</p>
+          <button type="button" onClick={() => navigate('/studio')} className="btn-primary">{t('studioEditorPage.back')}</button>
+        </div>
+      )}
     </div>
   );
 }
