@@ -269,27 +269,43 @@ export default function StudioEditorPage() {
         const data = res?.data;
         if (!data || cancelled) return;
 
+        // Defensive clamping — a project row with a missing/zero/corrupted
+        // width_px or height_px (e.g. saved by an earlier, buggy build of this
+        // page) would otherwise silently produce a degenerate near-invisible
+        // canvas with no error. Fall back to a sane square default instead.
+        const safeWidth = Math.min(8000, Math.max(40, Math.round(Number(data.widthPx)) || 1080));
+        const safeHeight = Math.min(8000, Math.max(40, Math.round(Number(data.heightPx)) || 1080));
+
         setTitle(data.title || '');
-        setDims({ widthPx: data.widthPx, heightPx: data.heightPx });
-        const initialFit = Math.min(1, 720 / Math.max(data.widthPx, data.heightPx));
+        setDims({ widthPx: safeWidth, heightPx: safeHeight });
+        const initialFit = Math.min(1, 720 / Math.max(safeWidth, safeHeight));
         setFitZoom(initialFit);
         setZoom(initialFit);
         // Zoom is implemented via Fabric's own viewport transform (setZoom), not
         // CSS transforms — setDimensions sets the canvas element's actual pixel
         // size to the already-zoomed size, while object coordinates (left/top)
         // stay in un-zoomed "design space" the whole time. Mixing in an extra
-        // CSS `transform: scale()` on top of Fabric's own canvas sizing was
-        // fought with Fabric's internal DPI/sizing handling and was the actual
-        // cause of newly-added objects failing to paint.
-        canvas.setDimensions({ width: data.widthPx * initialFit, height: data.heightPx * initialFit });
+        // CSS `transform: scale()` on top of Fabric's own canvas sizing fought
+        // with Fabric's internal DPI/sizing handling and was the actual cause
+        // of newly-added objects failing to paint in an earlier version of
+        // this page.
+        canvas.setDimensions({ width: Math.round(safeWidth * initialFit), height: Math.round(safeHeight * initialFit) });
         canvas.setZoom(initialFit);
 
         let initialJson = data.canvasJson;
         try {
-          JSON.parse(initialJson);
+          const parsed = JSON.parse(initialJson);
+          if (!parsed || !Array.isArray(parsed.objects)) throw new Error('malformed');
         } catch {
           initialJson = JSON.stringify({ version: '6.0.0', objects: [] });
         }
+
+        // Suppress history/autosave side effects while objects already saved on
+        // this project are being restored — object:added fires once per
+        // restored object, and without this guard each one would (harmlessly
+        // but pointlessly) queue an autosave and pre-enable the Undo button
+        // before the user has made any change of their own.
+        historyRef.current.suppress = true;
         await canvas.loadFromJSON(initialJson);
         if (cancelled) return;
         canvas.requestRenderAll();
@@ -456,12 +472,18 @@ export default function StudioEditorPage() {
     a.click();
   };
 
+  // Single source of truth for zoom — every zoom change (initial fit, +/-
+  // buttons, "Fit" reset) goes through this one function so the Fabric canvas's
+  // actual pixel size, its internal viewport zoom, and the React `zoom` state
+  // driving the on-screen % label can never drift apart from each other.
   const applyZoom = (z) => {
     const canvas = fabricCanvasRef.current;
     const clamped = Math.min(2, Math.max(0.1, Math.round(z * 100) / 100));
+    const w = Math.max(40, dims.widthPx || 1080);
+    const h = Math.max(40, dims.heightPx || 1080);
     if (canvas) {
       canvas.setZoom(clamped);
-      canvas.setDimensions({ width: dims.widthPx * clamped, height: dims.heightPx * clamped });
+      canvas.setDimensions({ width: Math.round(w * clamped), height: Math.round(h * clamped) });
       canvas.requestRenderAll();
       const active = canvas.getActiveObject();
       if (active) {
