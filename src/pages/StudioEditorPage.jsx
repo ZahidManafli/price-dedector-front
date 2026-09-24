@@ -158,6 +158,18 @@ export default function StudioEditorPage() {
   // 67% zoom would silently produce a 67%-resolution file. Reset to 1:1
   // design resolution for the export, then restore whatever zoom the user
   // was looking at.
+  //
+  // toDataURL THROWS synchronously (a SecurityError) instead of returning if
+  // the canvas is "tainted" — which happens the moment any cross-origin
+  // image was drawn onto it without the browser being able to validate CORS
+  // (the fallback path in addImageFromUrl takes exactly this trade-off when
+  // a library element's crossOrigin load fails). Without a try/finally here,
+  // that throw would skip the setZoom/setDimensions restore below entirely,
+  // permanently stranding the canvas at 1:1/no-zoom inside the fixed-size
+  // frame — on-screen the design suddenly looks "zoomed in" and cropped even
+  // though the % label still shows the old value. Restoring in `finally`
+  // keeps the visible canvas correct regardless of whether the export itself
+  // succeeds; a failed export just yields no thumbnail/download this time.
   const exportDataUrl = useCallback((multiplier = 1) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return null;
@@ -166,11 +178,16 @@ export default function StudioEditorPage() {
     canvas.setZoom(1);
     canvas.setDimensions({ width: dims.widthPx, height: dims.heightPx });
     canvas.renderAll();
-    const dataUrl = canvas.toDataURL({ format: 'png', multiplier });
-    canvas.setZoom(currentZoom);
-    canvas.setDimensions({ width: dims.widthPx * currentZoom, height: dims.heightPx * currentZoom });
-    canvas.renderAll();
-    return dataUrl;
+    try {
+      return canvas.toDataURL({ format: 'png', multiplier });
+    } catch (err) {
+      console.error('[design-studio] Export failed — canvas contains a cross-origin image that could not be verified (CORS):', err);
+      return null;
+    } finally {
+      canvas.setZoom(currentZoom);
+      canvas.setDimensions({ width: dims.widthPx * currentZoom, height: dims.heightPx * currentZoom });
+      canvas.renderAll();
+    }
   }, [dims]);
 
   // ── Save ─────────────────────────────────────────────────────────────────
@@ -846,7 +863,10 @@ export default function StudioEditorPage() {
                         onClick={() => addLibraryElement(el.thumbnailUrl)}
                         className={`aspect-square rounded-lg overflow-hidden border p-1.5 flex items-center justify-center transition-colors ${isDark ? 'border-slate-700 bg-slate-800 hover:border-purple-500' : 'border-slate-200 bg-white hover:border-purple-400'}`}
                       >
-                        <img src={el.thumbnailUrl} alt={el.name || ''} className="max-w-full max-h-full object-contain" />
+                        {/* crossOrigin here matches the CORS mode addLibraryElement uses to load the
+                            same URL into Fabric — loading it plain here first, then crossOrigin
+                            afterwards, is what let a stale/incompatible cache entry taint the canvas. */}
+                        <img src={el.thumbnailUrl} alt={el.name || ''} crossOrigin="anonymous" className="max-w-full max-h-full object-contain" />
                       </button>
                     ))}
                   </div>
