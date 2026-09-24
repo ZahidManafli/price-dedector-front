@@ -1266,7 +1266,8 @@
     "confirmDelete": "Bu dizaynı silmək istəyirsiniz?",
     "failedToLoad": "Dizaynlar yüklənmədi",
     "failedToCreate": "Dizayn yaradıla bilmədi",
-    "lastEdited": "Son redaktə"
+    "lastEdited": "Son redaktə",
+    "oneWorkspaceHint": "Hər istifadəçi eyni anda yalnız bir dizayn iş sahəsinə sahib ola bilər — yenisini yaratmaq üçün əvvəlcə mövcud olanı silməlisiniz."
   },
   "studioEditorPage": {
     "back": "Studiyaya qayıt",

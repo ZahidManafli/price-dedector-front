@@ -1266,7 +1266,8 @@
     "confirmDelete": "Bu tasarımı silmek istiyor musunuz?",
     "failedToLoad": "Tasarımlar yüklenemedi",
     "failedToCreate": "Tasarım oluşturulamadı",
-    "lastEdited": "Son düzenleme"
+    "lastEdited": "Son düzenleme",
+    "oneWorkspaceHint": "Her kullanıcının aynı anda yalnız bir tasarım çalışma alanı olabilir — yenisini oluşturmak için önce mevcut olanı silmelisiniz."
   },
   "studioEditorPage": {
     "back": "Stüdyoya dön",

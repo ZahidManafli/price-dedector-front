@@ -112,23 +112,30 @@ function NewDesignModal({ isDark, onClose, onCreate, creating, error }) {
   );
 }
 
+// Each user gets exactly ONE Design Studio workspace at a time (enforced
+// backend-side too, see routes/designStudio.js) — they either keep editing
+// it or delete it and start a fresh one. So this page shows at most a single
+// workspace card, not a gallery grid, and only offers "+ New Design" when
+// there isn't one yet.
 export default function StudioGalleryPage() {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [projects, setProjects] = useState([]);
+  const [workspace, setWorkspace] = useState(null);
   const [error, setError] = useState(null);
   const [showNewDesignModal, setShowNewDesignModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const loadProjects = async () => {
+  const loadWorkspace = async () => {
     setLoading(true);
     try {
       const res = await studioAPI.listProjects();
-      setProjects(Array.isArray(res?.data?.items) ? res.data.items : []);
+      const items = Array.isArray(res?.data?.items) ? res.data.items : [];
+      setWorkspace(items[0] || null);
     } catch {
       setError(t('studioPage.failedToLoad'));
     } finally {
@@ -137,7 +144,7 @@ export default function StudioGalleryPage() {
   };
 
   useEffect(() => {
-    loadProjects();
+    loadWorkspace();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -150,18 +157,28 @@ export default function StudioGalleryPage() {
       if (!id) throw new Error('missing id');
       navigate(`/studio/${id}`);
     } catch (err) {
-      setCreateError(err?.response?.data?.error || t('studioPage.failedToCreate'));
+      const apiError = err?.response?.data?.error;
+      setCreateError(apiError || t('studioPage.failedToCreate'));
       setCreating(false);
+      // A 409 here means our own local state was stale (e.g. two tabs) —
+      // resync so the UI reflects the workspace that actually exists.
+      if (err?.response?.status === 409) {
+        setShowNewDesignModal(false);
+        loadWorkspace();
+      }
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm(t('studioPage.confirmDelete'))) return;
+  const handleDelete = async () => {
+    if (!workspace || !window.confirm(t('studioPage.confirmDelete'))) return;
+    setDeleting(true);
     try {
-      await studioAPI.deleteProject(id);
-      setProjects((prev) => prev.filter((p) => p.id !== id));
+      await studioAPI.deleteProject(workspace.id);
+      setWorkspace(null);
     } catch {
       setError(t('studioPage.failedToLoad'));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -175,9 +192,11 @@ export default function StudioGalleryPage() {
           </h1>
           <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('studioPage.subtitle')}</p>
         </div>
-        <button type="button" onClick={() => { setCreateError(null); setShowNewDesignModal(true); }} className="btn-primary inline-flex items-center gap-2">
-          <Plus size={16} /> {t('studioPage.newDesign')}
-        </button>
+        {!loading && !workspace && (
+          <button type="button" onClick={() => { setCreateError(null); setShowNewDesignModal(true); }} className="btn-primary inline-flex items-center gap-2">
+            <Plus size={16} /> {t('studioPage.newDesign')}
+          </button>
+        )}
       </div>
 
       {error && (
@@ -190,57 +209,56 @@ export default function StudioGalleryPage() {
         <div className="flex items-center justify-center py-16">
           <Loader2 className="animate-spin text-indigo-600" size={24} />
         </div>
-      ) : projects.length === 0 ? (
+      ) : !workspace ? (
         <div className={`rounded-xl p-10 text-center border ${isDark ? 'bg-slate-900/60 border-slate-700' : 'glass-card'}`}>
           <ImageOff className={`mx-auto mb-3 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} size={36} />
           <p className={`${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('studioPage.emptyState')}</p>
+          <p className={`text-xs mt-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('studioPage.oneWorkspaceHint')}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {projects.map((project) => (
-            <div key={project.id} className={`rounded-xl border overflow-hidden flex flex-col ${isDark ? 'border-slate-700 bg-slate-900/50' : 'border-slate-200 bg-white'}`}>
-              <button
-                type="button"
-                onClick={() => navigate(`/studio/${project.id}`)}
-                className={`aspect-square flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}
-              >
-                {project.thumbnailUrl ? (
-                  <img src={project.thumbnailUrl} alt={project.title || ''} className="w-full h-full object-cover" />
-                ) : (
-                  <ImageOff className={isDark ? 'text-slate-600' : 'text-slate-300'} size={28} />
-                )}
-              </button>
-              <div className="p-3 flex-1 flex flex-col gap-1.5">
-                <p className={`text-xs font-semibold truncate ${isDark ? 'text-slate-200' : 'text-slate-800'}`} title={project.title || ''}>
-                  {project.title || t('studioEditorPage.untitled')}
-                </p>
-                <p className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  {t('studioPage.lastEdited')}: {new Date(project.updatedAt).toLocaleDateString()}
-                </p>
-                <div className="mt-auto flex items-center gap-1.5 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/studio/${project.id}`)}
-                    className={`flex-1 flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-semibold border transition-colors ${
-                      isDark ? 'border-slate-600 text-slate-200 hover:border-purple-500 hover:text-purple-400' : 'border-slate-300 text-slate-700 hover:border-purple-400 hover:text-purple-600'
-                    }`}
-                  >
-                    <Pencil size={12} /> {t('studioPage.editAction')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(project.id)}
-                    title={t('studioPage.deleteAction')}
-                    className={`flex items-center justify-center rounded-lg p-1.5 border transition-colors ${
-                      isDark ? 'border-slate-600 text-slate-400 hover:border-red-500 hover:text-red-400' : 'border-slate-300 text-slate-400 hover:border-red-400 hover:text-red-600'
-                    }`}
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
+        <div className="max-w-sm">
+          <div className={`rounded-xl border overflow-hidden flex flex-col ${isDark ? 'border-slate-700 bg-slate-900/50' : 'border-slate-200 bg-white'}`}>
+            <button
+              type="button"
+              onClick={() => navigate(`/studio/${workspace.id}`)}
+              className={`aspect-square flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}
+            >
+              {workspace.thumbnailUrl ? (
+                <img src={workspace.thumbnailUrl} alt={workspace.title || ''} className="w-full h-full object-cover" />
+              ) : (
+                <ImageOff className={isDark ? 'text-slate-600' : 'text-slate-300'} size={28} />
+              )}
+            </button>
+            <div className="p-4 flex flex-col gap-1.5">
+              <p className={`text-sm font-semibold truncate ${isDark ? 'text-slate-200' : 'text-slate-800'}`} title={workspace.title || ''}>
+                {workspace.title || t('studioEditorPage.untitled')}
+              </p>
+              <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                {t('studioPage.lastEdited')}: {new Date(workspace.updatedAt).toLocaleString()}
+              </p>
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/studio/${workspace.id}`)}
+                  className="btn-primary flex-1 flex items-center justify-center gap-1.5 py-2 text-sm"
+                >
+                  <Pencil size={13} /> {t('studioPage.editAction')}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  title={t('studioPage.deleteAction')}
+                  className={`flex items-center justify-center rounded-lg p-2 border transition-colors disabled:opacity-60 ${
+                    isDark ? 'border-slate-600 text-slate-400 hover:border-red-500 hover:text-red-400' : 'border-slate-300 text-slate-400 hover:border-red-400 hover:text-red-600'
+                  }`}
+                >
+                  {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                </button>
               </div>
             </div>
-          ))}
+          </div>
+          <p className={`text-xs mt-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('studioPage.oneWorkspaceHint')}</p>
         </div>
       )}
 

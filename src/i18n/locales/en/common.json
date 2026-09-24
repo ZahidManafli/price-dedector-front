@@ -1333,7 +1333,8 @@
     "confirmDelete": "Delete this design?",
     "failedToLoad": "Failed to load designs",
     "failedToCreate": "Failed to create design",
-    "lastEdited": "Last edited"
+    "lastEdited": "Last edited",
+    "oneWorkspaceHint": "Each user can have only one design workspace at a time — delete the existing one to create a new one."
   },
   "studioEditorPage": {
     "back": "Back to Studio",
