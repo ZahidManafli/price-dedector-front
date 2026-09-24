@@ -358,7 +358,18 @@ export default function StudioEditorPage() {
         // but pointlessly) queue an autosave and pre-enable the Undo button
         // before the user has made any change of their own.
         historyRef.current.suppress = true;
-        await canvas.loadFromJSON(initialJson);
+        // Fabric enlivens each saved object independently (Promise.allSettled
+        // under the hood) — if one of them fails (e.g. an image whose src
+        // can't be (re)loaded), it is dropped SILENTLY, with the rest of the
+        // design restored normally. This reviver at least surfaces that in
+        // the console instead of a design quietly missing a piece with no
+        // trace of why.
+        await canvas.loadFromJSON(initialJson, (_objData, instance, error) => {
+          if (error) {
+            console.error('[design-studio] An object failed to restore from the saved design and was skipped:', error, _objData);
+          }
+          return instance;
+        });
         if (cancelled) return;
         canvas.requestRenderAll();
         historyRef.current = { stack: [JSON.stringify(canvas.toJSON())], index: 0, suppress: false, timer: null };
