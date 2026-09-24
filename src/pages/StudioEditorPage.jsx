@@ -118,6 +118,7 @@ export default function StudioEditorPage() {
   const [elementSearch, setElementSearch] = useState('');
   const [elementResults, setElementResults] = useState([]);
   const [elementsLoading, setElementsLoading] = useState(false);
+  const [addingElementId, setAddingElementId] = useState(null);
   const elementSearchTimerRef = useRef(null);
 
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
@@ -154,16 +155,17 @@ export default function StudioEditorPage() {
   // was looking at.
   //
   // toDataURL THROWS synchronously (a SecurityError) instead of returning if
-  // the canvas is "tainted" — which happens the moment any cross-origin
-  // image was drawn onto it without the browser being able to validate CORS
-  // (the fallback path in addImageFromUrl takes exactly this trade-off when
-  // a library element's crossOrigin load fails). Without a try/finally here,
-  // that throw would skip the setZoom/setDimensions restore below entirely,
-  // permanently stranding the canvas at 1:1/no-zoom inside the fixed-size
-  // frame — on-screen the design suddenly looks "zoomed in" and cropped even
-  // though the % label still shows the old value. Restoring in `finally`
-  // keeps the visible canvas correct regardless of whether the export itself
-  // succeeds; a failed export just yields no thumbnail/download this time.
+  // the canvas is ever "tainted" (a cross-origin image drawn onto it without
+  // the browser validating CORS for it — every image added to a design is a
+  // data: URL now, see addImageFromUrl, specifically to make this
+  // impossible, but this guard stays as a safety net). Without a try/finally
+  // here, that throw would skip the setZoom/setDimensions restore below
+  // entirely, permanently stranding the canvas at 1:1/no-zoom inside the
+  // fixed-size frame — on-screen the design suddenly looks "zoomed in" and
+  // cropped even though the % label still shows the old value. Restoring in
+  // `finally` keeps the visible canvas correct regardless of whether the
+  // export itself succeeds; a failed export just yields no thumbnail/
+  // download this time.
   const exportDataUrl = useCallback((multiplier = 1) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return null;
@@ -455,43 +457,29 @@ export default function StudioEditorPage() {
     { stroke: '#111827', strokeWidth: 4 }
   ));
 
-  // Images added to a design are data: URLs (base64, produced locally by
-  // FileReader — see handleFileUpload) rather than URLs pointing at our own
-  // backend. Nothing about the raw image file is ever sent to the server:
-  // Fabric embeds the data: URL directly in the design's own saved JSON, so
-  // reopening a saved project later still shows the image correctly (unlike a
-  // browser-only blob: URL, which stops working the moment the tab closes)
-  // without a separate upload endpoint or any external file storage at all.
-  //
-  // `crossOrigin` is only relevant for the shared element library (hosted on
-  // our own backend, a real cross-origin URL from the browser's point of
-  // view) — never for a local data: URL, which isn't fetched at all and
-  // ignores the option entirely. FabricImage.fromURL REJECTS the promise on
-  // any load failure (network error, or the response missing the CORS
-  // headers a crossOrigin:'anonymous' request requires) — left uncaught, an
-  // element click would silently do nothing, which is exactly what was
-  // reported. So a crossOrigin attempt that fails is retried once without
-  // it: the element still gets added and is visible like any other image,
-  // just at the cost of tainting the canvas for export (toDataURL) until
-  // that image is removed — better than the click doing nothing at all.
-  const addImageFromUrl = async (url, { crossOrigin = null } = {}) => {
+  // Images added to a design are always data: URLs — produced locally by
+  // FileReader for an uploaded file (see handleFileUpload), or fetched as
+  // base64 from the backend for a shared library element (see
+  // addLibraryElement) — never a bare URL pointing at our own backend.
+  // A data: URL is never "cross-origin" from the canvas's point of view (it
+  // isn't fetched over the network at all), so it can never taint the
+  // canvas — Download/thumbnail export always works regardless of any
+  // reverse-proxy CORS-header quirk. This used to also accept a plain
+  // http(s) URL loaded with crossOrigin:'anonymous' for library elements,
+  // but that depended on the server sending exactly one correct
+  // Access-Control-Allow-Origin header, which broke repeatedly in front of
+  // this app's reverse proxy — moving element images through the backend as
+  // base64 instead removes that whole dependency.
+  const addImageFromUrl = async (url) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
     let img;
     try {
-      img = await FabricImage.fromURL(url, crossOrigin ? { crossOrigin } : {});
+      img = await FabricImage.fromURL(url);
     } catch (err) {
-      if (!crossOrigin) {
-        console.error('[design-studio] Failed to load image:', err);
-        return;
-      }
-      try {
-        img = await FabricImage.fromURL(url);
-      } catch (fallbackErr) {
-        console.error('[design-studio] Failed to load image (fallback also failed):', fallbackErr);
-        return;
-      }
+      console.error('[design-studio] Failed to load image:', err);
+      return;
     }
 
     const maxW = dims.widthPx * 0.8;
@@ -504,7 +492,22 @@ export default function StudioEditorPage() {
     canvas.requestRenderAll();
   };
 
-  const addLibraryElement = (url) => addImageFromUrl(url, { crossOrigin: 'anonymous' });
+  // Fetches the element's image as base64 from our own backend (server-to-
+  // server, no browser CORS involved at all) and adds it exactly like a
+  // local upload.
+  const addLibraryElement = async (elementId) => {
+    setAddingElementId(elementId);
+    try {
+      const res = await studioAPI.getElementImage(elementId);
+      const dataUrl = res?.data?.dataUrl;
+      if (!dataUrl) return;
+      await addImageFromUrl(dataUrl);
+    } catch (err) {
+      console.error('[design-studio] Failed to load library element:', err);
+    } finally {
+      setAddingElementId(null);
+    }
+  };
 
   const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -867,17 +870,20 @@ export default function StudioEditorPage() {
                         key={el.id}
                         type="button"
                         title={el.name || ''}
-                        onClick={() => addLibraryElement(el.thumbnailUrl)}
-                        className={`aspect-square rounded-lg overflow-hidden border p-1.5 flex items-center justify-center transition-colors ${isDark ? 'border-slate-700 bg-slate-800 hover:border-purple-500' : 'border-slate-200 bg-white hover:border-purple-400'}`}
+                        onClick={() => addLibraryElement(el.id)}
+                        disabled={addingElementId === el.id}
+                        className={`relative aspect-square rounded-lg overflow-hidden border p-1.5 flex items-center justify-center transition-colors disabled:opacity-60 ${isDark ? 'border-slate-700 bg-slate-800 hover:border-purple-500' : 'border-slate-200 bg-white hover:border-purple-400'}`}
                       >
-                        {/* Deliberately NOT crossOrigin here — a plain <img> never performs a CORS
-                            check at all (that only applies to crossOrigin-mode fetches, which is
-                            what addLibraryElement uses once, on click, to load the picked element
-                            into Fabric). Setting crossOrigin on every thumbnail in this grid turned
-                            simply opening the panel into a CORS-validated fetch for every visible
-                            result at once — dozens of simultaneous requests, all failing together
-                            for as long as the backend/proxy CORS headers aren't fixed yet. */}
+                        {/* Deliberately a plain <img> — no crossOrigin, no CORS check at all. The
+                            element's actual pixels are only ever fetched once, server-to-server, by
+                            addLibraryElement (via GET /studio/elements/:id/image) when this button
+                            is clicked — this thumbnail is just a normal same-page preview. */}
                         <img src={el.thumbnailUrl} alt={el.name || ''} className="max-w-full max-h-full object-contain" />
+                        {addingElementId === el.id && (
+                          <div className={`absolute inset-0 flex items-center justify-center ${isDark ? 'bg-slate-900/60' : 'bg-white/60'}`}>
+                            <Loader2 size={16} className="animate-spin text-purple-500" />
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>

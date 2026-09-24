@@ -301,6 +301,10 @@ export const studioAPI = {
   // every user with design_studio access; only the import itself is admin-only.
   searchElements: (search) => api.get('/studio/elements', { params: search ? { search } : {} }),
   importElements: (parsedJson) => api.post('/studio/admin/elements/import', parsedJson),
+  // Returns { dataUrl } — the backend fetches the element's hosted image
+  // server-side and inlines it as base64, so the browser never has to load
+  // it as a cross-origin image at all.
+  getElementImage: (id) => api.get(`/studio/elements/${encodeURIComponent(id)}/image`),
 };
 
 // eBay Post-Order API (cancellations, case management, inquiries) — gated behind the
