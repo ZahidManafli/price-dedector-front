@@ -1267,7 +1267,12 @@
     "failedToLoad": "Tasarımlar yüklenemedi",
     "failedToCreate": "Tasarım oluşturulamadı",
     "lastEdited": "Son düzenleme",
-    "oneWorkspaceHint": "Her kullanıcının aynı anda yalnız bir tasarım çalışma alanı olabilir — yenisini oluşturmak için önce mevcut olanı silmelisiniz."
+    "oneWorkspaceHint": "Her kullanıcının aynı anda yalnız bir tasarım çalışma alanı olabilir — yenisini oluşturmak için önce mevcut olanı silmelisiniz.",
+    "importElements": "Öğeleri içe aktar (JSON)",
+    "importingElements": "İçe aktarılıyor...",
+    "importElementsHint": "Yönetici: paylaşılan kitaplığa eklemek için Canva tarzı arama sonuçları JSON dosyası yükleyin",
+    "importElementsResult": "{{imported}} öğe eklendi, {{alreadyExists}} zaten mevcuttu, {{failed}} başarısız oldu (toplam {{total}})",
+    "importElementsFailed": "JSON dosyası içe aktarılamadı"
   },
   "studioEditorPage": {
     "back": "Stüdyoya dön",
@@ -1281,6 +1286,9 @@
     "text": "Metin",
     "shapes": "Şekiller",
     "uploads": "Yüklemeler",
+    "elements": "Öğeler",
+    "searchElements": "Öğe ara...",
+    "noElementsFound": "Öğe bulunamadı",
     "addHeading": "Başlık ekle",
     "addText": "Metin ekle",
     "rectangle": "Dikdörtgen",

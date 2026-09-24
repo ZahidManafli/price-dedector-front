@@ -6,6 +6,7 @@ import {
   ArrowLeft, Loader2, Undo2, Redo2, Save, Download, Type, Shapes as ShapesIcon,
   ImageUp, Trash2, Copy, BringToFront, SendToBack, ZoomIn, ZoomOut, Maximize,
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, ChevronDown,
+  Search, LayoutGrid, ImageOff,
 } from 'lucide-react';
 import { studioAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
@@ -114,6 +115,10 @@ export default function StudioEditorPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadedImages, setUploadedImages] = useState([]);
+  const [elementSearch, setElementSearch] = useState('');
+  const [elementResults, setElementResults] = useState([]);
+  const [elementsLoading, setElementsLoading] = useState(false);
+  const elementSearchTimerRef = useRef(null);
 
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
   useEffect(() => { dimsRef.current = dims; }, [dims]);
@@ -433,10 +438,14 @@ export default function StudioEditorPage() {
   // reopening a saved project later still shows the image correctly (unlike a
   // browser-only blob: URL, which stops working the moment the tab closes)
   // without a separate upload endpoint or any external file storage at all.
+  // crossOrigin: 'anonymous' is required for URLs hosted on our own backend
+  // (the shared element library) so the canvas isn't "tainted" and can still
+  // be exported via toDataURL — harmless/ignored for local data: URLs, which
+  // never go through CORS at all.
   const addImageFromUrl = async (url) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-    const img = await FabricImage.fromURL(url);
+    const img = await FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
     const maxW = dims.widthPx * 0.8;
     const maxH = dims.heightPx * 0.8;
     const scale = Math.min(1, maxW / img.width, maxH / img.height);
@@ -467,6 +476,27 @@ export default function StudioEditorPage() {
       setUploading(false);
     }
   };
+
+  // ── Element library (admin-imported stock graphics) ─────────────────────
+  // Debounced so every keystroke doesn't fire its own request; runs an
+  // initial (empty-query) search as soon as the Elements panel is opened so
+  // it isn't blank until the user types something.
+  useEffect(() => {
+    if (activePanel !== 'elements') return undefined;
+    clearTimeout(elementSearchTimerRef.current);
+    elementSearchTimerRef.current = setTimeout(async () => {
+      setElementsLoading(true);
+      try {
+        const res = await studioAPI.searchElements(elementSearch.trim());
+        setElementResults(Array.isArray(res?.data?.items) ? res.data.items : []);
+      } catch {
+        setElementResults([]);
+      } finally {
+        setElementsLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(elementSearchTimerRef.current);
+  }, [activePanel, elementSearch]);
 
   // ── Selected-object actions ──────────────────────────────────────────────
   const updateSelectedProp = (props) => {
@@ -698,6 +728,9 @@ export default function StudioEditorPage() {
           <button type="button" onClick={() => setActivePanel(activePanel === 'uploads' ? null : 'uploads')} className={iconButtonClass(isDark, activePanel === 'uploads')}>
             <ImageUp size={18} />{t('studioEditorPage.uploads')}
           </button>
+          <button type="button" onClick={() => setActivePanel(activePanel === 'elements' ? null : 'elements')} className={iconButtonClass(isDark, activePanel === 'elements')}>
+            <LayoutGrid size={18} />{t('studioEditorPage.elements')}
+          </button>
         </div>
 
         {/* Add-element panel */}
@@ -755,6 +788,46 @@ export default function StudioEditorPage() {
                         <img src={url} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activePanel === 'elements' && (
+              <div className="space-y-3">
+                <div className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 ${isDark ? 'border-slate-600 bg-slate-800' : 'border-slate-300 bg-white'}`}>
+                  <Search size={14} className={isDark ? 'text-slate-400' : 'text-slate-400'} />
+                  <input
+                    type="text"
+                    value={elementSearch}
+                    onChange={(e) => setElementSearch(e.target.value)}
+                    placeholder={t('studioEditorPage.searchElements')}
+                    className={`flex-1 bg-transparent text-sm outline-none ${isDark ? 'text-slate-100 placeholder-slate-500' : 'text-slate-800 placeholder-slate-400'}`}
+                  />
+                </div>
+
+                {elementsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 size={20} className="animate-spin text-purple-500" />
+                  </div>
+                ) : elementResults.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {elementResults.map((el) => (
+                      <button
+                        key={el.id}
+                        type="button"
+                        title={el.name || ''}
+                        onClick={() => addImageFromUrl(el.thumbnailUrl)}
+                        className={`aspect-square rounded-lg overflow-hidden border p-1.5 flex items-center justify-center transition-colors ${isDark ? 'border-slate-700 bg-slate-800 hover:border-purple-500' : 'border-slate-200 bg-white hover:border-purple-400'}`}
+                      >
+                        <img src={el.thumbnailUrl} alt={el.name || ''} className="max-w-full max-h-full object-contain" />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={`flex flex-col items-center gap-2 py-8 text-center ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    <ImageOff size={22} />
+                    <span className="text-xs">{t('studioEditorPage.noElementsFound')}</span>
                   </div>
                 )}
               </div>

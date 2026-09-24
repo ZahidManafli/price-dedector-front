@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Palette, Loader2, Plus, Pencil, Trash2, ImageOff } from 'lucide-react';
+import { Palette, Loader2, Plus, Pencil, Trash2, ImageOff, UploadCloud } from 'lucide-react';
 import { studioAPI } from '../services/api';
 import Alert from '../components/Alert';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const SIZE_PRESETS = [
   { key: 'square', labelKey: 'presetSquare', width: 1080, height: 1080 },
@@ -121,14 +122,19 @@ export default function StudioGalleryPage() {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   const [loading, setLoading] = useState(true);
   const [workspace, setWorkspace] = useState(null);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [showNewDesignModal, setShowNewDesignModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [importingElements, setImportingElements] = useState(false);
+  const elementsFileInputRef = useRef(null);
 
   const loadWorkspace = async () => {
     setLoading(true);
@@ -169,6 +175,31 @@ export default function StudioGalleryPage() {
     }
   };
 
+  // Admin-only: reads a Canva-style search-results JSON file (chosen from
+  // disk, never sent anywhere but our own backend) and hands its parsed
+  // content to the import endpoint, which downloads and re-hosts every
+  // element's thumbnail on our own storage and adds it to the shared,
+  // searchable element library every user's workspace can browse.
+  const handleImportElementsFile = async (file) => {
+    if (!file) return;
+    setImportingElements(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const res = await studioAPI.importElements(parsed);
+      const { imported = 0, failed = 0, alreadyExists = 0, total = 0 } = res?.data || {};
+      setSuccess(t('studioPage.importElementsResult', { imported, failed, alreadyExists, total }));
+    } catch (err) {
+      const apiError = err?.response?.data?.error;
+      setError(apiError || t('studioPage.importElementsFailed'));
+    } finally {
+      setImportingElements(false);
+      if (elementsFileInputRef.current) elementsFileInputRef.current.value = '';
+    }
+  };
+
   const handleDelete = async () => {
     if (!workspace || !window.confirm(t('studioPage.confirmDelete'))) return;
     setDeleting(true);
@@ -192,16 +223,44 @@ export default function StudioGalleryPage() {
           </h1>
           <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('studioPage.subtitle')}</p>
         </div>
-        {!loading && !workspace && (
-          <button type="button" onClick={() => { setCreateError(null); setShowNewDesignModal(true); }} className="btn-primary inline-flex items-center gap-2">
-            <Plus size={16} /> {t('studioPage.newDesign')}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <>
+              <button
+                type="button"
+                onClick={() => elementsFileInputRef.current?.click()}
+                disabled={importingElements}
+                title={t('studioPage.importElementsHint')}
+                className="btn-secondary inline-flex items-center gap-2 disabled:opacity-60"
+              >
+                {importingElements ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />}
+                {importingElements ? t('studioPage.importingElements') : t('studioPage.importElements')}
+              </button>
+              <input
+                ref={elementsFileInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => handleImportElementsFile(e.target.files?.[0])}
+              />
+            </>
+          )}
+          {!loading && !workspace && (
+            <button type="button" onClick={() => { setCreateError(null); setShowNewDesignModal(true); }} className="btn-primary inline-flex items-center gap-2">
+              <Plus size={16} /> {t('studioPage.newDesign')}
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (
         <div className="mb-4">
           <Alert type="error" message={error} onClose={() => setError(null)} />
+        </div>
+      )}
+      {success && (
+        <div className="mb-4">
+          <Alert type="success" message={success} onClose={() => setSuccess(null)} />
         </div>
       )}
 

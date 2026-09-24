@@ -1267,7 +1267,12 @@
     "failedToLoad": "Dizaynlar yüklənmədi",
     "failedToCreate": "Dizayn yaradıla bilmədi",
     "lastEdited": "Son redaktə",
-    "oneWorkspaceHint": "Hər istifadəçi eyni anda yalnız bir dizayn iş sahəsinə sahib ola bilər — yenisini yaratmaq üçün əvvəlcə mövcud olanı silməlisiniz."
+    "oneWorkspaceHint": "Hər istifadəçi eyni anda yalnız bir dizayn iş sahəsinə sahib ola bilər — yenisini yaratmaq üçün əvvəlcə mövcud olanı silməlisiniz.",
+    "importElements": "JSON yüklə (elementlər)",
+    "importingElements": "Yüklənir...",
+    "importElementsHint": "Admin: Canva tərzli axtarış nəticələri JSON faylı yükləyin, elementlər ümumi kitabxanaya əlavə olunsun",
+    "importElementsResult": "{{imported}} element əlavə edildi, {{alreadyExists}} artıq mövcud idi, {{failed}} uğursuz oldu (cəmi {{total}})",
+    "importElementsFailed": "JSON fayl yüklənə bilmədi"
   },
   "studioEditorPage": {
     "back": "Studiyaya qayıt",
@@ -1281,6 +1286,9 @@
     "text": "Mətn",
     "shapes": "Formalar",
     "uploads": "Şəkillər",
+    "elements": "Elementlər",
+    "searchElements": "Element axtar...",
+    "noElementsFound": "Heç bir element tapılmadı",
     "addHeading": "Başlıq əlavə et",
     "addText": "Mətn əlavə et",
     "rectangle": "Düzbucaqlı",

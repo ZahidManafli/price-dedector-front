@@ -297,6 +297,10 @@ export const studioAPI = {
   getProject: (id) => api.get(`/studio/projects/${encodeURIComponent(id)}`),
   saveProject: (id, payload) => api.put(`/studio/projects/${encodeURIComponent(id)}`, payload),
   deleteProject: (id) => api.delete(`/studio/projects/${encodeURIComponent(id)}`),
+  // Shared element library (admin-imported stock graphics) — searchable by
+  // every user with design_studio access; only the import itself is admin-only.
+  searchElements: (search) => api.get('/studio/elements', { params: search ? { search } : {} }),
+  importElements: (parsedJson) => api.post('/studio/admin/elements/import', parsedJson),
 };
 
 // eBay Post-Order API (cancellations, case management, inquiries) — gated behind the
