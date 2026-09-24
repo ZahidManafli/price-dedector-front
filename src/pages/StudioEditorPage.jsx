@@ -369,9 +369,36 @@ export default function StudioEditorPage() {
           return instance;
         });
         if (cancelled) return;
+
+        // Heal any image object saved BEFORE element images were embedded as
+        // data: URLs (see GET /studio/proxy-image) — its `src` is still a
+        // plain /uploads URL, which taints the canvas the moment it's drawn
+        // and breaks Download with "Tainted canvases may not be exported",
+        // even though every image added from now on is already immune to
+        // this. Runs once per legacy image; the healed src is folded into
+        // the initial history snapshot below and autosaved, so this only
+        // ever costs one extra fetch per legacy project, not every reload.
+        const legacyImages = canvas.getObjects().filter(
+          (obj) => obj.type === 'image' && typeof obj.getSrc === 'function' && !String(obj.getSrc() || '').startsWith('data:')
+        );
+        if (legacyImages.length) {
+          await Promise.all(legacyImages.map(async (imgObj) => {
+            try {
+              const res = await studioAPI.proxyImage(imgObj.getSrc());
+              const dataUrl = res?.data?.dataUrl;
+              if (dataUrl) await imgObj.setSrc(dataUrl);
+            } catch (err) {
+              console.error('[design-studio] Failed to heal a legacy image element:', err);
+            }
+          }));
+          if (cancelled) return;
+          canvas.requestRenderAll();
+        }
+
         canvas.requestRenderAll();
         historyRef.current = { stack: [JSON.stringify(canvas.toJSON())], index: 0, suppress: false, timer: null };
         setLoading(false);
+        if (legacyImages.length) scheduleAutosave();
       } catch {
         if (!cancelled) {
           setLoadError(t('studioEditorPage.loadFailed'));

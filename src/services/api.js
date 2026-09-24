@@ -305,6 +305,9 @@ export const studioAPI = {
   // server-side and inlines it as base64, so the browser never has to load
   // it as a cross-origin image at all.
   getElementImage: (id) => api.get(`/studio/elements/${encodeURIComponent(id)}/image`),
+  // Heals a design saved before element images were embedded as data: URLs —
+  // see the matching comment on the backend route.
+  proxyImage: (src) => api.get('/studio/proxy-image', { params: { src } }),
 };
 
 // eBay Post-Order API (cancellations, case management, inquiries) — gated behind the
