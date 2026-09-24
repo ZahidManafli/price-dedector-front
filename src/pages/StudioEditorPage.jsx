@@ -123,34 +123,28 @@ export default function StudioEditorPage() {
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
   useEffect(() => { dimsRef.current = dims; }, [dims]);
 
-  // The canvas always displays inside a fixed 40rem × 50rem "page" frame —
-  // not a dynamic fit-to-window range. Reads the root font-size so it still
-  // respects a user's browser zoom/accessibility font-size settings.
+  // 40rem × 50rem is a MAX bound on the on-screen page frame, not a fixed
+  // size every design gets forced into — the frame's own box always shrink-
+  // wraps the canvas's actual (zoomed) pixel size (see the canvas wrapper's
+  // inline style below), so a design narrower/shorter than 40:50 never picks
+  // up dead white space above/below or left/right of it (that used to make a
+  // border/frame element the user placed at the design's own edge look
+  // disconnected from the visible edge of the page). Reads the root
+  // font-size so the bound still respects a user's browser zoom/accessibility
+  // font-size settings.
   const getFramePx = () => {
     const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     return { w: 40 * rootPx, h: 50 * rootPx };
   };
 
-  // The design is scaled to fit exactly within the fixed frame (whichever
-  // dimension is the tighter constraint), then centered — a design whose
-  // aspect ratio doesn't match 40:50 fills one axis exactly and leaves even
-  // margins on the other, like a page frame around a differently-shaped print.
+  // The design is scaled down only as far as needed to fit within the 40×50rem
+  // bound (whichever dimension is the tighter constraint) — never scaled up
+  // past 100% just to fill it, since the frame now sizes itself to the result
+  // instead of the other way around.
   const computeFitZoom = useCallback((widthPx, heightPx) => {
     const { w, h } = getFramePx();
     return Math.min(4, Math.max(0.05, Math.min(w / widthPx, h / heightPx)));
   }, []);
-
-  // How far the (possibly smaller, due to aspect ratio) zoomed canvas must be
-  // offset from the frame's top-left corner to sit centered inside it — used
-  // to keep the floating selection toolbar aligned with the actual object,
-  // not with the fixed frame's corner.
-  const getCanvasOffset = (z, widthPx, heightPx) => {
-    const { w, h } = getFramePx();
-    return {
-      offsetX: Math.max(0, (w - widthPx * z) / 2),
-      offsetY: Math.max(0, (h - heightPx * z) / 2),
-    };
-  };
 
   // ── Export (download / thumbnail) ───────────────────────────────────────
   // toDataURL renders at the canvas's CURRENT pixel size, which tracks the
@@ -294,10 +288,12 @@ export default function StudioEditorPage() {
       if (!obj) { setToolbarPos(null); return; }
       const rect = obj.getBoundingRect();
       const z = zoomRef.current;
-      const { offsetX, offsetY } = getCanvasOffset(z, dimsRef.current.widthPx, dimsRef.current.heightPx);
+      // No offset needed — the wrapper around <canvas> always shrink-wraps
+      // it exactly (see the wrapper's inline style further down), so canvas
+      // coordinates map directly onto the wrapper's own coordinate space.
       setToolbarPos({
-        left: offsetX + (rect.left + rect.width / 2) * z,
-        top: Math.max(0, offsetY + rect.top * z - 46),
+        left: (rect.left + rect.width / 2) * z,
+        top: Math.max(0, rect.top * z - 46),
       });
     };
     const scheduleToolbarUpdate = () => {
@@ -626,15 +622,15 @@ export default function StudioEditorPage() {
       const active = canvas.getActiveObject();
       if (active) {
         const rect = active.getBoundingRect();
-        const { offsetX, offsetY } = getCanvasOffset(clamped, w, h);
-        setToolbarPos({ left: offsetX + (rect.left + rect.width / 2) * clamped, top: Math.max(0, offsetY + rect.top * clamped - 46) });
+        setToolbarPos({ left: (rect.left + rect.width / 2) * clamped, top: Math.max(0, rect.top * clamped - 46) });
       }
     }
     setZoom(clamped);
   };
   const adjustZoom = (delta) => applyZoom(zoomRef.current + delta);
-  // Recomputes the fit-to-frame zoom (the frame itself is a fixed 40rem ×
-  // 50rem — see getFramePx — so this doesn't depend on window size at all).
+  // Recomputes the fit-to-frame zoom (40×50rem is a MAX bound the frame
+  // shrink-wraps down to fit within — see getFramePx — so this doesn't
+  // depend on window size at all).
   const resetZoom = () => applyZoom(computeFitZoom(dims.widthPx, dims.heightPx));
 
   const panelBase = isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200';
@@ -899,19 +895,19 @@ export default function StudioEditorPage() {
         {/* Canvas area */}
         <div className="flex-1 flex flex-col min-w-0">
           <div className="flex-1 overflow-auto flex items-center justify-center p-6">
-            {/* Fixed 40rem × 50rem "page" frame — always this size, regardless
-                of the design's own pixel dimensions or the browser window.
-                The canvas inside is scaled to fit within it (computeFitZoom)
-                and centered (flex + getCanvasOffset for the floating toolbar's
-                math) — a design whose aspect ratio isn't 40:50 fills one axis
-                exactly and leaves even margins on the other, like a real page
-                frame around a differently-shaped print. No CSS transform is
-                used for the zoom itself — that's Fabric's own setZoom()/
-                setDimensions() (see applyZoom) — this wrapper only centers
-                whatever pixel size Fabric has already rendered the canvas at. */}
+            {/* The frame's own box always shrink-wraps the canvas's actual (zoomed)
+                pixel size exactly — width/height here just mirror whatever
+                Fabric's own setZoom()/setDimensions() (see applyZoom) already
+                rendered the <canvas> element at, capped at 40×50rem (see
+                computeFitZoom/getFramePx). No CSS transform is used for the
+                zoom itself. Deliberately NOT a fixed 40rem×50rem box: that
+                used to letterbox any design whose aspect ratio isn't 40:50
+                with dead white space above/below or left/right, which made a
+                border/frame element placed at the design's own edge look
+                disconnected from the frame's visible edge. */}
             <div
-              className="relative bg-white flex items-center justify-center shrink-0"
-              style={{ width: '40rem', height: '50rem', boxShadow: '0 8px 30px rgba(0,0,0,0.18)', borderRadius: 2, overflow: 'auto' }}
+              className="relative bg-white shrink-0"
+              style={{ width: Math.round(dims.widthPx * zoom), height: Math.round(dims.heightPx * zoom), boxShadow: '0 8px 30px rgba(0,0,0,0.18)', borderRadius: 2 }}
             >
               <canvas ref={canvasElRef} />
 
