@@ -426,10 +426,17 @@ export default function StudioEditorPage() {
     { stroke: '#111827', strokeWidth: 4 }
   ));
 
+  // Images added to a design are data: URLs (base64, produced locally by
+  // FileReader — see handleFileUpload) rather than URLs pointing at our own
+  // backend. Nothing about the raw image file is ever sent to the server:
+  // Fabric embeds the data: URL directly in the design's own saved JSON, so
+  // reopening a saved project later still shows the image correctly (unlike a
+  // browser-only blob: URL, which stops working the moment the tab closes)
+  // without a separate upload endpoint or any external file storage at all.
   const addImageFromUrl = async (url) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-    const img = await FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
+    const img = await FabricImage.fromURL(url);
     const maxW = dims.widthPx * 0.8;
     const maxH = dims.heightPx * 0.8;
     const scale = Math.min(1, maxW / img.width, maxH / img.height);
@@ -440,18 +447,20 @@ export default function StudioEditorPage() {
     canvas.requestRenderAll();
   };
 
+  const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error('Failed to read file'));
+    reader.readAsDataURL(file);
+  });
+
   const handleFileUpload = async (file) => {
-    if (!file) return;
+    if (!file || !String(file.type || '').startsWith('image/')) return;
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-      const res = await studioAPI.uploadImage(formData);
-      const url = res?.data?.url;
-      if (url) {
-        setUploadedImages((prev) => [url, ...prev]);
-        await addImageFromUrl(url);
-      }
+      const url = await readFileAsDataUrl(file);
+      setUploadedImages((prev) => [url, ...prev]);
+      await addImageFromUrl(url);
     } catch {
       // best-effort — user can retry the upload
     } finally {
@@ -561,7 +570,22 @@ export default function StudioEditorPage() {
   // report — not the zoom math itself. Loading/error states are now rendered
   // as an overlay INSIDE this same tree instead of replacing it.
   return (
-    <div className={`flex flex-col h-screen ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
+    <div
+      className={`flex flex-col h-screen ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        // Safety net for the whole editor, not just the Uploads dropzone —
+        // without this, dropping a file anywhere else (e.g. onto an actively-
+        // edited text box) falls through to the browser's own default drop
+        // handling, which can insert the file's path as literal text into
+        // whatever input/contenteditable happens to be focused. Prevented
+        // here regardless of where the drop lands, and treated the same as a
+        // real upload if it's an image.
+        e.preventDefault();
+        const file = e.dataTransfer.files?.[0];
+        if (file) handleFileUpload(file);
+      }}
+    >
       {/* Top bar */}
       <div className={`flex items-center gap-2 px-4 py-2 border-b shrink-0 ${panelBase}`}>
         <button
@@ -712,6 +736,11 @@ export default function StudioEditorPage() {
                 <button
                   type="button"
                   onClick={() => uploadInputRef.current?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleFileUpload(e.dataTransfer.files?.[0]);
+                  }}
                   disabled={uploading}
                   className={`w-full flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 text-center transition-colors disabled:opacity-60 ${isDark ? 'border-slate-600 hover:border-purple-500 text-slate-300' : 'border-slate-300 hover:border-purple-400 text-slate-600'}`}
                 >
