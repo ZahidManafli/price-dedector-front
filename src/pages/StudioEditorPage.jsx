@@ -874,10 +874,14 @@ export default function StudioEditorPage() {
                         onClick={() => addLibraryElement(el.thumbnailUrl)}
                         className={`aspect-square rounded-lg overflow-hidden border p-1.5 flex items-center justify-center transition-colors ${isDark ? 'border-slate-700 bg-slate-800 hover:border-purple-500' : 'border-slate-200 bg-white hover:border-purple-400'}`}
                       >
-                        {/* crossOrigin here matches the CORS mode addLibraryElement uses to load the
-                            same URL into Fabric — loading it plain here first, then crossOrigin
-                            afterwards, is what let a stale/incompatible cache entry taint the canvas. */}
-                        <img src={el.thumbnailUrl} alt={el.name || ''} crossOrigin="anonymous" className="max-w-full max-h-full object-contain" />
+                        {/* Deliberately NOT crossOrigin here — a plain <img> never performs a CORS
+                            check at all (that only applies to crossOrigin-mode fetches, which is
+                            what addLibraryElement uses once, on click, to load the picked element
+                            into Fabric). Setting crossOrigin on every thumbnail in this grid turned
+                            simply opening the panel into a CORS-validated fetch for every visible
+                            result at once — dozens of simultaneous requests, all failing together
+                            for as long as the backend/proxy CORS headers aren't fixed yet. */}
+                        <img src={el.thumbnailUrl} alt={el.name || ''} className="max-w-full max-h-full object-contain" />
                       </button>
                     ))}
                   </div>
