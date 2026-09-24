@@ -438,14 +438,38 @@ export default function StudioEditorPage() {
   // reopening a saved project later still shows the image correctly (unlike a
   // browser-only blob: URL, which stops working the moment the tab closes)
   // without a separate upload endpoint or any external file storage at all.
-  // crossOrigin: 'anonymous' is required for URLs hosted on our own backend
-  // (the shared element library) so the canvas isn't "tainted" and can still
-  // be exported via toDataURL — harmless/ignored for local data: URLs, which
-  // never go through CORS at all.
-  const addImageFromUrl = async (url) => {
+  //
+  // `crossOrigin` is only relevant for the shared element library (hosted on
+  // our own backend, a real cross-origin URL from the browser's point of
+  // view) — never for a local data: URL, which isn't fetched at all and
+  // ignores the option entirely. FabricImage.fromURL REJECTS the promise on
+  // any load failure (network error, or the response missing the CORS
+  // headers a crossOrigin:'anonymous' request requires) — left uncaught, an
+  // element click would silently do nothing, which is exactly what was
+  // reported. So a crossOrigin attempt that fails is retried once without
+  // it: the element still gets added and is visible like any other image,
+  // just at the cost of tainting the canvas for export (toDataURL) until
+  // that image is removed — better than the click doing nothing at all.
+  const addImageFromUrl = async (url, { crossOrigin = null } = {}) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-    const img = await FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
+
+    let img;
+    try {
+      img = await FabricImage.fromURL(url, crossOrigin ? { crossOrigin } : {});
+    } catch (err) {
+      if (!crossOrigin) {
+        console.error('[design-studio] Failed to load image:', err);
+        return;
+      }
+      try {
+        img = await FabricImage.fromURL(url);
+      } catch (fallbackErr) {
+        console.error('[design-studio] Failed to load image (fallback also failed):', fallbackErr);
+        return;
+      }
+    }
+
     const maxW = dims.widthPx * 0.8;
     const maxH = dims.heightPx * 0.8;
     const scale = Math.min(1, maxW / img.width, maxH / img.height);
@@ -455,6 +479,8 @@ export default function StudioEditorPage() {
     canvas.setActiveObject(img);
     canvas.requestRenderAll();
   };
+
+  const addLibraryElement = (url) => addImageFromUrl(url, { crossOrigin: 'anonymous' });
 
   const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -817,7 +843,7 @@ export default function StudioEditorPage() {
                         key={el.id}
                         type="button"
                         title={el.name || ''}
-                        onClick={() => addImageFromUrl(el.thumbnailUrl)}
+                        onClick={() => addLibraryElement(el.thumbnailUrl)}
                         className={`aspect-square rounded-lg overflow-hidden border p-1.5 flex items-center justify-center transition-colors ${isDark ? 'border-slate-700 bg-slate-800 hover:border-purple-500' : 'border-slate-200 bg-white hover:border-purple-400'}`}
                       >
                         <img src={el.thumbnailUrl} alt={el.name || ''} className="max-w-full max-h-full object-contain" />
