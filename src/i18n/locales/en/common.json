@@ -1371,6 +1371,7 @@
     "fill": "Fill",
     "stroke": "Stroke",
     "opacity": "Opacity",
+    "background": "Background",
     "bold": "Bold",
     "italic": "Italic",
     "underline": "Underline",

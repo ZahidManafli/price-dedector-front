@@ -110,6 +110,7 @@ export default function StudioEditorPage() {
   const [selected, setSelected] = useState(null);
   const [toolbarPos, setToolbarPos] = useState(null);
   const [openColorPopover, setOpenColorPopover] = useState(null);
+  const [canvasBackground, setCanvasBackground] = useState('#ffffff');
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -395,6 +396,23 @@ export default function StudioEditorPage() {
           canvas.requestRenderAll();
         }
 
+        // loadFromJSON always overwrites backgroundColor from the saved JSON's
+        // `background` field, even when that field is simply absent (every
+        // project created before this control existed, and any project
+        // created via the "empty design" default) — Fabric then sets it to
+        // `undefined`, silently replacing the white background this Canvas
+        // was constructed with above. A transparent canvas still looks fine
+        // on-screen (it just shows the page behind it), but a PNG exported
+        // from it (Download, or the gallery thumbnail) has a transparent
+        // background instead of a white one, which many image viewers render
+        // as flat grey — exactly the "arxa fon ağ deyil" report. Only backfill
+        // white when nothing meaningful was actually saved; an explicit color
+        // the user picked (including one just healed above) is left alone.
+        if (!canvas.backgroundColor) {
+          canvas.backgroundColor = '#ffffff';
+        }
+        setCanvasBackground(canvas.backgroundColor);
+
         canvas.requestRenderAll();
         historyRef.current = { stack: [JSON.stringify(canvas.toJSON())], index: 0, suppress: false, timer: null };
         setLoading(false);
@@ -578,6 +596,18 @@ export default function StudioEditorPage() {
     return () => clearTimeout(elementSearchTimerRef.current);
   }, [activePanel, elementSearch]);
 
+  // A page-level property (like the title), not tied to any object selection
+  // — the canvas itself always has a real background color (white by
+  // default, see the mount effect), which the user can override here.
+  const updateCanvasBackground = (color) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    canvas.backgroundColor = color;
+    canvas.requestRenderAll();
+    setCanvasBackground(color);
+    pushHistory();
+  };
+
   // ── Selected-object actions ──────────────────────────────────────────────
   const updateSelectedProp = (props) => {
     const canvas = fabricCanvasRef.current;
@@ -713,6 +743,17 @@ export default function StudioEditorPage() {
           placeholder={t('studioEditorPage.untitled')}
           className={`text-sm font-semibold rounded-lg px-2 py-1.5 outline-none border border-transparent focus:border-slate-300 shrink-0 w-40 ${isDark ? 'bg-transparent text-slate-100 focus:bg-slate-800' : 'bg-transparent text-slate-900 focus:bg-slate-50'}`}
         />
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('studioEditorPage.background')}</span>
+          <ColorSwatchButton
+            isDark={isDark}
+            value={canvasBackground}
+            open={openColorPopover === 'canvasBackground'}
+            onToggle={() => toggleColorPopover('canvasBackground')}
+            onChange={updateCanvasBackground}
+          />
+        </div>
 
         <div className={`h-6 w-px mx-1 shrink-0 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
 
