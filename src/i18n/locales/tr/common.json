@@ -1245,6 +1245,26 @@
     }
   },
   "back": "Geri",
+  "trackingMobileTracker": {
+    "buttonLabel": "Mobil Takipçi",
+    "buttonTitle": "Telefonunuzdan bir bookmarklet ile takibi güncelleyin",
+    "modalTitle": "Mobil Takipçi",
+    "description": "Takibi doğrudan telefonunuzdan güncelleyin — eklentiye gerek yok. Amazon'un mobil sitesinde siparişin \"Track package\" sayfasını açın ve bu bookmarklet'e dokunun; Amazon durumu Checkila'ya gönderilir ve eBay takibiniz birkaç saat içinde güncellenir. Sipariş başına günde bir kez yeterlidir.",
+    "loadError": "Anahtarınız yüklenemedi",
+    "generateError": "Anahtar oluşturulamadı",
+    "regenerateConfirm": "Bu, mevcut anahtarınızın yerini alacak. Eski anahtarla kaydedilmiş herhangi bir bookmarklet artık çalışmayacak. Devam edilsin mi?",
+    "generateButton": "Anahtarımı oluştur",
+    "generating": "Oluşturuluyor…",
+    "regenerating": "Yeniden oluşturuluyor…",
+    "regenerateButton": "Anahtarı yenile (eskisini geçersiz kılar)",
+    "step1Label": "Adım 1 — Kodu kopyalayın",
+    "copyCode": "Kodu kopyala",
+    "copied": "Kopyalandı!",
+    "step2Label": "Adım 2 —",
+    "step2Body": "Telefonunuzda herhangi bir sayfayı yer imlerine ekleyin. Ardından bu yer imini düzenleyin: adını Checkila olarak değiştirin ve adres/URL alanını az önce kopyaladığınız kodla değiştirin.",
+    "step3Label": "Adım 3 —",
+    "step3Body": "Amazon'un mobil sitesinde siparişin \"Track package\" sayfasını açın. Tarayıcınızın adres çubuğuna Checkila yazın ve çıkan yer imi önerisine dokunun."
+  },
   "studioPage": {
     "title": "Tasarım Stüdyosu",
     "subtitle": "Kendi tasarımlarınızı oluşturun ve düzenleyin",

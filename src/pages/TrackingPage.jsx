@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X, Trash2, Search, Copy, Pencil } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X, Trash2, Search, Copy, Pencil, Smartphone } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { ebayAPI, settingsAPI } from '../services/api';
+import { ebayAPI, settingsAPI, API_BASE_URL } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 
 // Amazon's tracking-page URL structure — mirrors buildAmazonTrackingUrl in
@@ -172,6 +173,178 @@ function JobStatusModal({ phase, message, isDark }) {
               <line x1="35" y1="17" x2="17" y2="35" stroke="#ef4444" strokeWidth="3.5" strokeLinecap="round" />
             </svg>
             <p className="text-sm font-medium text-center text-rose-500">{message || 'Something went wrong'}</p>
+          </>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// The mobile "Checkila" bookmarklet — a JS snippet bookmarked on a phone that,
+// tapped on an Amazon order's "Track package" page, sends that page's HTML straight
+// to POST /ebay/amazon-order-observed (the exact same pipeline the desktop Chrome
+// extension already uses, see extension/amazon_update_tracking_button.js and
+// resolveMobileTrackingAuth in backend routes/ebay.js). This is the only way to get
+// that "one tap, tracking updates automatically" flow on a phone, since a mobile
+// browser can't run a Chrome extension at all.
+//
+// Kept deliberately plain ASCII (no smart quotes/diacritics/checkmarks) in every
+// string literal — this text round-trips through a phone's bookmark-edit URL field,
+// which is exactly the kind of place non-ASCII characters are most likely to get
+// silently mangled by some keyboard/app along the way.
+function buildCheckilaBookmarklet(key) {
+  const apiBase = String(API_BASE_URL || '').replace(/\/+$/, '');
+  const src = `(function(){var K='${key}';var H='${apiBase}';if(!/amazon\\./.test(location.hostname)){alert('Checkila: this only works on an Amazon page.');return;}var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#4f46e5;color:#fff;font:600 15px/1.45 -apple-system,Segoe UI,Arial,sans-serif;padding:14px 16px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.25)';b.textContent='Checkila: sending...';document.body.appendChild(b);var t=document.body.innerText||'';var id=(location.href.match(/\\d{3}-\\d{7}-\\d{7}/)||t.match(/\\d{3}-\\d{7}-\\d{7}/)||[])[0]||'';var p=JSON.stringify({amazonOrderId:id,orderLink:location.href.slice(0,600),html:document.documentElement.outerHTML.slice(0,1800000)});var u=H+'/ebay/amazon-order-observed?token='+K;function done(ok,m){b.style.background=ok?'#16a34a':'#dc2626';b.textContent='Checkila: '+m;setTimeout(function(){if(b.parentNode)b.parentNode.removeChild(b);},8000);}function viaForm(){var f=document.createElement('form');f.method='POST';f.action=u;f.target='_blank';var a=document.createElement('input');a.type='hidden';a.name='payload';a.value=p;f.appendChild(a);document.body.appendChild(f);f.submit();document.body.removeChild(f);done(true,'sent - check the new tab');}try{fetch(u,{method:'POST',headers:{'Content-Type':'text/plain'},body:p}).then(function(r){return r.json();}).then(function(d){done(Boolean(d&&d.success),(d&&d.matched)?'tracking updated!':(d&&d.success?'received, no exact order match yet':'failed - try again'));}).catch(viaForm);}catch(e){viaForm();}})();`;
+  return `javascript:${src}`;
+}
+
+// GET /settings/amazon-tracking-key / POST .../generate — see settings.js. One
+// lifetime key per user; regenerating replaces it outright (old bookmarklets start
+// getting 401s, exactly like rotating any other leaked credential should behave).
+function MobileTrackerModal({ isDark, onClose }) {
+  const { t } = useTranslation();
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [keyValue, setKeyValue] = useState(null);
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await settingsAPI.getAmazonTrackingKey();
+        if (!cancelled) setKeyValue(res?.data?.key || null);
+      } catch {
+        if (!cancelled) setError(t('trackingMobileTracker.loadError'));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleGenerate = async () => {
+    if (generating) return;
+    if (keyValue && !window.confirm(t('trackingMobileTracker.regenerateConfirm'))) {
+      return;
+    }
+    setGenerating(true);
+    setError('');
+    try {
+      const res = await settingsAPI.generateAmazonTrackingKey();
+      setKeyValue(res?.data?.key || null);
+      setCopied(false);
+    } catch {
+      setError(t('trackingMobileTracker.generateError'));
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const bookmarklet = keyValue ? buildCheckilaBookmarklet(keyValue) : '';
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(bookmarklet);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Clipboard API can be unavailable (non-HTTPS, older browser) — the
+      // textarea itself is still selectable/copyable by hand as a fallback.
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div
+        className={`rounded-2xl shadow-xl p-6 w-full max-w-lg mx-4 border max-h-[90vh] overflow-y-auto ${
+          isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
+        }`}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className={`text-base font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+            <Smartphone size={18} /> {t('trackingMobileTracker.modalTitle')}
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className={isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <p className={`text-sm mb-4 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+          {t('trackingMobileTracker.description')}
+        </p>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <span className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
+          </div>
+        ) : (
+          <>
+            {error && <p className="text-sm text-rose-500 mb-3">{error}</p>}
+
+            {!keyValue ? (
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={generating}
+                className="btn-primary w-full py-2.5 text-sm disabled:opacity-60"
+              >
+                {generating ? t('trackingMobileTracker.generating') : t('trackingMobileTracker.generateButton')}
+              </button>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {t('trackingMobileTracker.step1Label')}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopy}
+                      className="text-xs font-medium text-indigo-500 hover:text-indigo-400 inline-flex items-center gap-1"
+                    >
+                      <Copy size={12} /> {copied ? t('trackingMobileTracker.copied') : t('trackingMobileTracker.copyCode')}
+                    </button>
+                  </div>
+                  <textarea
+                    readOnly
+                    value={bookmarklet}
+                    onFocus={(e) => e.target.select()}
+                    rows={4}
+                    className={`w-full rounded-lg border px-3 py-2 text-xs font-mono resize-none ${
+                      isDark ? 'bg-slate-800 border-slate-600 text-slate-300' : 'bg-slate-50 border-slate-300 text-slate-700'
+                    }`}
+                  />
+                </div>
+
+                <div className={`text-sm space-y-2.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  <p>
+                    <strong>{t('trackingMobileTracker.step2Label')}</strong> {t('trackingMobileTracker.step2Body')}
+                  </p>
+                  <p>
+                    <strong>{t('trackingMobileTracker.step3Label')}</strong> {t('trackingMobileTracker.step3Body')}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleGenerate}
+                  disabled={generating}
+                  className="btn-secondary w-full py-2 text-xs disabled:opacity-60"
+                >
+                  {generating ? t('trackingMobileTracker.regenerating') : t('trackingMobileTracker.regenerateButton')}
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -1212,6 +1385,7 @@ function MessageTemplatesSidebar({ isDark, onClose, ebayAccountId, accountLabel 
 
 export default function TrackingPage() {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('tracked');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1226,6 +1400,7 @@ export default function TrackingPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [trackingCredits, setTrackingCredits] = useState(null); // { limit, used, remaining } | null
   const [orderMetaByEbayOrderId, setOrderMetaByEbayOrderId] = useState({}); // ebayOrderId -> { imageUrl, title }
+  const [showMobileTracker, setShowMobileTracker] = useState(false);
 
   const loadTracked = async () => {
     setLoading(true);
@@ -1433,6 +1608,16 @@ export default function TrackingPage() {
           Tracking
         </h1>
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setShowMobileTracker(true)}
+            title={t('trackingMobileTracker.buttonTitle')}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+              isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Smartphone size={14} /> {t('trackingMobileTracker.buttonLabel')}
+          </button>
           <div className="relative">
             <Search size={14} className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
             <input
@@ -1654,6 +1839,8 @@ export default function TrackingPage() {
           </div>
         </div>
       )}
+
+      {showMobileTracker && <MobileTrackerModal isDark={isDark} onClose={() => setShowMobileTracker(false)} />}
     </div>
   );
 }

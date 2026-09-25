@@ -137,6 +137,10 @@ export const settingsAPI = {
   submitMarketAnalysisCreditsRequest: (data) => api.post('/settings/subscription-requests/market-analysis-credits', data),
   listMyRequests: () => api.get('/settings/subscription-requests/mine'),
   cancelSubscriptionRequest: (id) => api.post(`/settings/subscription-requests/${encodeURIComponent(id)}/cancel`),
+  // One lifetime "mobile tracking key" per user — powers the Mobile Tracker
+  // bookmarklet on the Tracking page (see TrackingPage.jsx).
+  getAmazonTrackingKey: () => api.get('/settings/amazon-tracking-key'),
+  generateAmazonTrackingKey: () => api.post('/settings/amazon-tracking-key/generate'),
 };
 
 // Epoint online payment APIs.

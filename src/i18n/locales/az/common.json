@@ -1245,6 +1245,26 @@
     }
   },
   "back": "Geri",
+  "trackingMobileTracker": {
+    "buttonLabel": "Mobil İzləyici",
+    "buttonTitle": "Telefonunuzdan bookmarklet vasitəsilə tracking yeniləyin",
+    "modalTitle": "Mobil İzləyici",
+    "description": "Tracking-i birbaşa telefonunuzdan yeniləyin — heç bir əlavəyə (extension) ehtiyac yoxdur. Amazon-un mobil saytında sifarişin \"Track package\" səhifəsini açın və bu bookmarklet-ə toxunun; Amazon statusu Checkila-ya göndərilir və eBay tracking-iniz bir neçə saat ərzində yenilənir. Hər sifariş üçün gündə bir dəfə kifayətdir.",
+    "loadError": "Açarınız yüklənə bilmədi",
+    "generateError": "Açar yaradıla bilmədi",
+    "regenerateConfirm": "Bu, mövcud açarınızı əvəz edəcək. Köhnə açarla saxlanılmış istənilən bookmarklet artıq işləməyəcək. Davam edilsin?",
+    "generateButton": "Açarımı yarat",
+    "generating": "Yaradılır…",
+    "regenerating": "Yenidən yaradılır…",
+    "regenerateButton": "Açarı yenilə (köhnəsini etibarsız edir)",
+    "step1Label": "1-ci addım — Kodu kopyalayın",
+    "copyCode": "Kodu kopyala",
+    "copied": "Kopyalandı!",
+    "step2Label": "2-ci addım —",
+    "step2Body": "Telefonunuzda istənilən səhifəni əlfəcinə (bookmark) əlavə edin. Sonra həmin əlfəcini redaktə edin: adını Checkila qoyun və ünvan/URL sahəsini indicə kopyaladığınız kodla əvəz edin.",
+    "step3Label": "3-cü addım —",
+    "step3Body": "Amazon-un mobil saytında sifarişin \"Track package\" səhifəsini açın. Brauzerinizin ünvan çubuğuna Checkila yazın və çıxan əlfəcin təklifinə toxunun."
+  },
   "studioPage": {
     "title": "Dizayn Studiyası",
     "subtitle": "Öz dizaynlarınızı yaradın və redaktə edin",

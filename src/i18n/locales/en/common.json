@@ -1312,6 +1312,26 @@
     }
   },
   "back": "Back",
+  "trackingMobileTracker": {
+    "buttonLabel": "Mobile Tracker",
+    "buttonTitle": "Update tracking from your phone via a bookmarklet",
+    "modalTitle": "Mobile Tracker",
+    "description": "Update tracking straight from your phone — no extension needed. Open an order's \"Track package\" page on Amazon's mobile site and tap this bookmarklet; the Amazon status is sent to Checkila and your eBay tracking updates within a few hours. Once a day per order is enough.",
+    "loadError": "Failed to load your key",
+    "generateError": "Failed to generate a key",
+    "regenerateConfirm": "This replaces your current key. Any bookmarklet already saved with the old one will stop working. Continue?",
+    "generateButton": "Generate my key",
+    "generating": "Generating…",
+    "regenerating": "Regenerating…",
+    "regenerateButton": "Regenerate key (invalidates the old one)",
+    "step1Label": "Step 1 — Copy the code",
+    "copyCode": "Copy code",
+    "copied": "Copied!",
+    "step2Label": "Step 2 —",
+    "step2Body": "On your phone, bookmark any page. Then edit that bookmark: rename it Checkila and replace its address/URL field with the code you just copied.",
+    "step3Label": "Step 3 —",
+    "step3Body": "On Amazon's mobile site, open the order's \"Track package\" page. Type Checkila in your browser's address bar and tap the bookmark suggestion that appears."
+  },
   "studioPage": {
     "title": "Design Studio",
     "subtitle": "Create and edit your own designs",
