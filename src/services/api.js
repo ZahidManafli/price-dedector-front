@@ -27,6 +27,8 @@ api.interceptors.request.use((config) => {
     url.startsWith('/payments/epoint/checkout/') ||
     url.startsWith('/payments/epoint/widget/') ||
     url.startsWith('/payments/epoint/status/') ||
+    url.startsWith('/payments/luhive/checkout/') ||
+    url.startsWith('/payments/luhive/confirm/') ||
     url.startsWith('/api/partners/public') ||
     url.includes('/privacy') ||
     url.includes('/about');
@@ -172,6 +174,14 @@ export const paymentsAPI = {
   getPaymentStatus: (requestId) => api.get(`/payments/epoint/status/${encodeURIComponent(requestId)}`),
   payNowWidget: () => api.post('/payments/epoint/pay-now/widget'),
   getRenewalWidgetStatus: (attemptId) => api.get(`/payments/epoint/pay-now/widget/${encodeURIComponent(attemptId)}/status`),
+};
+
+// Luhive integration — see LUHIVE_INTEGRATION.md. Both routes are public
+// (unauthenticated): the payer's own browser calls these directly from a
+// link Luhive handed it, exactly like the epoint checkout flow above.
+export const luhiveAPI = {
+  getCheckoutPayload: (requestId) => api.get(`/payments/luhive/checkout/${encodeURIComponent(requestId)}`),
+  confirmPayment: (requestId) => api.post(`/payments/luhive/confirm/${encodeURIComponent(requestId)}`),
 };
 
 export const ebayAPI = {
