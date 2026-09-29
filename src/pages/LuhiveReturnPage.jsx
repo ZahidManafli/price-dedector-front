@@ -34,6 +34,12 @@ export default function LuhiveReturnPage() {
         const result = res?.data?.status;
         if (result === 'paid') {
           setStatus('paid');
+          // Luhive's approval API already returned 200 for this payment (set
+          // by the backend only once that call succeeds) — send the payer
+          // straight back to Luhive instead of leaving them on this page.
+          if (res?.data?.redirectUrl) {
+            window.location.replace(res.data.redirectUrl);
+          }
         } else if (result === 'failed') {
           setStatus('failed');
         } else if (attempt < MAX_ATTEMPTS) {
