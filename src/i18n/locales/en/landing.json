@@ -188,11 +188,14 @@
   "mobileApp": {
     "eyebrow": "New — Mobile App",
     "title": "Checkila in your pocket",
-    "description": "Run market research, track profits, and manage orders from your phone. The Android app is ready to download right now — iOS is coming soon.",
+    "description": "The Android app mirrors almost everything you can do on web — market research, Amazon tracking, orders, cases, profit tools and more, all from your phone. iOS is coming soon.",
     "features": [
-      "Market & product research on the go",
-      "Live order and case tracking",
-      "Profit calculator in your pocket"
+      "Market & product analysis",
+      "Amazon price tracking",
+      "Order management",
+      "Case management",
+      "Design Studio",
+      "Dewiso sourcing"
     ],
     "android": {
       "cta": "Download for Android (.apk)",

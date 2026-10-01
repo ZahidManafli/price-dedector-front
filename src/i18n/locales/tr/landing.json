@@ -188,11 +188,14 @@
   "mobileApp": {
     "eyebrow": "Yeni — Mobil Uygulama",
     "title": "Checkila artık cebinizde",
-    "description": "Pazar araştırması yapın, kârınızı takip edin ve siparişlerinizi telefonunuzdan yönetin. Android uygulaması şimdi indirilebilir — iOS sürümü yakında geliyor.",
+    "description": "Mobil uygulama, web sürümünde yapabildiğiniz hemen her şeyi yapar — pazar araştırması, Amazon takibi, siparişler, vakalar, kâr araçları ve daha fazlası artık telefonunuzda. iOS sürümü yakında geliyor.",
     "features": [
-      "Her yerden pazar ve ürün araştırması",
-      "Sipariş ve vakaların anlık takibi",
-      "Cebinizde kâr hesaplayıcı"
+      "Pazar ve ürün analizi",
+      "Amazon fiyat takibi",
+      "Sipariş yönetimi",
+      "Vaka (case) yönetimi",
+      "Tasarım Stüdyosu",
+      "Dewiso kaynak bulma"
     ],
     "android": {
       "cta": "Android için indir (.apk)",

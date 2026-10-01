@@ -188,11 +188,14 @@
   "mobileApp": {
     "eyebrow": "Yenilik — Mobil Tətbiq",
     "title": "Checkila artıq cibinizdə",
-    "description": "Bazar araşdırması aparın, mənfəəti izləyin və sifarişləri telefonunuzdan idarə edin. Android tətbiqini indi yükləyə bilərsiniz — iOS versiyası tezliklə gəlir.",
+    "description": "Mobil tətbiq veb versiyada etdiyiniz demək olar ki, hər şeyi edir — bazar araşdırması, Amazon izləmə, sifarişlər, iddialar, mənfəət alətləri və daha çoxu artıq telefonunuzdadır. iOS versiyası tezliklə gəlir.",
     "features": [
-      "Hər yerdən bazar və məhsul araşdırması",
-      "Sifariş və case-lərin canlı izlənməsi",
-      "Mənfəət kalkulyatoru cibinizdə"
+      "Bazar və məhsul analizi",
+      "Amazon qiymət izləmə",
+      "Sifariş idarəetməsi",
+      "İddia (case) idarəetməsi",
+      "Dizayn Studiyası",
+      "Dewiso mənbə axtarışı"
     ],
     "android": {
       "cta": "Android üçün yüklə (.apk)",

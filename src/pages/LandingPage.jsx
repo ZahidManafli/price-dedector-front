@@ -34,6 +34,7 @@ const CHROME_EXTENSION_URL =
   'https://chromewebstore.google.com/detail/checkila-extension/mokpdmidbgchibehajdblfkjcgcibcbb';
 const TELEGRAM_BOT_URL = 'https://t.me/Checkila_bot';
 const MOBILE_APK_URL = `${API_BASE_URL}/uploads/checkila.apk`;
+const MOBILE_FEATURE_ICONS = [BarChart3, Radar, Truck, ShieldCheck, Sparkles, Puzzle];
 
 function SectionHeader({ eyebrow, title, description, align = 'left' }) {
   const alignClasses = align === 'center' ? 'items-center text-center' : 'items-start text-left';
@@ -875,13 +876,19 @@ export default function LandingPage() {
                   {t('landing:mobileApp.description')}
                 </p>
 
-                <ul className="flex flex-col gap-2.5">
-                  {t('landing:mobileApp.features', { returnObjects: true }).map((feature, index) => (
-                    <li key={index} className="flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-200">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-300" />
-                      {feature}
-                    </li>
-                  ))}
+                <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  {t('landing:mobileApp.features', { returnObjects: true }).map((feature, index) => {
+                    const Icon = MOBILE_FEATURE_ICONS[index] || CheckCircle2;
+                    return (
+                      <li
+                        key={index}
+                        className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
+                      >
+                        <Icon className="h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-300" />
+                        {feature}
+                      </li>
+                    );
+                  })}
                 </ul>
 
                 <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -913,11 +920,10 @@ export default function LandingPage() {
               <div className="flex justify-center md:justify-end">
                 <div className="relative w-48 rounded-[2rem] border-4 border-slate-900 bg-slate-900 p-2 shadow-2xl dark:border-slate-700">
                   <div className="absolute left-1/2 top-2 h-1 w-10 -translate-x-1/2 rounded-full bg-slate-700" />
-                  <div className="flex h-80 w-full flex-col items-center justify-center gap-4 rounded-[1.6rem] bg-gradient-to-br from-cyan-400 via-blue-500 to-slate-900">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
-                      <span className="text-2xl font-bold text-white">C</span>
+                  <div className="flex h-80 w-full flex-col items-center justify-center gap-4 rounded-[1.6rem] bg-gradient-to-br from-cyan-400 via-blue-500 to-slate-900 p-6">
+                    <div className="flex h-28 w-28 items-center justify-center rounded-3xl bg-white p-3 shadow-xl">
+                      <img src="/logo-2.png" alt="Checkila" className="h-full w-full object-contain" />
                     </div>
-                    <span className="text-sm font-semibold text-white/90">Checkila</span>
                   </div>
                 </div>
               </div>
