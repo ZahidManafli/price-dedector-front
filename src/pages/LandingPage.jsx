@@ -17,9 +17,12 @@ import {
   Mail,
   MapPin,
   Truck,
+  Smartphone,
+  Download,
+  Apple,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { partnerAPI, settingsAPI } from '../services/api';
+import { partnerAPI, settingsAPI, API_BASE_URL } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
@@ -30,6 +33,7 @@ import { pathFor, SUPPORTED_LANGS, SEO_PAGES, imageFor } from '../data/seoPages'
 const CHROME_EXTENSION_URL =
   'https://chromewebstore.google.com/detail/checkila-extension/mokpdmidbgchibehajdblfkjcgcibcbb';
 const TELEGRAM_BOT_URL = 'https://t.me/Checkila_bot';
+const MOBILE_APK_URL = `${API_BASE_URL}/uploads/checkila.apk`;
 
 function SectionHeader({ eyebrow, title, description, align = 'left' }) {
   const alignClasses = align === 'center' ? 'items-center text-center' : 'items-start text-left';
@@ -851,6 +855,73 @@ export default function LandingPage() {
                 <ArrowRight size={14} />
               </a>
             </article>
+          </div>
+        </section>
+
+        <section id="mobile-app" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
+          <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-xl shadow-slate-200/60 dark:border-white/10 dark:bg-slate-900/70 dark:shadow-none">
+            <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-cyan-400/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
+
+            <div className="relative grid gap-10 p-8 md:grid-cols-2 md:items-center md:gap-12 md:p-14">
+              <div className="flex flex-col items-start gap-5">
+                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 dark:border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-100">
+                  {t('landing:mobileApp.eyebrow')}
+                </div>
+                <h2 className="max-w-md text-3xl font-semibold tracking-tight text-slate-900 dark:text-white md:text-4xl">
+                  {t('landing:mobileApp.title')}
+                </h2>
+                <p className="max-w-md text-sm leading-7 text-slate-600 dark:text-slate-300 md:text-base">
+                  {t('landing:mobileApp.description')}
+                </p>
+
+                <ul className="flex flex-col gap-2.5">
+                  {t('landing:mobileApp.features', { returnObjects: true }).map((feature, index) => (
+                    <li key={index} className="flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-200">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-300" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <a
+                    href={MOBILE_APK_URL}
+                    download
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:scale-[1.01] hover:from-cyan-300 hover:to-blue-400"
+                  >
+                    <Smartphone size={16} />
+                    {t('landing:mobileApp.android.cta')}
+                    <Download size={14} />
+                  </a>
+
+                  <div
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 px-5 py-3 text-sm font-medium text-slate-400 dark:border-white/15 dark:text-slate-500"
+                    title={t('landing:mobileApp.ios.badge')}
+                  >
+                    <Apple size={16} />
+                    {t('landing:mobileApp.ios.label')}
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-white/10 dark:text-slate-400">
+                      {t('landing:mobileApp.ios.badge')}
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-400 dark:text-slate-500">{t('landing:mobileApp.android.note')}</p>
+              </div>
+
+              <div className="flex justify-center md:justify-end">
+                <div className="relative w-48 rounded-[2rem] border-4 border-slate-900 bg-slate-900 p-2 shadow-2xl dark:border-slate-700">
+                  <div className="absolute left-1/2 top-2 h-1 w-10 -translate-x-1/2 rounded-full bg-slate-700" />
+                  <div className="flex h-80 w-full flex-col items-center justify-center gap-4 rounded-[1.6rem] bg-gradient-to-br from-cyan-400 via-blue-500 to-slate-900">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
+                      <span className="text-2xl font-bold text-white">C</span>
+                    </div>
+                    <span className="text-sm font-semibold text-white/90">Checkila</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 

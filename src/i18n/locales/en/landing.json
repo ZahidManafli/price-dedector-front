@@ -185,6 +185,24 @@
       "cta": "Open in Telegram"
     }
   },
+  "mobileApp": {
+    "eyebrow": "New — Mobile App",
+    "title": "Checkila in your pocket",
+    "description": "Run market research, track profits, and manage orders from your phone. The Android app is ready to download right now — iOS is coming soon.",
+    "features": [
+      "Market & product research on the go",
+      "Live order and case tracking",
+      "Profit calculator in your pocket"
+    ],
+    "android": {
+      "cta": "Download for Android (.apk)",
+      "note": "Direct APK download — no Google Play needed yet"
+    },
+    "ios": {
+      "badge": "Coming soon",
+      "label": "App Store"
+    }
+  },
   "footer": {
     "tagline": "Track Amazon prices, evaluate opportunities, and manage eBay listings — all from one platform.",
     "resourcesTitle": "Resources",

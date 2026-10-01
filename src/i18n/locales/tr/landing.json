@@ -185,6 +185,24 @@
       "cta": "Telegram'da Aç"
     }
   },
+  "mobileApp": {
+    "eyebrow": "Yeni — Mobil Uygulama",
+    "title": "Checkila artık cebinizde",
+    "description": "Pazar araştırması yapın, kârınızı takip edin ve siparişlerinizi telefonunuzdan yönetin. Android uygulaması şimdi indirilebilir — iOS sürümü yakında geliyor.",
+    "features": [
+      "Her yerden pazar ve ürün araştırması",
+      "Sipariş ve vakaların anlık takibi",
+      "Cebinizde kâr hesaplayıcı"
+    ],
+    "android": {
+      "cta": "Android için indir (.apk)",
+      "note": "Doğrudan APK indirme — Google Play henüz gerekmiyor"
+    },
+    "ios": {
+      "badge": "Yakında",
+      "label": "App Store"
+    }
+  },
   "footer": {
     "tagline": "Amazon fiyatlarını takip edin, fırsatları değerlendirin ve eBay ilanlarını tek platformdan yönetin.",
     "resourcesTitle": "Kaynaklar",

@@ -185,6 +185,24 @@
       "cta": "Telegram-da aç"
     }
   },
+  "mobileApp": {
+    "eyebrow": "Yenilik — Mobil Tətbiq",
+    "title": "Checkila artıq cibinizdə",
+    "description": "Bazar araşdırması aparın, mənfəəti izləyin və sifarişləri telefonunuzdan idarə edin. Android tətbiqini indi yükləyə bilərsiniz — iOS versiyası tezliklə gəlir.",
+    "features": [
+      "Hər yerdən bazar və məhsul araşdırması",
+      "Sifariş və case-lərin canlı izlənməsi",
+      "Mənfəət kalkulyatoru cibinizdə"
+    ],
+    "android": {
+      "cta": "Android üçün yüklə (.apk)",
+      "note": "Birbaşa APK yükləmə — Google Play hələ tələb olunmur"
+    },
+    "ios": {
+      "badge": "Tezliklə",
+      "label": "App Store"
+    }
+  },
   "footer": {
     "tagline": "Amazon qiymətlərini izləyin, imkanları qiymətləndirin və eBay-də bir platformadan idarə edin.",
     "resourcesTitle": "Resurslar",
