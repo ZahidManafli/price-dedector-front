@@ -566,6 +566,7 @@ export default function ListingsPage() {
                 isDark={isDark}
               />
             )}
+            <ScheduledListingsPanel isDark={isDark} variant="inline" />
             {typeof total === 'number' ? `${t('listingsPage.total')}: ${total}` : null}
             <span
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-md border ${isDark ? 'border-slate-700 bg-slate-800/60 text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-700'}`}
@@ -1197,8 +1198,6 @@ export default function ListingsPage() {
           onClose={() => setFeedbackListing(null)}
         />
       )}
-
-      {ebayStatus.connected && <ScheduledListingsPanel isDark={isDark} />}
     </div>
   );
 }

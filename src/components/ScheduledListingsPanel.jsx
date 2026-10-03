@@ -11,10 +11,14 @@ const STATUS_META = {
   cancelled: { icon: Ban, colorLight: 'text-slate-500 bg-slate-100 border-slate-200', colorDark: 'text-slate-400 bg-slate-800/50 border-slate-700' },
 };
 
-// Floating icon + drawer that lets a user see and cancel what they've scheduled
-// from the "Planlaşdırılmış Listing" flow in ListOnEbayModal. Self-contained —
+// Trigger + drawer that lets a user see and cancel what they've scheduled from
+// the "Planlaşdırılmış Listing" flow in ListOnEbayModal. Self-contained —
 // fetches its own data, doesn't touch any of ListingsPage's existing state.
-export default function ScheduledListingsPanel({ isDark = false }) {
+// variant="floating" (default) keeps the old fixed bottom-right button;
+// variant="inline" renders a normal pill button instead, meant to sit next to
+// EbayAccountSwitcher in the page header — the floating version used to
+// overlap the pagination controls at the bottom of long listing tables.
+export default function ScheduledListingsPanel({ isDark = false, variant = 'floating' }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
@@ -57,6 +61,31 @@ export default function ScheduledListingsPanel({ isDark = false }) {
   const subText = isDark ? 'text-slate-400' : 'text-slate-500';
 
   if (!open) {
+    if (variant === 'inline') {
+      return (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          title={t('scheduledListingsPanel.floatingButton')}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold border transition-colors ${
+            isDark
+              ? 'border-indigo-800 bg-indigo-950/40 text-indigo-300 hover:bg-indigo-900/50'
+              : 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+          }`}
+        >
+          <CalendarClock size={16} />
+          <span>{t('scheduledListingsPanel.floatingButton')}</span>
+          {pendingCount > 0 && (
+            <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold leading-none ${
+              isDark ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white'
+            }`}>
+              {pendingCount}
+            </span>
+          )}
+        </button>
+      );
+    }
+
     return (
       <button
         type="button"
