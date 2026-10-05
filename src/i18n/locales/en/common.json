@@ -1084,7 +1084,7 @@
     "uploading": "Uploading…",
     "autoBuildButton": "✨ Auto-build from Amazon",
     "autoBuildTitle": "Auto-build from Amazon link",
-    "autoBuildHint": "Paste an Amazon product link. We'll pull {{count}} image(s) from it, re-host them on eBay, and rewrite the title/description with AI into the selected template.",
+    "autoBuildHint": "Paste an Amazon product link. We'll pull {{count}} image(s) from it, re-host them on eBay, and rewrite the title/description with AI into the selected template. Limited to 20 uses per day.",
     "autoBuildSubmit": "Build",
     "autoBuildWorking": "Building…",
     "autoBuildSuccess": "Listing auto-built from Amazon",

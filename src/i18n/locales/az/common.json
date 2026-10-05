@@ -1025,7 +1025,7 @@
     "uploading": "Yüklənir…",
     "autoBuildButton": "✨ Amazon-dan Avtomatik Qur",
     "autoBuildTitle": "Amazon linkindən avtomatik qurulma",
-    "autoBuildHint": "Amazon məhsul linkini yapışdırın. Oradan {{count}} şəkil götürüləcək, eBay-ə yüklənəcək və başlıq/təsvir süni intellekt ilə seçilmiş template-ə yazılacaq.",
+    "autoBuildHint": "Amazon məhsul linkini yapışdırın. Oradan {{count}} şəkil götürüləcək, eBay-ə yüklənəcək və başlıq/təsvir süni intellekt ilə seçilmiş template-ə yazılacaq. Gündə maksimum 20 dəfə istifadə oluna bilər.",
     "autoBuildSubmit": "Qur",
     "autoBuildWorking": "Qurulur…",
     "autoBuildSuccess": "Listing Amazon-dan avtomatik quruldu",

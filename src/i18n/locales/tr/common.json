@@ -1025,7 +1025,7 @@
     "uploading": "Yükleniyor…",
     "autoBuildButton": "✨ Amazon'dan Otomatik Oluştur",
     "autoBuildTitle": "Amazon bağlantısından otomatik oluşturma",
-    "autoBuildHint": "Bir Amazon ürün bağlantısı yapıştırın. Oradan {{count}} görsel alınacak, eBay'e yüklenecek ve başlık/açıklama yapay zeka ile seçili şablona yazılacak.",
+    "autoBuildHint": "Bir Amazon ürün bağlantısı yapıştırın. Oradan {{count}} görsel alınacak, eBay'e yüklenecek ve başlık/açıklama yapay zeka ile seçili şablona yazılacak. Günde en fazla 20 kez kullanılabilir.",
     "autoBuildSubmit": "Oluştur",
     "autoBuildWorking": "Oluşturuluyor…",
     "autoBuildSuccess": "İlan Amazon'dan otomatik oluşturuldu",
