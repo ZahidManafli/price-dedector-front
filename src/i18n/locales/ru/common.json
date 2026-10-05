@@ -1023,7 +1023,7 @@
     "uploadHtml": "Загрузить HTML",
     "uploadImages": "Загрузить изображения",
     "uploading": "Загрузка…",
-    "autoBuildButton": "✨ Автосборка из Amazon (Админ)",
+    "autoBuildButton": "✨ Автосборка из Amazon",
     "autoBuildTitle": "Автосборка по ссылке Amazon",
     "autoBuildHint": "Вставьте ссылку на товар Amazon. Будет взято {{count}} изображение(й), загружено на eBay, а заголовок/описание переписаны ИИ в выбранный шаблон.",
     "autoBuildSubmit": "Собрать",

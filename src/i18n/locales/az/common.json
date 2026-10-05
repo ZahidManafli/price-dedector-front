@@ -1023,7 +1023,7 @@
     "uploadHtml": "HTML yüklə",
     "uploadImages": "Şəkilləri yüklə",
     "uploading": "Yüklənir…",
-    "autoBuildButton": "✨ Amazon-dan Avtomatik Qur (Admin)",
+    "autoBuildButton": "✨ Amazon-dan Avtomatik Qur",
     "autoBuildTitle": "Amazon linkindən avtomatik qurulma",
     "autoBuildHint": "Amazon məhsul linkini yapışdırın. Oradan {{count}} şəkil götürüləcək, eBay-ə yüklənəcək və başlıq/təsvir süni intellekt ilə seçilmiş template-ə yazılacaq.",
     "autoBuildSubmit": "Qur",

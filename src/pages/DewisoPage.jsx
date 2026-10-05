@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { dewisoAPI } from '../services/api';
 import Alert from '../components/Alert';
 import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext';
 import { Sparkles, X, Loader2 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -1141,8 +1140,6 @@ function FloatingToolbar({ iframeRef }) {
 export default function DewisoPage() {
   const { isDark } = useTheme();
   const { t } = useTranslation('common');
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
 
   // Layout & colours
   const [layout, setLayout] = useState('one_col');
@@ -1517,18 +1514,16 @@ export default function DewisoPage() {
                 </button>
               ))}
             </div>
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={() => setAutoBuildOpen(true)}
-                className={`mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition ${
-                  isDark ? 'bg-indigo-950/50 text-indigo-300 border border-indigo-800 hover:bg-indigo-900/50' : 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100'
-                }`}
-              >
-                <Sparkles size={14} />
-                {t('dewisoPage.autoBuildButton')}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setAutoBuildOpen(true)}
+              className={`mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition ${
+                isDark ? 'bg-indigo-950/50 text-indigo-300 border border-indigo-800 hover:bg-indigo-900/50' : 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100'
+              }`}
+            >
+              <Sparkles size={14} />
+              {t('dewisoPage.autoBuildButton')}
+            </button>
           </div>
 
           <div className={`border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`} />
