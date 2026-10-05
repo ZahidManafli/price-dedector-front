@@ -144,7 +144,6 @@ const CHECKILA_TEMPLATES = [
         <div id="description-part" class="col-12 col-md-6" style="color:#1a1a1a;">
           <h2 style="font-family:Georgia,serif;font-size:1.3rem;color:#0a0a0a;margin-bottom:12px;">Why Buyers Love This</h2>
           <p style="font-size:0.95rem;line-height:1.7;color:#444;margin-bottom:16px;">Every detail has been perfected over years of refinement. This isn't just a product — it's an investment in quality that pays dividends every single day you own it.</p>
-          <div style="border-left:3px solid #c9a84c;padding-left:16px;margin:16px 0;font-style:italic;color:#666;font-size:0.9rem;">"Exceeded every expectation. The quality is immediately obvious. Worth every penny." — Verified Buyer</div>
           <ul style="list-style:none;padding:0;margin:0;font-size:0.9rem;">
             <li style="padding:7px 0;border-bottom:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>Superior Materials:</strong> Only the finest, most durable materials used.</span></li>
             <li style="padding:7px 0;border-bottom:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>Expert Craftsmanship:</strong> Hand-inspected before every shipment.</span></li>
@@ -232,9 +231,6 @@ const CHECKILA_TEMPLATES = [
             <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#0f3460;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">2</span><span><strong>Fast Tracked Delivery</strong> — know exactly where your order is.</span></div>
             <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#0f3460;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">3</span><span><strong>Risk-Free Purchase</strong> — not satisfied? We fix it, no questions.</span></div>
           </div>
-          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 16px;font-size:0.82rem;color:#0c4a6e;line-height:1.5;">
-            💬 <em>"I was skeptical at first but this completely blew me away. Faster than expected, better than described!"</em><br/><strong>— Sarah M., Verified Buyer ⭐⭐⭐⭐⭐</strong>
-          </div>
         </div>
       </div>
     </div>
@@ -308,9 +304,6 @@ const CHECKILA_TEMPLATES = [
             <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Quick Delivery</strong> — dispatched promptly with full tracking.</div></div>
             <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Hassle-Free Returns</strong> — we stand behind everything we sell.</div></div>
             <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Trusted Seller</strong> — thousands of 5-star transactions.</div></div>
-          </div>
-          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #059669;border-radius:8px;padding:14px 16px;font-size:0.82rem;color:#064e3b;line-height:1.6;">
-            💬 <em>"Arrived quickly, well packaged and exactly as described. Already recommended to friends!"</em><br/><strong style="color:#065f46;">— James T. ⭐⭐⭐⭐⭐ Verified Purchase</strong>
           </div>
         </div>
       </div>
@@ -388,7 +381,6 @@ const TWO_IMAGE_TEMPLATES = [
       <div id="description-part" style="color:#1a1a1a;">
         <h2 style="font-family:Georgia,serif;font-size:1.3rem;color:#0a0a0a;margin-bottom:12px;">Why Buyers Love This</h2>
         <p style="font-size:0.95rem;line-height:1.7;color:#444;margin-bottom:16px;">Every detail has been perfected over years of refinement. This isn't just a product — it's an investment in quality that pays dividends every single day you own it.</p>
-        <div style="border-left:3px solid #c9a84c;padding-left:16px;margin:16px 0;font-style:italic;color:#666;font-size:0.9rem;">"Exceeded every expectation. The quality is immediately obvious. Worth every penny." — Verified Buyer</div>
         <ul style="list-style:none;padding:0;margin:0;font-size:0.9rem;display:grid;grid-template-columns:1fr 1fr;gap:6px;">
           <li style="padding:7px 0;border-bottom:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>Superior Materials</strong></span></li>
           <li style="padding:7px 0;border-bottom:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>Expert Craftsmanship</strong></span></li>
@@ -471,9 +463,6 @@ const TWO_IMAGE_TEMPLATES = [
           <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#0f3460;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">3</span><span><strong>Risk-Free Purchase</strong></span></div>
           <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#e94560;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">4</span><span><strong>Buyer Protection</strong></span></div>
         </div>
-        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 16px;font-size:0.82rem;color:#0c4a6e;line-height:1.5;">
-          💬 <em>"I was skeptical at first but this completely blew me away. Faster than expected, better than described!"</em><br/><strong>— Sarah M., Verified Buyer ⭐⭐⭐⭐⭐</strong>
-        </div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
@@ -545,9 +534,6 @@ const TWO_IMAGE_TEMPLATES = [
           <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Quick Delivery</strong></div></div>
           <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Hassle-Free Returns</strong></div></div>
           <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Trusted Seller</strong></div></div>
-        </div>
-        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #059669;border-radius:8px;padding:14px 16px;font-size:0.82rem;color:#064e3b;line-height:1.6;">
-          💬 <em>"Arrived quickly, well packaged and exactly as described. Already recommended to friends!"</em><br/><strong style="color:#065f46;">— James T. ⭐⭐⭐⭐⭐ Verified Purchase</strong>
         </div>
       </div>
     </div>
@@ -629,7 +615,6 @@ const THREE_IMAGE_TEMPLATES = [
       <div id="description-part" style="color:#1a1a1a;">
         <h2 style="font-family:Georgia,serif;font-size:1.3rem;color:#0a0a0a;margin-bottom:12px;">Why Buyers Love This</h2>
         <p style="font-size:0.95rem;line-height:1.7;color:#444;margin-bottom:16px;">Every detail has been perfected over years of refinement. This isn't just a product — it's an investment in quality that pays dividends every single day you own it.</p>
-        <div style="border-left:3px solid #c9a84c;padding-left:16px;margin:16px 0;font-style:italic;color:#666;font-size:0.9rem;">"Exceeded every expectation. The quality is immediately obvious. Worth every penny." — Verified Buyer</div>
         <ul style="list-style:none;padding:0;margin:0;font-size:0.9rem;">
           <li style="padding:7px 0;border-bottom:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>Superior Materials:</strong> Only the finest, most durable materials used.</span></li>
           <li style="padding:7px 0;border-bottom:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-start;"><span style="color:#c9a84c;font-weight:700;flex-shrink:0;">✦</span><span><strong>Expert Craftsmanship:</strong> Hand-inspected before every shipment.</span></li>
@@ -715,9 +700,6 @@ const THREE_IMAGE_TEMPLATES = [
           <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#0f3460;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">2</span><span><strong>Fast Tracked Delivery</strong> — know exactly where your order is.</span></div>
           <div style="display:flex;align-items:center;gap:10px;font-size:0.88rem;"><span style="background:#0f3460;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">3</span><span><strong>Risk-Free Purchase</strong> — not satisfied? We fix it, no questions.</span></div>
         </div>
-        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 16px;font-size:0.82rem;color:#0c4a6e;line-height:1.5;">
-          💬 <em>"I was skeptical at first but this completely blew me away. Faster than expected, better than described!"</em><br/><strong>— Sarah M., Verified Buyer ⭐⭐⭐⭐⭐</strong>
-        </div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
@@ -790,9 +772,6 @@ const THREE_IMAGE_TEMPLATES = [
           <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Quick Delivery</strong> — dispatched promptly with full tracking.</div></div>
           <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Hassle-Free Returns</strong> — we stand behind everything we sell.</div></div>
           <div style="display:flex;gap:10px;align-items:flex-start;font-size:0.88rem;"><span style="color:#059669;font-size:16px;flex-shrink:0;line-height:1;">✓</span><div><strong>Trusted Seller</strong> — thousands of 5-star transactions.</div></div>
-        </div>
-        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #059669;border-radius:8px;padding:14px 16px;font-size:0.82rem;color:#064e3b;line-height:1.6;">
-          💬 <em>"Arrived quickly, well packaged and exactly as described. Already recommended to friends!"</em><br/><strong style="color:#065f46;">— James T. ⭐⭐⭐⭐⭐ Verified Purchase</strong>
         </div>
       </div>
     </div>
