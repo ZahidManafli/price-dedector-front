@@ -417,6 +417,7 @@ export const dewisoAPI = {
     api.post('/dewiso/images/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
+  autoBuild: ({ amazonUrl, imageCount }) => api.post('/dewiso/auto-build', { amazonUrl, imageCount }),
 };
 
 // Admin APIs

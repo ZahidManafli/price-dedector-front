@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { dewisoAPI } from '../services/api';
 import Alert from '../components/Alert';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { Sparkles, X, Loader2 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────────────────────────
    DEFAULT HTML TEMPLATE
@@ -1160,6 +1162,8 @@ function FloatingToolbar({ iframeRef }) {
 export default function DewisoPage() {
   const { isDark } = useTheme();
   const { t } = useTranslation('common');
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   // Layout & colours
   const [layout, setLayout] = useState('one_col');
@@ -1184,6 +1188,13 @@ export default function DewisoPage() {
   // Images
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadedImages, setUploadedImages] = useState([]);
+
+  // Admin-only: auto-build a listing from an Amazon link into the currently
+  // selected template
+  const [autoBuildOpen, setAutoBuildOpen] = useState(false);
+  const [autoBuildUrl, setAutoBuildUrl] = useState('');
+  const [autoBuildLoading, setAutoBuildLoading] = useState(false);
+  const [autoBuildError, setAutoBuildError] = useState('');
 
   // Alert
   const [alert, setAlert] = useState(null);
@@ -1399,6 +1410,49 @@ export default function DewisoPage() {
     }));
   };
 
+  // Maps the active template-gallery tab to how many image slots that
+  // template has — the backend uses this to know exactly how many Amazon
+  // images to pull/re-host (see routes/dewiso.js's POST /auto-build).
+  const autoBuildImageCount = templateTab === '1img' ? 1 : templateTab === '2img' ? 2 : 3;
+
+  const handleAutoBuild = async () => {
+    const amazonUrl = autoBuildUrl.trim();
+    if (!amazonUrl) return;
+
+    setAutoBuildLoading(true);
+    setAutoBuildError('');
+    try {
+      const res = await dewisoAPI.autoBuild({ amazonUrl, imageCount: autoBuildImageCount });
+      const { title, description, images } = res?.data || {};
+
+      const doc = iframeRef.current?.contentDocument;
+      if (!doc) throw new Error('Editor is not ready yet');
+
+      const titleEl = doc.querySelector('#title-part h1');
+      if (titleEl && title) titleEl.textContent = title;
+
+      const descriptionEl = doc.querySelector('#description-part p');
+      if (descriptionEl && description) descriptionEl.textContent = description;
+
+      const imageEls = doc.querySelectorAll('#image-gallery img');
+      imageEls.forEach((img, index) => {
+        const url = images?.[index];
+        if (!url) return;
+        img.src = url;
+        if (title) img.alt = title;
+      });
+
+      setBodyHtml(doc.body.innerHTML);
+      setAutoBuildOpen(false);
+      setAutoBuildUrl('');
+      setAlert({ type: 'success', message: t('dewisoPage.autoBuildSuccess') });
+    } catch (err) {
+      setAutoBuildError(err?.response?.data?.error || err.message || t('dewisoPage.autoBuildFailed'));
+    } finally {
+      setAutoBuildLoading(false);
+    }
+  };
+
   const copyText = async (value) => {
     try {
       await navigator.clipboard.writeText(String(value || '').trim());
@@ -1484,6 +1538,18 @@ export default function DewisoPage() {
                 </button>
               ))}
             </div>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setAutoBuildOpen(true)}
+                className={`mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition ${
+                  isDark ? 'bg-indigo-950/50 text-indigo-300 border border-indigo-800 hover:bg-indigo-900/50' : 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100'
+                }`}
+              >
+                <Sparkles size={14} />
+                {t('dewisoPage.autoBuildButton')}
+              </button>
+            )}
           </div>
 
           <div className={`border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`} />
@@ -1694,6 +1760,63 @@ export default function DewisoPage() {
           />
         </div>
       </div>
+
+      {autoBuildOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className={`w-full max-w-md rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className={`text-sm font-semibold flex items-center gap-1.5 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                <Sparkles size={15} className="text-indigo-500" />
+                {t('dewisoPage.autoBuildTitle')}
+              </h2>
+              <button
+                type="button"
+                onClick={() => { setAutoBuildOpen(false); setAutoBuildError(''); }}
+                className={isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-700'}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <p className={`text-xs mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              {t('dewisoPage.autoBuildHint', { count: autoBuildImageCount })}
+            </p>
+
+            <input
+              type="text"
+              value={autoBuildUrl}
+              onChange={(e) => setAutoBuildUrl(e.target.value)}
+              placeholder="https://www.amazon.com/dp/..."
+              disabled={autoBuildLoading}
+              className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 ${
+                isDark ? 'bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500' : 'bg-white border-slate-300 text-slate-900'
+              }`}
+            />
+
+            {autoBuildError && <p className="text-xs text-red-500 mt-2">{autoBuildError}</p>}
+
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                type="button"
+                className="btn-secondary text-xs"
+                onClick={() => { setAutoBuildOpen(false); setAutoBuildError(''); }}
+                disabled={autoBuildLoading}
+              >
+                {t('dewisoPage.cancel')}
+              </button>
+              <button
+                type="button"
+                className="btn-primary text-xs flex items-center gap-1.5"
+                onClick={handleAutoBuild}
+                disabled={autoBuildLoading || !autoBuildUrl.trim()}
+              >
+                {autoBuildLoading && <Loader2 size={13} className="animate-spin" />}
+                {autoBuildLoading ? t('dewisoPage.autoBuildWorking') : t('dewisoPage.autoBuildSubmit')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
