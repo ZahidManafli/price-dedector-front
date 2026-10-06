@@ -26,6 +26,23 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
+// Same field + aliases ListOnEbayModal.jsx checks for "Country/Region of
+// Manufacture" — kept in sync so this behaves identically there.
+const ITEM_ORIGIN_SPEC_ALIASES = new Set([
+  'country/region of manufacture',
+  'country of manufacture',
+  'region of manufacture',
+  'country of origin',
+  'item origin',
+]);
+const ITEM_ORIGIN_SPEC_NAME = 'Country/Region of Manufacture';
+const COUNTRY_OPTIONS = [
+  'United States', 'China', 'United Kingdom', 'Canada', 'Germany', 'France', 'Italy',
+  'Spain', 'Japan', 'South Korea', 'India', 'Vietnam', 'Mexico', 'Turkey', 'Australia',
+  'Netherlands', 'Poland', 'Bangladesh', 'Indonesia', 'Thailand', 'Taiwan', 'Cambodia',
+  'Portugal', 'Brazil', 'Switzerland', 'Unknown',
+];
+
 function useDebouncedAutoLookup({ amazonAsin, autoLookupEnabled, onLookup }) {
   const lastLookedUp = useRef(null);
 
@@ -72,6 +89,8 @@ export default function AmazonLookupPage() {
 
   // Single-result "List on eBay" (the existing instant-preview card above)
   const [singleListingState, setSingleListingState] = useState(null); // { status, message, itemId, listingUrl, prepared }
+  const [editableListing, setEditableListing] = useState(null); // user-editable copy of prepared.listingInput while awaiting confirmation
+  const [newImageUrl, setNewImageUrl] = useState('');
 
   // Bulk auto-listing (paste multiple Amazon links)
   const [bulkLinksText, setBulkLinksText] = useState('');
@@ -395,24 +414,33 @@ export default function AmazonLookupPage() {
       onPhaseChange: (phase) => setSingleListingState((prev) => ({ ...prev, phase })),
     });
     setSingleListingState((prev) => ({ ...prev, ...outcome }));
-    if (outcome.status === 'listed') {
+    if (outcome.status === 'awaiting_confirmation') {
+      setEditableListing(outcome.prepared?.listingInput || null);
+    } else if (outcome.status === 'listed') {
       setAlert({ type: 'success', message: t('amazonLookupPage.listingCreated') });
     } else if (outcome.status === 'error') {
       setAlert({ type: 'error', message: outcome.message });
     }
   }, [amazonAsin, result, runAutoListPipeline, t]);
 
+  const closeListingModal = useCallback(() => {
+    setSingleListingState(null);
+    setEditableListing(null);
+    setNewImageUrl('');
+  }, []);
+
   const confirmSingleListing = useCallback(async () => {
     if (!singleListingState?.prepared) return;
     setSingleListingState((prev) => ({ ...prev, status: 'preparing', phase: 'confirm' }));
-    const outcome = await confirmPreparedListing(singleListingState.asin, singleListingState.prepared);
+    const preparedWithEdits = { ...singleListingState.prepared, listingInput: editableListing || singleListingState.prepared.listingInput };
+    const outcome = await confirmPreparedListing(singleListingState.asin, preparedWithEdits);
     setSingleListingState((prev) => ({ ...prev, ...outcome }));
     if (outcome.status === 'listed') {
       setAlert({ type: 'success', message: t('amazonLookupPage.listingCreated') });
     } else if (outcome.status === 'error') {
       setAlert({ type: 'error', message: outcome.message });
     }
-  }, [confirmPreparedListing, singleListingState, t]);
+  }, [confirmPreparedListing, editableListing, singleListingState, t]);
 
   const handleBulkAutoList = useCallback(async () => {
     const lines = bulkLinksText
@@ -895,7 +923,7 @@ export default function AmazonLookupPage() {
                         setResult(null);
                         setActiveImageIdx(0);
                         setAlert(null);
-                        setSingleListingState(null);
+                        closeListingModal();
                       }}
                       className="btn-secondary"
                     >
@@ -1117,7 +1145,7 @@ export default function AmazonLookupPage() {
                 {singleListingState.status !== 'preparing' && (
                   <button
                     type="button"
-                    onClick={() => setSingleListingState(null)}
+                    onClick={closeListingModal}
                     className={`rounded-full p-1.5 transition ${isDark ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-200' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'}`}
                   >
                     <X size={18} />
@@ -1140,18 +1168,35 @@ export default function AmazonLookupPage() {
                       <XCircle size={16} className="shrink-0 mt-0.5 text-red-500" />
                       <p className="text-sm text-red-600 dark:text-red-300">{singleListingState.message}</p>
                     </div>
-                    <button type="button" onClick={() => setSingleListingState(null)} className="btn-secondary text-xs mt-4">
+                    <button type="button" onClick={closeListingModal} className="btn-secondary text-xs mt-4">
                       {t('amazonLookupPage.cancel')}
                     </button>
                   </div>
                 )}
 
-                {isPreview && (() => {
-                  const li = singleListingState.prepared?.listingInput || {};
+                {isPreview && editableListing && (() => {
+                  const li = editableListing;
                   const pictureUrls = Array.isArray(li.pictureUrls) ? li.pictureUrls : [];
                   const specEntries = li.itemSpecifics && typeof li.itemSpecifics === 'object' ? Object.entries(li.itemSpecifics) : [];
                   const policies = singleListingState.prepared?.policies || {};
                   const referenceFound = !!singleListingState.prepared?.referenceListingUrl;
+
+                  const updateField = (field, value) => setEditableListing((prev) => ({ ...prev, [field]: value }));
+                  const updateSpec = (name, value) =>
+                    setEditableListing((prev) => ({ ...prev, itemSpecifics: { ...prev.itemSpecifics, [name]: value } }));
+                  const removeImage = (idx) =>
+                    setEditableListing((prev) => ({ ...prev, pictureUrls: prev.pictureUrls.filter((_, i) => i !== idx) }));
+                  const addImageByUrl = () => {
+                    const url = newImageUrl.trim();
+                    if (!url) return;
+                    setEditableListing((prev) => ({ ...prev, pictureUrls: [...(prev.pictureUrls || []), url].slice(0, 24) }));
+                    setNewImageUrl('');
+                  };
+
+                  const inputCls = `w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/40 ${
+                    isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+                  }`;
+
                   return (
                     <div className={`mt-5 pt-5 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                       <div
@@ -1184,6 +1229,14 @@ export default function AmazonLookupPage() {
                               <span className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
                                 {t('amazonLookupPage.coverImageBadge')}
                               </span>
+                              <button
+                                type="button"
+                                onClick={() => removeImage(0)}
+                                className="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white rounded-full p-1"
+                                title={t('amazonLookupPage.removeImage')}
+                              >
+                                <X size={12} />
+                              </button>
                             </div>
                           )}
                           {pictureUrls.length > 1 && (
@@ -1191,13 +1244,32 @@ export default function AmazonLookupPage() {
                               {pictureUrls.slice(1).map((url, idx) => (
                                 <div
                                   key={`${url}-${idx}`}
-                                  className={`flex-none w-14 h-14 rounded-md overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-white'}`}
+                                  className={`relative group flex-none w-14 h-14 rounded-md overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-white'}`}
                                 >
                                   <img src={url} alt={`${li.title || ''} ${idx + 2}`} className="w-full h-full object-contain" />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeImage(idx + 1)}
+                                    className="absolute inset-0 bg-black/0 group-hover:bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                                    title={t('amazonLookupPage.removeImage')}
+                                  >
+                                    <X size={14} className="text-white" />
+                                  </button>
                                 </div>
                               ))}
                             </div>
                           )}
+                          <div className="flex gap-1.5">
+                            <input
+                              value={newImageUrl}
+                              onChange={(e) => setNewImageUrl(e.target.value)}
+                              placeholder={t('amazonLookupPage.addImageUrlPlaceholder')}
+                              className={`flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300'}`}
+                            />
+                            <button type="button" onClick={addImageByUrl} className="btn-secondary text-xs px-2.5">
+                              {t('amazonLookupPage.addImage')}
+                            </button>
+                          </div>
                           <p className={`text-xs text-center ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                             {t('amazonLookupPage.previewGalleryTitle', { count: pictureUrls.length })}
                           </p>
@@ -1206,31 +1278,70 @@ export default function AmazonLookupPage() {
                         {/* Details */}
                         <div className="md:col-span-3 space-y-4 min-w-0">
                           <div>
-                            <p className={`font-semibold text-sm leading-snug ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{li.title}</p>
+                            <label className={`block text-xs font-semibold uppercase tracking-wide mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                              {t('amazonLookupPage.previewTitleLabel')}
+                            </label>
+                            <input
+                              value={li.title || ''}
+                              onChange={(e) => updateField('title', e.target.value.slice(0, 80))}
+                              maxLength={80}
+                              className={inputCls}
+                            />
                           </div>
 
                           <div className="grid grid-cols-2 gap-3">
-                            <div className={`rounded-lg border px-3 py-2 ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
-                              <p className={`text-[11px] uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                            <div>
+                              <label className={`block text-[11px] uppercase tracking-wide mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                 {t('amazonLookupPage.previewPriceLabel')}
-                              </p>
-                              <p className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>${Number(li.price || 0).toFixed(2)}</p>
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={li.price}
+                                onChange={(e) => updateField('price', Number(e.target.value))}
+                                className={inputCls}
+                              />
                             </div>
-                            <div className={`rounded-lg border px-3 py-2 ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
-                              <p className={`text-[11px] uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                            <div>
+                              <label className={`block text-[11px] uppercase tracking-wide mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                 {t('amazonLookupPage.previewStockLabel')}
-                              </p>
-                              <p className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{li.quantity}</p>
+                              </label>
+                              <input
+                                type="number"
+                                min="1"
+                                value={li.quantity}
+                                onChange={(e) => updateField('quantity', Math.max(1, Number(e.target.value) || 1))}
+                                className={inputCls}
+                              />
                             </div>
                           </div>
 
                           <div>
-                            <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                              {t('amazonLookupPage.previewDescriptionTitle')}
-                            </p>
-                            <p className={`text-sm leading-relaxed max-h-24 overflow-y-auto ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                              {li.description}
-                            </p>
+                            <div className="flex items-center justify-between mb-1">
+                              <p className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                {t('amazonLookupPage.previewDescriptionTitle')}
+                              </p>
+                              {li.useRawDewisoHtml && (
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full ${isDark ? 'bg-indigo-950/50 text-indigo-300' : 'bg-indigo-50 text-indigo-700'}`}>
+                                  {t('amazonLookupPage.dewisoTemplateBadge')}
+                                </span>
+                              )}
+                            </div>
+                            {li.useRawDewisoHtml ? (
+                              <iframe
+                                title="description-preview"
+                                srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:system-ui,sans-serif;margin:0;padding:10px;font-size:13px;}</style></head><body>${li.description || ''}</body></html>`}
+                                className={`w-full h-48 rounded-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}
+                              />
+                            ) : (
+                              <textarea
+                                value={li.description || ''}
+                                onChange={(e) => updateField('description', e.target.value)}
+                                rows={4}
+                                className={`${inputCls} resize-none`}
+                              />
+                            )}
                           </div>
 
                           {specEntries.length > 0 && (
@@ -1238,13 +1349,31 @@ export default function AmazonLookupPage() {
                               <p className={`text-xs font-semibold uppercase tracking-wide mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                 {t('amazonLookupPage.previewSpecificsTitle')}
                               </p>
-                              <div
-                                className={`rounded-lg border divide-y text-xs max-h-32 overflow-y-auto ${isDark ? 'border-slate-700 divide-slate-800' : 'border-slate-200 divide-slate-100'}`}
-                              >
+                              <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
                                 {specEntries.map(([name, value]) => (
-                                  <div key={name} className="flex justify-between gap-3 px-2.5 py-1.5">
-                                    <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{name}</span>
-                                    <span className={`text-right ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{value}</span>
+                                  <div key={name} className="grid grid-cols-5 gap-2 items-center">
+                                    <span className={`col-span-2 text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`} title={name}>
+                                      {name}
+                                    </span>
+                                    {ITEM_ORIGIN_SPEC_ALIASES.has(name.trim().toLowerCase()) ? (
+                                      <select
+                                        value={value}
+                                        onChange={(e) => updateSpec(name, e.target.value)}
+                                        className={`col-span-3 rounded-md border px-2 py-1 text-xs ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300'}`}
+                                      >
+                                        {COUNTRY_OPTIONS.map((c) => (
+                                          <option key={c} value={c}>
+                                            {c}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    ) : (
+                                      <input
+                                        value={value}
+                                        onChange={(e) => updateSpec(name, e.target.value)}
+                                        className={`col-span-3 rounded-md border px-2 py-1 text-xs ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300'}`}
+                                      />
+                                    )}
                                   </div>
                                 ))}
                               </div>
@@ -1278,7 +1407,7 @@ export default function AmazonLookupPage() {
                       </div>
 
                       <div className={`flex justify-end gap-2 mt-6 pt-4 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                        <button type="button" onClick={() => setSingleListingState(null)} className="btn-secondary text-sm px-4 py-2">
+                        <button type="button" onClick={closeListingModal} className="btn-secondary text-sm px-4 py-2">
                           {t('amazonLookupPage.cancel')}
                         </button>
                         <button type="button" onClick={confirmSingleListing} className="btn-primary text-sm px-4 py-2 inline-flex items-center gap-1.5">
