@@ -522,6 +522,7 @@
     "quotaResets": "(sıfırlanır: {{date}})",
     "instantResultsTitle": "Ani Nəticələr",
     "instantResultsDesc": "Amazon ASIN daxil edin və tətbiq qiyməti, şəkilləri və təsviri çıxarsın.",
+    "emptyStateHint": "Başlamaq üçün yuxarıya Amazon linki və ya ASIN yapışdırın.",
     "imageGalleryTitle": "Şəkil Qalereyası",
     "imageGalleryDesc": "Saxlamadan və ya müqayisə etmədən əvvəl fərqli məhsul şəkilləri seçin.",
     "priceInSecondsTitle": "Saniyələr İçində Qiymət",

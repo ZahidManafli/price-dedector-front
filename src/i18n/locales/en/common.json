@@ -728,6 +728,7 @@
     "quotaResets": "(resets {{date}})",
     "instantResultsTitle": "Instant Results",
     "instantResultsDesc": "Enter an Amazon ASIN and the app extracts price, images, and description.",
+    "emptyStateHint": "Paste an Amazon link or ASIN above to get started.",
     "imageGalleryTitle": "Image Gallery",
     "imageGalleryDesc": "Choose different product images before saving or comparing.",
     "priceInSecondsTitle": "Price in Seconds",

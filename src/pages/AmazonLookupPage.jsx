@@ -23,6 +23,10 @@ import {
   CheckCircle2,
   XCircle,
   Sparkles,
+  TrendingUp as TrendingUpIcon,
+  BrainCircuit,
+  History,
+  PackageSearch,
 } from 'lucide-react';
 
 // Same field + aliases ListOnEbayModal.jsx checks for "Country/Region of
@@ -522,161 +526,181 @@ export default function AmazonLookupPage() {
 
   return (
     <div className="page-shell">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-5 flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-          <div>
-            <h1 className="page-title">{t('amazonLookupPage.title')}</h1>
-            <p className="page-subtitle">
-              {t('amazonLookupPage.subtitle')}
-            </p>
-          </div>
+      <div className="max-w-6xl mx-auto space-y-5">
+        {/* Hero header */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-blue-600 to-blue-700 p-6 md:p-8 text-white shadow-xl shadow-blue-900/10">
+          <div className="pointer-events-none absolute -top-16 -right-10 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-black/10 blur-3xl" />
+          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
+                <BrainCircuit size={26} />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('amazonLookupPage.title')}</h1>
+                <p className="text-sm text-blue-100 mt-1 max-w-md">{t('amazonLookupPage.subtitle')}</p>
+              </div>
+            </div>
 
-          <div className="flex items-center gap-3 text-sm">
-            <label className="flex items-center gap-2 select-none cursor-pointer">
-              <input
-                type="checkbox"
-                checked={autoLookupEnabled}
-                onChange={(e) => setAutoLookupEnabled(e.target.checked)}
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-              />
-              <span className="text-slate-700">{t('amazonLookupPage.autoLookup')}</span>
-            </label>
-            {ebayStatus.connected && (
-              <button
-                type="button"
-                onClick={openSettingsModal}
-                className="btn-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs"
-                title={t('amazonLookupPage.autoListSettings')}
-              >
-                <SettingsIcon size={14} />
-                {t('amazonLookupPage.autoListSettings')}
-              </button>
-            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              <label className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/15 px-3 py-2.5 text-sm cursor-pointer select-none backdrop-blur transition">
+                <input
+                  type="checkbox"
+                  checked={autoLookupEnabled}
+                  onChange={(e) => setAutoLookupEnabled(e.target.checked)}
+                  className="h-4 w-4 rounded accent-white"
+                />
+                {t('amazonLookupPage.autoLookup')}
+              </label>
+              {ebayStatus.connected && (
+                <button
+                  type="button"
+                  onClick={openSettingsModal}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 hover:bg-white/20 px-3 py-2.5 text-sm backdrop-blur transition"
+                  title={t('amazonLookupPage.autoListSettings')}
+                >
+                  <SettingsIcon size={14} />
+                  {t('amazonLookupPage.autoListSettings')}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
         {alert && (
-          <div className="mb-4">
-            <Alert
-              type={alert.type}
-              message={alert.message}
-              onClose={() => setAlert(null)}
-              autoClose={false}
-            />
-          </div>
+          <Alert
+            type={alert.type}
+            message={alert.message}
+            onClose={() => setAlert(null)}
+            autoClose={false}
+          />
         )}
 
         <div
-          className={`glass-card overflow-hidden relative ${isDark ? 'bg-slate-950 border-slate-800' : ''}`}
+          className={`rounded-2xl border shadow-sm overflow-hidden relative ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}
           data-tour="amazon-lookup-search"
         >
-          <div className="p-4 md:p-5 bg-gradient-to-r from-slate-900 to-blue-900 text-white">
-            <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
-              <div className="flex-1">
-                <div className="text-xs text-blue-100 flex items-center gap-2 mb-2">
-                  <SearchIcon size={14} />
-                  {t('amazonLookupPage.asinLabel')}
-                </div>
-                <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-3">
-                  <div className="flex-1 flex items-center gap-2 rounded-xl border border-white/10 bg-white/95 px-3 py-2">
-                    <LinkIcon size={16} className="text-slate-400" />
-                    <input
-                      value={amazonAsin}
-                      onChange={(e) => setAmazonAsin(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          // Let submit handler run.
-                        }
-                      }}
-                      placeholder={t('amazonLookupPage.inputPlaceholder')}
-                      className="w-full bg-transparent outline-none text-slate-800 text-sm"
-                      type="text"
-                    />
-                  </div>
+          <div className="p-5 md:p-6">
+            <div className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-wide mb-3 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+              <SearchIcon size={14} />
+              {t('amazonLookupPage.asinLabel')}
+            </div>
+            <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-3">
+              <div
+                className={`flex-1 flex items-center gap-2 rounded-xl border px-3.5 py-3 transition focus-within:ring-2 focus-within:ring-blue-500/30 ${
+                  isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'
+                }`}
+              >
+                <LinkIcon size={16} className="text-slate-400 shrink-0" />
+                <input
+                  value={amazonAsin}
+                  onChange={(e) => setAmazonAsin(e.target.value)}
+                  placeholder={t('amazonLookupPage.inputPlaceholder')}
+                  className={`w-full bg-transparent outline-none text-sm ${isDark ? 'text-slate-100 placeholder:text-slate-500' : 'text-slate-800'}`}
+                  type="text"
+                />
+              </div>
 
-                  <div className="flex gap-2">
-                    <button
-                      type="submit"
-                      disabled={loading || !canLookup || isLookupQuotaReached}
-                      className="btn-primary flex items-center justify-center gap-2 px-5"
-                    >
-                      {loading ? (
-                        <>
-                          <span className="inline-block h-4 w-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
-                          {t('amazonLookupPage.checking')}
-                        </>
-                      ) : (
-                        <>
-                          {t('amazonLookupPage.check')}
-                          <SearchIcon size={14} />
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={loading || !amazonAsin}
-                      onClick={() => {
-                        setAmazonAsin('');
-                        setResult(null);
-                        setActiveImageIdx(0);
-                        setAlert(null);
-                      }}
-                      className="btn-secondary flex items-center justify-center px-4"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </form>
-
-                <div className="mt-2 text-xs text-slate-200">
-                  {lookupQuota?.remainingThisWeek === null || lookupQuota?.remainingThisWeek === undefined ? (
-                    <>{t('amazonLookupPage.quotaUnlimited')}</>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={loading || !canLookup || isLookupQuotaReached}
+                  className="btn-primary flex items-center justify-center gap-2 px-6"
+                >
+                  {loading ? (
+                    <>
+                      <span className="inline-block h-4 w-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
+                      {t('amazonLookupPage.checking')}
+                    </>
                   ) : (
                     <>
-                      {t('amazonLookupPage.quotaLeft', { count: lookupQuota.remainingThisWeek })}
-                      {lookupQuota.resetAt ? ` ${t('amazonLookupPage.quotaResets', { date: new Date(lookupQuota.resetAt).toLocaleString() })}` : ''}.
+                      {t('amazonLookupPage.check')}
+                      <SearchIcon size={14} />
                     </>
                   )}
-                </div>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={loading || !amazonAsin}
+                  onClick={() => {
+                    setAmazonAsin('');
+                    setResult(null);
+                    setActiveImageIdx(0);
+                    setAlert(null);
+                  }}
+                  className="btn-secondary flex items-center justify-center px-4"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
+            </form>
+
+            <div className="mt-3">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border ${
+                  isLookupQuotaReached
+                    ? isDark
+                      ? 'bg-red-950/40 text-red-300 border-red-900'
+                      : 'bg-red-50 text-red-700 border-red-200'
+                    : isDark
+                      ? 'bg-blue-950/40 text-blue-300 border-blue-900'
+                      : 'bg-blue-50 text-blue-700 border-blue-200'
+                }`}
+              >
+                {lookupQuota?.remainingThisWeek === null || lookupQuota?.remainingThisWeek === undefined ? (
+                  <>{t('amazonLookupPage.quotaUnlimited')}</>
+                ) : (
+                  <>
+                    {t('amazonLookupPage.quotaLeft', { count: lookupQuota.remainingThisWeek })}
+                    {lookupQuota.resetAt ? ` ${t('amazonLookupPage.quotaResets', { date: new Date(lookupQuota.resetAt).toLocaleString() })}` : ''}.
+                  </>
+                )}
+              </span>
             </div>
           </div>
 
-          <div className="p-4 md:p-5">
+          <div className={`p-5 md:p-6 ${result || loading ? `border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}` : ''}`}>
             {loading && !result ? (
               <LoadingSpinner />
-            ) : !result ? null : (
+            ) : !result ? (
+              <div className={`flex flex-col items-center justify-center gap-2 py-10 text-center ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                <PackageSearch size={32} className="opacity-50" />
+                <p className="text-sm">{t('amazonLookupPage.emptyStateHint')}</p>
+              </div>
+            ) : (
               <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-4 lg:gap-5">
                 {/* Gallery */}
-                <div className={`rounded-xl overflow-hidden border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                  <div className={`p-3 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                <div className={`rounded-2xl overflow-hidden border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className={`px-4 py-3 border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                     <div className="flex items-center justify-between gap-3">
                       <div className={`text-sm font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                         <ImageIcon size={16} className="text-blue-600" />
                         {t('amazonLookupPage.productImagesTitle')}
                       </div>
-                      <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                        {result?.images?.length ? `${activeImageIdx + 1}/${result.images.length}` : '—'}
-                      </div>
+                      {result?.images?.length > 0 && (
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-white text-slate-600 border border-slate-200'}`}>
+                          {activeImageIdx + 1}/{result.images.length}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  <div className="p-3">
+                  <div className="p-4">
                     {result?.images?.length ? (
                       <div className="space-y-3">
-                        <div className={`rounded-lg p-3 border ${isDark ? 'bg-slate-950 border-slate-700' : 'bg-white border-slate-200'}`}>
+                        <div className={`rounded-xl p-3 border shadow-sm ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200'}`}>
                           <img
                             src={result.images[activeImageIdx]}
                             alt={result.title || t('amazonLookupPage.productImageAlt')}
-                            className={`w-full h-[320px] object-contain rounded-md ${isDark ? 'bg-slate-900' : 'bg-white'}`}
+                            className={`w-full h-[320px] object-contain rounded-lg ${isDark ? 'bg-slate-900' : 'bg-white'}`}
                           />
                         </div>
 
                         <div className="flex flex-wrap gap-2">
                           <button
                             type="button"
-                            className="btn-secondary inline-flex items-center justify-center gap-2 px-4"
+                            className="btn-secondary inline-flex items-center justify-center gap-2 px-4 text-xs"
                             onClick={async () => {
                               const img = result.images[activeImageIdx];
                               const ok = await downloadImageBestEffort(
@@ -694,7 +718,7 @@ export default function AmazonLookupPage() {
 
                           <button
                             type="button"
-                            className="btn-secondary inline-flex items-center justify-center gap-2 px-4"
+                            className="btn-secondary inline-flex items-center justify-center gap-2 px-4 text-xs"
                             onClick={async () => {
                               // Trigger downloads sequentially to avoid browser pop-up/connection limits.
                               try {
@@ -722,11 +746,11 @@ export default function AmazonLookupPage() {
                               key={`${img}-${idx}`}
                               type="button"
                               onClick={() => setActiveImageIdx(idx)}
-                              className={`flex-none w-20 h-14 rounded-md border ${
+                              className={`flex-none w-20 h-14 rounded-lg border-2 transition ${
                                 idx === activeImageIdx
-                                  ? 'border-blue-500 ring-2 ring-blue-100'
+                                  ? 'border-blue-500 ring-2 ring-blue-500/20'
                                   : isDark
-                                    ? 'border-slate-700 hover:border-slate-500'
+                                    ? 'border-slate-800 hover:border-slate-600'
                                     : 'border-slate-200 hover:border-slate-300'
                               } ${isDark ? 'bg-slate-900' : 'bg-white'} overflow-hidden`}
                             >
@@ -745,24 +769,26 @@ export default function AmazonLookupPage() {
 
                 {/* Details */}
                 <div className="space-y-4">
-                  <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
+                  <div className={`rounded-2xl border p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                       <div className="min-w-0">
                         <h2 className={`text-xl md:text-2xl font-semibold leading-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                           {result.title}
                         </h2>
-                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                           {t('amazonLookupPage.extractedFromAsin')}
                         </p>
                       </div>
 
-                      <div className="flex flex-col items-start md:items-end">
-                        <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{t('amazonLookupPage.amazonPrice')}</div>
+                      <div
+                        className={`flex flex-col items-start md:items-end shrink-0 rounded-xl px-4 py-3 ${isDark ? 'bg-slate-800/60' : 'bg-slate-50'}`}
+                      >
+                        <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('amazonLookupPage.amazonPrice')}</div>
                         <div className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                           {formatCurrency(result?.price?.usd ?? 0)}
                         </div>
                         {result?.price?.currency && result.price.currency !== 'USD' && (
-                          <div className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          <div className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                             {t('amazonLookupPage.raw')}{' '}{Number(result.price.raw).toFixed(2)} {result.price.currency}
                           </div>
                         )}
@@ -770,7 +796,7 @@ export default function AmazonLookupPage() {
                         {result?.price?.subscribedUsd != null && (
                           <div className="mt-2 text-xs">
                             <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center px-2 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full border font-semibold ${isDark ? 'bg-emerald-950/40 border-emerald-900 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
                                 {t('amazonLookupPage.subscribeAndSave')}
                               </span>
                               <span className={`font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
@@ -787,7 +813,7 @@ export default function AmazonLookupPage() {
                         href={buildAmazonProductUrl(result?.asin || extractAmazonAsin(amazonAsin))}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn-secondary inline-flex items-center gap-2"
+                        className="btn-secondary inline-flex items-center gap-2 text-xs"
                       >
                         <LinkIcon size={14} />
                         {t('amazonLookupPage.openOnAmazon')}
@@ -807,42 +833,44 @@ export default function AmazonLookupPage() {
                             });
                           }
                         }}
-                        className="btn-secondary inline-flex items-center gap-2"
+                        className="btn-secondary inline-flex items-center gap-2 text-xs"
                       >
                         {t('amazonLookupPage.copyUrl')}
                       </button>
                     </div>
                   </div>
 
-                  <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
-                    <h3 className={`text-lg font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  <div className={`rounded-2xl border p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                    <h3 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                      <ImageIcon size={15} className="text-blue-600" />
                       {t('amazonLookupPage.descriptionTitle')}
                     </h3>
 
                     {result.description ? (
-                      <div className={`text-sm leading-relaxed ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                      <div className={`text-sm leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                         {result.description}
                       </div>
                     ) : result.bullets?.length ? (
                       <ul className="space-y-2">
                         {result.bullets.map((b, idx) => (
-                          <li key={`${b}-${idx}`} className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                          <li key={`${b}-${idx}`} className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                             <span className="text-blue-600 font-bold mr-2">•</span>
                             {b}
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <div className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                         {t('amazonLookupPage.noDescription')}
                       </div>
                     )}
                   </div>
 
-                    {/* Profit Planner */}
-                    <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
-                      <h3 className={`text-lg font-semibold mb-3 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                        {t('amazonLookupPage.profitPlannerTitle')}
+                  {/* Profit Planner */}
+                  <div className={`rounded-2xl border p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                    <h3 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                      <TrendingUpIcon size={15} className="text-blue-600" />
+                      {t('amazonLookupPage.profitPlannerTitle')}
                       </h3>
 
                       <div className="flex flex-col gap-3">
@@ -902,7 +930,7 @@ export default function AmazonLookupPage() {
                       </div>
                     </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                  <div className={`flex flex-col sm:flex-row gap-2 sm:justify-end pt-4 mt-1 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                     <button
                       type="button"
                       onClick={handleSingleListOnEbay}
@@ -947,9 +975,10 @@ export default function AmazonLookupPage() {
             )}
 
             {history.length > 0 && (
-              <div className={`mt-4 rounded-xl border p-3 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+              <div className={`mt-5 rounded-2xl border p-4 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
                 <div className="flex items-center justify-between gap-2 mb-3">
-                  <h3 className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  <h3 className={`text-sm font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                    <History size={15} className="text-blue-600" />
                     {t('amazonLookupPage.recentSearches')}
                   </h3>
                   <button
@@ -975,10 +1004,10 @@ export default function AmazonLookupPage() {
                           lookup(historyAsin);
                         }
                       }}
-                      className={`w-full text-left rounded-lg border p-2.5 transition ${
+                      className={`w-full text-left rounded-xl border p-3 transition ${
                         isDark
-                          ? 'border-slate-700 hover:bg-slate-800'
-                          : 'border-slate-200 hover:bg-slate-50'
+                          ? 'border-slate-800 bg-slate-950/40 hover:bg-slate-800 hover:border-slate-700'
+                          : 'border-slate-200 bg-white hover:bg-blue-50/50 hover:border-blue-200'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -986,17 +1015,32 @@ export default function AmazonLookupPage() {
                           <p className={`text-sm font-medium truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                             {item.title || item.amazonAsin || item.amazonUrlOriginal}
                           </p>
-                          <p className={`text-xs truncate ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          <p className={`text-xs truncate mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                             {item.amazonAsin || item.amazonUrlOriginal}
                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right shrink-0">
                           <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                             {item.priceUsd != null ? formatCurrency(item.priceUsd) : '—'}
                           </p>
-                          <p className={`text-[11px] ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                            {item.cached ? t('amazonLookupPage.cached') : t('amazonLookupPage.live')} · {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}
-                          </p>
+                          <div className="flex items-center gap-1 justify-end mt-1">
+                            <span
+                              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                                item.cached
+                                  ? isDark
+                                    ? 'bg-slate-800 text-slate-400'
+                                    : 'bg-slate-100 text-slate-500'
+                                  : isDark
+                                    ? 'bg-emerald-950/40 text-emerald-300'
+                                    : 'bg-emerald-50 text-emerald-700'
+                              }`}
+                            >
+                              {item.cached ? t('amazonLookupPage.cached') : t('amazonLookupPage.live')}
+                            </span>
+                            <span className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                              {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </button>
@@ -1014,14 +1058,20 @@ export default function AmazonLookupPage() {
         </div>
 
         {ebayStatus.connected && (
-          <div className={`glass-card mt-5 p-4 md:p-5 ${isDark ? 'bg-slate-950 border-slate-800' : ''}`}>
-            <h2 className={`text-lg font-semibold mb-1 flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-              <Sparkles size={18} className="text-blue-600" />
-              {t('amazonLookupPage.bulkTitle')}
-            </h2>
-            <p className={`text-sm mb-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              {t('amazonLookupPage.bulkDescription')}
-            </p>
+          <div className={`rounded-2xl border p-5 md:p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+            <div className="flex items-start gap-3 mb-4">
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isDark ? 'bg-indigo-950/50' : 'bg-indigo-50'}`}>
+                <PackageSearch size={18} className={isDark ? 'text-indigo-300' : 'text-indigo-600'} />
+              </div>
+              <div>
+                <h2 className={`text-base font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  {t('amazonLookupPage.bulkTitle')}
+                </h2>
+                <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                  {t('amazonLookupPage.bulkDescription')}
+                </p>
+              </div>
+            </div>
 
             <textarea
               value={bulkLinksText}
@@ -1029,8 +1079,8 @@ export default function AmazonLookupPage() {
               placeholder={t('amazonLookupPage.bulkPlaceholder')}
               rows={4}
               disabled={bulkProcessing}
-              className={`w-full rounded-lg border px-3 py-2 text-sm font-mono outline-none focus:ring-2 focus:ring-blue-500/40 ${
-                isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+              className={`w-full rounded-xl border px-3.5 py-3 text-sm font-mono outline-none transition focus:ring-2 focus:ring-blue-500/30 ${
+                isDark ? 'bg-slate-800 border-slate-700 text-slate-100' : 'bg-slate-50 border-slate-200 text-slate-900'
               }`}
             />
 
@@ -1045,7 +1095,17 @@ export default function AmazonLookupPage() {
                 {t('amazonLookupPage.bulkSubmit')}
               </button>
               {autoListSettings && (
-                <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <span
+                  className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${
+                    autoListSettings.previewBeforeList
+                      ? isDark
+                        ? 'bg-amber-950/40 text-amber-300'
+                        : 'bg-amber-50 text-amber-700'
+                      : isDark
+                        ? 'bg-emerald-950/40 text-emerald-300'
+                        : 'bg-emerald-50 text-emerald-700'
+                  }`}
+                >
                   {autoListSettings.previewBeforeList
                     ? t('amazonLookupPage.previewModeOn')
                     : t('amazonLookupPage.previewModeOff')}
@@ -1055,13 +1115,22 @@ export default function AmazonLookupPage() {
 
             {bulkResults.length > 0 && (
               <div className="mt-4 space-y-2">
-                {bulkResults.map((item, index) => (
+                {bulkResults.map((item, index) => {
+                  const statusBarColor = ['error', 'quota_exceeded'].includes(item.status)
+                    ? 'bg-red-500'
+                    : item.status === 'listed'
+                      ? 'bg-emerald-500'
+                      : item.status === 'awaiting_confirmation'
+                        ? 'bg-amber-500'
+                        : 'bg-blue-500';
+                  return (
                   <div
                     key={item.id}
-                    className={`rounded-lg border p-3 text-sm flex items-start gap-2 ${
-                      isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-50'
+                    className={`relative overflow-hidden rounded-xl border p-3 pl-4 text-sm flex items-start gap-2 ${
+                      isDark ? 'border-slate-800 bg-slate-800/40' : 'border-slate-200 bg-slate-50'
                     }`}
                   >
+                    <span className={`absolute left-0 top-0 bottom-0 w-1 ${statusBarColor}`} />
                     {['pending', 'looking_up', 'preparing'].includes(item.status) && (
                       <Loader2 size={15} className="mt-0.5 shrink-0 animate-spin text-blue-500" />
                     )}
@@ -1122,7 +1191,8 @@ export default function AmazonLookupPage() {
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

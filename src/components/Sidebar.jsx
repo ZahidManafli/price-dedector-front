@@ -6,7 +6,7 @@ import {
   Settings,
   LogOut,
   User,
-  Search,
+  BrainCircuit,
   ShieldCheck,
   Moon,
   Sun,
@@ -125,7 +125,7 @@ export default function Sidebar() {
     // regardless of their subscription plan's allowedTabs.
     { label: 'Support', path: '/support', icon: LifeBuoy },
     { label: 'Alıcı CRM', path: '/buyers', icon: Users, tab: TAB_KEYS.BUYER_CRM },
-    { label: t('nav.amazonLookup'), path: '/amazon-lookup', icon: Search, tab: TAB_KEYS.AMAZON_LOOKUP, tour: 'sidebar-amazon-lookup' },
+    { label: t('nav.amazonLookup'), path: '/amazon-lookup', icon: BrainCircuit, tab: TAB_KEYS.AMAZON_LOOKUP, tour: 'sidebar-amazon-lookup' },
     { label: t('nav.ebayCalculator'), path: '/ebay-calculator', icon: Calculator, tab: TAB_KEYS.EBAY_CALCULATOR },
     { label: t('nav.marketAnalysis'), path: '/market-analysis', icon: BarChart3, tab: TAB_KEYS.MARKET_ANALYSIS, tour: 'sidebar-market-analysis' },
     { label: 'Market Insight', path: '/market-insight', icon: Sparkles, tab: TAB_KEYS.MARKET_INSIGHT },

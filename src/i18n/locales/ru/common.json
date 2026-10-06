@@ -522,6 +522,7 @@
     "quotaResets": "(сброс {{date}})",
     "instantResultsTitle": "Мгновенный результат",
     "instantResultsDesc": "Введите ASIN Amazon, и приложение извлечет цену, изображения и описание.",
+    "emptyStateHint": "Вставьте ссылку на Amazon или ASIN выше, чтобы начать.",
     "imageGalleryTitle": "Галерея изображений",
     "imageGalleryDesc": "Выберите разные изображения товара перед сохранением или сравнением.",
     "priceInSecondsTitle": "Цена за секунды",
