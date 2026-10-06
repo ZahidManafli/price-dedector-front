@@ -23,7 +23,6 @@ import {
   CheckCircle2,
   XCircle,
   Sparkles,
-  AlertTriangle,
 } from 'lucide-react';
 
 // Same field + aliases ListOnEbayModal.jsx checks for "Country/Region of
@@ -1181,7 +1180,6 @@ export default function AmazonLookupPage() {
                   const pictureUrls = Array.isArray(li.pictureUrls) ? li.pictureUrls : [];
                   const specEntries = li.itemSpecifics && typeof li.itemSpecifics === 'object' ? Object.entries(li.itemSpecifics) : [];
                   const policies = singleListingState.prepared?.policies || {};
-                  const referenceFound = !!singleListingState.prepared?.referenceListingUrl;
 
                   const updateField = (field, value) => setEditableListing((prev) => ({ ...prev, [field]: value }));
                   const updateSpec = (name, value) =>
@@ -1201,24 +1199,6 @@ export default function AmazonLookupPage() {
 
                   return (
                     <div className={`mt-5 pt-5 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                      <div
-                        className={`flex items-start gap-2 rounded-xl border p-3 mb-5 text-sm ${
-                          referenceFound
-                            ? isDark
-                              ? 'border-emerald-900 bg-emerald-950/30 text-emerald-200'
-                              : 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                            : isDark
-                              ? 'border-amber-900 bg-amber-950/30 text-amber-200'
-                              : 'border-amber-200 bg-amber-50 text-amber-800'
-                        }`}
-                      >
-                        {referenceFound ? (
-                          <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
-                        ) : (
-                          <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-                        )}
-                        <span>{singleListingState.prepared?.referenceNote}</span>
-                      </div>
 
                       <div className="grid md:grid-cols-5 gap-6">
                         {/* Gallery */}
