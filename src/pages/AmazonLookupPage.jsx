@@ -289,6 +289,7 @@ export default function AmazonLookupPage() {
       defaultProfitUsd: String(autoListSettings?.defaultProfitUsd ?? 5),
       adRatePercent: autoListSettings?.adRatePercent != null ? String(autoListSettings.adRatePercent) : '',
       defaultDewisoTemplateId: autoListSettings?.defaultDewisoTemplateId || '',
+      coverImagePrompt: autoListSettings?.coverImagePrompt || '',
     });
     setSettingsModalOpen(true);
     if (!dewisoTemplates.length) {
@@ -310,6 +311,7 @@ export default function AmazonLookupPage() {
         defaultProfitUsd: Number(settingsForm.defaultProfitUsd) || 0,
         adRatePercent: String(settingsForm.adRatePercent).trim() === '' ? null : Number(settingsForm.adRatePercent),
         defaultDewisoTemplateId: settingsForm.defaultDewisoTemplateId || null,
+        coverImagePrompt: settingsForm.coverImagePrompt?.trim() || null,
       });
       setAutoListSettings(response?.data?.settings || null);
       setSettingsModalOpen(false);
@@ -1535,6 +1537,22 @@ export default function AmazonLookupPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  {t('amazonLookupPage.coverImagePromptLabel')}
+                </label>
+                <textarea
+                  value={settingsForm.coverImagePrompt}
+                  onChange={(e) => setSettingsForm((prev) => ({ ...prev, coverImagePrompt: e.target.value.slice(0, 1000) }))}
+                  rows={3}
+                  placeholder={t('amazonLookupPage.coverImagePromptPlaceholder')}
+                  className="input-base resize-none"
+                />
+                <p className={`text-[11px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  {t('amazonLookupPage.coverImagePromptHint')}
+                </p>
               </div>
             </div>
 
