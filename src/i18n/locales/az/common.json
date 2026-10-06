@@ -563,6 +563,7 @@
     "failedAutoList": "Bu məhsulu avtomatik yerləşdirmək alınmadı",
     "preparing": "Listing hazırlanır (Amazon oxunur, mətn yazılır, ZIK yoxlanılır)…",
     "confirmAndList": "Təsdiqlə və yerləşdir",
+    "reviewAndConfirm": "Bax və təsdiqlə",
     "autoListProgressTitle": "Yerləşdirmə prosesi",
     "lookingUpQuota": "Checkila Smart krediti yoxlanılır…",
     "stepScrape": "Amazon məhsul səhifəsi oxunur",

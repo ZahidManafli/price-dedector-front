@@ -87,6 +87,7 @@ export default function AmazonLookupPage() {
   const [autoListSettings, setAutoListSettings] = useState(null);
   const [dewisoTemplates, setDewisoTemplates] = useState([]);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
   const [settingsForm, setSettingsForm] = useState(null);
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -94,6 +95,7 @@ export default function AmazonLookupPage() {
   const [singleListingState, setSingleListingState] = useState(null); // { status, message, itemId, listingUrl, prepared }
   const [editableListing, setEditableListing] = useState(null); // user-editable copy of prepared.listingInput while awaiting confirmation
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [bulkEditingIndex, setBulkEditingIndex] = useState(null); // set when the shared preview modal is editing a bulk row instead of the single lookup
 
   // Bulk auto-listing (paste multiple Amazon links)
   const [bulkLinksText, setBulkLinksText] = useState('');
@@ -430,9 +432,23 @@ export default function AmazonLookupPage() {
 
   const closeListingModal = useCallback(() => {
     setSingleListingState(null);
+    setBulkEditingIndex(null);
     setEditableListing(null);
     setNewImageUrl('');
   }, []);
+
+  // Opens the same preview/edit modal used for the single-ASIN flow, but
+  // targeting one row of the bulk batch instead — "eyni ilə bir-bir Amazon
+  // linkini list etmədə etdiyi kimi".
+  const openBulkItemEditor = useCallback(
+    (index) => {
+      const item = bulkResults[index];
+      if (!item?.prepared?.listingInput) return;
+      setBulkEditingIndex(index);
+      setEditableListing(item.prepared.listingInput);
+    },
+    [bulkResults]
+  );
 
   const confirmSingleListing = useCallback(async () => {
     if (!singleListingState?.prepared) return;
@@ -517,11 +533,18 @@ export default function AmazonLookupPage() {
     async (index) => {
       const item = bulkResults[index];
       if (!item?.prepared) return;
+      // If the modal is open editing THIS row, use the user's edits instead
+      // of the as-prepared listingInput.
+      const preparedToConfirm =
+        bulkEditingIndex === index && editableListing ? { ...item.prepared, listingInput: editableListing } : item.prepared;
       setBulkResults((prev) => prev.map((r, idx) => (idx === index ? { ...r, status: 'preparing', phase: 'confirm' } : r)));
-      const outcome = await confirmPreparedListing(item.asin, item.prepared);
+      const outcome = await confirmPreparedListing(item.asin, preparedToConfirm);
+      // Deliberately NOT clearing bulkEditingIndex here (even on success) —
+      // same as the single-lookup modal, it stays open showing the
+      // listed/error result until the user explicitly closes it.
       setBulkResults((prev) => prev.map((r, idx) => (idx === index ? { ...r, ...outcome } : r)));
     },
-    [bulkResults, confirmPreparedListing]
+    [bulkEditingIndex, bulkResults, confirmPreparedListing, editableListing]
   );
 
   return (
@@ -552,6 +575,20 @@ export default function AmazonLookupPage() {
                 />
                 {t('amazonLookupPage.autoLookup')}
               </label>
+              <button
+                type="button"
+                onClick={() => setHistoryDrawerOpen(true)}
+                className="relative inline-flex items-center gap-1.5 rounded-xl bg-white/10 hover:bg-white/20 px-3 py-2.5 text-sm backdrop-blur transition"
+                title={t('amazonLookupPage.recentSearches')}
+              >
+                <History size={14} />
+                {t('amazonLookupPage.recentSearches')}
+                {history.length > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-white text-blue-700 text-[10px] font-bold">
+                    {history.length}
+                  </span>
+                )}
+              </button>
               {ebayStatus.connected && (
                 <button
                   type="button"
@@ -974,80 +1011,6 @@ export default function AmazonLookupPage() {
               </div>
             )}
 
-            {history.length > 0 && (
-              <div className={`mt-5 rounded-2xl border p-4 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <h3 className={`text-sm font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                    <History size={15} className="text-blue-600" />
-                    {t('amazonLookupPage.recentSearches')}
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={fetchHistory}
-                    className="btn-secondary text-xs px-3 py-1.5"
-                  >
-                    {t('amazonLookupPage.refresh')}
-                  </button>
-                </div>
-                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                  {history.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => {
-                        const historyAsin = item.amazonAsin || extractAmazonAsin(item.amazonUrlOriginal || '');
-                        setAmazonAsin(historyAsin || '');
-                        if (item.details) {
-                          setResult(item.details);
-                          setActiveImageIdx(0);
-                        } else if (historyAsin) {
-                          lookup(historyAsin);
-                        }
-                      }}
-                      className={`w-full text-left rounded-xl border p-3 transition ${
-                        isDark
-                          ? 'border-slate-800 bg-slate-950/40 hover:bg-slate-800 hover:border-slate-700'
-                          : 'border-slate-200 bg-white hover:bg-blue-50/50 hover:border-blue-200'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className={`text-sm font-medium truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                            {item.title || item.amazonAsin || item.amazonUrlOriginal}
-                          </p>
-                          <p className={`text-xs truncate mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                            {item.amazonAsin || item.amazonUrlOriginal}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                            {item.priceUsd != null ? formatCurrency(item.priceUsd) : '—'}
-                          </p>
-                          <div className="flex items-center gap-1 justify-end mt-1">
-                            <span
-                              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                                item.cached
-                                  ? isDark
-                                    ? 'bg-slate-800 text-slate-400'
-                                    : 'bg-slate-100 text-slate-500'
-                                  : isDark
-                                    ? 'bg-emerald-950/40 text-emerald-300'
-                                    : 'bg-emerald-50 text-emerald-700'
-                              }`}
-                            >
-                              {item.cached ? t('amazonLookupPage.cached') : t('amazonLookupPage.live')}
-                            </span>
-                            <span className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                              {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {loading && result && (
@@ -1172,10 +1135,11 @@ export default function AmazonLookupPage() {
                           </span>
                           <button
                             type="button"
-                            onClick={() => confirmBulkItem(index)}
-                            className="btn-primary text-xs px-2.5 py-1"
+                            onClick={() => openBulkItemEditor(index)}
+                            className="btn-primary text-xs px-2.5 py-1 inline-flex items-center gap-1"
                           >
-                            {t('amazonLookupPage.confirmAndList')}
+                            <Sparkles size={12} />
+                            {t('amazonLookupPage.reviewAndConfirm')}
                           </button>
                         </div>
                       )}
@@ -1199,8 +1163,17 @@ export default function AmazonLookupPage() {
         )}
       </div>
 
-      {singleListingState && (() => {
-        const isPreview = singleListingState.status === 'awaiting_confirmation';
+      {(singleListingState || bulkEditingIndex !== null) && (() => {
+        const activeModalState = bulkEditingIndex !== null ? bulkResults[bulkEditingIndex] : singleListingState;
+        if (!activeModalState) return null;
+        const isPreview = activeModalState.status === 'awaiting_confirmation';
+        const handleModalConfirm = () => {
+          if (bulkEditingIndex !== null) {
+            confirmBulkItem(bulkEditingIndex);
+          } else {
+            confirmSingleListing();
+          }
+        };
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6">
             <div
@@ -1213,7 +1186,7 @@ export default function AmazonLookupPage() {
                   </span>
                   {t('amazonLookupPage.autoListProgressTitle')}
                 </h2>
-                {singleListingState.status !== 'preparing' && (
+                {activeModalState.status !== 'preparing' && (
                   <button
                     type="button"
                     onClick={closeListingModal}
@@ -1226,18 +1199,18 @@ export default function AmazonLookupPage() {
 
               <div className="px-6 py-5">
                 <AutoListProgressStepper
-                  phase={singleListingState.phase}
-                  outcome={['listed', 'awaiting_confirmation', 'error'].includes(singleListingState.status) ? singleListingState.status : null}
+                  phase={activeModalState.phase}
+                  outcome={['listed', 'awaiting_confirmation', 'error'].includes(activeModalState.status) ? activeModalState.status : null}
                   t={t}
                   isDark={isDark}
                   variant="full"
                 />
 
-                {singleListingState.status === 'error' && (
+                {activeModalState.status === 'error' && (
                   <div className={`mt-5 pt-5 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                     <div className={`rounded-xl border p-3 flex items-start gap-2 ${isDark ? 'border-red-900 bg-red-950/30' : 'border-red-200 bg-red-50'}`}>
                       <XCircle size={16} className="shrink-0 mt-0.5 text-red-500" />
-                      <p className="text-sm text-red-600 dark:text-red-300">{singleListingState.message}</p>
+                      <p className="text-sm text-red-600 dark:text-red-300">{activeModalState.message}</p>
                     </div>
                     <button type="button" onClick={closeListingModal} className="btn-secondary text-xs mt-4">
                       {t('amazonLookupPage.cancel')}
@@ -1249,7 +1222,7 @@ export default function AmazonLookupPage() {
                   const li = editableListing;
                   const pictureUrls = Array.isArray(li.pictureUrls) ? li.pictureUrls : [];
                   const specEntries = li.itemSpecifics && typeof li.itemSpecifics === 'object' ? Object.entries(li.itemSpecifics) : [];
-                  const policies = singleListingState.prepared?.policies || {};
+                  const policies = activeModalState.prepared?.policies || {};
 
                   const updateField = (field, value) => setEditableListing((prev) => ({ ...prev, [field]: value }));
                   const updateSpec = (name, value) =>
@@ -1462,7 +1435,7 @@ export default function AmazonLookupPage() {
                         <button type="button" onClick={closeListingModal} className="btn-secondary text-sm px-4 py-2">
                           {t('amazonLookupPage.cancel')}
                         </button>
-                        <button type="button" onClick={confirmSingleListing} className="btn-primary text-sm px-4 py-2 inline-flex items-center gap-1.5">
+                        <button type="button" onClick={handleModalConfirm} className="btn-primary text-sm px-4 py-2 inline-flex items-center gap-1.5">
                           <Sparkles size={14} />
                           {t('amazonLookupPage.confirmAndList')}
                         </button>
@@ -1471,7 +1444,7 @@ export default function AmazonLookupPage() {
                   );
                 })()}
 
-                {singleListingState.status === 'listed' && (
+                {activeModalState.status === 'listed' && (
                   <div className={`mt-5 pt-5 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                     <div
                       className={`rounded-xl border p-4 flex items-start gap-3 ${isDark ? 'border-emerald-900 bg-emerald-950/30' : 'border-emerald-200 bg-emerald-50'}`}
@@ -1479,14 +1452,14 @@ export default function AmazonLookupPage() {
                       <CheckCircle2 size={20} className="shrink-0 mt-0.5 text-emerald-500" />
                       <div className="min-w-0">
                         <p className={`text-sm font-medium ${isDark ? 'text-emerald-200' : 'text-emerald-800'}`}>{t('amazonLookupPage.listingCreated')}</p>
-                        {singleListingState.listingUrl && (
+                        {activeModalState.listingUrl && (
                           <a
-                            href={singleListingState.listingUrl}
+                            href={activeModalState.listingUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className={`text-xs underline break-all ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}
                           >
-                            {singleListingState.listingUrl}
+                            {activeModalState.listingUrl}
                           </a>
                         )}
                       </div>
@@ -1498,6 +1471,107 @@ export default function AmazonLookupPage() {
           </div>
         );
       })()}
+
+      {historyDrawerOpen && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setHistoryDrawerOpen(false)} aria-hidden="true" />
+          <div
+            className={`fixed top-0 right-0 z-50 h-full w-full max-w-md flex flex-col shadow-2xl border-l ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}
+            style={{ animation: 'amazonLookupSlideInRight 0.22s ease-out' }}
+          >
+            <div className={`flex items-center justify-between px-5 py-4 border-b shrink-0 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+              <h2 className={`text-base font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                <History size={18} className="text-blue-600" />
+                {t('amazonLookupPage.recentSearches')}
+              </h2>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={fetchHistory} className="btn-secondary text-xs px-3 py-1.5">
+                  {t('amazonLookupPage.refresh')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHistoryDrawerOpen(false)}
+                  className={`p-1.5 rounded-lg transition ${isDark ? 'text-slate-400 hover:bg-slate-800' : 'text-slate-400 hover:bg-slate-100'}`}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {history.length === 0 ? (
+                <div className={`flex flex-col items-center justify-center gap-2 py-16 text-center ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  <History size={36} className="opacity-30" />
+                  <p className="text-sm">{t('amazonLookupPage.emptyStateHint')}</p>
+                </div>
+              ) : (
+                history.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      const historyAsin = item.amazonAsin || extractAmazonAsin(item.amazonUrlOriginal || '');
+                      setAmazonAsin(historyAsin || '');
+                      if (item.details) {
+                        setResult(item.details);
+                        setActiveImageIdx(0);
+                      } else if (historyAsin) {
+                        lookup(historyAsin);
+                      }
+                      setHistoryDrawerOpen(false);
+                    }}
+                    className={`w-full text-left rounded-xl border p-3 transition ${
+                      isDark
+                        ? 'border-slate-800 bg-slate-950/40 hover:bg-slate-800 hover:border-slate-700'
+                        : 'border-slate-200 bg-white hover:bg-blue-50/50 hover:border-blue-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className={`text-sm font-medium truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                          {item.title || item.amazonAsin || item.amazonUrlOriginal}
+                        </p>
+                        <p className={`text-xs truncate mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                          {item.amazonAsin || item.amazonUrlOriginal}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                          {item.priceUsd != null ? formatCurrency(item.priceUsd) : '—'}
+                        </p>
+                        <div className="flex items-center gap-1 justify-end mt-1">
+                          <span
+                            className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                              item.cached
+                                ? isDark
+                                  ? 'bg-slate-800 text-slate-400'
+                                  : 'bg-slate-100 text-slate-500'
+                                : isDark
+                                  ? 'bg-emerald-950/40 text-emerald-300'
+                                  : 'bg-emerald-50 text-emerald-700'
+                            }`}
+                          >
+                            {item.cached ? t('amazonLookupPage.cached') : t('amazonLookupPage.live')}
+                          </span>
+                          <span className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                            {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+          <style>{`
+            @keyframes amazonLookupSlideInRight {
+              from { transform: translateX(100%); opacity: 0; }
+              to   { transform: translateX(0);    opacity: 1; }
+            }
+          `}</style>
+        </>
+      )}
 
       {settingsModalOpen && settingsForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">

@@ -769,6 +769,7 @@
     "failedAutoList": "Failed to auto-list this item",
     "preparing": "Preparing listing (scraping Amazon, writing copy, checking ZIK)…",
     "confirmAndList": "Confirm & List",
+    "reviewAndConfirm": "Review & confirm",
     "autoListProgressTitle": "Listing progress",
     "lookingUpQuota": "Checking Checkila Smart quota…",
     "stepScrape": "Reading the Amazon product page",

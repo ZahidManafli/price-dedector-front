@@ -563,6 +563,7 @@
     "failedAutoList": "Не удалось автоматически разместить этот товар",
     "preparing": "Подготовка объявления (чтение Amazon, написание текста, проверка ZIK)…",
     "confirmAndList": "Подтвердить и разместить",
+    "reviewAndConfirm": "Просмотреть и подтвердить",
     "autoListProgressTitle": "Прогресс размещения",
     "lookingUpQuota": "Проверка квоты Checkila Smart…",
     "stepScrape": "Чтение страницы товара на Amazon",

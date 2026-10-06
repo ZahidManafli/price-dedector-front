@@ -563,6 +563,7 @@
     "failedAutoList": "Bu ürün otomatik listelenemedi",
     "preparing": "İlan hazırlanıyor (Amazon okunuyor, metin yazılıyor, ZIK kontrol ediliyor)…",
     "confirmAndList": "Onayla ve Listele",
+    "reviewAndConfirm": "İncele ve onayla",
     "autoListProgressTitle": "Listeleme süreci",
     "lookingUpQuota": "Checkila Smart kotası kontrol ediliyor…",
     "stepScrape": "Amazon ürün sayfası okunuyor",
