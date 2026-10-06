@@ -12,8 +12,8 @@ import { Check, Loader2, Circle, AlertCircle } from 'lucide-react';
 // process is, instead of one opaque spinner.
 const PREPARE_STEPS = [
   { key: 'scrape', labelKey: 'amazonLookupPage.stepScrape', estMs: 1800 },
-  { key: 'copy', labelKey: 'amazonLookupPage.stepCopy', estMs: 2600 },
   { key: 'zik', labelKey: 'amazonLookupPage.stepZik', estMs: 5000 },
+  { key: 'copy', labelKey: 'amazonLookupPage.stepCopy', estMs: 2600 },
   { key: 'cover', labelKey: 'amazonLookupPage.stepCover', estMs: 1600 },
 ];
 

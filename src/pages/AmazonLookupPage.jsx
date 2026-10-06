@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   XCircle,
   Sparkles,
+  AlertTriangle,
 } from 'lucide-react';
 
 function useDebouncedAutoLookup({ amazonAsin, autoLookupEnabled, onLookup }) {
@@ -1099,160 +1100,223 @@ export default function AmazonLookupPage() {
         )}
       </div>
 
-      {singleListingState && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
-          <div
-            className={`w-full max-w-2xl max-h-full overflow-y-auto rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className={`text-base font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                <Sparkles size={16} className="text-blue-600" />
-                {t('amazonLookupPage.autoListProgressTitle')}
-              </h2>
-              {singleListingState.status !== 'preparing' && (
-                <button
-                  type="button"
-                  onClick={() => setSingleListingState(null)}
-                  className={isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-700'}
-                >
-                  <X size={18} />
-                </button>
-              )}
-            </div>
-
-            <AutoListProgressStepper
-              phase={singleListingState.phase}
-              outcome={['listed', 'awaiting_confirmation', 'error'].includes(singleListingState.status) ? singleListingState.status : null}
-              t={t}
-              isDark={isDark}
-              variant="full"
-            />
-
-            {singleListingState.status === 'error' && (
-              <div className={`mt-4 pt-4 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                <p className="text-sm text-red-500">{singleListingState.message}</p>
-                <button type="button" onClick={() => setSingleListingState(null)} className="btn-secondary text-xs mt-3">
-                  {t('amazonLookupPage.cancel')}
-                </button>
+      {singleListingState && (() => {
+        const isPreview = singleListingState.status === 'awaiting_confirmation';
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6">
+            <div
+              className={`w-full ${isPreview ? 'max-w-4xl' : 'max-w-md'} max-h-full overflow-y-auto rounded-2xl border shadow-2xl transition-all ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}
+            >
+              <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <h2 className={`text-base font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+                    <Sparkles size={15} />
+                  </span>
+                  {t('amazonLookupPage.autoListProgressTitle')}
+                </h2>
+                {singleListingState.status !== 'preparing' && (
+                  <button
+                    type="button"
+                    onClick={() => setSingleListingState(null)}
+                    className={`rounded-full p-1.5 transition ${isDark ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-200' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'}`}
+                  >
+                    <X size={18} />
+                  </button>
+                )}
               </div>
-            )}
 
-            {singleListingState.status === 'awaiting_confirmation' && (() => {
-              const li = singleListingState.prepared?.listingInput || {};
-              const pictureUrls = Array.isArray(li.pictureUrls) ? li.pictureUrls : [];
-              const specEntries = li.itemSpecifics && typeof li.itemSpecifics === 'object' ? Object.entries(li.itemSpecifics) : [];
-              const policies = singleListingState.prepared?.policies || {};
-              return (
-                <div className={`mt-4 pt-4 border-t space-y-4 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{singleListingState.prepared?.referenceNote}</p>
+              <div className="px-6 py-5">
+                <AutoListProgressStepper
+                  phase={singleListingState.phase}
+                  outcome={['listed', 'awaiting_confirmation', 'error'].includes(singleListingState.status) ? singleListingState.status : null}
+                  t={t}
+                  isDark={isDark}
+                  variant="full"
+                />
 
-                  {pictureUrls.length > 0 && (
-                    <div>
-                      <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {t('amazonLookupPage.previewGalleryTitle', { count: pictureUrls.length })}
-                      </p>
-                      <div className="flex gap-2 overflow-x-auto pb-1">
-                        {pictureUrls.map((url, idx) => (
-                          <div
-                            key={`${url}-${idx}`}
-                            className={`relative flex-none w-20 h-20 rounded-lg overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-white'}`}
-                          >
-                            <img src={url} alt={`${li.title || ''} ${idx + 1}`} className="w-full h-full object-contain" />
-                            {idx === 0 && (
-                              <span className="absolute bottom-0 inset-x-0 bg-blue-600 text-white text-[9px] font-semibold text-center py-0.5">
-                                {t('amazonLookupPage.coverImageBadge')}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                {singleListingState.status === 'error' && (
+                  <div className={`mt-5 pt-5 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                    <div className={`rounded-xl border p-3 flex items-start gap-2 ${isDark ? 'border-red-900 bg-red-950/30' : 'border-red-200 bg-red-50'}`}>
+                      <XCircle size={16} className="shrink-0 mt-0.5 text-red-500" />
+                      <p className="text-sm text-red-600 dark:text-red-300">{singleListingState.message}</p>
                     </div>
-                  )}
-
-                  <div>
-                    <p className={`font-medium text-sm ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{li.title}</p>
-                    <p className={`text-sm leading-relaxed mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{li.description}</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('amazonLookupPage.previewPriceLabel')}</p>
-                      <p className={`text-base font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>${Number(li.price || 0).toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('amazonLookupPage.previewStockLabel')}</p>
-                      <p className={`text-base font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{li.quantity}</p>
-                    </div>
-                  </div>
-
-                  {specEntries.length > 0 && (
-                    <div>
-                      <p className={`text-xs font-semibold uppercase tracking-wide mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {t('amazonLookupPage.previewSpecificsTitle')}
-                      </p>
-                      <div className={`rounded-lg border divide-y text-xs ${isDark ? 'border-slate-700 divide-slate-800' : 'border-slate-200 divide-slate-100'}`}>
-                        {specEntries.map(([name, value]) => (
-                          <div key={name} className="flex justify-between gap-3 px-2.5 py-1.5">
-                            <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{name}</span>
-                            <span className={`text-right ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{value}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <p className={`text-xs font-semibold uppercase tracking-wide mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {t('amazonLookupPage.previewPoliciesTitle')}
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {['shipping', 'payment', 'returns'].map((key) => (
-                        <span
-                          key={key}
-                          className={`text-xs rounded-full px-2.5 py-1 border ${
-                            policies[key]
-                              ? isDark
-                                ? 'border-slate-700 bg-slate-800 text-slate-200'
-                                : 'border-slate-200 bg-slate-100 text-slate-700'
-                              : isDark
-                                ? 'border-amber-800 bg-amber-950/30 text-amber-300'
-                                : 'border-amber-200 bg-amber-50 text-amber-700'
-                          }`}
-                        >
-                          {t(`amazonLookupPage.previewPolicy_${key}`)}: {policies[key] || t('amazonLookupPage.previewPolicyNotSet')}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 pt-1">
-                    <button type="button" onClick={() => setSingleListingState(null)} className="btn-secondary text-xs px-3 py-1.5">
+                    <button type="button" onClick={() => setSingleListingState(null)} className="btn-secondary text-xs mt-4">
                       {t('amazonLookupPage.cancel')}
                     </button>
-                    <button type="button" onClick={confirmSingleListing} className="btn-primary text-xs px-3 py-1.5">
-                      {t('amazonLookupPage.confirmAndList')}
-                    </button>
                   </div>
-                </div>
-              );
-            })()}
+                )}
 
-            {singleListingState.status === 'listed' && (
-              <div className={`mt-4 pt-4 border-t flex items-start gap-2 text-sm ${isDark ? 'border-slate-700 text-emerald-300' : 'border-slate-200 text-emerald-700'}`}>
-                <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
-                <div className="min-w-0">
-                  <p>{t('amazonLookupPage.listingCreated')}</p>
-                  {singleListingState.listingUrl && (
-                    <a href={singleListingState.listingUrl} target="_blank" rel="noopener noreferrer" className="text-xs underline break-all">
-                      {singleListingState.listingUrl}
-                    </a>
-                  )}
-                </div>
+                {isPreview && (() => {
+                  const li = singleListingState.prepared?.listingInput || {};
+                  const pictureUrls = Array.isArray(li.pictureUrls) ? li.pictureUrls : [];
+                  const specEntries = li.itemSpecifics && typeof li.itemSpecifics === 'object' ? Object.entries(li.itemSpecifics) : [];
+                  const policies = singleListingState.prepared?.policies || {};
+                  const referenceFound = !!singleListingState.prepared?.referenceListingUrl;
+                  return (
+                    <div className={`mt-5 pt-5 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                      <div
+                        className={`flex items-start gap-2 rounded-xl border p-3 mb-5 text-sm ${
+                          referenceFound
+                            ? isDark
+                              ? 'border-emerald-900 bg-emerald-950/30 text-emerald-200'
+                              : 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                            : isDark
+                              ? 'border-amber-900 bg-amber-950/30 text-amber-200'
+                              : 'border-amber-200 bg-amber-50 text-amber-800'
+                        }`}
+                      >
+                        {referenceFound ? (
+                          <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
+                        ) : (
+                          <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                        )}
+                        <span>{singleListingState.prepared?.referenceNote}</span>
+                      </div>
+
+                      <div className="grid md:grid-cols-5 gap-6">
+                        {/* Gallery */}
+                        <div className="md:col-span-2 space-y-2">
+                          {pictureUrls[0] && (
+                            <div
+                              className={`relative rounded-xl overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-slate-50'}`}
+                            >
+                              <img src={pictureUrls[0]} alt={li.title || ''} className="w-full aspect-square object-contain" />
+                              <span className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                                {t('amazonLookupPage.coverImageBadge')}
+                              </span>
+                            </div>
+                          )}
+                          {pictureUrls.length > 1 && (
+                            <div className="flex gap-1.5 overflow-x-auto pb-1">
+                              {pictureUrls.slice(1).map((url, idx) => (
+                                <div
+                                  key={`${url}-${idx}`}
+                                  className={`flex-none w-14 h-14 rounded-md overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-white'}`}
+                                >
+                                  <img src={url} alt={`${li.title || ''} ${idx + 2}`} className="w-full h-full object-contain" />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <p className={`text-xs text-center ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                            {t('amazonLookupPage.previewGalleryTitle', { count: pictureUrls.length })}
+                          </p>
+                        </div>
+
+                        {/* Details */}
+                        <div className="md:col-span-3 space-y-4 min-w-0">
+                          <div>
+                            <p className={`font-semibold text-sm leading-snug ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{li.title}</p>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className={`rounded-lg border px-3 py-2 ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
+                              <p className={`text-[11px] uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                {t('amazonLookupPage.previewPriceLabel')}
+                              </p>
+                              <p className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>${Number(li.price || 0).toFixed(2)}</p>
+                            </div>
+                            <div className={`rounded-lg border px-3 py-2 ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
+                              <p className={`text-[11px] uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                {t('amazonLookupPage.previewStockLabel')}
+                              </p>
+                              <p className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{li.quantity}</p>
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                              {t('amazonLookupPage.previewDescriptionTitle')}
+                            </p>
+                            <p className={`text-sm leading-relaxed max-h-24 overflow-y-auto ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                              {li.description}
+                            </p>
+                          </div>
+
+                          {specEntries.length > 0 && (
+                            <div>
+                              <p className={`text-xs font-semibold uppercase tracking-wide mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                {t('amazonLookupPage.previewSpecificsTitle')}
+                              </p>
+                              <div
+                                className={`rounded-lg border divide-y text-xs max-h-32 overflow-y-auto ${isDark ? 'border-slate-700 divide-slate-800' : 'border-slate-200 divide-slate-100'}`}
+                              >
+                                {specEntries.map(([name, value]) => (
+                                  <div key={name} className="flex justify-between gap-3 px-2.5 py-1.5">
+                                    <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{name}</span>
+                                    <span className={`text-right ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div>
+                            <p className={`text-xs font-semibold uppercase tracking-wide mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                              {t('amazonLookupPage.previewPoliciesTitle')}
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {['shipping', 'payment', 'returns'].map((key) => (
+                                <span
+                                  key={key}
+                                  className={`text-xs rounded-full px-2.5 py-1 border ${
+                                    policies[key]
+                                      ? isDark
+                                        ? 'border-slate-700 bg-slate-800 text-slate-200'
+                                        : 'border-slate-200 bg-slate-100 text-slate-700'
+                                      : isDark
+                                        ? 'border-amber-800 bg-amber-950/30 text-amber-300'
+                                        : 'border-amber-200 bg-amber-50 text-amber-700'
+                                  }`}
+                                >
+                                  {t(`amazonLookupPage.previewPolicy_${key}`)}: {policies[key] || t('amazonLookupPage.previewPolicyNotSet')}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={`flex justify-end gap-2 mt-6 pt-4 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                        <button type="button" onClick={() => setSingleListingState(null)} className="btn-secondary text-sm px-4 py-2">
+                          {t('amazonLookupPage.cancel')}
+                        </button>
+                        <button type="button" onClick={confirmSingleListing} className="btn-primary text-sm px-4 py-2 inline-flex items-center gap-1.5">
+                          <Sparkles size={14} />
+                          {t('amazonLookupPage.confirmAndList')}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {singleListingState.status === 'listed' && (
+                  <div className={`mt-5 pt-5 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                    <div
+                      className={`rounded-xl border p-4 flex items-start gap-3 ${isDark ? 'border-emerald-900 bg-emerald-950/30' : 'border-emerald-200 bg-emerald-50'}`}
+                    >
+                      <CheckCircle2 size={20} className="shrink-0 mt-0.5 text-emerald-500" />
+                      <div className="min-w-0">
+                        <p className={`text-sm font-medium ${isDark ? 'text-emerald-200' : 'text-emerald-800'}`}>{t('amazonLookupPage.listingCreated')}</p>
+                        {singleListingState.listingUrl && (
+                          <a
+                            href={singleListingState.listingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`text-xs underline break-all ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}
+                          >
+                            {singleListingState.listingUrl}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {settingsModalOpen && settingsForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
