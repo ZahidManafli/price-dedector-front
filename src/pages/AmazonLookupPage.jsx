@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { amazonAPI, ebayAPI, settingsAPI } from '../services/api';
+import { amazonAPI, ebayAPI, settingsAPI, dewisoAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import AutoListProgressStepper from '../components/AutoListProgressStepper';
@@ -64,6 +64,7 @@ export default function AmazonLookupPage() {
   const [ebayStatus, setEbayStatus] = useState({ connected: false });
   const [activeEbayAccountId, setActiveEbayAccountId] = useState(null);
   const [autoListSettings, setAutoListSettings] = useState(null);
+  const [dewisoTemplates, setDewisoTemplates] = useState([]);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsForm, setSettingsForm] = useState(null);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -267,8 +268,15 @@ export default function AmazonLookupPage() {
       defaultStockQty: String(autoListSettings?.defaultStockQty ?? 1),
       defaultProfitUsd: String(autoListSettings?.defaultProfitUsd ?? 5),
       adRatePercent: autoListSettings?.adRatePercent != null ? String(autoListSettings.adRatePercent) : '',
+      defaultDewisoTemplateId: autoListSettings?.defaultDewisoTemplateId || '',
     });
     setSettingsModalOpen(true);
+    if (!dewisoTemplates.length) {
+      dewisoAPI
+        .getHistory(50)
+        .then((res) => setDewisoTemplates(Array.isArray(res?.data?.items) ? res.data.items : []))
+        .catch(() => {});
+    }
   };
 
   const saveSettings = async () => {
@@ -281,6 +289,7 @@ export default function AmazonLookupPage() {
         defaultStockQty: Number(settingsForm.defaultStockQty) || 1,
         defaultProfitUsd: Number(settingsForm.defaultProfitUsd) || 0,
         adRatePercent: String(settingsForm.adRatePercent).trim() === '' ? null : Number(settingsForm.adRatePercent),
+        defaultDewisoTemplateId: settingsForm.defaultDewisoTemplateId || null,
       });
       setAutoListSettings(response?.data?.settings || null);
       setSettingsModalOpen(false);
@@ -309,6 +318,14 @@ export default function AmazonLookupPage() {
         onPhaseChange?.('prepare');
         const prepareRes = await ebayAPI.prepareAmazonAutoListing({ asin, ebayAccountId: activeEbayAccountId });
         const prepared = prepareRes?.data;
+
+        // A malformed/empty response here must never be silently treated as
+        // "no preview configured, go ahead and list" — that would submit a
+        // listing built from nothing instead of showing the preview the
+        // account is actually set up to require.
+        if (!prepared?.listingInput?.title) {
+          return { status: 'error', message: t('amazonLookupPage.failedAutoList') };
+        }
 
         if (prepared?.settings?.previewBeforeList) {
           return { status: 'awaiting_confirmation', prepared };
@@ -599,34 +616,7 @@ export default function AmazonLookupPage() {
           <div className="p-4 md:p-5">
             {loading && !result ? (
               <LoadingSpinner />
-            ) : !result ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="glass-card p-4 md:p-5">
-                  <div className="text-xs font-semibold text-blue-600 mb-2">
-                    {t('amazonLookupPage.instantResultsTitle')}
-                  </div>
-                  <p className="text-sm text-slate-600">
-                    {t('amazonLookupPage.instantResultsDesc')}
-                  </p>
-                </div>
-                <div className="glass-card p-4 md:p-5">
-                  <div className="text-xs font-semibold text-blue-600 mb-2">
-                    {t('amazonLookupPage.imageGalleryTitle')}
-                  </div>
-                  <p className="text-sm text-slate-600">
-                    {t('amazonLookupPage.imageGalleryDesc')}
-                  </p>
-                </div>
-                <div className="glass-card p-4 md:p-5">
-                  <div className="text-xs font-semibold text-blue-600 mb-2">
-                    {t('amazonLookupPage.priceInSecondsTitle')}
-                  </div>
-                  <p className="text-sm text-slate-600">
-                    {t('amazonLookupPage.priceInSecondsDesc')}
-                  </p>
-                </div>
-              </div>
-            ) : (
+            ) : !result ? null : (
               <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-4 lg:gap-5">
                 {/* Gallery */}
                 <div className={`rounded-xl overflow-hidden border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
@@ -922,55 +912,6 @@ export default function AmazonLookupPage() {
                       <SearchIcon size={14} />
                     </RouterLink>
                   </div>
-
-                  {singleListingState && (
-                    <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
-                      <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {t('amazonLookupPage.autoListProgressTitle')}
-                      </p>
-
-                      <AutoListProgressStepper
-                        phase={singleListingState.phase}
-                        outcome={['listed', 'awaiting_confirmation', 'error'].includes(singleListingState.status) ? singleListingState.status : null}
-                        t={t}
-                        isDark={isDark}
-                        variant="full"
-                      />
-
-                      {singleListingState.status === 'error' && (
-                        <p className="mt-3 text-sm text-red-500">{singleListingState.message}</p>
-                      )}
-
-                      {singleListingState.status === 'awaiting_confirmation' && (
-                        <div className={`mt-3 pt-3 border-t space-y-2 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                          <p className={`font-medium text-sm ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                            {singleListingState.prepared?.listingInput?.title}
-                          </p>
-                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                            ${Number(singleListingState.prepared?.listingInput?.price || 0).toFixed(2)} ·{' '}
-                            {singleListingState.prepared?.referenceNote}
-                          </p>
-                          <button type="button" onClick={confirmSingleListing} className="btn-primary text-xs px-3 py-1.5">
-                            {t('amazonLookupPage.confirmAndList')}
-                          </button>
-                        </div>
-                      )}
-
-                      {singleListingState.status === 'listed' && (
-                        <div className={`mt-3 pt-3 border-t flex items-center gap-2 text-sm ${isDark ? 'border-slate-700 text-emerald-300' : 'border-slate-200 text-emerald-700'}`}>
-                          <CheckCircle2 size={16} className="shrink-0" />
-                          <div className="min-w-0">
-                            <p>{t('amazonLookupPage.listingCreated')}</p>
-                            {singleListingState.listingUrl && (
-                              <a href={singleListingState.listingUrl} target="_blank" rel="noopener noreferrer" className="text-xs underline break-all">
-                                {singleListingState.listingUrl}
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -1158,6 +1099,88 @@ export default function AmazonLookupPage() {
         )}
       </div>
 
+      {singleListingState && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className={`w-full max-w-md rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className={`text-base font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                <Sparkles size={16} className="text-blue-600" />
+                {t('amazonLookupPage.autoListProgressTitle')}
+              </h2>
+              {singleListingState.status !== 'preparing' && (
+                <button
+                  type="button"
+                  onClick={() => setSingleListingState(null)}
+                  className={isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-700'}
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+
+            <AutoListProgressStepper
+              phase={singleListingState.phase}
+              outcome={['listed', 'awaiting_confirmation', 'error'].includes(singleListingState.status) ? singleListingState.status : null}
+              t={t}
+              isDark={isDark}
+              variant="full"
+            />
+
+            {singleListingState.status === 'error' && (
+              <div className={`mt-4 pt-4 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                <p className="text-sm text-red-500">{singleListingState.message}</p>
+                <button type="button" onClick={() => setSingleListingState(null)} className="btn-secondary text-xs mt-3">
+                  {t('amazonLookupPage.cancel')}
+                </button>
+              </div>
+            )}
+
+            {singleListingState.status === 'awaiting_confirmation' && (
+              <div className={`mt-4 pt-4 border-t space-y-2 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                <p className={`font-medium text-sm ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  {singleListingState.prepared?.listingInput?.title}
+                </p>
+                <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  ${Number(singleListingState.prepared?.listingInput?.price || 0).toFixed(2)}
+                </p>
+                <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {singleListingState.prepared?.referenceNote}
+                </p>
+                {Array.isArray(singleListingState.prepared?.listingInput?.pictureUrls) && (
+                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {t('amazonLookupPage.galleryImageCount', {
+                      count: singleListingState.prepared.listingInput.pictureUrls.length,
+                    })}
+                  </p>
+                )}
+                <div className="flex gap-2 pt-1">
+                  <button type="button" onClick={() => setSingleListingState(null)} className="btn-secondary text-xs px-3 py-1.5">
+                    {t('amazonLookupPage.cancel')}
+                  </button>
+                  <button type="button" onClick={confirmSingleListing} className="btn-primary text-xs px-3 py-1.5">
+                    {t('amazonLookupPage.confirmAndList')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {singleListingState.status === 'listed' && (
+              <div className={`mt-4 pt-4 border-t flex items-start gap-2 text-sm ${isDark ? 'border-slate-700 text-emerald-300' : 'border-slate-200 text-emerald-700'}`}>
+                <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p>{t('amazonLookupPage.listingCreated')}</p>
+                  {singleListingState.listingUrl && (
+                    <a href={singleListingState.listingUrl} target="_blank" rel="noopener noreferrer" className="text-xs underline break-all">
+                      {singleListingState.listingUrl}
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {settingsModalOpen && settingsForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className={`w-full max-w-md rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
@@ -1228,6 +1251,24 @@ export default function AmazonLookupPage() {
                   onChange={(e) => setSettingsForm((prev) => ({ ...prev, adRatePercent: e.target.value }))}
                   className="input-base"
                 />
+              </div>
+
+              <div>
+                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  {t('amazonLookupPage.defaultDewisoTemplateLabel')}
+                </label>
+                <select
+                  value={settingsForm.defaultDewisoTemplateId}
+                  onChange={(e) => setSettingsForm((prev) => ({ ...prev, defaultDewisoTemplateId: e.target.value }))}
+                  className="input-base"
+                >
+                  <option value="">{t('amazonLookupPage.defaultDewisoTemplateNone')}</option>
+                  {dewisoTemplates.map((tpl) => (
+                    <option key={tpl.id} value={tpl.id}>
+                      {tpl.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
