@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { amazonAPI, ebayAPI, productAPI, settingsAPI } from '../services/api';
+import { amazonAPI, ebayAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
-import EbayListingDraftModal from '../components/EbayListingDraftModal';
+import AutoListProgressStepper from '../components/AutoListProgressStepper';
 import {
   buildAmazonProductUrl,
   extractAmazonAsin,
@@ -17,6 +17,12 @@ import {
   Image as ImageIcon,
   Search as SearchIcon,
   Trash2,
+  Settings as SettingsIcon,
+  X,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Sparkles,
 } from 'lucide-react';
 
 function useDebouncedAutoLookup({ amazonAsin, autoLookupEnabled, onLookup }) {
@@ -53,13 +59,22 @@ export default function AmazonLookupPage() {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [lookupQuota, setLookupQuota] = useState(null);
   const [history, setHistory] = useState([]);
-  const [listingDraft, setListingDraft] = useState(null);
-  const [isListingModalOpen, setIsListingModalOpen] = useState(false);
-  const [listingError, setListingError] = useState('');
-  const [isSubmittingListing, setIsSubmittingListing] = useState(false);
-  const [isUpdatingDraft, setIsUpdatingDraft] = useState(false);
-  const [listingSubmission, setListingSubmission] = useState(null);
-  const [isAddingProduct, setIsAddingProduct] = useState(false);
+
+  // eBay account + per-account Amazon Lookup auto-listing settings
+  const [ebayStatus, setEbayStatus] = useState({ connected: false });
+  const [activeEbayAccountId, setActiveEbayAccountId] = useState(null);
+  const [autoListSettings, setAutoListSettings] = useState(null);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [settingsForm, setSettingsForm] = useState(null);
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  // Single-result "List on eBay" (the existing instant-preview card above)
+  const [singleListingState, setSingleListingState] = useState(null); // { status, message, itemId, listingUrl, prepared }
+
+  // Bulk auto-listing (paste multiple Amazon links)
+  const [bulkLinksText, setBulkLinksText] = useState('');
+  const [bulkResults, setBulkResults] = useState([]);
+  const [bulkProcessing, setBulkProcessing] = useState(false);
 
   // Profit planner
   const [targetProfit, setTargetProfit] = useState('');
@@ -206,6 +221,31 @@ export default function AmazonLookupPage() {
     fetchHistory();
   }, [fetchHistory]);
 
+  // eBay connection + account, needed before any auto-listing call (settings
+  // and listings are scoped per eBay account — see ListingsPage.jsx's
+  // identical pattern).
+  useEffect(() => {
+    const loadEbayStatus = async () => {
+      try {
+        const statusRes = await ebayAPI.getStatus();
+        const status = statusRes?.data || { connected: false };
+        setEbayStatus(status);
+        setActiveEbayAccountId(status.activeEbayAccountId || null);
+      } catch (error) {
+        console.warn('Failed to load eBay status:', error);
+      }
+    };
+    loadEbayStatus();
+  }, []);
+
+  useEffect(() => {
+    if (!activeEbayAccountId) return;
+    ebayAPI
+      .getAmazonLookupSettings(activeEbayAccountId)
+      .then((res) => setAutoListSettings(res?.data?.settings || null))
+      .catch(() => {});
+  }, [activeEbayAccountId]);
+
   useDebouncedAutoLookup({
     amazonAsin,
     autoLookupEnabled,
@@ -221,120 +261,217 @@ export default function AmazonLookupPage() {
     lookup(extractAmazonAsin(amazonAsin));
   };
 
-  const openListingModal = useCallback(async () => {
+  const openSettingsModal = () => {
+    setSettingsForm({
+      previewBeforeList: autoListSettings?.previewBeforeList || false,
+      defaultStockQty: String(autoListSettings?.defaultStockQty ?? 1),
+      defaultProfitUsd: String(autoListSettings?.defaultProfitUsd ?? 5),
+      adRatePercent: autoListSettings?.adRatePercent != null ? String(autoListSettings.adRatePercent) : '',
+    });
+    setSettingsModalOpen(true);
+  };
+
+  const saveSettings = async () => {
+    if (!activeEbayAccountId || !settingsForm) return;
+    setSavingSettings(true);
+    try {
+      const response = await ebayAPI.saveAmazonLookupSettings({
+        ebayAccountId: activeEbayAccountId,
+        previewBeforeList: settingsForm.previewBeforeList,
+        defaultStockQty: Number(settingsForm.defaultStockQty) || 1,
+        defaultProfitUsd: Number(settingsForm.defaultProfitUsd) || 0,
+        adRatePercent: String(settingsForm.adRatePercent).trim() === '' ? null : Number(settingsForm.adRatePercent),
+      });
+      setAutoListSettings(response?.data?.settings || null);
+      setSettingsModalOpen(false);
+      setAlert({ type: 'success', message: t('amazonLookupPage.settingsSaved') });
+    } catch (error) {
+      setAlert({
+        type: 'error',
+        message: error?.response?.data?.error || error.message || t('amazonLookupPage.settingsSaveFailed'),
+      });
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  // Builds the full listing (ChatGPT copy, ZIK-sourced category/specifics,
+  // composited cover image) for one ASIN, then either submits it immediately
+  // or — when the active eBay account has "preview before listing" enabled —
+  // stops and hands back the prepared draft so the caller can show it and
+  // wait for an explicit confirm.
+  const runAutoListPipeline = useCallback(
+    async (asin, { onPhaseChange } = {}) => {
+      if (!activeEbayAccountId) {
+        return { status: 'error', message: t('amazonLookupPage.connectEbayFirst') };
+      }
+      try {
+        onPhaseChange?.('prepare');
+        const prepareRes = await ebayAPI.prepareAmazonAutoListing({ asin, ebayAccountId: activeEbayAccountId });
+        const prepared = prepareRes?.data;
+
+        if (prepared?.settings?.previewBeforeList) {
+          return { status: 'awaiting_confirmation', prepared };
+        }
+
+        onPhaseChange?.('confirm');
+        const confirmRes = await ebayAPI.confirmAmazonAutoListing({
+          asin,
+          ebayAccountId: activeEbayAccountId,
+          amazonPrice: prepared?.amazonPrice,
+          listingInput: prepared?.listingInput,
+        });
+        const listed = confirmRes?.data;
+        return {
+          status: 'listed',
+          itemId: listed?.itemId,
+          listingUrl: listed?.listingUrl,
+          addedToProducts: listed?.addedToProducts,
+          adRateApplied: listed?.adRateApplied,
+        };
+      } catch (error) {
+        return {
+          status: 'error',
+          message: error?.response?.data?.error || error.message || t('amazonLookupPage.failedAutoList'),
+        };
+      }
+    },
+    [activeEbayAccountId, t]
+  );
+
+  const confirmPreparedListing = useCallback(
+    async (asin, prepared) => {
+      try {
+        const confirmRes = await ebayAPI.confirmAmazonAutoListing({
+          asin,
+          ebayAccountId: activeEbayAccountId,
+          amazonPrice: prepared?.amazonPrice,
+          listingInput: prepared?.listingInput,
+        });
+        const listed = confirmRes?.data;
+        return {
+          status: 'listed',
+          itemId: listed?.itemId,
+          listingUrl: listed?.listingUrl,
+          addedToProducts: listed?.addedToProducts,
+          adRateApplied: listed?.adRateApplied,
+        };
+      } catch (error) {
+        return {
+          status: 'error',
+          message: error?.response?.data?.error || error.message || t('amazonLookupPage.failedAutoList'),
+        };
+      }
+    },
+    [activeEbayAccountId, t]
+  );
+
+  const handleSingleListOnEbay = useCallback(async () => {
     const asin = result?.asin || extractAmazonAsin(amazonAsin);
     if (!asin) {
       setAlert({ type: 'warning', message: t('amazonLookupPage.noAsinFound') });
       return;
     }
+    setSingleListingState({ asin, status: 'preparing', phase: 'prepare' });
+    const outcome = await runAutoListPipeline(asin, {
+      onPhaseChange: (phase) => setSingleListingState((prev) => ({ ...prev, phase })),
+    });
+    setSingleListingState((prev) => ({ ...prev, ...outcome }));
+    if (outcome.status === 'listed') {
+      setAlert({ type: 'success', message: t('amazonLookupPage.listingCreated') });
+    } else if (outcome.status === 'error') {
+      setAlert({ type: 'error', message: outcome.message });
+    }
+  }, [amazonAsin, result, runAutoListPipeline, t]);
 
-    setListingError('');
-    setListingSubmission(null);
-    setListingDraft(null);
-    setIsListingModalOpen(true);
+  const confirmSingleListing = useCallback(async () => {
+    if (!singleListingState?.prepared) return;
+    setSingleListingState((prev) => ({ ...prev, status: 'preparing', phase: 'confirm' }));
+    const outcome = await confirmPreparedListing(singleListingState.asin, singleListingState.prepared);
+    setSingleListingState((prev) => ({ ...prev, ...outcome }));
+    if (outcome.status === 'listed') {
+      setAlert({ type: 'success', message: t('amazonLookupPage.listingCreated') });
+    } else if (outcome.status === 'error') {
+      setAlert({ type: 'error', message: outcome.message });
+    }
+  }, [confirmPreparedListing, singleListingState, t]);
 
-    try {
-      const amazonBasePrice = Number(result?.price?.usd || 0);
-      const defaultPrice = amazonBasePrice > 0 ? Number((amazonBasePrice + 2).toFixed(2)) : undefined;
-      const overrides = {};
-      if (Number.isFinite(defaultPrice) && defaultPrice > 0) {
-        overrides.price = defaultPrice;
+  const handleBulkAutoList = useCallback(async () => {
+    const lines = bulkLinksText
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (!lines.length) return;
+
+    setBulkProcessing(true);
+    setBulkResults(lines.map((line, idx) => ({ id: `${idx}-${line}`, input: line, status: 'pending' })));
+
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = lines[i];
+      const asin = extractAmazonAsin(line);
+
+      if (!isValidAmazonAsin(asin)) {
+        setBulkResults((prev) =>
+          prev.map((r, idx) => (idx === i ? { ...r, status: 'error', message: t('amazonLookupPage.invalidAsin') } : r))
+        );
+        continue; // eslint-disable-line no-continue
       }
 
-      const response = await ebayAPI.createListingDraft({
-        asin,
-        overrides,
-        sourceProduct: result,
+      setBulkResults((prev) => prev.map((r, idx) => (idx === i ? { ...r, asin, status: 'looking_up' } : r)));
+
+      // Consume the shared weekly Amazon-lookup quota for this link first —
+      // the same quota /amazon/lookup already enforces everywhere else.
+      try {
+        const lookupRes = await amazonAPI.lookup(asin);
+        if (lookupRes?.data?.quota) setLookupQuota(lookupRes.data.quota);
+      } catch (error) {
+        const quotaExceeded = error?.response?.status === 429;
+        if (error?.response?.data?.quota) setLookupQuota(error.response.data.quota);
+        setBulkResults((prev) =>
+          prev.map((r, idx) =>
+            idx === i
+              ? {
+                  ...r,
+                  status: quotaExceeded ? 'quota_exceeded' : 'error',
+                  message: error?.response?.data?.error || error.message,
+                }
+              : r
+          )
+        );
+        if (quotaExceeded) {
+          setBulkResults((prev) =>
+            prev.map((r, idx) =>
+              idx > i && r.status === 'pending'
+                ? { ...r, status: 'quota_exceeded', message: t('amazonLookupPage.quotaReached') }
+                : r
+            )
+          );
+          break;
+        }
+        continue; // eslint-disable-line no-continue
+      }
+
+      setBulkResults((prev) => prev.map((r, idx) => (idx === i ? { ...r, status: 'preparing', phase: 'prepare' } : r)));
+      const outcome = await runAutoListPipeline(asin, {
+        onPhaseChange: (phase) => setBulkResults((prev) => prev.map((r, idx) => (idx === i ? { ...r, phase } : r))),
       });
-      setListingDraft(response?.data?.draft || null);
-    } catch (error) {
-      setListingError(
-        error?.response?.data?.error ||
-          error?.message ||
-          t('amazonLookupPage.failedPrepareDraft')
-      );
-    }
-  }, [amazonAsin, result, t]);
-
-  const updateDraft = useCallback(async (updates) => {
-    if (!listingDraft?.id) return;
-    setIsUpdatingDraft(true);
-    setListingError('');
-    try {
-      const response = await ebayAPI.updateListingDraft(listingDraft.id, updates || {});
-      setListingDraft(response?.data?.draft || listingDraft);
-    } catch (error) {
-      setListingError(
-        error?.response?.data?.error || error?.message || t('amazonLookupPage.failedUpdateDraft')
-      );
-    } finally {
-      setIsUpdatingDraft(false);
-    }
-  }, [listingDraft, t]);
-
-  const submitListing = useCallback(async () => {
-    if (!listingDraft?.id) return;
-    setListingError('');
-    setIsSubmittingListing(true);
-    try {
-      const response = await ebayAPI.submitListingDraft(listingDraft.id);
-      setListingSubmission(response?.data?.submission || null);
-      setListingDraft((prev) => ({ ...prev, ...(response?.data?.payload || {}) }));
-      setAlert({ type: 'success', message: t('amazonLookupPage.listingCreated') });
-    } catch (error) {
-      setListingError(
-        error?.response?.data?.error || error?.message || t('amazonLookupPage.failedSubmitListing')
-      );
-    } finally {
-      setIsSubmittingListing(false);
-    }
-  }, [listingDraft, t]);
-
-  const addToProductsAfterListing = useCallback(async (email) => {
-    const trimmedEmail = String(email || '').trim();
-    if (!trimmedEmail) {
-      setListingError(t('amazonLookupPage.emailRequired'));
-      return;
+      setBulkResults((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...outcome } : r)));
     }
 
-    const asin = listingDraft?.asin || result?.asin || extractAmazonAsin(amazonAsin);
-    const ebayItemId = String(listingSubmission?.itemId || '').match(/\d{9,15}/)?.[0] || '';
-    if (!asin || !ebayItemId) {
-      setListingError(t('amazonLookupPage.missingProductData'));
-      return;
-    }
+    setBulkProcessing(false);
+    fetchHistory();
+  }, [bulkLinksText, fetchHistory, runAutoListPipeline, t]);
 
-    const amazonPrice = Number(result?.price?.usd || 0);
-    const ebayPrice = Number(listingDraft?.price || 0);
-    if (!(amazonPrice > 0 && ebayPrice > 0)) {
-      setListingError(t('amazonLookupPage.pricesMustBeGreater'));
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('productName', String(listingDraft?.title || result?.title || `ASIN ${asin}`).slice(0, 120));
-    formData.append('amazonAsin', asin);
-    formData.append('ebayItemId', ebayItemId);
-    formData.append('currentAmazonPrice', String(amazonPrice));
-    formData.append('currentEbayPrice', String(ebayPrice));
-    formData.append('userEmail', trimmedEmail);
-
-    setIsAddingProduct(true);
-    setListingError('');
-    try {
-      await productAPI.create(formData);
-      setAlert({ type: 'success', message: t('amazonLookupPage.addedToProducts') });
-      setIsListingModalOpen(false);
-      setListingSubmission(null);
-      setListingDraft(null);
-    } catch (error) {
-      setListingError(
-        error?.response?.data?.error || error?.message || t('amazonLookupPage.failedAddListing')
-      );
-    } finally {
-      setIsAddingProduct(false);
-    }
-  }, [amazonAsin, listingDraft, listingSubmission, result, t]);
+  const confirmBulkItem = useCallback(
+    async (index) => {
+      const item = bulkResults[index];
+      if (!item?.prepared) return;
+      setBulkResults((prev) => prev.map((r, idx) => (idx === index ? { ...r, status: 'preparing', phase: 'confirm' } : r)));
+      const outcome = await confirmPreparedListing(item.asin, item.prepared);
+      setBulkResults((prev) => prev.map((r, idx) => (idx === index ? { ...r, ...outcome } : r)));
+    },
+    [bulkResults, confirmPreparedListing]
+  );
 
   return (
     <div className="page-shell">
@@ -347,7 +484,7 @@ export default function AmazonLookupPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-3 text-sm">
             <label className="flex items-center gap-2 select-none cursor-pointer">
               <input
                 type="checkbox"
@@ -357,6 +494,17 @@ export default function AmazonLookupPage() {
               />
               <span className="text-slate-700">{t('amazonLookupPage.autoLookup')}</span>
             </label>
+            {ebayStatus.connected && (
+              <button
+                type="button"
+                onClick={openSettingsModal}
+                className="btn-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs"
+                title={t('amazonLookupPage.autoListSettings')}
+              >
+                <SettingsIcon size={14} />
+                {t('amazonLookupPage.autoListSettings')}
+              </button>
+            )}
           </div>
         </div>
 
@@ -737,11 +885,16 @@ export default function AmazonLookupPage() {
                   <div className="flex flex-col sm:flex-row gap-2 justify-end">
                     <button
                       type="button"
-                      onClick={() => setAlert({ type: 'info', message: t('amazonLookupPage.listOnEbaySoon') })}
-                      className="btn-primary"
-                      disabled
-                      title={t('amazonLookupPage.availableSoon')}
+                      onClick={handleSingleListOnEbay}
+                      className="btn-primary inline-flex items-center justify-center gap-2"
+                      disabled={!ebayStatus.connected || singleListingState?.status === 'preparing'}
+                      title={!ebayStatus.connected ? t('amazonLookupPage.connectEbayFirst') : ''}
                     >
+                      {singleListingState?.status === 'preparing' ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Sparkles size={14} />
+                      )}
                       {t('amazonLookupPage.listOnEbayButton')}
                     </button>
                     <button
@@ -751,6 +904,7 @@ export default function AmazonLookupPage() {
                         setResult(null);
                         setActiveImageIdx(0);
                         setAlert(null);
+                        setSingleListingState(null);
                       }}
                       className="btn-secondary"
                     >
@@ -768,6 +922,55 @@ export default function AmazonLookupPage() {
                       <SearchIcon size={14} />
                     </RouterLink>
                   </div>
+
+                  {singleListingState && (
+                    <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
+                      <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {t('amazonLookupPage.autoListProgressTitle')}
+                      </p>
+
+                      <AutoListProgressStepper
+                        phase={singleListingState.phase}
+                        outcome={['listed', 'awaiting_confirmation', 'error'].includes(singleListingState.status) ? singleListingState.status : null}
+                        t={t}
+                        isDark={isDark}
+                        variant="full"
+                      />
+
+                      {singleListingState.status === 'error' && (
+                        <p className="mt-3 text-sm text-red-500">{singleListingState.message}</p>
+                      )}
+
+                      {singleListingState.status === 'awaiting_confirmation' && (
+                        <div className={`mt-3 pt-3 border-t space-y-2 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                          <p className={`font-medium text-sm ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                            {singleListingState.prepared?.listingInput?.title}
+                          </p>
+                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                            ${Number(singleListingState.prepared?.listingInput?.price || 0).toFixed(2)} ·{' '}
+                            {singleListingState.prepared?.referenceNote}
+                          </p>
+                          <button type="button" onClick={confirmSingleListing} className="btn-primary text-xs px-3 py-1.5">
+                            {t('amazonLookupPage.confirmAndList')}
+                          </button>
+                        </div>
+                      )}
+
+                      {singleListingState.status === 'listed' && (
+                        <div className={`mt-3 pt-3 border-t flex items-center gap-2 text-sm ${isDark ? 'border-slate-700 text-emerald-300' : 'border-slate-200 text-emerald-700'}`}>
+                          <CheckCircle2 size={16} className="shrink-0" />
+                          <div className="min-w-0">
+                            <p>{t('amazonLookupPage.listingCreated')}</p>
+                            {singleListingState.listingUrl && (
+                              <a href={singleListingState.listingUrl} target="_blank" rel="noopener noreferrer" className="text-xs underline break-all">
+                                {singleListingState.listingUrl}
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -838,27 +1041,208 @@ export default function AmazonLookupPage() {
             </div>
           )}
         </div>
+
+        {ebayStatus.connected && (
+          <div className={`glass-card mt-5 p-4 md:p-5 ${isDark ? 'bg-slate-950 border-slate-800' : ''}`}>
+            <h2 className={`text-lg font-semibold mb-1 flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+              <Sparkles size={18} className="text-blue-600" />
+              {t('amazonLookupPage.bulkTitle')}
+            </h2>
+            <p className={`text-sm mb-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+              {t('amazonLookupPage.bulkDescription')}
+            </p>
+
+            <textarea
+              value={bulkLinksText}
+              onChange={(e) => setBulkLinksText(e.target.value)}
+              placeholder={t('amazonLookupPage.bulkPlaceholder')}
+              rows={4}
+              disabled={bulkProcessing}
+              className={`w-full rounded-lg border px-3 py-2 text-sm font-mono outline-none focus:ring-2 focus:ring-blue-500/40 ${
+                isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+              }`}
+            />
+
+            <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+              <button
+                type="button"
+                onClick={handleBulkAutoList}
+                disabled={bulkProcessing || !bulkLinksText.trim()}
+                className="btn-primary inline-flex items-center gap-2"
+              >
+                {bulkProcessing && <Loader2 size={14} className="animate-spin" />}
+                {t('amazonLookupPage.bulkSubmit')}
+              </button>
+              {autoListSettings && (
+                <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {autoListSettings.previewBeforeList
+                    ? t('amazonLookupPage.previewModeOn')
+                    : t('amazonLookupPage.previewModeOff')}
+                </span>
+              )}
+            </div>
+
+            {bulkResults.length > 0 && (
+              <div className="mt-4 space-y-2">
+                {bulkResults.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className={`rounded-lg border p-3 text-sm flex items-start gap-2 ${
+                      isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-50'
+                    }`}
+                  >
+                    {['pending', 'looking_up', 'preparing'].includes(item.status) && (
+                      <Loader2 size={15} className="mt-0.5 shrink-0 animate-spin text-blue-500" />
+                    )}
+                    {item.status === 'listed' && <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-500" />}
+                    {['error', 'quota_exceeded'].includes(item.status) && (
+                      <XCircle size={15} className="mt-0.5 shrink-0 text-red-500" />
+                    )}
+                    {item.status === 'awaiting_confirmation' && (
+                      <Sparkles size={15} className="mt-0.5 shrink-0 text-amber-500" />
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <p className={`truncate ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                        {item.prepared?.listingInput?.title || item.input}
+                      </p>
+
+                      {item.status === 'looking_up' && (
+                        <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                          {t('amazonLookupPage.lookingUpQuota')}
+                        </p>
+                      )}
+
+                      {item.phase && (
+                        <div className="mt-1">
+                          <AutoListProgressStepper
+                            phase={item.phase}
+                            outcome={['listed', 'awaiting_confirmation', 'error'].includes(item.status) ? item.status : null}
+                            t={t}
+                            isDark={isDark}
+                            variant="compact"
+                          />
+                        </div>
+                      )}
+
+                      {item.status === 'awaiting_confirmation' && (
+                        <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                          <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                            ${Number(item.prepared?.listingInput?.price || 0).toFixed(2)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => confirmBulkItem(index)}
+                            className="btn-primary text-xs px-2.5 py-1"
+                          >
+                            {t('amazonLookupPage.confirmAndList')}
+                          </button>
+                        </div>
+                      )}
+
+                      {item.status === 'listed' && item.listingUrl && (
+                        <a href={item.listingUrl} target="_blank" rel="noopener noreferrer" className="text-xs underline">
+                          {item.listingUrl}
+                        </a>
+                      )}
+
+                      {['error', 'quota_exceeded'].includes(item.status) && item.message && (
+                        <p className="text-xs text-red-500">{item.message}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      <EbayListingDraftModal
-        isOpen={isListingModalOpen}
-        draft={listingDraft}
-        error={listingError}
-        submitting={isSubmittingListing}
-        updatingDraft={isUpdatingDraft}
-        creatingProduct={isAddingProduct}
-        submission={listingSubmission}
-        onClose={() => {
-          if (isSubmittingListing || isAddingProduct) return;
-          setIsListingModalOpen(false);
-          setListingError('');
-          setListingSubmission(null);
-          setListingDraft(null);
-        }}
-        onConfirm={submitListing}
-        onUpdateDraft={updateDraft}
-        onCreateProduct={addToProductsAfterListing}
-      />
+      {settingsModalOpen && settingsForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className={`w-full max-w-md rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className={`text-base font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                {t('amazonLookupPage.autoListSettings')}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setSettingsModalOpen(false)}
+                className={isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-700'}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <label className="flex items-center gap-2 select-none cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settingsForm.previewBeforeList}
+                  onChange={(e) => setSettingsForm((prev) => ({ ...prev, previewBeforeList: e.target.checked }))}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                />
+                <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                  {t('amazonLookupPage.previewBeforeListLabel')}
+                </span>
+              </label>
+
+              <div>
+                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  {t('amazonLookupPage.defaultStockQtyLabel')}
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={settingsForm.defaultStockQty}
+                  onChange={(e) => setSettingsForm((prev) => ({ ...prev, defaultStockQty: e.target.value }))}
+                  className="input-base"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  {t('amazonLookupPage.defaultProfitLabel')}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={settingsForm.defaultProfitUsd}
+                  onChange={(e) => setSettingsForm((prev) => ({ ...prev, defaultProfitUsd: e.target.value }))}
+                  className="input-base"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  {t('amazonLookupPage.adRatePercentLabel')}
+                </label>
+                <input
+                  type="number"
+                  min="2"
+                  max="100"
+                  step="0.1"
+                  placeholder={t('amazonLookupPage.adRatePercentPlaceholder')}
+                  value={settingsForm.adRatePercent}
+                  onChange={(e) => setSettingsForm((prev) => ({ ...prev, adRatePercent: e.target.value }))}
+                  className="input-base"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-5">
+              <button type="button" onClick={() => setSettingsModalOpen(false)} className="btn-secondary text-sm" disabled={savingSettings}>
+                {t('amazonLookupPage.cancel')}
+              </button>
+              <button type="button" onClick={saveSettings} className="btn-primary text-sm inline-flex items-center gap-1.5" disabled={savingSettings}>
+                {savingSettings && <Loader2 size={14} className="animate-spin" />}
+                {t('amazonLookupPage.saveSettings')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
