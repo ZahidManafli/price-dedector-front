@@ -17,7 +17,7 @@ import {
   Upload, Link as LinkIcon,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
-import { learningAPI } from '../services/api';
+import { learningAPI, adminAPI } from '../services/api';
 
 // ─── constants ───────────────────────────────────────────────────────────────
 
@@ -29,7 +29,30 @@ const EMPTY_FORM = {
   duration_seconds: '',
   sort_order: '',
   is_published: true,
+  is_paid: false,
+  price_azn: '',
+  free_access_user_ids: [],
 };
+
+// Classic iOS-style switch — matches SettingsPage.jsx's auto-renew toggle markup.
+function Switch({ checked, onChange, disabled }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      disabled={disabled}
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-40 ${
+        checked ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'
+      }`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+          checked ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
+    </button>
+  );
+}
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -84,6 +107,11 @@ export default function AdminVideosTab() {
   const [videoMode,   setVideoMode]   = useState('url');
   const [thumbMode,   setThumbMode]   = useState('url');
 
+  // Paid-video free-access picker
+  const [allUsers,       setAllUsers]       = useState([]);
+  const [usersLoaded,    setUsersLoaded]    = useState(false);
+  const [userPickerSearch, setUserPickerSearch] = useState('');
+
   // File refs
   const [videoFile,   setVideoFile]   = useState(null);
   const [thumbFile,   setThumbFile]   = useState(null);
@@ -133,14 +161,28 @@ export default function AdminVideosTab() {
     if (thumbInputRef.current) thumbInputRef.current.value = '';
   };
 
+  const ensureUsersLoaded = async () => {
+    if (usersLoaded) return;
+    try {
+      const res = await adminAPI.listUsers();
+      setAllUsers(res?.data?.users || []);
+    } catch {
+      setAllUsers([]);
+    } finally {
+      setUsersLoaded(true);
+    }
+  };
+
   const openCreate = () => {
     setForm(EMPTY_FORM);
     setEditId(null);
     resetFileState();
     setModal('create');
+    ensureUsersLoaded();
   };
 
-  const openEdit = (video) => {
+  const openEdit = async (video) => {
+    const isPaid = Boolean(video.isPaid ?? video.is_paid);
     setForm({
       title:            video.title || '',
       description:      video.description || '',
@@ -149,13 +191,41 @@ export default function AdminVideosTab() {
       duration_seconds: video.duration_seconds ?? '',
       sort_order:       video.sort_order ?? '',
       is_published:     Boolean(video.is_published),
+      is_paid:          isPaid,
+      price_azn:        video.priceAzn ?? video.price_azn ?? '',
+      free_access_user_ids: [],
     });
     setEditId(video.id);
     resetFileState();
     setModal('edit');
+    ensureUsersLoaded();
+
+    if (isPaid) {
+      try {
+        const res = await learningAPI.get(video.id);
+        const ids = (res?.data?.video?.freeAccessUserIds || []).map(String);
+        setForm((prev) => ({ ...prev, free_access_user_ids: ids }));
+      } catch {
+        // keep empty list — admin can re-select
+      }
+    }
   };
 
-  const closeModal = () => { setModal(null); setEditId(null); resetFileState(); };
+  const closeModal = () => { setModal(null); setEditId(null); resetFileState(); setUserPickerSearch(''); };
+
+  const toggleFreeAccessUser = (userId) => {
+    setForm((prev) => {
+      const ids = prev.free_access_user_ids || [];
+      const next = ids.includes(userId) ? ids.filter((id) => id !== userId) : [...ids, userId];
+      return { ...prev, free_access_user_ids: next };
+    });
+  };
+
+  const filteredPickerUsers = allUsers.filter((u) => {
+    const q = userPickerSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (u.email || '').toLowerCase().includes(q) || (u.name || '').toLowerCase().includes(q);
+  });
 
   const handleField = (e) => {
     const { name, value, type, checked } = e.target;
@@ -182,6 +252,9 @@ export default function AdminVideosTab() {
     if (videoMode === 'url' && !hasVideoUrl)  return Swal.fire('Error', 'Video URL is required', 'error');
     if (videoMode === 'file' && !hasVideoFile && modal === 'create')
       return Swal.fire('Error', 'Please select a video file', 'error');
+    if (form.is_paid && !(Number(form.price_azn) > 0)) {
+      return Swal.fire('Error', 'Enter a price (AZN) greater than 0 for a paid video', 'error');
+    }
 
     setSaving(true);
     try {
@@ -192,6 +265,11 @@ export default function AdminVideosTab() {
       fd.append('duration_seconds', form.duration_seconds !== '' ? Number(form.duration_seconds) : '');
       fd.append('sort_order',  form.sort_order !== '' ? Number(form.sort_order) : 0);
       fd.append('is_published', form.is_published ? '1' : '0');
+      fd.append('is_paid', form.is_paid ? '1' : '0');
+      if (form.is_paid) {
+        fd.append('price_azn', Number(form.price_azn));
+        fd.append('free_access_user_ids', JSON.stringify(form.free_access_user_ids || []));
+      }
 
       // Video
       if (videoMode === 'file' && videoFile) {
@@ -324,6 +402,11 @@ export default function AdminVideosTab() {
                   {!video.is_published && (
                     <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 rounded px-1.5 py-0.5">
                       DRAFT
+                    </span>
+                  )}
+                  {Boolean(video.isPaid ?? video.is_paid) && (
+                    <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 rounded px-1.5 py-0.5">
+                      {video.priceAzn ?? video.price_azn} AZN
                     </span>
                   )}
                 </div>
@@ -588,6 +671,78 @@ export default function AdminVideosTab() {
                   Published (visible to users)
                 </span>
               </label>
+
+              {/* Paid video */}
+              <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Ödənişlidir</p>
+                    <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Aktiv olarsa, qiymət təyin edilməli və istisna edilən istifadəçilər seçilə bilər.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={form.is_paid}
+                    onChange={(val) => setForm((prev) => ({ ...prev, is_paid: val }))}
+                  />
+                </div>
+
+                {form.is_paid && (
+                  <div className="mt-3 space-y-3">
+                    <div>
+                      <label className={label}>Qiymət (AZN) *</label>
+                      <input
+                        name="price_azn"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={form.price_azn}
+                        onChange={handleField}
+                        className={input}
+                        placeholder="e.g. 10"
+                      />
+                    </div>
+
+                    <div>
+                      <label className={label}>
+                        Pulsuz baxa bilən istifadəçilər ({form.free_access_user_ids.length} seçilib)
+                      </label>
+                      <input
+                        value={userPickerSearch}
+                        onChange={(e) => setUserPickerSearch(e.target.value)}
+                        placeholder="Ad və ya email üzrə axtar…"
+                        className={`${input} mb-1.5`}
+                      />
+                      <div className={`max-h-40 overflow-y-auto rounded-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                        {!usersLoaded ? (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 size={16} className="animate-spin text-slate-400" />
+                          </div>
+                        ) : filteredPickerUsers.length === 0 ? (
+                          <p className={`text-xs p-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>İstifadəçi tapılmadı.</p>
+                        ) : (
+                          filteredPickerUsers.map((u) => (
+                            <label
+                              key={u.id}
+                              className={`flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-50'}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={form.free_access_user_ids.includes(u.id)}
+                                onChange={() => toggleFreeAccessUser(u.id)}
+                                className="w-3.5 h-3.5 rounded"
+                              />
+                              <span className={`truncate ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                                {u.name || u.email} {u.name ? <span className="opacity-60">({u.email})</span> : ''}
+                              </span>
+                            </label>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-2">

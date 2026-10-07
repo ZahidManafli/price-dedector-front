@@ -11,9 +11,10 @@
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ThumbsUp, MessageSquare, Send, Loader2,
-  ChevronLeft, PlayCircle, X, Clock,
+  ChevronLeft, PlayCircle, X, Clock, Lock,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth }  from '../context/AuthContext';
@@ -107,10 +108,12 @@ function CommentItem({ comment, isDark }) {
 export default function LearningVideosPage() {
   const { isDark } = useTheme();
   const { user }   = useAuth();
+  const navigate   = useNavigate();
 
   const [videos,        setVideos]        = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState(null);
+  const [purchasing,    setPurchasing]    = useState(false);
 
   // Selected video detail
   const [activeVideo,   setActiveVideo]   = useState(null);
@@ -162,6 +165,22 @@ export default function LearningVideosPage() {
   };
 
   const closeVideo = () => { setActiveVideo(null); setComments([]); };
+
+  // ── Buy access (lifetime, one-time Epoint payment) ────────────────────────
+  const handlePurchase = async (video) => {
+    setPurchasing(true);
+    setError(null);
+    try {
+      const res = await learningAPI.createPurchase(video.id);
+      const requestId = res?.data?.requestId;
+      if (!requestId) throw new Error('Sorğu yaradıla bilmədi.');
+      navigate(`/learning/pay/${requestId}`);
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Ödəniş sorğusu alınmadı.');
+    } finally {
+      setPurchasing(false);
+    }
+  };
 
   // ── Like toggle ────────────────────────────────────────────────────────────
   const handleLike = async (video, e) => {
@@ -259,7 +278,41 @@ export default function LearningVideosPage() {
 
               {/* Left: player + info */}
               <div className="space-y-4">
-                <VideoPlayer video={activeVideo} />
+                {activeVideo.isPaid && !activeVideo.hasAccess ? (
+                  <div
+                    className={`relative w-full rounded-xl border flex flex-col items-center justify-center gap-3 py-16 px-6 text-center ${
+                      isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-100'
+                    }`}
+                  >
+                    {activeVideo.thumbnail_url && (
+                      <img
+                        src={activeVideo.thumbnail_url}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover opacity-20 rounded-xl"
+                      />
+                    )}
+                    <div className="relative z-10 flex flex-col items-center gap-3">
+                      <Lock size={32} className={muted} />
+                      <p className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                        Bu video ödənişlidir
+                      </p>
+                      <p className={`text-xs ${muted}`}>
+                        Baxmaq üçün bir dəfəlik {Number(activeVideo.priceAzn).toFixed(2)} AZN ödəyin — ömürlük giriş əldə edirsiniz.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handlePurchase(activeVideo)}
+                        disabled={purchasing}
+                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 transition"
+                      >
+                        {purchasing ? <Loader2 size={15} className="animate-spin" /> : <Lock size={15} />}
+                        {purchasing ? 'Yönləndirilir…' : `${Number(activeVideo.priceAzn).toFixed(2)} AZN ödə`}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <VideoPlayer video={activeVideo} />
+                )}
 
                 <div>
                   <h2 className={`text-xl font-bold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>
@@ -402,6 +455,12 @@ export default function LearningVideosPage() {
                       {video.duration_seconds && (
                         <span className="absolute bottom-2 right-2 bg-black/75 text-white text-[11px] font-medium rounded px-1.5 py-0.5">
                           {fmtDuration(video.duration_seconds)}
+                        </span>
+                      )}
+                      {video.isPaid && (
+                        <span className="absolute top-2 left-2 inline-flex items-center gap-1 bg-blue-600/90 text-white text-[11px] font-semibold rounded-full px-2 py-0.5">
+                          <Lock size={10} />
+                          {video.hasAccess ? 'Alınıb' : `${Number(video.priceAzn).toFixed(2)} AZN`}
                         </span>
                       )}
                       {/* Play overlay */}

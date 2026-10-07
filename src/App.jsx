@@ -66,6 +66,8 @@ const LuhivePaymentRedirectPage = React.lazy(() => import('./pages/LuhivePayment
 const LuhiveReturnPage = React.lazy(() => import('./pages/LuhiveReturnPage'));
 const WalletPaymentRedirectPage = React.lazy(() => import('./pages/WalletPaymentRedirectPage'));
 const WalletReturnPage = React.lazy(() => import('./pages/WalletReturnPage'));
+const VideoPurchaseRedirectPage = React.lazy(() => import('./pages/VideoPurchaseRedirectPage'));
+const VideoPurchaseReturnPage = React.lazy(() => import('./pages/VideoPurchaseReturnPage'));
 
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
@@ -183,6 +185,8 @@ function AppContent() {
             <Route path="/luhive/return" element={<LuhiveReturnPage />} />
             <Route path="/wallet/pay/:requestId" element={<WalletPaymentRedirectPage />} />
             <Route path="/wallet/return" element={<WalletReturnPage />} />
+            <Route path="/learning/pay/:requestId" element={<VideoPurchaseRedirectPage />} />
+            <Route path="/learning/return" element={<VideoPurchaseReturnPage />} />
 
             {/* SEO landing pages (public, locale-prefixed) */}
             {buildSeoRoutes()}

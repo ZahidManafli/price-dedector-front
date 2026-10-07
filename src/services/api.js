@@ -559,6 +559,12 @@ export const learningAPI = {
   addComment:    (id, body)        => api.post(`/api/learning-videos/${id}/comments`, { body }),
   deleteComment: (videoId, commentId) =>
     api.delete(`/api/learning-videos/${videoId}/comments/${commentId}`),
+
+  // Paywall — one-time Epoint purchase granting lifetime access to one video.
+  // checkout/confirm are public (UUID-as-credential), same convention as walletAPI.
+  createPurchase:   (id)        => api.post(`/api/learning-videos/${id}/purchase`),
+  getPurchaseCheckout: (requestId) => api.get(`/api/learning-videos/purchase/checkout/${encodeURIComponent(requestId)}`),
+  confirmPurchase:  (requestId) => api.post(`/api/learning-videos/purchase/confirm/${encodeURIComponent(requestId)}`),
 };
 
 export const buyersAPI = {
