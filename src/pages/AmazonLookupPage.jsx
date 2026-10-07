@@ -98,6 +98,10 @@ export default function AmazonLookupPage() {
   const [walletBalanceAzn, setWalletBalanceAzn] = useState(null);
   const [walletTopupModalOpen, setWalletTopupModalOpen] = useState(false);
   const [walletHistoryModalOpen, setWalletHistoryModalOpen] = useState(false);
+  // 'ai' = ZIK reference + AI title/cover (existing pipeline); 'no_ai' = eBay's
+  // own Taxonomy API for category/item specifics, raw Amazon title, no cover
+  // image generation — AI is only used to write the description either way.
+  const [aiMode, setAiMode] = useState('ai');
   const [settingsForm, setSettingsForm] = useState(null);
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -105,6 +109,8 @@ export default function AmazonLookupPage() {
   const [singleListingState, setSingleListingState] = useState(null); // { status, message, itemId, listingUrl, prepared }
   const [editableListing, setEditableListing] = useState(null); // user-editable copy of prepared.listingInput while awaiting confirmation
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageFileInputRef = useRef(null);
   const [bulkEditingIndex, setBulkEditingIndex] = useState(null); // set when the shared preview modal is editing a bulk row instead of the single lookup
 
   // Bulk auto-listing (paste multiple Amazon links)
@@ -331,7 +337,7 @@ export default function AmazonLookupPage() {
       }
       try {
         onPhaseChange?.('prepare');
-        const prepareRes = await ebayAPI.prepareAmazonAutoListing({ asin, ebayAccountId: activeEbayAccountId });
+        const prepareRes = await ebayAPI.prepareAmazonAutoListing({ asin, ebayAccountId: activeEbayAccountId, mode: aiMode });
         const prepared = prepareRes?.data;
         // The AI cost of this run (whatever it was) has already been charged
         // to the wallet by the time /prepare responds, regardless of what
@@ -375,7 +381,7 @@ export default function AmazonLookupPage() {
         };
       }
     },
-    [activeEbayAccountId, t]
+    [activeEbayAccountId, aiMode, t]
   );
 
   const confirmPreparedListing = useCallback(
@@ -594,6 +600,33 @@ export default function AmazonLookupPage() {
               )}
             </div>
           </div>
+
+          <div className="relative mt-4 inline-flex items-center rounded-xl bg-white/10 p-1 backdrop-blur">
+            <button
+              type="button"
+              onClick={() => setAiMode('ai')}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                aiMode === 'ai' ? 'bg-white text-blue-700 shadow-sm' : 'text-blue-50 hover:bg-white/10'
+              }`}
+            >
+              <Sparkles size={13} />
+              With AI
+            </button>
+            <button
+              type="button"
+              onClick={() => setAiMode('no_ai')}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                aiMode === 'no_ai' ? 'bg-white text-blue-700 shadow-sm' : 'text-blue-50 hover:bg-white/10'
+              }`}
+            >
+              Without AI
+            </button>
+          </div>
+          <p className="relative mt-1.5 text-xs text-blue-100">
+            {aiMode === 'ai'
+              ? 'ZIK-sourced reference listing + AI-written title/description/cover image.'
+              : 'eBay Taxonomy API resolves category and item specifics; AI only writes the description. Raw Amazon title, no generated cover.'}
+          </p>
         </div>
 
         {alert && (
@@ -1186,6 +1219,10 @@ export default function AmazonLookupPage() {
                   const pictureUrls = Array.isArray(li.pictureUrls) ? li.pictureUrls : [];
                   const specEntries = li.itemSpecifics && typeof li.itemSpecifics === 'object' ? Object.entries(li.itemSpecifics) : [];
                   const policies = activeModalState.prepared?.policies || {};
+                  const taxonomyAspectsByName = {};
+                  (activeModalState.prepared?.taxonomyAspects || []).forEach((aspect) => {
+                    if (aspect?.name) taxonomyAspectsByName[aspect.name] = aspect;
+                  });
 
                   const updateField = (field, value) => setEditableListing((prev) => ({ ...prev, [field]: value }));
                   const updateSpec = (name, value) =>
@@ -1197,6 +1234,26 @@ export default function AmazonLookupPage() {
                     if (!url) return;
                     setEditableListing((prev) => ({ ...prev, pictureUrls: [...(prev.pictureUrls || []), url].slice(0, 24) }));
                     setNewImageUrl('');
+                  };
+                  const handleImageFileSelected = async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (!file) return;
+                    setUploadingImage(true);
+                    try {
+                      const formData = new FormData();
+                      formData.append('images', file);
+                      formData.append('templateId', `amazon-lookup-image-${Date.now()}`);
+                      const res = await dewisoAPI.uploadImages(formData);
+                      const item = res?.data?.items?.[0];
+                      const uploadedUrl = item?.maxDimensionImageUrl || item?.localUrl;
+                      if (!uploadedUrl) throw new Error(item?.error || 'Upload returned no image URL');
+                      setEditableListing((prev) => ({ ...prev, pictureUrls: [...(prev.pictureUrls || []), uploadedUrl].slice(0, 24) }));
+                    } catch (uploadErr) {
+                      setAlert({ type: 'error', message: uploadErr?.response?.data?.error || uploadErr.message || 'Image upload failed' });
+                    } finally {
+                      setUploadingImage(false);
+                    }
                   };
 
                   const inputCls = `w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/40 ${
@@ -1258,6 +1315,22 @@ export default function AmazonLookupPage() {
                               {t('amazonLookupPage.addImage')}
                             </button>
                           </div>
+                          <input
+                            ref={imageFileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageFileSelected}
+                            className="hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => imageFileInputRef.current?.click()}
+                            disabled={uploadingImage}
+                            className="btn-secondary text-xs px-2.5 w-full inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
+                          >
+                            {uploadingImage ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
+                            {uploadingImage ? 'Yüklənir...' : 'Şəkil yüklə'}
+                          </button>
                           <p className={`text-xs text-center ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                             {t('amazonLookupPage.previewGalleryTitle', { count: pictureUrls.length })}
                           </p>
@@ -1338,32 +1411,54 @@ export default function AmazonLookupPage() {
                                 {t('amazonLookupPage.previewSpecificsTitle')}
                               </p>
                               <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                                {specEntries.map(([name, value]) => (
-                                  <div key={name} className="grid grid-cols-5 gap-2 items-center">
-                                    <span className={`col-span-2 text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`} title={name}>
-                                      {name}
-                                    </span>
-                                    {ITEM_ORIGIN_SPEC_ALIASES.has(name.trim().toLowerCase()) ? (
-                                      <select
-                                        value={value}
-                                        onChange={(e) => updateSpec(name, e.target.value)}
-                                        className={`col-span-3 rounded-md border px-2 py-1 text-xs ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300'}`}
-                                      >
-                                        {COUNTRY_OPTIONS.map((c) => (
-                                          <option key={c} value={c}>
-                                            {c}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    ) : (
-                                      <input
-                                        value={value}
-                                        onChange={(e) => updateSpec(name, e.target.value)}
-                                        className={`col-span-3 rounded-md border px-2 py-1 text-xs ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300'}`}
-                                      />
-                                    )}
-                                  </div>
-                                ))}
+                                {specEntries.map(([name, value]) => {
+                                  const taxonomyAspect = taxonomyAspectsByName[name];
+                                  const selectableValues = taxonomyAspect?.mode === 'SELECTION_ONLY' ? taxonomyAspect.values : null;
+                                  return (
+                                    <div key={name} className="grid grid-cols-5 gap-2 items-center">
+                                      <span className={`col-span-2 text-xs truncate flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} title={name}>
+                                        {name}
+                                        {taxonomyAspect?.required && <span className="text-red-500">*</span>}
+                                      </span>
+                                      {ITEM_ORIGIN_SPEC_ALIASES.has(name.trim().toLowerCase()) ? (
+                                        <select
+                                          value={value}
+                                          onChange={(e) => updateSpec(name, e.target.value)}
+                                          className={`col-span-3 rounded-md border px-2 py-1 text-xs ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300'}`}
+                                        >
+                                          {COUNTRY_OPTIONS.map((c) => (
+                                            <option key={c} value={c}>
+                                              {c}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      ) : selectableValues && selectableValues.length > 0 ? (
+                                        <select
+                                          value={value}
+                                          onChange={(e) => updateSpec(name, e.target.value)}
+                                          className={`col-span-3 rounded-md border px-2 py-1 text-xs ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300'} ${
+                                            taxonomyAspect?.required && !value ? 'border-red-500' : ''
+                                          }`}
+                                        >
+                                          <option value="">— seçin —</option>
+                                          {selectableValues.map((v) => (
+                                            <option key={v} value={v}>
+                                              {v}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      ) : (
+                                        <input
+                                          value={value}
+                                          onChange={(e) => updateSpec(name, e.target.value)}
+                                          className={`col-span-3 rounded-md border px-2 py-1 text-xs ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300'} ${
+                                            taxonomyAspect?.required && !value ? 'border-red-500' : ''
+                                          }`}
+                                        />
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           )}
