@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { amazonAPI, ebayAPI, settingsAPI, dewisoAPI } from '../services/api';
+import { amazonAPI, ebayAPI, settingsAPI, dewisoAPI, walletAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import AutoListProgressStepper from '../components/AutoListProgressStepper';
+import WalletTopupModal from '../components/WalletTopupModal';
 import {
   buildAmazonProductUrl,
   extractAmazonAsin,
@@ -27,6 +28,7 @@ import {
   BrainCircuit,
   History,
   PackageSearch,
+  Wallet,
 } from 'lucide-react';
 
 // Same field + aliases ListOnEbayModal.jsx checks for "Country/Region of
@@ -39,6 +41,10 @@ const ITEM_ORIGIN_SPEC_ALIASES = new Set([
   'item origin',
 ]);
 const ITEM_ORIGIN_SPEC_NAME = 'Country/Region of Manufacture';
+// Mirrors services/walletService.js's WALLET_MIN_BALANCE_AZN — only used here
+// for an early, friendlier client-side block; the server enforces the real
+// one inside /amazon-lookup/prepare regardless of what the client checks.
+const WALLET_MIN_BALANCE_AZN = 0.1;
 const COUNTRY_OPTIONS = [
   'United States', 'China', 'United Kingdom', 'Canada', 'Germany', 'France', 'Italy',
   'Spain', 'Japan', 'South Korea', 'India', 'Vietnam', 'Mexico', 'Turkey', 'Australia',
@@ -88,6 +94,8 @@ export default function AmazonLookupPage() {
   const [dewisoTemplates, setDewisoTemplates] = useState([]);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
+  const [walletBalanceAzn, setWalletBalanceAzn] = useState(null);
+  const [walletTopupModalOpen, setWalletTopupModalOpen] = useState(false);
   const [settingsForm, setSettingsForm] = useState(null);
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -225,6 +233,19 @@ export default function AmazonLookupPage() {
     }
   }, []);
 
+  // Checkila Smart's auto-list AI cost is charged from this balance (in AZN)
+  // on every /amazon-lookup/prepare run — see routes/ebay.js. Re-fetched here
+  // and re-synced from each prepare response's own `wallet.balanceAzn`, so the
+  // header chip never shows a stale number mid-session.
+  const fetchWalletBalance = useCallback(async () => {
+    try {
+      const response = await walletAPI.getBalance();
+      setWalletBalanceAzn(response?.data?.balanceAzn ?? null);
+    } catch (error) {
+      console.warn('Failed to load wallet balance:', error);
+    }
+  }, []);
+
   useEffect(() => {
     const fetchLimits = async () => {
       try {
@@ -245,7 +266,8 @@ export default function AmazonLookupPage() {
 
     fetchLimits();
     fetchHistory();
-  }, [fetchHistory]);
+    fetchWalletBalance();
+  }, [fetchHistory, fetchWalletBalance]);
 
   // eBay connection + account, needed before any auto-listing call (settings
   // and listings are scoped per eBay account — see ListingsPage.jsx's
@@ -345,6 +367,10 @@ export default function AmazonLookupPage() {
         onPhaseChange?.('prepare');
         const prepareRes = await ebayAPI.prepareAmazonAutoListing({ asin, ebayAccountId: activeEbayAccountId });
         const prepared = prepareRes?.data;
+        // The AI cost of this run (whatever it was) has already been charged
+        // to the wallet by the time /prepare responds, regardless of what
+        // happens next — keep the header chip in sync immediately.
+        if (prepared?.wallet) setWalletBalanceAzn(prepared.wallet.balanceAzn);
 
         // A malformed/empty response here must never be silently treated as
         // "no preview configured, go ahead and list" — that would submit a
@@ -374,6 +400,9 @@ export default function AmazonLookupPage() {
           adRateApplied: listed?.adRateApplied,
         };
       } catch (error) {
+        if (error?.response?.status === 402) {
+          return { status: 'error', message: t('amazonLookupPage.walletBalanceTooLow') };
+        }
         return {
           status: 'error',
           message: error?.response?.data?.error || error.message || t('amazonLookupPage.failedAutoList'),
@@ -416,6 +445,11 @@ export default function AmazonLookupPage() {
       setAlert({ type: 'warning', message: t('amazonLookupPage.noAsinFound') });
       return;
     }
+    if (walletBalanceAzn !== null && walletBalanceAzn < WALLET_MIN_BALANCE_AZN) {
+      setAlert({ type: 'warning', message: t('amazonLookupPage.walletBalanceTooLow') });
+      setWalletTopupModalOpen(true);
+      return;
+    }
     setSingleListingState({ asin, status: 'preparing', phase: 'prepare' });
     const outcome = await runAutoListPipeline(asin, {
       onPhaseChange: (phase) => setSingleListingState((prev) => ({ ...prev, phase })),
@@ -428,7 +462,7 @@ export default function AmazonLookupPage() {
     } else if (outcome.status === 'error') {
       setAlert({ type: 'error', message: outcome.message });
     }
-  }, [amazonAsin, result, runAutoListPipeline, t]);
+  }, [amazonAsin, result, runAutoListPipeline, t, walletBalanceAzn]);
 
   const closeListingModal = useCallback(() => {
     setSingleListingState(null);
@@ -469,6 +503,11 @@ export default function AmazonLookupPage() {
       .map((line) => line.trim())
       .filter(Boolean);
     if (!lines.length) return;
+    if (walletBalanceAzn !== null && walletBalanceAzn < WALLET_MIN_BALANCE_AZN) {
+      setAlert({ type: 'warning', message: t('amazonLookupPage.walletBalanceTooLow') });
+      setWalletTopupModalOpen(true);
+      return;
+    }
 
     setBulkProcessing(true);
     setBulkResults(lines.map((line, idx) => ({ id: `${idx}-${line}`, input: line, status: 'pending' })));
@@ -527,7 +566,7 @@ export default function AmazonLookupPage() {
 
     setBulkProcessing(false);
     fetchHistory();
-  }, [bulkLinksText, fetchHistory, runAutoListPipeline, t]);
+  }, [bulkLinksText, fetchHistory, runAutoListPipeline, t, walletBalanceAzn]);
 
   const confirmBulkItem = useCallback(
     async (index) => {
@@ -566,6 +605,19 @@ export default function AmazonLookupPage() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setWalletTopupModalOpen(true)}
+                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm backdrop-blur transition ${
+                  walletBalanceAzn !== null && walletBalanceAzn < WALLET_MIN_BALANCE_AZN
+                    ? 'bg-rose-500/90 hover:bg-rose-500 text-white'
+                    : 'bg-white/10 hover:bg-white/20'
+                }`}
+                title={t('amazonLookupPage.topUpBalance')}
+              >
+                <Wallet size={14} />
+                {walletBalanceAzn === null ? '—' : `${Number(walletBalanceAzn).toFixed(2)} ₼`}
+              </button>
               <label className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/15 px-3 py-2.5 text-sm cursor-pointer select-none backdrop-blur transition">
                 <input
                   type="checkbox"
@@ -1692,6 +1744,8 @@ export default function AmazonLookupPage() {
           </div>
         </div>
       )}
+
+      <WalletTopupModal open={walletTopupModalOpen} onClose={() => setWalletTopupModalOpen(false)} />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { adminAPI, productAPI, settingsAPI, ebayAPI, paymentsAPI } from '../services/api';
+import { adminAPI, productAPI, settingsAPI, ebayAPI, paymentsAPI, walletAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
 import { formatCurrency } from '../utils/helpers';
@@ -8,11 +8,12 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Gauge, LineChart, Lock, ShieldCheck, TrendingUp, X } from 'lucide-react';
+import { AlertCircle, Gauge, LineChart, Lock, ShieldCheck, TrendingUp, Wallet, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import SellerAnalyticsSection from '../components/SellerAnalyticsSection';
 import FinanceAnalyticsSection from '../components/FinanceAnalyticsSection';
 import PaymentMethodPicker from '../components/PaymentMethodPicker';
+import WalletTopupModal from '../components/WalletTopupModal';
 
 // Formula: (credits / 3) * rate AZN — e.g. 6 credits at 0.35 -> (6/3)*0.35 = 0.70 AZN.
 // Mirrors computeTrackingCreditsTopUpPrice on the backend, which recomputes
@@ -414,6 +415,7 @@ export default function DashboardPage() {
   const [products, setProducts] = useState([]);
   const [limits, setLimits] = useState(null);
   const [trackingCreditsModalOpen, setTrackingCreditsModalOpen] = useState(false);
+  const [walletTopupModalOpen, setWalletTopupModalOpen] = useState(false);
   const [marketAnalysisCreditsModalOpen, setMarketAnalysisCreditsModalOpen] = useState(false);
   const [defaultCard, setDefaultCard] = useState(null);
   const [adminStats, setAdminStats] = useState(null);
@@ -439,19 +441,22 @@ export default function DashboardPage() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState(null);
   const [financeDays, setFinanceDays] = useState(365);
+  const [walletBalanceAzn, setWalletBalanceAzn] = useState(null);
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-        const [productsRes, limitsRes, ebayRes, cardsRes] = await Promise.all([
+        const [productsRes, limitsRes, ebayRes, cardsRes, walletRes] = await Promise.all([
           productAPI.getAll().catch(() => ({ data: [] })),
           settingsAPI.getLimits().catch(() => null),
           ebayAPI.getStatus().catch(() => null),
           paymentsAPI.listCards().catch(() => null),
+          walletAPI.getBalance().catch(() => null),
         ]);
         setProducts(productsRes?.data || []);
         setLimits(limitsRes?.data || null);
+        setWalletBalanceAzn(walletRes?.data?.balanceAzn ?? null);
         syncPermissionsFromLimits(limitsRes?.data || null);
         setDefaultCard((cardsRes?.data?.cards || []).find((c) => c.isDefault) || null);
         const ebayData = ebayRes?.data || {};
@@ -947,6 +952,8 @@ export default function DashboardPage() {
         }}
       />
 
+      <WalletTopupModal open={walletTopupModalOpen} onClose={() => setWalletTopupModalOpen(false)} />
+
       {alert && (
         <div className="mb-6">
           <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
@@ -1321,6 +1328,51 @@ export default function DashboardPage() {
             </p>
           )}
         </div>
+
+        {/* Checkila Smart Wallet Balance */}
+        {(() => {
+          const walletLow = walletBalanceAzn !== null && walletBalanceAzn < 0.1;
+          return (
+            <div className={`glass-card p-5 border transition-all ${
+              walletLow
+                ? isDark ? 'bg-slate-950 text-white border-rose-700/60' : 'bg-rose-50 text-slate-900 border-rose-300'
+                : isDark ? 'bg-slate-950 text-white border-slate-800' : 'bg-slate-200 text-slate-900 border-slate-300'
+            }`}>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <p className={`text-sm flex items-center gap-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  <Wallet size={14} /> Checkila Smart Balans
+                </p>
+                {walletLow && (
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                    isDark ? 'bg-rose-900/50 text-rose-300' : 'bg-rose-100 text-rose-700'
+                  }`}>
+                    <AlertCircle size={10} />
+                    Balans az
+                  </span>
+                )}
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <p className={`text-3xl font-bold ${walletLow ? 'text-rose-500' : ''}`}>
+                  {walletBalanceAzn === null ? '—' : `${Number(walletBalanceAzn).toFixed(2)} ₼`}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setWalletTopupModalOpen(true)}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+                    isDark
+                      ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-900/40'
+                      : 'bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 hover:border-blue-300 shadow-sm'
+                  }`}
+                >
+                  Balans artır
+                </button>
+              </div>
+              <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
+                Checkila Smart ilə eBay-ə avtomatik listinq üçün istifadə olunur.
+              </p>
+            </div>
+          );
+        })()}
       </div>
 
       <div className={`glass-card p-5 border ${isDark ? 'bg-slate-950 text-white border-slate-800' : 'bg-white text-slate-900 border-slate-200'}`}>

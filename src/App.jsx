@@ -64,6 +64,8 @@ const PaymentErrorPage = React.lazy(() => import('./pages/PaymentErrorPage'));
 const EpointRedirectPage = React.lazy(() => import('./pages/EpointRedirectPage'));
 const LuhivePaymentRedirectPage = React.lazy(() => import('./pages/LuhivePaymentRedirectPage'));
 const LuhiveReturnPage = React.lazy(() => import('./pages/LuhiveReturnPage'));
+const WalletPaymentRedirectPage = React.lazy(() => import('./pages/WalletPaymentRedirectPage'));
+const WalletReturnPage = React.lazy(() => import('./pages/WalletReturnPage'));
 
 import { TAB_KEYS } from './utils/planAccess';
 import ActivityTracker from './components/ActivityTracker';
@@ -179,6 +181,8 @@ function AppContent() {
             <Route path="/payments/epoint/card/register/:attemptId" element={<EpointRedirectPage kind="card" />} />
             <Route path="/luhive/pay/:requestId" element={<LuhivePaymentRedirectPage />} />
             <Route path="/luhive/return" element={<LuhiveReturnPage />} />
+            <Route path="/wallet/pay/:requestId" element={<WalletPaymentRedirectPage />} />
+            <Route path="/wallet/return" element={<WalletReturnPage />} />
 
             {/* SEO landing pages (public, locale-prefixed) */}
             {buildSeoRoutes()}

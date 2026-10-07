@@ -184,6 +184,17 @@ export const luhiveAPI = {
   confirmPayment: (requestId) => api.post(`/payments/luhive/confirm/${encodeURIComponent(requestId)}`),
 };
 
+// Checkila Smart balance (wallet) — balance-funded, not credit/subscription,
+// top-up via Epoint. getCheckoutPayload/confirmPayment are public (same
+// UUID-as-credential convention as luhiveAPI above); createTopup/getBalance
+// require auth since they act on the logged-in user's own wallet.
+export const walletAPI = {
+  getBalance: () => api.get('/wallet/balance'),
+  createTopup: (amountAzn) => api.post('/wallet/topup', { amountAzn }),
+  getCheckoutPayload: (requestId) => api.get(`/wallet/topup/checkout/${encodeURIComponent(requestId)}`),
+  confirmPayment: (requestId) => api.post(`/wallet/topup/confirm/${encodeURIComponent(requestId)}`),
+};
+
 export const ebayAPI = {
   get: (...args) => api.get(...args),
   post: (...args) => api.post(...args),
