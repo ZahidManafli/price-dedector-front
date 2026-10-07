@@ -13,6 +13,7 @@ import {
   isValidAmazonAsin,
 } from '../utils/helpers';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import {
   Link as LinkIcon,
@@ -31,6 +32,7 @@ import {
   PackageSearch,
   Wallet,
   Receipt,
+  Lock,
 } from 'lucide-react';
 
 // Same field + aliases ListOnEbayModal.jsx checks for "Country/Region of
@@ -77,6 +79,8 @@ function useDebouncedAutoLookup({ amazonAsin, autoLookupEnabled, onLookup }) {
 
 export default function AmazonLookupPage() {
   const { isDark } = useTheme();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const { t } = useTranslation();
   const [amazonAsin, setAmazonAsin] = useState('');
   const [autoLookupEnabled, setAutoLookupEnabled] = useState(true);
@@ -614,11 +618,23 @@ export default function AmazonLookupPage() {
             </button>
             <button
               type="button"
-              onClick={() => setAiMode('no_ai')}
+              onClick={() => {
+                if (!isAdmin) {
+                  setAlert({ type: 'warning', message: 'Without AI rejimi hələlik yalnız adminlər üçün açıqdır.' });
+                  return;
+                }
+                setAiMode('no_ai');
+              }}
+              title={!isAdmin ? 'Hələlik yalnız adminlər üçün açıqdır' : undefined}
               className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-                aiMode === 'no_ai' ? 'bg-white text-blue-700 shadow-sm' : 'text-blue-50 hover:bg-white/10'
+                !isAdmin
+                  ? 'text-blue-200/60 cursor-not-allowed'
+                  : aiMode === 'no_ai'
+                    ? 'bg-white text-blue-700 shadow-sm'
+                    : 'text-blue-50 hover:bg-white/10'
               }`}
             >
+              {!isAdmin && <Lock size={12} />}
               Without AI
             </button>
           </div>
