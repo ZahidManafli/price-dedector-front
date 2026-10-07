@@ -578,7 +578,7 @@
     "defaultDewisoTemplateNone": "Yoxdur (sadə süni intellekt təsviri)",
     "coverImagePromptLabel": "Ön kapak şəklinin stili (könüllü)",
     "coverImagePromptPlaceholder": "məs. \"bayram mövzusu, qızılı rənglər, üzərində yazı olmasın\"",
-    "coverImagePromptHint": "Ön kapak şəkli hər zaman süni intellekt tərəfindən yaradılır. Boş saxlasanız, standart stil istifadə olunur (qırmızı çərçivə, endirim nişanı, Free Delivery lenti, şəkil üzərində yazı olmadan) — öz stilinizi təsvir etsəniz, o, standartı əvəz edir.",
+    "coverImagePromptHint": "Boş saxlasanız, standart kapak stili istifadə olunur (qırmızı çərçivə, endirim nişanı, Free Delivery lenti — hər dəfə eyni görünüşdə, süni intellekt xərci olmadan). Öz stilinizi təsvir etsəniz, süni intellekt əsl məhsul şəklini redaktə edəcək — nəticə dəfədən-dəfəyə fərqli ola bilər.",
     "previewGalleryTitle": "Qalereya ({{count}} şəkil)",
     "coverImageBadge": "Ön kapak",
     "previewPriceLabel": "Qiymət",

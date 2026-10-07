@@ -578,7 +578,7 @@
     "defaultDewisoTemplateNone": "Yok (düz yapay zeka açıklaması)",
     "coverImagePromptLabel": "Kapak görseli stili (isteğe bağlı)",
     "coverImagePromptPlaceholder": "örn. \"bayram teması, sıcak altın tonları, üzerinde yazı olmasın\"",
-    "coverImagePromptHint": "Kapak görseli her zaman yapay zeka tarafından oluşturulur. Boş bırakırsanız varsayılan stil kullanılır (kırmızı çerçeve, indirim rozeti, Free Delivery kurdelesi, fotoğrafın üzerinde yazı olmadan) — kendi stilinizi tanımlarsanız varsayılanın yerini alır.",
+    "coverImagePromptHint": "Boş bırakırsanız varsayılan kapak stili kullanılır (kırmızı çerçeve, indirim rozeti, Free Delivery kurdelesi — her seferinde aynı, yapay zeka maliyeti olmadan). Kendi stilinizi tanımlarsanız, yapay zeka gerçek ürün fotoğrafını düzenler — sonuç seferden sefere değişebilir.",
     "previewGalleryTitle": "Galeri ({{count}} görsel)",
     "coverImageBadge": "Kapak",
     "previewPriceLabel": "Fiyat",
