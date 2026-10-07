@@ -190,6 +190,7 @@ export const luhiveAPI = {
 // require auth since they act on the logged-in user's own wallet.
 export const walletAPI = {
   getBalance: () => api.get('/wallet/balance'),
+  getTransactions: (limit = 50, offset = 0) => api.get('/wallet/transactions', { params: { limit, offset } }),
   createTopup: (amountAzn) => api.post('/wallet/topup', { amountAzn }),
   getCheckoutPayload: (requestId) => api.get(`/wallet/topup/checkout/${encodeURIComponent(requestId)}`),
   confirmPayment: (requestId) => api.post(`/wallet/topup/confirm/${encodeURIComponent(requestId)}`),

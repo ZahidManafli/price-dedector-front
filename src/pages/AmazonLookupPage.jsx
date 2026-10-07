@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { amazonAPI, ebayAPI, settingsAPI, dewisoAPI, walletAPI } from '../services/api';
+import { amazonAPI, ebayAPI, dewisoAPI, walletAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import AutoListProgressStepper from '../components/AutoListProgressStepper';
 import WalletTopupModal from '../components/WalletTopupModal';
+import WalletHistoryModal from '../components/WalletHistoryModal';
 import {
   buildAmazonProductUrl,
   extractAmazonAsin,
@@ -29,6 +30,7 @@ import {
   History,
   PackageSearch,
   Wallet,
+  Receipt,
 } from 'lucide-react';
 
 // Same field + aliases ListOnEbayModal.jsx checks for "Country/Region of
@@ -84,7 +86,6 @@ export default function AmazonLookupPage() {
   const [result, setResult] = useState(null);
 
   const [activeImageIdx, setActiveImageIdx] = useState(0);
-  const [lookupQuota, setLookupQuota] = useState(null);
   const [history, setHistory] = useState([]);
 
   // eBay account + per-account Amazon Lookup auto-listing settings
@@ -96,6 +97,7 @@ export default function AmazonLookupPage() {
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
   const [walletBalanceAzn, setWalletBalanceAzn] = useState(null);
   const [walletTopupModalOpen, setWalletTopupModalOpen] = useState(false);
+  const [walletHistoryModalOpen, setWalletHistoryModalOpen] = useState(false);
   const [settingsForm, setSettingsForm] = useState(null);
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -117,11 +119,6 @@ export default function AmazonLookupPage() {
   const canLookup = useMemo(() => {
     return isValidAmazonAsin(extractAmazonAsin(amazonAsin));
   }, [amazonAsin]);
-
-  const isLookupQuotaReached =
-    lookupQuota?.remainingThisWeek !== null &&
-    lookupQuota?.remainingThisWeek !== undefined &&
-    lookupQuota?.remainingThisWeek <= 0;
 
   const profitPlanner = useMemo(() => {
     const parsedTarget = parseFloat(targetProfit);
@@ -178,13 +175,6 @@ export default function AmazonLookupPage() {
 
   const lookup = useCallback(async (asinValue, fromAuto = false) => {
     if (!asinValue) return;
-    if (isLookupQuotaReached) {
-      setAlert({
-        type: 'warning',
-        message: t('amazonLookupPage.quotaReached'),
-      });
-      return;
-    }
 
     const normalizedAsin = extractAmazonAsin(asinValue);
     if (!isValidAmazonAsin(normalizedAsin)) {
@@ -197,9 +187,6 @@ export default function AmazonLookupPage() {
     try {
       const response = await amazonAPI.lookup(normalizedAsin);
       setResult(response.data || null);
-      if (response?.data?.quota) {
-        setLookupQuota(response.data.quota);
-      }
       fetchHistory();
       setActiveImageIdx(0);
       setTargetProfit('');
@@ -209,9 +196,6 @@ export default function AmazonLookupPage() {
       }
     } catch (error) {
       setResult(null);
-      if (error?.response?.data?.quota) {
-        setLookupQuota(error.response.data.quota);
-      }
       setAlert({
         type: 'error',
         message:
@@ -222,7 +206,7 @@ export default function AmazonLookupPage() {
     } finally {
       setLoading(false);
     }
-  }, [isLookupQuotaReached, t]);
+  }, [t]);
 
   const fetchHistory = useCallback(async () => {
     try {
@@ -247,24 +231,6 @@ export default function AmazonLookupPage() {
   }, []);
 
   useEffect(() => {
-    const fetchLimits = async () => {
-      try {
-        const response = await settingsAPI.getLimits();
-        const q = response?.data?.amazonLookup;
-        if (q) {
-          setLookupQuota({
-            limitPerWeek: q.limitPerWeek,
-            usedThisWeek: q.usedThisWeek,
-            remainingThisWeek: q.remainingThisWeek,
-            resetAt: q.resetAt,
-          });
-        }
-      } catch (error) {
-        console.warn('Failed to load lookup quota:', error);
-      }
-    };
-
-    fetchLimits();
     fetchHistory();
     fetchWalletBalance();
   }, [fetchHistory, fetchWalletBalance]);
@@ -523,41 +489,7 @@ export default function AmazonLookupPage() {
         continue; // eslint-disable-line no-continue
       }
 
-      setBulkResults((prev) => prev.map((r, idx) => (idx === i ? { ...r, asin, status: 'looking_up' } : r)));
-
-      // Consume the shared weekly Amazon-lookup quota for this link first —
-      // the same quota /amazon/lookup already enforces everywhere else.
-      try {
-        const lookupRes = await amazonAPI.lookup(asin);
-        if (lookupRes?.data?.quota) setLookupQuota(lookupRes.data.quota);
-      } catch (error) {
-        const quotaExceeded = error?.response?.status === 429;
-        if (error?.response?.data?.quota) setLookupQuota(error.response.data.quota);
-        setBulkResults((prev) =>
-          prev.map((r, idx) =>
-            idx === i
-              ? {
-                  ...r,
-                  status: quotaExceeded ? 'quota_exceeded' : 'error',
-                  message: error?.response?.data?.error || error.message,
-                }
-              : r
-          )
-        );
-        if (quotaExceeded) {
-          setBulkResults((prev) =>
-            prev.map((r, idx) =>
-              idx > i && r.status === 'pending'
-                ? { ...r, status: 'quota_exceeded', message: t('amazonLookupPage.quotaReached') }
-                : r
-            )
-          );
-          break;
-        }
-        continue; // eslint-disable-line no-continue
-      }
-
-      setBulkResults((prev) => prev.map((r, idx) => (idx === i ? { ...r, status: 'preparing', phase: 'prepare' } : r)));
+      setBulkResults((prev) => prev.map((r, idx) => (idx === i ? { ...r, asin, status: 'preparing', phase: 'prepare' } : r)));
       const outcome = await runAutoListPipeline(asin, {
         onPhaseChange: (phase) => setBulkResults((prev) => prev.map((r, idx) => (idx === i ? { ...r, phase } : r))),
       });
@@ -617,6 +549,14 @@ export default function AmazonLookupPage() {
               >
                 <Wallet size={14} />
                 {walletBalanceAzn === null ? '—' : `${Number(walletBalanceAzn).toFixed(2)} ₼`}
+              </button>
+              <button
+                type="button"
+                onClick={() => setWalletHistoryModalOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 hover:bg-white/20 px-3 py-2.5 text-sm backdrop-blur transition"
+                title="Balans tarixçəsi"
+              >
+                <Receipt size={14} />
               </button>
               <label className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/15 px-3 py-2.5 text-sm cursor-pointer select-none backdrop-blur transition">
                 <input
@@ -693,7 +633,7 @@ export default function AmazonLookupPage() {
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  disabled={loading || !canLookup || isLookupQuotaReached}
+                  disabled={loading || !canLookup}
                   className="btn-primary flex items-center justify-center gap-2 px-6"
                 >
                   {loading ? (
@@ -724,29 +664,6 @@ export default function AmazonLookupPage() {
                 </button>
               </div>
             </form>
-
-            <div className="mt-3">
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border ${
-                  isLookupQuotaReached
-                    ? isDark
-                      ? 'bg-red-950/40 text-red-300 border-red-900'
-                      : 'bg-red-50 text-red-700 border-red-200'
-                    : isDark
-                      ? 'bg-blue-950/40 text-blue-300 border-blue-900'
-                      : 'bg-blue-50 text-blue-700 border-blue-200'
-                }`}
-              >
-                {lookupQuota?.remainingThisWeek === null || lookupQuota?.remainingThisWeek === undefined ? (
-                  <>{t('amazonLookupPage.quotaUnlimited')}</>
-                ) : (
-                  <>
-                    {t('amazonLookupPage.quotaLeft', { count: lookupQuota.remainingThisWeek })}
-                    {lookupQuota.resetAt ? ` ${t('amazonLookupPage.quotaResets', { date: new Date(lookupQuota.resetAt).toLocaleString() })}` : ''}.
-                  </>
-                )}
-              </span>
-            </div>
           </div>
 
           <div className={`p-5 md:p-6 ${result || loading ? `border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}` : ''}`}>
@@ -1131,7 +1048,7 @@ export default function AmazonLookupPage() {
             {bulkResults.length > 0 && (
               <div className="mt-4 space-y-2">
                 {bulkResults.map((item, index) => {
-                  const statusBarColor = ['error', 'quota_exceeded'].includes(item.status)
+                  const statusBarColor = item.status === 'error'
                     ? 'bg-red-500'
                     : item.status === 'listed'
                       ? 'bg-emerald-500'
@@ -1146,11 +1063,11 @@ export default function AmazonLookupPage() {
                     }`}
                   >
                     <span className={`absolute left-0 top-0 bottom-0 w-1 ${statusBarColor}`} />
-                    {['pending', 'looking_up', 'preparing'].includes(item.status) && (
+                    {['pending', 'preparing'].includes(item.status) && (
                       <Loader2 size={15} className="mt-0.5 shrink-0 animate-spin text-blue-500" />
                     )}
                     {item.status === 'listed' && <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-500" />}
-                    {['error', 'quota_exceeded'].includes(item.status) && (
+                    {item.status === 'error' && (
                       <XCircle size={15} className="mt-0.5 shrink-0 text-red-500" />
                     )}
                     {item.status === 'awaiting_confirmation' && (
@@ -1161,12 +1078,6 @@ export default function AmazonLookupPage() {
                       <p className={`truncate ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                         {item.prepared?.listingInput?.title || item.input}
                       </p>
-
-                      {item.status === 'looking_up' && (
-                        <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                          {t('amazonLookupPage.lookingUpQuota')}
-                        </p>
-                      )}
 
                       {item.phase && (
                         <div className="mt-1">
@@ -1202,7 +1113,7 @@ export default function AmazonLookupPage() {
                         </a>
                       )}
 
-                      {['error', 'quota_exceeded'].includes(item.status) && item.message && (
+                      {item.status === 'error' && item.message && (
                         <p className="text-xs text-red-500">{item.message}</p>
                       )}
                     </div>
@@ -1746,6 +1657,7 @@ export default function AmazonLookupPage() {
       )}
 
       <WalletTopupModal open={walletTopupModalOpen} onClose={() => setWalletTopupModalOpen(false)} />
+      <WalletHistoryModal open={walletHistoryModalOpen} onClose={() => setWalletHistoryModalOpen(false)} />
     </div>
   );
 }

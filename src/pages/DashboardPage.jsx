@@ -14,6 +14,7 @@ import SellerAnalyticsSection from '../components/SellerAnalyticsSection';
 import FinanceAnalyticsSection from '../components/FinanceAnalyticsSection';
 import PaymentMethodPicker from '../components/PaymentMethodPicker';
 import WalletTopupModal from '../components/WalletTopupModal';
+import WalletHistoryModal from '../components/WalletHistoryModal';
 
 // Formula: (credits / 3) * rate AZN — e.g. 6 credits at 0.35 -> (6/3)*0.35 = 0.70 AZN.
 // Mirrors computeTrackingCreditsTopUpPrice on the backend, which recomputes
@@ -416,6 +417,7 @@ export default function DashboardPage() {
   const [limits, setLimits] = useState(null);
   const [trackingCreditsModalOpen, setTrackingCreditsModalOpen] = useState(false);
   const [walletTopupModalOpen, setWalletTopupModalOpen] = useState(false);
+  const [walletHistoryModalOpen, setWalletHistoryModalOpen] = useState(false);
   const [marketAnalysisCreditsModalOpen, setMarketAnalysisCreditsModalOpen] = useState(false);
   const [defaultCard, setDefaultCard] = useState(null);
   const [adminStats, setAdminStats] = useState(null);
@@ -550,7 +552,6 @@ export default function DashboardPage() {
   const productsLimit = limits?.products?.limit;
   const productsUsed = limits?.products?.used ?? products.length;
   const productsLeft = limits?.products?.remaining;
-  const lookupLeft = limits?.amazonLookup?.remainingThisWeek;
   const marketCreditsLeft = limits?.marketAnalysis?.creditsRemaining;
   const marketCreditsUsed = limits?.marketAnalysis?.creditsUsed;
   const marketCreditsLimit = limits?.marketAnalysis?.creditsLimit;
@@ -561,8 +562,6 @@ export default function DashboardPage() {
     productsLeft !== null && productsLeft !== undefined && productsLeft <= 0;
 
   const productsLow = !isProductQuotaReached && productsLeft != null && productsLeft <= 5;
-  const lookupLow = lookupLeft != null && lookupLeft > 0 && lookupLeft <= 5;
-  const lookupEmpty = lookupLeft != null && lookupLeft <= 0;
   const marketLow = marketCreditsLeft != null && marketCreditsLeft > 0 && marketCreditsLeft <= 3;
   const marketEmpty = marketCreditsLeft != null && marketCreditsLeft <= 0;
   const trackingLow = trackingCreditsLeft != null && trackingCreditsLeft > 0 && trackingCreditsLeft <= 3;
@@ -953,6 +952,7 @@ export default function DashboardPage() {
       />
 
       <WalletTopupModal open={walletTopupModalOpen} onClose={() => setWalletTopupModalOpen(false)} />
+      <WalletHistoryModal open={walletHistoryModalOpen} onClose={() => setWalletHistoryModalOpen(false)} />
 
       {alert && (
         <div className="mb-6">
@@ -997,10 +997,6 @@ export default function DashboardPage() {
             <p className="text-xs opacity-80">{t('dashboard.productsAddedWeek')}</p>
             <p className="text-2xl font-bold mt-1">{adminStats.productsAdded?.week ?? 0}</p>
             <p className="text-xs opacity-70 mt-1">{t('dashboard.month')}: {adminStats.productsAdded?.month ?? 0} • {t('dashboard.year')}: {adminStats.productsAdded?.year ?? 0}</p>
-          </div>
-          <div className={`glass-card p-4 border ${isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-200 border-slate-300 text-slate-900'}`}>
-            <p className="text-xs opacity-80">{t('dashboard.usersReachedAmazonQuota')}</p>
-            <p className="text-2xl font-bold mt-1">{adminStats.quotaReachedUsers?.amazonLookup ?? 0}</p>
           </div>
           <div className={`glass-card p-4 border ${isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-200 border-slate-300 text-slate-900'}`}>
             <p className="text-xs opacity-80">{t('dashboard.usersReachedProductQuota')}</p>
@@ -1196,46 +1192,6 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Amazon Lookup Credits */}
-        <div className={`glass-card p-5 border transition-all ${
-          lookupEmpty
-            ? isDark ? 'bg-slate-950 text-white border-rose-700/60' : 'bg-rose-50 text-slate-900 border-rose-300'
-            : lookupLow
-              ? isDark ? 'bg-slate-950 text-white border-amber-700/60' : 'bg-amber-50 text-slate-900 border-amber-300'
-              : isDark ? 'bg-slate-950 text-white border-slate-800' : 'bg-slate-200 text-slate-900 border-slate-300'
-        }`}>
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('dashboard.autoTrackingCredits')}</p>
-            {(lookupEmpty || lookupLow) && (
-              <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                lookupEmpty
-                  ? isDark ? 'bg-rose-900/50 text-rose-300' : 'bg-rose-100 text-rose-700'
-                  : isDark ? 'bg-amber-900/50 text-amber-300' : 'bg-amber-100 text-amber-700'
-              }`}>
-                <AlertCircle size={10} />
-                {lookupEmpty ? 'Limit doldu' : 'Az qalıb'}
-              </span>
-            )}
-          </div>
-          <p className={`mt-2 text-3xl font-bold ${lookupEmpty ? 'text-rose-500' : lookupLow ? 'text-amber-500' : ''}`}>
-            {lookupLeft === null || lookupLeft === undefined ? t('unlimited', { ns: 'common' }) : lookupLeft}
-          </p>
-          <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>{t('dashboard.amazonLookupsRemaining')}</p>
-          {(lookupEmpty || lookupLow) && (
-            <button
-              type="button"
-              onClick={onOpenUpgradeRequest}
-              className={`mt-3 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                lookupEmpty
-                  ? 'bg-rose-600 text-white hover:bg-rose-700'
-                  : 'bg-amber-500 text-white hover:bg-amber-600'
-              }`}
-            >
-              Planı Yüksəlt
-            </button>
-          )}
-        </div>
-
         {/* Market Analysis Credits */}
         <div className={`glass-card p-5 border transition-all ${
           marketEmpty
@@ -1367,9 +1323,18 @@ export default function DashboardPage() {
                   Balans artır
                 </button>
               </div>
-              <p className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
-                Checkila Smart ilə eBay-ə avtomatik listinq üçün istifadə olunur.
-              </p>
+              <div className="flex items-center justify-between gap-2 mt-2">
+                <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
+                  Checkila Smart ilə eBay-ə avtomatik listinq üçün istifadə olunur.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setWalletHistoryModalOpen(true)}
+                  className={`shrink-0 text-xs font-medium underline ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  Tarixçə
+                </button>
+              </div>
             </div>
           );
         })()}
