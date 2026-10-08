@@ -245,6 +245,8 @@ export const ebayAPI = {
     api.get(`/ebay/listings/${encodeURIComponent(listingId)}/feedback`, { params }),
   respondToListingFeedback: (listingId, payload) =>
     api.post(`/ebay/listings/${encodeURIComponent(listingId)}/feedback/respond`, payload),
+  draftAiFeedbackReply: (listingId, payload) =>
+    api.post(`/ebay/listings/${encodeURIComponent(listingId)}/feedback/ai-reply`, payload),
   getOrderConversations: (params = {}) =>
     api.get('/ebay/messages', { params }),
   getConversationMessages: (conversationId, params = {}) =>

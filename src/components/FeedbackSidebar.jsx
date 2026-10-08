@@ -2,10 +2,20 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   X, ThumbsUp, ThumbsDown, Minus, Send,
   ChevronLeft, ChevronRight, MessageSquare, Loader2,
-  AlertCircle, RefreshCw,
+  AlertCircle, RefreshCw, BrainCircuit, Bot,
 } from 'lucide-react';
 import { ebayAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+
+// eBay posts this exact text as automated feedback when an order arrives with
+// no issues and the buyer never leaves real feedback — there's nothing
+// genuine to reply to, so "Reply with Checkila Smart" is hidden for it (the
+// manual Reply option stays available, unchanged).
+const EBAY_AUTOMATED_FEEDBACK_TEXT = 'order delivered on time with no issues';
+
+function isAutomatedFeedback(commentText) {
+  return String(commentText || '').trim().toLowerCase() === EBAY_AUTOMATED_FEEDBACK_TEXT;
+}
 
 const TYPE_CONFIG = {
   Positive: {
@@ -57,11 +67,16 @@ function UserAvatar({ username }) {
   );
 }
 
-function FeedbackEntry({ entry, isDark, replyState, onOpenReply, onCloseReply, onSendReply, onReplyTextChange }) {
+function FeedbackEntry({
+  entry, isDark, replyState, onOpenReply, onCloseReply, onSendReply, onReplyTextChange,
+  aiDraftState, onAiReply,
+}) {
   const typeConf = TYPE_CONFIG[entry.commentType] || TYPE_CONFIG.Neutral;
   const { Icon } = typeConf;
   const rs = replyState || {};
+  const ai = aiDraftState || {};
   const hasResponse = Boolean(entry.feedbackResponse);
+  const isAutomated = isAutomatedFeedback(entry.commentText);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
@@ -93,6 +108,12 @@ function FeedbackEntry({ entry, isDark, replyState, onOpenReply, onCloseReply, o
             {entry.role && (
               <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
                 {entry.role}
+              </span>
+            )}
+            {isAutomated && (
+              <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
+                <Bot size={9} />
+                eBay avtomatik feedback
               </span>
             )}
             <span className={`ml-auto text-xs flex-shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -141,16 +162,34 @@ function FeedbackEntry({ entry, isDark, replyState, onOpenReply, onCloseReply, o
                         : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'
                     }`}
                   />
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                       {(rs.text || '').length}/500
                     </span>
                     <div className="flex items-center gap-2 flex-wrap justify-end">
+                      {ai.error && (
+                        <span className="text-xs text-rose-500 flex items-center gap-1">
+                          <AlertCircle size={11} />
+                          {ai.error}
+                        </span>
+                      )}
                       {rs.error && (
                         <span className="text-xs text-rose-500 flex items-center gap-1">
                           <AlertCircle size={11} />
                           {rs.error}
                         </span>
+                      )}
+                      {!isAutomated && (
+                        <button
+                          type="button"
+                          onClick={() => onAiReply(entry)}
+                          disabled={ai.loading || rs.sending}
+                          title="Checkila Smart Checkila Smart balansından xərc çıxaraq cavab yazacaq"
+                          className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-indigo-500 text-indigo-500 hover:bg-indigo-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {ai.loading ? <Loader2 size={11} className="animate-spin" /> : <BrainCircuit size={11} />}
+                          {ai.loading ? 'Yazılır…' : (rs.text ? 'Yenidən yaz' : 'Checkila Smart ilə yaz')}
+                        </button>
                       )}
                       <button
                         type="button"
@@ -172,18 +211,32 @@ function FeedbackEntry({ entry, isDark, replyState, onOpenReply, onCloseReply, o
                   </div>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => onOpenReply(entry.feedbackId)}
-                  className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition ${
-                    isDark
-                      ? 'border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-slate-500'
-                      : 'border-slate-300 text-slate-600 hover:bg-slate-50 hover:border-slate-400'
-                  }`}
-                >
-                  <MessageSquare size={11} />
-                  Reply
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => onOpenReply(entry.feedbackId)}
+                    className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition ${
+                      isDark
+                        ? 'border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-slate-500'
+                        : 'border-slate-300 text-slate-600 hover:bg-slate-50 hover:border-slate-400'
+                    }`}
+                  >
+                    <MessageSquare size={11} />
+                    Reply
+                  </button>
+                  {!isAutomated && (
+                    <button
+                      type="button"
+                      onClick={() => onAiReply(entry)}
+                      disabled={ai.loading}
+                      title="Checkila Smart Checkila Smart balansından xərc çıxaraq cavab yazacaq"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-indigo-500 text-indigo-500 hover:bg-indigo-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {ai.loading ? <Loader2 size={11} className="animate-spin" /> : <BrainCircuit size={11} />}
+                      {ai.loading ? 'Yazılır…' : 'Checkila Smart ilə cavabla'}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -201,6 +254,7 @@ export default function FeedbackSidebar({ listing, ebayListingId, onClose }) {
   const [filter, setFilter] = useState('All');
   const [page, setPage] = useState(1);
   const [replyState, setReplyState] = useState({});
+  const [aiDraftState, setAiDraftState] = useState({});
 
   const loadFeedback = useCallback(async (pageNum, commentType) => {
     if (!ebayListingId) return;
@@ -241,6 +295,34 @@ export default function FeedbackSidebar({ listing, ebayListingId, onClose }) {
 
   const setReplyText = (feedbackId, text) => {
     setReplyState((s) => ({ ...s, [feedbackId]: { ...(s[feedbackId] || {}), text } }));
+  };
+
+  // "Reply with Checkila Smart" — drafts a reply via AI (charged to the
+  // Checkila Smart wallet the moment it's generated, regardless of whether
+  // the seller ends up sending it) and fills it into the same reply textarea
+  // the manual flow already uses, so the seller can review/edit before
+  // actually posting via sendReply.
+  const draftAiReply = async (entry) => {
+    const feedbackId = entry.feedbackId;
+    setAiDraftState((s) => ({ ...s, [feedbackId]: { loading: true, error: null } }));
+    setReplyState((s) => ({
+      ...s,
+      [feedbackId]: { ...(s[feedbackId] || {}), open: true, error: null },
+    }));
+    try {
+      const res = await ebayAPI.draftAiFeedbackReply(ebayListingId, {
+        feedbackId,
+        commentText: entry.commentText,
+        commentType: entry.commentType,
+        itemTitle: entry.itemTitle,
+      });
+      const replyText = res?.data?.replyText || '';
+      setReplyState((s) => ({ ...s, [feedbackId]: { ...(s[feedbackId] || {}), open: true, text: replyText } }));
+      setAiDraftState((s) => ({ ...s, [feedbackId]: { loading: false, error: null } }));
+    } catch (err) {
+      const msg = err?.response?.data?.error || err?.message || 'Failed to draft AI reply';
+      setAiDraftState((s) => ({ ...s, [feedbackId]: { loading: false, error: msg } }));
+    }
   };
 
   const sendReply = async (entry) => {
@@ -433,6 +515,8 @@ export default function FeedbackSidebar({ listing, ebayListingId, onClose }) {
                   onCloseReply={closeReply}
                   onSendReply={sendReply}
                   onReplyTextChange={setReplyText}
+                  aiDraftState={aiDraftState[entry.feedbackId]}
+                  onAiReply={draftAiReply}
                 />
               ))}
             </div>
