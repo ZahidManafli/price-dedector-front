@@ -1386,10 +1386,23 @@ export default function DewisoPage() {
     }));
   };
 
-  // Maps the active template-gallery tab to how many image slots that
-  // template has — the backend uses this to know exactly how many Amazon
-  // images to pull/re-host (see routes/dewiso.js's POST /auto-build).
-  const autoBuildImageCount = templateTab === '1img' ? 1 : templateTab === '2img' ? 2 : 3;
+  // How many image slots the CURRENTLY LOADED template actually has — derived
+  // from the real HTML, not from which gallery tab happens to be highlighted.
+  // A saved template's own image count has no relationship to the browse-tab
+  // state (loadFromHistory/loadCheckilaTemplate never touch templateTab), so
+  // using the tab here was asking the backend for the wrong number of images
+  // and leaving the rest of the gallery stuck on the previous product's
+  // photos. The backend uses this to know exactly how many Amazon images to
+  // pull/re-host (see routes/dewiso.js's POST /auto-build).
+  const loadedImageCount = useMemo(() => {
+    try {
+      const parsed = new DOMParser().parseFromString(bodyHtml || '', 'text/html');
+      const count = parsed.querySelectorAll('#image-gallery img').length;
+      return Math.min(3, Math.max(1, count || 1));
+    } catch {
+      return 1;
+    }
+  }, [bodyHtml]);
 
   const handleAutoBuild = async () => {
     const amazonUrl = autoBuildUrl.trim();
@@ -1398,7 +1411,7 @@ export default function DewisoPage() {
     setAutoBuildLoading(true);
     setAutoBuildError('');
     try {
-      const res = await dewisoAPI.autoBuild({ amazonUrl, imageCount: autoBuildImageCount });
+      const res = await dewisoAPI.autoBuild({ amazonUrl, imageCount: loadedImageCount });
       const { title, description, images } = res?.data || {};
 
       const doc = iframeRef.current?.contentDocument;
@@ -1407,9 +1420,24 @@ export default function DewisoPage() {
       const titleEl = doc.querySelector('#title-part h1');
       if (titleEl && title) titleEl.textContent = title;
 
-      const descriptionEl = doc.querySelector('#description-part p');
-      if (descriptionEl && description) descriptionEl.textContent = description;
+      // A hand-edited saved template can have MORE than one <p> inside
+      // #description-part (the contentEditable builder wraps each new typed
+      // line in its own <p>/<div> — built-in templates only ever have one).
+      // Only touching the first <p> left every paragraph after it holding
+      // the PREVIOUS product's old description text untouched. Fix: update
+      // the first paragraph, then remove every other direct child.
+      const descriptionContainer = doc.querySelector('#description-part');
+      const descriptionEl = descriptionContainer?.querySelector('p');
+      if (descriptionEl && description) {
+        descriptionEl.textContent = description;
+        Array.from(descriptionContainer.children).forEach((child) => {
+          if (child !== descriptionEl) child.remove();
+        });
+      }
 
+      // Every gallery slot gets a fresh image — images.length now always
+      // matches imageEls.length since we requested exactly loadedImageCount,
+      // but the `if (!url) return` guard stays as a defensive fallback.
       const imageEls = doc.querySelectorAll('#image-gallery img');
       imageEls.forEach((img, index) => {
         const url = images?.[index];
@@ -1417,6 +1445,13 @@ export default function DewisoPage() {
         img.src = url;
         if (title) img.alt = title;
       });
+
+      // Keep the sidebar's uploaded-images list (persisted as meta.images on
+      // save) in sync too, so re-saving this template afterward doesn't
+      // silently keep pointing at the old product's photos.
+      if (Array.isArray(images) && images.length) {
+        setUploadedImages(images);
+      }
 
       setBodyHtml(doc.body.innerHTML);
       setAutoBuildOpen(false);
@@ -1753,7 +1788,7 @@ export default function DewisoPage() {
             </div>
 
             <p className={`text-xs mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              {t('dewisoPage.autoBuildHint', { count: autoBuildImageCount })}
+              {t('dewisoPage.autoBuildHint', { count: loadedImageCount })}
             </p>
 
             <input
