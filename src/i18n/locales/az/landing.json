@@ -66,6 +66,21 @@
     "orderTracking": "Checkila Tracking",
     "orderTrackingValue": "Amazon tracking nömrələrini eBay koduna çevirir"
   },
+  "platformStats": {
+    "title": "Platforma rəqəmləri",
+    "subtitle": "Hamısı bazadan, canlı",
+    "live": "Canlı məlumat",
+    "productsTracked": "Amazon məhsulları",
+    "productsTrackedSub": "Amazon Checker nəzarətində",
+    "ebayAccounts": "Qoşulmuş eBay hesabları",
+    "ebayAccountsSub": "Aktiv satıcı hesabları",
+    "trackingCodes": "Verilmiş izləmə kodları",
+    "trackingCodesSub": "AutoTrack vasitəsilə",
+    "marketCredits": "İstifadə edilmiş Analiz krediti",
+    "marketCreditsSub": "Checkila Analysis vasitəsilə",
+    "aiActions": "Alınmış Süni İntellekt dəstəyi",
+    "aiActionsSub": "Checkila Smart və Dewiso"
+  },
   "workflow": {
     "discover": {
       "title": "Kəşf et",

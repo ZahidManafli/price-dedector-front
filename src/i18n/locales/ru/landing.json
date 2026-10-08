@@ -66,6 +66,21 @@
     "orderTracking": "Checkila Tracking",
     "orderTrackingValue": "Конвертирует трек-номера Amazon в код eBay"
   },
+  "platformStats": {
+    "title": "Цифры платформы",
+    "subtitle": "Всё из базы данных, в реальном времени",
+    "live": "Живые данные",
+    "productsTracked": "Товаров Amazon",
+    "productsTrackedSub": "под наблюдением Amazon Checker",
+    "ebayAccounts": "Подключённые аккаунты eBay",
+    "ebayAccountsSub": "Активные аккаунты продавцов",
+    "trackingCodes": "Выдано трек-кодов",
+    "trackingCodesSub": "через AutoTrack",
+    "marketCredits": "Использовано кредитов анализа",
+    "marketCreditsSub": "через Checkila Analysis",
+    "aiActions": "Оказано содействий ИИ",
+    "aiActionsSub": "Checkila Smart и Dewiso"
+  },
   "workflow": {
     "discover": {
       "title": "Поиск",

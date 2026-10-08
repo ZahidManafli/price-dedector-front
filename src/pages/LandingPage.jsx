@@ -20,6 +20,8 @@ import {
   Smartphone,
   Download,
   Apple,
+  Package,
+  Link2,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { partnerAPI, settingsAPI, API_BASE_URL } from '../services/api';
@@ -280,6 +282,7 @@ export default function LandingPage() {
   const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState('subscription');
   const [plans, setPlans] = useState([]);
+  const [platformStats, setPlatformStats] = useState(null);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [presetIncludeTracking, setPresetIncludeTracking] = useState(false);
@@ -343,6 +346,25 @@ export default function LandingPage() {
     };
 
     loadPlans();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Live platform counters ("Platforma rəqəmləri") shown right below the hero.
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPlatformStats = async () => {
+      try {
+        const response = await settingsAPI.getPlatformStats();
+        if (!cancelled) setPlatformStats(response?.data || null);
+      } catch {
+        if (!cancelled) setPlatformStats(null);
+      }
+    };
+
+    loadPlatformStats();
     return () => {
       cancelled = true;
     };
@@ -466,6 +488,59 @@ export default function LandingPage() {
     { label: t('landing:stats.orderTracking'), value: t('landing:stats.orderTrackingValue'), icon: Truck },
     { label: t('landing:stats.analysis'), value: t('landing:stats.analysisValue'), icon: BarChart3 },
     { label: t('landing:stats.ebay'), value: t('landing:stats.ebayValue'), icon: BadgeCheck },
+  ];
+
+  const formatStatNumber = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n.toLocaleString('en-US') : '—';
+  };
+
+  const platformStatCards = [
+    {
+      key: 'productsTracked',
+      icon: Package,
+      iconBg: 'bg-orange-400/10 border border-orange-500/20',
+      iconColor: 'text-orange-600 dark:text-orange-300',
+      value: platformStats?.productsTrackedTotal,
+      label: t('landing:platformStats.productsTracked', 'Amazon məhsulları'),
+      sublabel: t('landing:platformStats.productsTrackedSub', 'Amazon Checker nəzarətində'),
+    },
+    {
+      key: 'ebayAccounts',
+      icon: Link2,
+      iconBg: 'bg-cyan-400/10 border border-cyan-500/20',
+      iconColor: 'text-cyan-600 dark:text-cyan-300',
+      value: platformStats?.ebayAccountsConnected,
+      label: t('landing:platformStats.ebayAccounts', 'Qoşulmuş eBay hesabları'),
+      sublabel: t('landing:platformStats.ebayAccountsSub', 'Aktiv satıcı hesabları'),
+    },
+    {
+      key: 'trackingCodes',
+      icon: Truck,
+      iconBg: 'bg-blue-400/10 border border-blue-500/20',
+      iconColor: 'text-blue-600 dark:text-blue-300',
+      value: platformStats?.trackingCodesTotal,
+      label: t('landing:platformStats.trackingCodes', 'Verilmiş izləmə kodları'),
+      sublabel: t('landing:platformStats.trackingCodesSub', 'AutoTrack vasitəsilə'),
+    },
+    {
+      key: 'marketCredits',
+      icon: BarChart3,
+      iconBg: 'bg-violet-400/10 border border-violet-500/20',
+      iconColor: 'text-violet-600 dark:text-violet-300',
+      value: platformStats?.marketAnalysisCreditsUsed,
+      label: t('landing:platformStats.marketCredits', 'İstifadə edilmiş Analiz krediti'),
+      sublabel: t('landing:platformStats.marketCreditsSub', 'Checkila Analysis vasitəsilə'),
+    },
+    {
+      key: 'aiActions',
+      icon: Sparkles,
+      iconBg: 'bg-pink-400/10 border border-pink-500/20',
+      iconColor: 'text-pink-600 dark:text-pink-300',
+      value: platformStats?.aiAssistedActionsTotal,
+      label: t('landing:platformStats.aiActions', 'Alınmış Süni İntellekt dəstəyi'),
+      sublabel: t('landing:platformStats.aiActionsSub', 'Checkila Smart və Dewiso'),
+    },
   ];
 
   const showcaseCards = [
@@ -639,6 +714,43 @@ export default function LandingPage() {
                   />
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-6 pb-16 md:pb-20">
+          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60 backdrop-blur dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none md:p-8">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white md:text-2xl">
+                  {t('landing:platformStats.title', 'Platforma rəqəmləri')}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  {t('landing:platformStats.subtitle', 'Hamısı bazadan, canlı')}
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:border-emerald-300/20 dark:text-emerald-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {t('landing:platformStats.live', 'Canlı məlumat')}
+              </span>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+              {platformStatCards.map((stat) => (
+                <article
+                  key={stat.key}
+                  className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.03]"
+                >
+                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${stat.iconBg}`}>
+                    <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
+                  </span>
+                  <p className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    {platformStats ? formatStatNumber(stat.value) : '—'}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-slate-700 dark:text-slate-200">{stat.label}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{stat.sublabel}</p>
+                </article>
+              ))}
             </div>
           </div>
         </section>

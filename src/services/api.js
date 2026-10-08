@@ -131,6 +131,7 @@ export const settingsAPI = {
   getPublicPlans: () => api.get('/settings/plans/public'),
   getPublicData: () => api.get('/settings/public-data'),
   getCurrencyRates: () => api.get('/settings/currency-rates'),
+  getPlatformStats: () => api.get('/settings/platform-stats'),
   submitSubscriptionRequest: (data) => api.post('/settings/subscription-requests', data),
   verifySubscriptionRequest: (data) => api.post('/settings/subscription-requests/verify', data),
   submitUpdateCreditRequest: (data) => api.post('/settings/subscription-requests/update-credits', data),

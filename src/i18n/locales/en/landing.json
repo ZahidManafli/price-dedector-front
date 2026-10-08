@@ -66,6 +66,21 @@
     "orderTracking": "Checkila Tracking",
     "orderTrackingValue": "Converts Amazon tracking numbers to eBay codes"
   },
+  "platformStats": {
+    "title": "Platform numbers",
+    "subtitle": "All from the database, live",
+    "live": "Live data",
+    "productsTracked": "Amazon products",
+    "productsTrackedSub": "Under Amazon Checker tracking",
+    "ebayAccounts": "Connected eBay accounts",
+    "ebayAccountsSub": "Active seller accounts",
+    "trackingCodes": "Tracking codes issued",
+    "trackingCodesSub": "via AutoTrack",
+    "marketCredits": "Analysis credits used",
+    "marketCreditsSub": "via Checkila Analysis",
+    "aiActions": "AI assists delivered",
+    "aiActionsSub": "Checkila Smart & Dewiso"
+  },
   "workflow": {
     "discover": {
       "title": "Discover",
