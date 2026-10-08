@@ -13,6 +13,7 @@ import { TAB_KEYS, USER_DEFAULT_ALLOWED_TABS } from '../utils/planAccess';
 import * as XLSX from 'xlsx';
 import { NotificationsTab } from '../components/NotificationsTab';
 import AdminVideosTab from '../components/AdminVideosTab';
+import AdminReviewsTab from '../components/AdminReviewsTab';
 import AdminAnalytics from '../components/AdminAnalytics';
 import DateRangePicker from '../components/DateRangePicker';
 
@@ -903,6 +904,12 @@ export default function AdminPanelPage() {
             onClick={() => setActiveTab('videos')}
           >
             {t('adminPanelPage.videosTab')}
+          </button>
+          <button
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'reviews' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
+            onClick={() => setActiveTab('reviews')}
+          >
+            Rəylər
           </button>
           <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'danger' ? 'bg-red-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
@@ -1940,6 +1947,12 @@ export default function AdminPanelPage() {
         {!loading && activeTab === 'videos' && (
           <div className="space-y-4">
             <AdminVideosTab />
+          </div>
+        )}
+
+        {!loading && activeTab === 'reviews' && (
+          <div className="space-y-4">
+            <AdminReviewsTab />
           </div>
         )}
 

@@ -570,6 +570,14 @@ export const learningAPI = {
   confirmPurchase:  (requestId) => api.post(`/api/learning-videos/purchase/confirm/${encodeURIComponent(requestId)}`),
 };
 
+// Admin panel "Rəylər" (reviews/testimonials) tab — admin-only.
+export const reviewsAPI = {
+  list: () => api.get('/api/reviews'),
+  create: (data) => api.post('/api/reviews', data),
+  update: (id, data) => api.put(`/api/reviews/${id}`, data),
+  remove: (id) => api.delete(`/api/reviews/${id}`),
+};
+
 export const buyersAPI = {
   list: () => api.get('/buyers'),
   get: (username) => api.get(`/buyers/${encodeURIComponent(username)}`),
