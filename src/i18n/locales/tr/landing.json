@@ -79,7 +79,11 @@
     "marketCredits": "Kullanılan analiz kredisi",
     "marketCreditsSub": "Checkila Analysis ile",
     "aiActions": "Sağlanan Yapay Zeka desteği",
-    "aiActionsSub": "Checkila Smart ve Dewiso"
+    "aiActionsSub": "Checkila Smart ve Dewiso",
+    "managedListings": "Total Managed Listings",
+    "managedListingsSub": "Bağlı eBay hesaplarında",
+    "managedOrders": "Total Managed Orders",
+    "managedOrdersSub": "Bağlı eBay hesaplarında"
   },
   "workflow": {
     "discover": {

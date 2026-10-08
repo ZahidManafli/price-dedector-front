@@ -22,6 +22,8 @@ import {
   Apple,
   Package,
   Link2,
+  ClipboardList,
+  ShoppingCart,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { partnerAPI, settingsAPI, API_BASE_URL } from '../services/api';
@@ -541,6 +543,24 @@ export default function LandingPage() {
       label: t('landing:platformStats.aiActions', 'Alınmış Süni İntellekt dəstəyi'),
       sublabel: t('landing:platformStats.aiActionsSub', 'Checkila Smart və Dewiso'),
     },
+    {
+      key: 'managedListings',
+      icon: ClipboardList,
+      iconBg: 'bg-indigo-400/10 border border-indigo-500/20',
+      iconColor: 'text-indigo-600 dark:text-indigo-300',
+      value: platformStats?.managedListingsTotal,
+      label: t('landing:platformStats.managedListings', 'Total Managed Listings'),
+      sublabel: t('landing:platformStats.managedListingsSub', 'Qoşulmuş eBay hesablarında'),
+    },
+    {
+      key: 'managedOrders',
+      icon: ShoppingCart,
+      iconBg: 'bg-rose-400/10 border border-rose-500/20',
+      iconColor: 'text-rose-600 dark:text-rose-300',
+      value: platformStats?.managedOrdersTotal,
+      label: t('landing:platformStats.managedOrders', 'Total Managed Orders'),
+      sublabel: t('landing:platformStats.managedOrdersSub', 'Qoşulmuş eBay hesablarında'),
+    },
   ];
 
   const showcaseCards = [
@@ -735,7 +755,7 @@ export default function LandingPage() {
               </span>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {platformStatCards.map((stat) => (
                 <article
                   key={stat.key}

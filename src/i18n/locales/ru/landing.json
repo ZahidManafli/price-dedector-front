@@ -79,7 +79,11 @@
     "marketCredits": "Использовано кредитов анализа",
     "marketCreditsSub": "через Checkila Analysis",
     "aiActions": "Оказано содействий ИИ",
-    "aiActionsSub": "Checkila Smart и Dewiso"
+    "aiActionsSub": "Checkila Smart и Dewiso",
+    "managedListings": "Total Managed Listings",
+    "managedListingsSub": "На подключённых аккаунтах eBay",
+    "managedOrders": "Total Managed Orders",
+    "managedOrdersSub": "На подключённых аккаунтах eBay"
   },
   "workflow": {
     "discover": {

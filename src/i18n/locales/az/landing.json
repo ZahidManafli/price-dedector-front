@@ -79,7 +79,11 @@
     "marketCredits": "İstifadə edilmiş Analiz krediti",
     "marketCreditsSub": "Checkila Analysis vasitəsilə",
     "aiActions": "Alınmış Süni İntellekt dəstəyi",
-    "aiActionsSub": "Checkila Smart və Dewiso"
+    "aiActionsSub": "Checkila Smart və Dewiso",
+    "managedListings": "Total Managed Listings",
+    "managedListingsSub": "Qoşulmuş eBay hesablarında",
+    "managedOrders": "Total Managed Orders",
+    "managedOrdersSub": "Qoşulmuş eBay hesablarında"
   },
   "workflow": {
     "discover": {
