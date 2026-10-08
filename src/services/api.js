@@ -19,6 +19,8 @@ api.interceptors.request.use((config) => {
     url.startsWith('/referrals/public') ||
     url.startsWith('/settings/plans/public') ||
     url.startsWith('/settings/currency-rates') ||
+    url.startsWith('/settings/platform-stats') ||
+    url.startsWith('/settings/public-reviews') ||
     url === '/settings/subscription-requests' ||
     url === '/settings/subscription-requests/verify' ||
     url.startsWith('/settings/subscription-requests/update-credits') ||
