@@ -1420,19 +1420,22 @@ export default function DewisoPage() {
       const titleEl = doc.querySelector('#title-part h1');
       if (titleEl && title) titleEl.textContent = title;
 
-      // A hand-edited saved template can have MORE than one <p> inside
-      // #description-part (the contentEditable builder wraps each new typed
-      // line in its own <p>/<div> — built-in templates only ever have one).
-      // Only touching the first <p> left every paragraph after it holding
-      // the PREVIOUS product's old description text untouched. Fix: update
-      // the first paragraph, then remove every other direct child.
+      // A hand-edited saved template's #description-part can contain
+      // ANYTHING — multiple <p>s, <div>s (contentEditable's default
+      // paragraph separator), <br>-separated bare text, bullet lists, or a
+      // mix, depending entirely on how that description was typed/pasted
+      // last time (even the built-in templates ship with more than one
+      // paragraph plus a bullet list, not just one clean <p>). Trying to
+      // find and update "the" existing paragraph kept leaving some of that
+      // old structure's text behind. The only fully reliable fix: wipe
+      // #description-part's contents entirely and rebuild it from scratch
+      // with exactly one fresh paragraph holding the new, per-product text.
       const descriptionContainer = doc.querySelector('#description-part');
-      const descriptionEl = descriptionContainer?.querySelector('p');
-      if (descriptionEl && description) {
-        descriptionEl.textContent = description;
-        Array.from(descriptionContainer.children).forEach((child) => {
-          if (child !== descriptionEl) child.remove();
-        });
+      if (descriptionContainer && description) {
+        descriptionContainer.innerHTML = '';
+        const freshPara = doc.createElement('p');
+        freshPara.textContent = description;
+        descriptionContainer.appendChild(freshPara);
       }
 
       // Every gallery slot gets a fresh image — images.length now always
