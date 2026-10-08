@@ -1428,14 +1428,20 @@ export default function DewisoPage() {
       // paragraph plus a bullet list, not just one clean <p>). Trying to
       // find and update "the" existing paragraph kept leaving some of that
       // old structure's text behind. The only fully reliable fix: wipe
-      // #description-part's contents entirely and rebuild it from scratch
-      // with exactly one fresh paragraph holding the new, per-product text.
+      // #description-part's contents entirely and rebuild it from scratch.
+      // The backend returns one rewritten bullet per line (newline-
+      // separated) when Amazon's "About this item" had its own bullets, so
+      // each line becomes its own fresh paragraph — same bullet count and
+      // structure as the real listing, just with rewritten text.
       const descriptionContainer = doc.querySelector('#description-part');
       if (descriptionContainer && description) {
         descriptionContainer.innerHTML = '';
-        const freshPara = doc.createElement('p');
-        freshPara.textContent = description;
-        descriptionContainer.appendChild(freshPara);
+        const lines = String(description).split('\n').map((line) => line.trim()).filter(Boolean);
+        (lines.length ? lines : [String(description)]).forEach((line) => {
+          const p = doc.createElement('p');
+          p.textContent = line;
+          descriptionContainer.appendChild(p);
+        });
       }
 
       // Every gallery slot gets a fresh image — images.length now always
