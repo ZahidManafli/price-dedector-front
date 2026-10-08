@@ -24,6 +24,9 @@ import {
   Link2,
   ClipboardList,
   ShoppingCart,
+  Star,
+  X,
+  Loader2,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { partnerAPI, settingsAPI, API_BASE_URL } from '../services/api';
@@ -39,6 +42,97 @@ const CHROME_EXTENSION_URL =
 const TELEGRAM_BOT_URL = 'https://t.me/Checkila_bot';
 const MOBILE_APK_URL = `${API_BASE_URL}/uploads/checkila.apk`;
 const MOBILE_FEATURE_ICONS = [BarChart3, Radar, Truck, ShieldCheck, Sparkles, Puzzle];
+
+function ReviewsModal({ open, onClose, isDark }) {
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    settingsAPI
+      .getPublicReviews()
+      .then((res) => {
+        if (!cancelled) setReviews(res?.data?.reviews || []);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err?.response?.data?.error || err.message || 'Rəylər yüklənmədi');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className={`w-full max-w-2xl max-h-[85vh] flex flex-col rounded-[1.5rem] border p-6 shadow-2xl ${
+          isDark ? 'border-white/10 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-900'
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex flex-shrink-0 items-center justify-between">
+          <h3 className="text-lg font-semibold">İstifadəçi rəyləri</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className={`rounded-lg p-1.5 transition ${isDark ? 'hover:bg-white/10' : 'hover:bg-slate-100'}`}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+            </div>
+          ) : error ? (
+            <p className="text-sm text-rose-500">{error}</p>
+          ) : reviews.length === 0 ? (
+            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Hələ rəy yoxdur.</p>
+          ) : (
+            reviews.map((r) => (
+              <div
+                key={r.id}
+                className={`rounded-xl border p-4 ${isDark ? 'border-white/10 bg-white/[0.04]' : 'border-slate-200 bg-slate-50'}`}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm font-semibold">{r.fullName}</span>
+                  <span className="inline-flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <Star
+                        key={n}
+                        size={13}
+                        className={n <= r.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-600'}
+                      />
+                    ))}
+                  </span>
+                </div>
+                {r.reviewText && (
+                  <p className={`mt-1.5 text-sm leading-6 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                    {r.reviewText}
+                  </p>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SectionHeader({ eyebrow, title, description, align = 'left' }) {
   const alignClasses = align === 'center' ? 'items-center text-center' : 'items-start text-left';
@@ -285,6 +379,7 @@ export default function LandingPage() {
   const [activeTab, setActiveTab] = useState('subscription');
   const [plans, setPlans] = useState([]);
   const [platformStats, setPlatformStats] = useState(null);
+  const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [presetIncludeTracking, setPresetIncludeTracking] = useState(false);
@@ -771,6 +866,31 @@ export default function LandingPage() {
                   <p className="text-xs text-slate-500 dark:text-slate-400">{stat.sublabel}</p>
                 </article>
               ))}
+
+              {/* Reviews — distinct tile: average rating + positive/negative
+                  split, with a link that opens the full reviews list in a
+                  modal instead of just displaying a static number. */}
+              <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-400/10">
+                  <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
+                </span>
+                <p className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                  {platformStats ? `${Number(platformStats.reviewsAvgRating || 0).toFixed(1)} ★` : '—'}
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-700 dark:text-slate-200">Rəylər</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {platformStats
+                    ? `${formatStatNumber(platformStats.reviewsPositiveCount)} pozitiv · ${formatStatNumber(platformStats.reviewsNegativeCount)} neqativ`
+                    : ''}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setReviewsModalOpen(true)}
+                  className="mt-2 text-xs font-semibold text-cyan-600 hover:underline dark:text-cyan-300"
+                >
+                  Rəylərə bax →
+                </button>
+              </article>
             </div>
           </div>
         </section>
@@ -1469,6 +1589,8 @@ export default function LandingPage() {
         presetIncludeTracking={presetIncludeTracking}
         onSuccess={onRequestSuccess}
       />
+
+      <ReviewsModal open={reviewsModalOpen} onClose={() => setReviewsModalOpen(false)} isDark={isDark} />
     </div>
   );
 }
