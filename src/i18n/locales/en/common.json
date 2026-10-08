@@ -825,6 +825,8 @@
     "failedPrepareDraft": "Failed to prepare eBay listing draft.",
     "failedUpdateDraft": "Failed to update listing draft.",
     "listingCreated": "eBay listing created successfully.",
+    "adRateNoPermission": "Could not add ad — you don't have permission. Please add the ad yourself on eBay.",
+    "adRateFailedOther": "Could not add ad. Please add the ad yourself on eBay.",
     "failedSubmitListing": "Failed to submit listing to eBay.",
     "emailRequired": "Email is required to add this listing to products.",
     "missingProductData": "Could not extract ASIN or eBay Item ID for product creation.",

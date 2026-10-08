@@ -262,6 +262,7 @@ export const ebayAPI = {
   saveAmazonLookupSettings: (payload) => api.put('/ebay/amazon-lookup/settings', payload),
   prepareAmazonAutoListing: (payload) => api.post('/ebay/amazon-lookup/prepare', payload),
   confirmAmazonAutoListing: (payload) => api.post('/ebay/amazon-lookup/confirm', payload),
+  pollAmazonAutoListingConfirm: (jobId) => api.get(`/ebay/amazon-lookup/confirm/${encodeURIComponent(jobId)}`),
   sellSimilar: (listingId) => api.post('/ebay/listing/sell-similar', { listingId }),
   getDashboardAnalytics: (days) => api.get('/ebay/analytics/dashboard', days ? { params: { days } } : undefined),
   getOrderEarningsDetail: (orderId) => api.get(`/ebay/finance/order-earnings/${encodeURIComponent(orderId)}`),

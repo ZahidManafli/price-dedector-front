@@ -77,6 +77,35 @@ function useDebouncedAutoLookup({ amazonAsin, autoLookupEnabled, onLookup }) {
   return lastLookedUp;
 }
 
+// POST /ebay/amazon-lookup/confirm now only kicks the actual eBay submission
+// off in the background (image uploads + inventory/offer/publish calls can
+// legitimately take over a minute) and returns a jobId right away — this
+// polls GET /ebay/amazon-lookup/confirm/:jobId (same job-row/poll contract as
+// pollExtensionJobUntilDone elsewhere in this app) until it's done or error.
+// No overall timeout: the listing step must never give up and report
+// "timeout" to the user while the backend is still genuinely working — only
+// a run of actually-failed poll requests (the backend itself unreachable,
+// not just slow) gives up early.
+async function pollAmazonLookupConfirmJob(jobId, { intervalMs = 2000, maxConsecutiveFailures = 10 } = {}) {
+  let consecutiveFailures = 0;
+  for (;;) {
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    let pollRes;
+    try {
+      pollRes = await ebayAPI.pollAmazonAutoListingConfirm(jobId);
+      consecutiveFailures = 0;
+    } catch (pollErr) {
+      consecutiveFailures += 1;
+      if (consecutiveFailures >= maxConsecutiveFailures) throw pollErr;
+      continue; // eslint-disable-line no-continue
+    }
+    const status = pollRes?.data?.status;
+    if (status === 'done') return pollRes.data;
+    if (status === 'error') throw new Error(pollRes?.data?.error || 'Failed to list item on eBay');
+    // status === 'processing' -> keep polling
+  }
+}
+
 export default function AmazonLookupPage() {
   const { isDark } = useTheme();
   const { user } = useAuth();
@@ -367,13 +396,18 @@ export default function AmazonLookupPage() {
           amazonPrice: prepared?.amazonPrice,
           listingInput: prepared?.listingInput,
         });
-        const listed = confirmRes?.data;
+        const jobId = confirmRes?.data?.jobId;
+        if (!jobId) {
+          return { status: 'error', message: t('amazonLookupPage.failedAutoList') };
+        }
+        const listed = await pollAmazonLookupConfirmJob(jobId);
         return {
           status: 'listed',
           itemId: listed?.itemId,
           listingUrl: listed?.listingUrl,
           addedToProducts: listed?.addedToProducts,
           adRateApplied: listed?.adRateApplied,
+          adRateSkippedReason: listed?.adRateSkippedReason || null,
         };
       } catch (error) {
         if (error?.response?.status === 402) {
@@ -397,13 +431,18 @@ export default function AmazonLookupPage() {
           amazonPrice: prepared?.amazonPrice,
           listingInput: prepared?.listingInput,
         });
-        const listed = confirmRes?.data;
+        const jobId = confirmRes?.data?.jobId;
+        if (!jobId) {
+          return { status: 'error', message: t('amazonLookupPage.failedAutoList') };
+        }
+        const listed = await pollAmazonLookupConfirmJob(jobId);
         return {
           status: 'listed',
           itemId: listed?.itemId,
           listingUrl: listed?.listingUrl,
           addedToProducts: listed?.addedToProducts,
           adRateApplied: listed?.adRateApplied,
+          adRateSkippedReason: listed?.adRateSkippedReason || null,
         };
       } catch (error) {
         return {
@@ -413,6 +452,25 @@ export default function AmazonLookupPage() {
       }
     },
     [activeEbayAccountId, t]
+  );
+
+  // The ad-rate step never blocks a listing from going through (a missing
+  // eBay Marketing scope just means this one account can't run promoted ads
+  // via the API yet) — but silently dropping it left sellers wondering why
+  // their configured ad rate never showed up on the new listing. Surfaces the
+  // reason as its own toast alongside the success toast instead.
+  const notifyAdRateSkipped = useCallback(
+    (outcome) => {
+      if (!outcome?.adRateSkippedReason) return;
+      setAlert({
+        type: 'warning',
+        message:
+          outcome.adRateSkippedReason === 'NO_AD_PERMISSION'
+            ? t('amazonLookupPage.adRateNoPermission')
+            : t('amazonLookupPage.adRateFailedOther'),
+      });
+    },
+    [t]
   );
 
   const handleSingleListOnEbay = useCallback(async () => {
@@ -434,11 +492,15 @@ export default function AmazonLookupPage() {
     if (outcome.status === 'awaiting_confirmation') {
       setEditableListing(outcome.prepared?.listingInput || null);
     } else if (outcome.status === 'listed') {
-      setAlert({ type: 'success', message: t('amazonLookupPage.listingCreated') });
+      if (outcome.adRateSkippedReason) {
+        notifyAdRateSkipped(outcome);
+      } else {
+        setAlert({ type: 'success', message: t('amazonLookupPage.listingCreated') });
+      }
     } else if (outcome.status === 'error') {
       setAlert({ type: 'error', message: outcome.message });
     }
-  }, [amazonAsin, result, runAutoListPipeline, t, walletBalanceAzn]);
+  }, [amazonAsin, notifyAdRateSkipped, result, runAutoListPipeline, t, walletBalanceAzn]);
 
   const closeListingModal = useCallback(() => {
     setSingleListingState(null);
@@ -467,11 +529,15 @@ export default function AmazonLookupPage() {
     const outcome = await confirmPreparedListing(singleListingState.asin, preparedWithEdits);
     setSingleListingState((prev) => ({ ...prev, ...outcome }));
     if (outcome.status === 'listed') {
-      setAlert({ type: 'success', message: t('amazonLookupPage.listingCreated') });
+      if (outcome.adRateSkippedReason) {
+        notifyAdRateSkipped(outcome);
+      } else {
+        setAlert({ type: 'success', message: t('amazonLookupPage.listingCreated') });
+      }
     } else if (outcome.status === 'error') {
       setAlert({ type: 'error', message: outcome.message });
     }
-  }, [confirmPreparedListing, editableListing, singleListingState, t]);
+  }, [confirmPreparedListing, editableListing, notifyAdRateSkipped, singleListingState, t]);
 
   const handleBulkAutoList = useCallback(async () => {
     const lines = bulkLinksText
@@ -523,6 +589,9 @@ export default function AmazonLookupPage() {
       // Deliberately NOT clearing bulkEditingIndex here (even on success) —
       // same as the single-lookup modal, it stays open showing the
       // listed/error result until the user explicitly closes it.
+      // adRateSkippedReason (if any) renders inline in the row itself below —
+      // no separate toast here, unlike the single-lookup flow, since bulk
+      // rows don't use toasts for their other outcomes either.
       setBulkResults((prev) => prev.map((r, idx) => (idx === index ? { ...r, ...outcome } : r)));
     },
     [bulkEditingIndex, bulkResults, confirmPreparedListing, editableListing]
@@ -1160,6 +1229,16 @@ export default function AmazonLookupPage() {
                         <a href={item.listingUrl} target="_blank" rel="noopener noreferrer" className="text-xs underline">
                           {item.listingUrl}
                         </a>
+                      )}
+
+                      {item.status === 'listed' && item.adRateSkippedReason && (
+                        <p className={`text-xs mt-0.5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                          {t(
+                            item.adRateSkippedReason === 'NO_AD_PERMISSION'
+                              ? 'amazonLookupPage.adRateNoPermission'
+                              : 'amazonLookupPage.adRateFailedOther'
+                          )}
+                        </p>
                       )}
 
                       {item.status === 'error' && item.message && (

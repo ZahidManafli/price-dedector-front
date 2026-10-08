@@ -619,6 +619,8 @@
     "failedPrepareDraft": "eBay ilan taslağı hazırlanamadı.",
     "failedUpdateDraft": "İlan taslağı güncellenemedi.",
     "listingCreated": "eBay ilanı başarıyla oluşturuldu.",
+    "adRateNoPermission": "Reklam eklenemedi — izniniz yok. Lütfen reklamı eBay'de kendiniz ekleyin.",
+    "adRateFailedOther": "Reklam eklenemedi. Lütfen reklamı eBay'de kendiniz ekleyin.",
     "failedSubmitListing": "İlan eBay'e gönderilemedi.",
     "emailRequired": "Bu ilanı ürünlere eklemek için e-posta gerekir.",
     "missingProductData": "Ürün oluşturma için ASIN veya eBay ürün ID'si çıkarılamadı.",

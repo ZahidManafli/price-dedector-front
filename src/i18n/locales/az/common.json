@@ -619,6 +619,8 @@
     "failedPrepareDraft": "eBay elan qaralaması hazırlana bilmədi.",
     "failedUpdateDraft": "Elan qaralaması yenilənə bilmədi.",
     "listingCreated": "eBay elanı uğurla yaradıldı.",
+    "adRateNoPermission": "Reklam əlavə edilə bilmədi — icazəniz yoxdur. Zəhmət olmasa reklamı eBay-də özünüz əlavə edin.",
+    "adRateFailedOther": "Reklam əlavə edilə bilmədi. Zəhmət olmasa reklamı eBay-də özünüz əlavə edin.",
     "failedSubmitListing": "Elan eBay-ə göndərilə bilmədi.",
     "emailRequired": "Bu elanı məhsullara əlavə etmək üçün e-poçt tələb olunur.",
     "missingProductData": "Məhsul yaratmaq üçün ASIN və ya eBay məhsul ID-si çıxarıla bilmədi.",
