@@ -72,8 +72,6 @@
     "live": "Живые данные",
     "productsTracked": "Товаров Amazon",
     "productsTrackedSub": "под наблюдением Amazon Checker",
-    "ebayAccounts": "Подключённые аккаунты eBay",
-    "ebayAccountsSub": "Активные аккаунты продавцов",
     "trackingCodes": "Выдано трек-кодов",
     "trackingCodesSub": "через AutoTrack",
     "marketCredits": "Использовано кредитов анализа",
@@ -83,7 +81,8 @@
     "managedListings": "Total Managed Listings",
     "managedListingsSub": "На подключённых аккаунтах eBay",
     "managedOrders": "Total Managed Orders",
-    "managedOrdersSub": "На подключённых аккаунтах eBay"
+    "managedOrdersSub": "На подключённых аккаунтах eBay",
+    "mysteryBoxText": "Истина скрыта в цифрах"
   },
   "workflow": {
     "discover": {

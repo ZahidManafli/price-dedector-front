@@ -72,8 +72,6 @@
     "live": "Live data",
     "productsTracked": "Amazon products",
     "productsTrackedSub": "Under Amazon Checker tracking",
-    "ebayAccounts": "Connected eBay accounts",
-    "ebayAccountsSub": "Active seller accounts",
     "trackingCodes": "Tracking codes issued",
     "trackingCodesSub": "via AutoTrack",
     "marketCredits": "Analysis credits used",
@@ -83,7 +81,8 @@
     "managedListings": "Total Managed Listings",
     "managedListingsSub": "Across connected eBay accounts",
     "managedOrders": "Total Managed Orders",
-    "managedOrdersSub": "Across connected eBay accounts"
+    "managedOrdersSub": "Across connected eBay accounts",
+    "mysteryBoxText": "The truth is hidden in the numbers"
   },
   "workflow": {
     "discover": {

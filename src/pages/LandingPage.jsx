@@ -21,7 +21,7 @@ import {
   Download,
   Apple,
   Package,
-  Link2,
+  EyeOff,
   ClipboardList,
   ShoppingCart,
   Star,
@@ -603,15 +603,6 @@ export default function LandingPage() {
       sublabel: t('landing:platformStats.productsTrackedSub', 'Amazon Checker nəzarətində'),
     },
     {
-      key: 'ebayAccounts',
-      icon: Link2,
-      iconBg: 'bg-cyan-400/10 border border-cyan-500/20',
-      iconColor: 'text-cyan-600 dark:text-cyan-300',
-      value: platformStats?.ebayAccountsConnected,
-      label: t('landing:platformStats.ebayAccounts', 'Qoşulmuş eBay hesabları'),
-      sublabel: t('landing:platformStats.ebayAccountsSub', 'Aktiv satıcı hesabları'),
-    },
-    {
       key: 'trackingCodes',
       icon: Truck,
       iconBg: 'bg-blue-400/10 border border-blue-500/20',
@@ -890,6 +881,18 @@ export default function LandingPage() {
                 >
                   Rəylərə bax →
                 </button>
+              </article>
+
+              {/* Deliberately not a real number — the seller-count tile this
+                  replaced is not shown on the public landing page. A quiet,
+                  on-brand placeholder instead of just leaving a gap. */}
+              <article className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center dark:border-white/10 dark:bg-white/[0.03]">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-400/20 bg-slate-400/10">
+                  <EyeOff className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                </span>
+                <p className="mt-3 text-sm font-medium italic leading-5 text-slate-600 dark:text-slate-300">
+                  {t('landing:platformStats.mysteryBoxText', 'Həqiqət rəqəmlərdə gizlidir')}
+                </p>
               </article>
             </div>
           </div>

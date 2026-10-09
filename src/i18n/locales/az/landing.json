@@ -72,8 +72,6 @@
     "live": "Canlı məlumat",
     "productsTracked": "Amazon məhsulları",
     "productsTrackedSub": "Amazon Checker nəzarətində",
-    "ebayAccounts": "Qoşulmuş eBay hesabları",
-    "ebayAccountsSub": "Aktiv satıcı hesabları",
     "trackingCodes": "Verilmiş izləmə kodları",
     "trackingCodesSub": "AutoTrack vasitəsilə",
     "marketCredits": "İstifadə edilmiş Analiz krediti",
@@ -83,7 +81,8 @@
     "managedListings": "Total Managed Listings",
     "managedListingsSub": "Qoşulmuş eBay hesablarında",
     "managedOrders": "Total Managed Orders",
-    "managedOrdersSub": "Qoşulmuş eBay hesablarında"
+    "managedOrdersSub": "Qoşulmuş eBay hesablarında",
+    "mysteryBoxText": "Həqiqət rəqəmlərdə gizlidir"
   },
   "workflow": {
     "discover": {
