@@ -755,7 +755,7 @@ export default function ProductsPage() {
             <table className="w-full min-w-[1060px]">
               <thead>
                 <tr className={`border-b ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <th className={`${thCls} w-12`}></th>
+                  <th className={`${thCls} w-16`}></th>
                   <th className={thCls}>
                     <button onClick={() => handleTableSort('productName')} className="flex items-center gap-1.5 hover:opacity-80 transition">
                       Product <SortIcon active={sortKey === 'productName'} dir={sortDir} />
@@ -814,13 +814,25 @@ export default function ProductsPage() {
                             : isDark ? 'bg-slate-900/20 hover:bg-slate-900/40' : 'bg-slate-50/40 hover:bg-slate-50/80'
                       }`}
                     >
-                      {/* Thumbnail */}
+                      {/* Thumbnail — most Amazon product photos are shot on a plain
+                          white background with the product itself a narrow object
+                          (a pen, a single stick, a roll of bags), so against this
+                          table's own white rows a plain cropped <img> made the square
+                          frame invisible and only the thin product silhouette showed,
+                          looking like a badly-shaped sliver instead of a thumbnail.
+                          A visible card background + border always shows the square
+                          boundary, and object-contain guarantees the whole photo is
+                          visible (never cropped) regardless of its own aspect ratio. */}
                       <td className={tdCls}>
                         {image ? (
-                          <img src={image} alt="" className="w-16 h-16 rounded-lg object-cover" />
+                          <div className={`w-16 h-16 rounded-lg border overflow-hidden flex items-center justify-center p-1 ${
+                            isDark ? 'bg-white border-slate-700' : 'bg-white border-slate-200'
+                          }`}>
+                            <img src={image} alt="" className="max-w-full max-h-full object-contain" />
+                          </div>
                         ) : (
-                          <div className={`w-16 h-16 rounded-lg flex items-center justify-center text-base font-bold ${
-                            isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400'
+                          <div className={`w-16 h-16 rounded-lg border flex items-center justify-center text-base font-bold ${
+                            isDark ? 'bg-slate-800 border-slate-700 text-slate-500' : 'bg-slate-100 border-slate-200 text-slate-400'
                           }`}>
                             {(product.productName || 'P')[0].toUpperCase()}
                           </div>
