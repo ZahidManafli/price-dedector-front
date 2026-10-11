@@ -132,7 +132,24 @@
     "allConnectedAccounts": "Все подключенные аккаунты",
     "noProductsMatchFilter": "Нет товаров, соответствующих этому фильтру аккаунта.",
     "showAllProducts": "Показать все товары",
-    "unknownAccount": "Неизвестный аккаунт"
+    "unknownAccount": "Неизвестный аккаунт",
+    "bulkImportButton": "Импорт из Excel"
+  },
+  "productBulkImport": {
+    "title": "Массовое добавление товаров из Excel",
+    "description": "Скачайте шаблон, заполните его и загрузите обратно — каждая строка будет добавлена как новый товар с включённой проверкой цены/наличия.",
+    "downloadTemplate": "Скачать шаблон Excel",
+    "ebayAccountLabel": "Аккаунт eBay",
+    "unknownAccount": "Неизвестный аккаунт",
+    "activeAccountSuffix": "(активный)",
+    "fileLabel": "Заполненный файл Excel (.xlsx)",
+    "templateDownloadFailed": "Не удалось скачать шаблон",
+    "uploadFailed": "Не удалось загрузить файл",
+    "resultSummary": "{{created}} / {{total}} товаров успешно добавлено",
+    "resultSkipped": "Пропущено строк: {{skipped}}",
+    "resultErrorLine": "Строка {{row}}: {{reason}}",
+    "close": "Закрыть",
+    "uploadButton": "Загрузить"
   },
   "productCard": {
     "compare": "Сравнить",

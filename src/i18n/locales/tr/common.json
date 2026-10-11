@@ -132,7 +132,24 @@
     "allConnectedAccounts": "Tüm bağlı hesaplar",
     "noProductsMatchFilter": "Bu hesap filtresine uyan ürün yok.",
     "showAllProducts": "Tüm ürünleri göster",
-    "unknownAccount": "Bilinmeyen hesap"
+    "unknownAccount": "Bilinmeyen hesap",
+    "bulkImportButton": "Excel ile ekle"
+  },
+  "productBulkImport": {
+    "title": "Excel ile toplu ürün ekle",
+    "description": "Şablonu indirip doldurun, sonra geri yükleyin — her satır fiyat/stok kontrolü etkin yeni bir ürün olarak eklenecek.",
+    "downloadTemplate": "Excel şablonunu indir",
+    "ebayAccountLabel": "eBay hesabı",
+    "unknownAccount": "Bilinmeyen hesap",
+    "activeAccountSuffix": "(aktif)",
+    "fileLabel": "Doldurulmuş Excel dosyası (.xlsx)",
+    "templateDownloadFailed": "Şablon indirilemedi",
+    "uploadFailed": "Dosya yüklenemedi",
+    "resultSummary": "{{created}} / {{total}} ürün başarıyla eklendi",
+    "resultSkipped": "{{skipped}} satır atlandı:",
+    "resultErrorLine": "Satır {{row}}: {{reason}}",
+    "close": "Kapat",
+    "uploadButton": "Yükle"
   },
   "productCard": {
     "compare": "Karşılaştır",

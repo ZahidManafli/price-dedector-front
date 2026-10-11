@@ -366,7 +366,24 @@
     "allConnectedAccounts": "All connected accounts",
     "noProductsMatchFilter": "No products match this account filter.",
     "showAllProducts": "Show all products",
-    "unknownAccount": "Unknown account"
+    "unknownAccount": "Unknown account",
+    "bulkImportButton": "Import from Excel"
+  },
+  "productBulkImport": {
+    "title": "Bulk-add products from Excel",
+    "description": "Download the template, fill it in, then upload it back — each row will be added as a new product with price/stock checking enabled.",
+    "downloadTemplate": "Download Excel template",
+    "ebayAccountLabel": "eBay account",
+    "unknownAccount": "Unknown account",
+    "activeAccountSuffix": "(active)",
+    "fileLabel": "Filled-in Excel file (.xlsx)",
+    "templateDownloadFailed": "Could not download the template",
+    "uploadFailed": "Could not upload the file",
+    "resultSummary": "{{created}} / {{total}} products added successfully",
+    "resultSkipped": "{{skipped}} row(s) skipped:",
+    "resultErrorLine": "Row {{row}}: {{reason}}",
+    "close": "Close",
+    "uploadButton": "Upload"
   },
   "productCard": {
     "compare": "Compare",

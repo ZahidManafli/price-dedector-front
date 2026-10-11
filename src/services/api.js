@@ -123,6 +123,10 @@ export const productAPI = {
   comparePrice: (id) => api.get(`/products/${id}/compare`),
   restock: (id) => api.post(`/products/${id}/restock`),
   markOutOfStock: (id) => api.post(`/products/${id}/mark-out-of-stock`),
+  bulkImport: (formData) => api.post('/products/bulk-import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  downloadBulkImportTemplate: () => api.get('/products/bulk-import/template', { responseType: 'blob' }),
 };
 
 // Settings APIs

@@ -132,7 +132,24 @@
     "allConnectedAccounts": "Bütün bağlanan hesaplar",
     "noProductsMatchFilter": "Bu hesab filtrinə uyğun məhsul yok.",
     "showAllProducts": "Bütün məhsulları göstər",
-    "unknownAccount": "Naməlum hesap"
+    "unknownAccount": "Naməlum hesap",
+    "bulkImportButton": "Excel ilə əlavə et"
+  },
+  "productBulkImport": {
+    "title": "Excel ilə toplu məhsul əlavə et",
+    "description": "Şablonu yükləyib doldurun, sonra geri yükləyin — hər sətir price/stok yoxlaması aktiv olan yeni bir məhsul kimi əlavə olunacaq.",
+    "downloadTemplate": "Excel şablonunu yüklə",
+    "ebayAccountLabel": "eBay hesabı",
+    "unknownAccount": "Naməlum hesab",
+    "activeAccountSuffix": "(aktiv)",
+    "fileLabel": "Doldurulmuş Excel faylı (.xlsx)",
+    "templateDownloadFailed": "Şablon yüklənə bilmədi",
+    "uploadFailed": "Fayl yüklənə bilmədi",
+    "resultSummary": "{{created}} / {{total}} məhsul uğurla əlavə edildi",
+    "resultSkipped": "{{skipped}} sətir keçildi:",
+    "resultErrorLine": "Sətir {{row}}: {{reason}}",
+    "close": "Bağla",
+    "uploadButton": "Yüklə"
   },
   "productCard": {
     "compare": "Müqayisə Et",

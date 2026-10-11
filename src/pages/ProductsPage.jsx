@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowDown, ArrowUp, ArrowUpDown, Check, ExternalLink,
+  ArrowDown, ArrowUp, ArrowUpDown, Check, ExternalLink, FileSpreadsheet,
   Grid3X3, List, MoreVertical, PackageCheck, PackageX, Pencil, Plus, RefreshCw, Search, Trash2,
   TrendingDown, TrendingUp, X,
 } from 'lucide-react';
@@ -10,6 +10,7 @@ import ProductCard from '../components/ProductCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
 import { ProductFormModal } from './ProductFormPage';
+import ProductBulkImportModal from '../components/ProductBulkImportModal';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { buildAmazonProductUrl, calculateProfit, formatCurrency } from '../utils/helpers';
@@ -216,9 +217,11 @@ export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [ebayAccounts, setEbayAccounts] = useState([]);
+  const [activeEbayAccountId, setActiveEbayAccountId] = useState(null);
   const [alert, setAlert] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
+  const [bulkImportModalOpen, setBulkImportModalOpen] = useState(false);
   const [limits, setLimits] = useState(null);
   const [ebayFilter, setEbayFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -273,8 +276,10 @@ export default function ProductsPage() {
     try {
       const res = await ebayAPI.getStatus();
       setEbayAccounts(Array.isArray(res?.data?.ebayAccounts) ? res.data.ebayAccounts : []);
+      setActiveEbayAccountId(res?.data?.activeEbayAccountId || null);
     } catch {
       setEbayAccounts([]);
+      setActiveEbayAccountId(null);
     }
   };
 
@@ -479,6 +484,16 @@ export default function ProductsPage() {
         />
       )}
 
+      {bulkImportModalOpen && (
+        <ProductBulkImportModal
+          ebayAccounts={ebayAccounts}
+          activeEbayAccountId={activeEbayAccountId}
+          isDark={isDark}
+          onClose={() => setBulkImportModalOpen(false)}
+          onSuccess={() => { fetchProducts(); fetchLimits(); }}
+        />
+      )}
+
       {alert && (
         <div className="mb-5">
           <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
@@ -494,6 +509,20 @@ export default function ProductsPage() {
         <div className="flex flex-wrap gap-2">
           <button onClick={() => navigate('/market-analysis')} className="btn-secondary">
             {t('productsPage.openAnalysis')}
+          </button>
+          <button
+            onClick={() => {
+              if (isProductQuotaReached) {
+                setAlert({ type: 'warning', message: t('productsPage.quotaReached') });
+                return;
+              }
+              setBulkImportModalOpen(true);
+            }}
+            disabled={isProductQuotaReached}
+            className="btn-secondary flex items-center gap-1.5 disabled:cursor-not-allowed"
+          >
+            <FileSpreadsheet size={14} />
+            {t('productsPage.bulkImportButton')}
           </button>
           <button
             data-tour="products-add-button"
