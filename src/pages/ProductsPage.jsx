@@ -817,9 +817,9 @@ export default function ProductsPage() {
                       {/* Thumbnail */}
                       <td className={tdCls}>
                         {image ? (
-                          <img src={image} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                          <img src={image} alt="" className="w-16 h-16 rounded-lg object-cover" />
                         ) : (
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-[11px] font-bold ${
+                          <div className={`w-16 h-16 rounded-lg flex items-center justify-center text-base font-bold ${
                             isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400'
                           }`}>
                             {(product.productName || 'P')[0].toUpperCase()}
