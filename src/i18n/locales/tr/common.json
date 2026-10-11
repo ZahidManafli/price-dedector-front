@@ -145,7 +145,7 @@
     "fileLabel": "Doldurulmuş Excel dosyası (.xlsx)",
     "templateDownloadFailed": "Şablon indirilemedi",
     "uploadFailed": "Dosya yüklenemedi",
-    "processingHint": "Ürünler ekleniyor ve her biri için Amazon fotoğrafı aranıyor — bu birkaç dakika sürebilir, lütfen bu pencereyi kapatmayın.",
+    "processingHint": "Ürünler ekleniyor ve her biri için Amazon fotoğrafı aranıyor — bu birkaç dakika sürebilir. Bu pencereyi kapatabilirsiniz, işlem bitince liste kendiliğinden güncellenecek.",
     "resultSummary": "{{created}} / {{total}} ürün başarıyla eklendi",
     "resultSkipped": "{{skipped}} satır atlandı:",
     "resultErrorLine": "Satır {{row}}: {{reason}}",

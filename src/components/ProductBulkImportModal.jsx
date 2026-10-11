@@ -25,40 +25,21 @@ function findMatchingAccount(accounts = [], value) {
   return accounts.find((account) => getAccountKeys(account).includes(target)) || null;
 }
 
-// POST /products/bulk-import only kicks the import off in the background
-// (fetching each row's real Amazon photo can take a while) and returns a
-// jobId right away — this polls GET /products/bulk-import/:jobId until it's
-// done or error, same contract as pollAmazonLookupConfirmJob in
-// AmazonLookupPage.jsx. No overall timeout: a large batch legitimately takes
-// longer, and this must never report "failed" while the backend is still
-// genuinely working through it — only a run of actually-failed poll requests
-// gives up.
-async function pollProductBulkImportJob(jobId, { intervalMs = 2000, maxConsecutiveFailures = 10 } = {}) {
-  let consecutiveFailures = 0;
-  for (;;) {
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-    let pollRes;
-    try {
-      pollRes = await productAPI.pollBulkImport(jobId);
-      consecutiveFailures = 0;
-    } catch (pollErr) {
-      consecutiveFailures += 1;
-      if (consecutiveFailures >= maxConsecutiveFailures) throw pollErr;
-      continue; // eslint-disable-line no-continue
-    }
-    const status = pollRes?.data?.status;
-    if (status === 'done') return pollRes.data;
-    if (status === 'error') throw new Error(pollRes?.data?.error || 'Fayl yüklənə bilmədi');
-    // status === 'processing' -> keep polling
-  }
-}
-
 // Bulk-add products from an uploaded .xlsx spreadsheet instead of one at a
 // time — see backend-for-server's productController.js (bulkImportProducts /
 // downloadBulkImportTemplate) for the exact column-matching rules. Mirrors
 // ProductFormPage.jsx's eBay-account-selection pattern so a multi-account
 // user picks the same way here as when adding a single product.
-export default function ProductBulkImportModal({ onClose, onSuccess, ebayAccounts = [], activeEbayAccountId, isDark }) {
+//
+// This modal only STARTS the job (POST /bulk-import -> jobId) and hands it to
+// the parent via onJobStarted — it does NOT poll for the result itself. The
+// import can take a while (each row's Amazon photo lookup), and closing this
+// modal must never stop the product list from eventually refreshing — so the
+// actual polling lives in ProductsPage.jsx, which stays mounted regardless of
+// whether this modal is open or closed. `job` (the parent's current
+// {jobId, status, result, error} for this upload, or null) is what drives the
+// progress/result UI below.
+export default function ProductBulkImportModal({ onClose, onJobStarted, job, ebayAccounts = [], activeEbayAccountId, isDark }) {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
   const [file, setFile] = useState(null);
@@ -67,13 +48,14 @@ export default function ProductBulkImportModal({ onClose, onSuccess, ebayAccount
     return getPreferredAccountValue(activeAcc || ebayAccounts[0] || {});
   });
   const [downloadingTemplate, setDownloadingTemplate] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState('');
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState('');
+
+  const isProcessing = job?.status === 'processing';
 
   const handleDownloadTemplate = async () => {
     setDownloadingTemplate(true);
-    setError('');
+    setStartError('');
     try {
       const res = await productAPI.downloadBulkImportTemplate();
       const blobUrl = window.URL.createObjectURL(new Blob([res.data]));
@@ -85,7 +67,7 @@ export default function ProductBulkImportModal({ onClose, onSuccess, ebayAccount
       link.remove();
       window.URL.revokeObjectURL(blobUrl);
     } catch {
-      setError(t('productBulkImport.templateDownloadFailed'));
+      setStartError(t('productBulkImport.templateDownloadFailed'));
     } finally {
       setDownloadingTemplate(false);
     }
@@ -94,15 +76,13 @@ export default function ProductBulkImportModal({ onClose, onSuccess, ebayAccount
   const handleFileChange = (e) => {
     const selected = e.target.files?.[0] || null;
     setFile(selected);
-    setResult(null);
-    setError('');
+    setStartError('');
   };
 
   const handleUpload = async () => {
     if (!file) return;
-    setUploading(true);
-    setError('');
-    setResult(null);
+    setStarting(true);
+    setStartError('');
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -118,15 +98,13 @@ export default function ProductBulkImportModal({ onClose, onSuccess, ebayAccount
       if (!jobId) {
         throw new Error(t('productBulkImport.uploadFailed'));
       }
-      const finished = await pollProductBulkImportJob(jobId);
-      setResult(finished || null);
-      if ((finished?.created || 0) > 0) {
-        onSuccess?.();
-      }
+      setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      onJobStarted?.(jobId);
     } catch (uploadError) {
-      setError(uploadError?.response?.data?.error || uploadError.message || t('productBulkImport.uploadFailed'));
+      setStartError(uploadError?.response?.data?.error || uploadError.message || t('productBulkImport.uploadFailed'));
     } finally {
-      setUploading(false);
+      setStarting(false);
     }
   };
 
@@ -179,7 +157,7 @@ export default function ProductBulkImportModal({ onClose, onSuccess, ebayAccount
                 className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/40 ${
                   isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
                 }`}
-                disabled={uploading}
+                disabled={starting || isProcessing}
               >
                 {ebayAccounts.map((acc) => {
                   const optionValue = getPreferredAccountValue(acc);
@@ -204,7 +182,7 @@ export default function ProductBulkImportModal({ onClose, onSuccess, ebayAccount
               type="file"
               accept=".xlsx"
               onChange={handleFileChange}
-              disabled={uploading}
+              disabled={starting || isProcessing}
               className={`w-full text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}
             />
             {file && (
@@ -212,36 +190,45 @@ export default function ProductBulkImportModal({ onClose, onSuccess, ebayAccount
             )}
           </div>
 
-          {uploading && !result && !error && (
+          {isProcessing && (
             <div className={`rounded-xl border p-3 flex items-start gap-2 ${isDark ? 'border-blue-900 bg-blue-950/30' : 'border-blue-200 bg-blue-50'}`}>
               <Loader2 size={16} className="shrink-0 mt-0.5 animate-spin text-blue-500" />
-              <p className="text-sm text-blue-700 dark:text-blue-300">{t('productBulkImport.processingHint')}</p>
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                {t('productBulkImport.processingHint')}
+              </p>
             </div>
           )}
 
-          {error && (
+          {startError && (
             <div className={`rounded-xl border p-3 flex items-start gap-2 ${isDark ? 'border-red-900 bg-red-950/30' : 'border-red-200 bg-red-50'}`}>
               <AlertTriangle size={16} className="shrink-0 mt-0.5 text-red-500" />
-              <p className="text-sm text-red-600 dark:text-red-300">{error}</p>
+              <p className="text-sm text-red-600 dark:text-red-300">{startError}</p>
             </div>
           )}
 
-          {result && (
+          {job?.status === 'error' && (
+            <div className={`rounded-xl border p-3 flex items-start gap-2 ${isDark ? 'border-red-900 bg-red-950/30' : 'border-red-200 bg-red-50'}`}>
+              <AlertTriangle size={16} className="shrink-0 mt-0.5 text-red-500" />
+              <p className="text-sm text-red-600 dark:text-red-300">{job.error}</p>
+            </div>
+          )}
+
+          {job?.status === 'done' && job.result && (
             <div className={`rounded-xl border p-3 space-y-1.5 ${isDark ? 'border-emerald-900 bg-emerald-950/30' : 'border-emerald-200 bg-emerald-50'}`}>
               <div className="flex items-start gap-2">
                 <CheckCircle2 size={16} className="shrink-0 mt-0.5 text-emerald-500" />
                 <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                  {t('productBulkImport.resultSummary', { created: result.created, total: result.totalRows })}
+                  {t('productBulkImport.resultSummary', { created: job.result.created, total: job.result.totalRows })}
                 </p>
               </div>
-              {result.skipped > 0 && (
+              {job.result.skipped > 0 && (
                 <p className={`text-xs ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-                  {t('productBulkImport.resultSkipped', { skipped: result.skipped })}
+                  {t('productBulkImport.resultSkipped', { skipped: job.result.skipped })}
                 </p>
               )}
-              {Array.isArray(result.errors) && result.errors.length > 0 && (
+              {Array.isArray(job.result.errors) && job.result.errors.length > 0 && (
                 <ul className="mt-1.5 max-h-32 overflow-y-auto space-y-0.5">
-                  {result.errors.map((err, idx) => (
+                  {job.result.errors.map((err, idx) => (
                     <li key={`${err.row}-${idx}`} className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       {t('productBulkImport.resultErrorLine', { row: err.row, reason: err.reason })}
                     </li>
@@ -259,10 +246,10 @@ export default function ProductBulkImportModal({ onClose, onSuccess, ebayAccount
           <button
             type="button"
             onClick={handleUpload}
-            disabled={!file || uploading}
+            disabled={!file || starting || isProcessing}
             className="btn-primary text-sm inline-flex items-center gap-2 disabled:opacity-60"
           >
-            {uploading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
+            {starting ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
             {t('productBulkImport.uploadButton')}
           </button>
         </div>

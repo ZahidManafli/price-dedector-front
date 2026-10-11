@@ -17,6 +17,32 @@ import { buildAmazonProductUrl, calculateProfit, formatCurrency } from '../utils
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// POST /products/bulk-import only starts the import in the background
+// (fetching each row's real Amazon photo can take a while) and returns a
+// jobId right away — this polls GET /products/bulk-import/:jobId until it's
+// done or error. Lives here (not inside ProductBulkImportModal) specifically
+// so closing that modal never stops it: this page stays mounted and keeps
+// polling regardless, then refreshes the product list the moment it's done.
+async function pollProductBulkImportJob(jobId, { intervalMs = 2000, maxConsecutiveFailures = 10 } = {}) {
+  let consecutiveFailures = 0;
+  for (;;) {
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    let pollRes;
+    try {
+      pollRes = await productAPI.pollBulkImport(jobId);
+      consecutiveFailures = 0;
+    } catch (pollErr) {
+      consecutiveFailures += 1;
+      if (consecutiveFailures >= maxConsecutiveFailures) throw pollErr;
+      continue; // eslint-disable-line no-continue
+    }
+    const status = pollRes?.data?.status;
+    if (status === 'done') return pollRes.data;
+    if (status === 'error') throw new Error(pollRes?.data?.error || 'Fayl yüklənə bilmədi');
+    // status === 'processing' -> keep polling
+  }
+}
+
 function getProductStatus(p) {
   const amazon = Number(p.currentAmazonPrice || 0);
   if (!amazon) return 'out_of_stock';
@@ -222,6 +248,7 @@ export default function ProductsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
   const [bulkImportModalOpen, setBulkImportModalOpen] = useState(false);
+  const [bulkImportJob, setBulkImportJob] = useState(null); // { jobId, status, result, error } or null
   const [limits, setLimits] = useState(null);
   const [ebayFilter, setEbayFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -250,6 +277,38 @@ export default function ProductsPage() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Keeps polling a started bulk-import job to completion regardless of
+  // whether ProductBulkImportModal (which only kicks the job off) is still
+  // open — this effect lives on the page itself, so closing the modal early
+  // can never leave the product list stuck showing stale data until a manual
+  // page refresh.
+  useEffect(() => {
+    const jobId = bulkImportJob?.jobId;
+    if (!jobId || bulkImportJob.status !== 'processing') return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const finished = await pollProductBulkImportJob(jobId);
+        if (cancelled) return;
+        setBulkImportJob({ jobId, status: 'done', result: finished });
+        fetchProducts();
+        fetchLimits();
+        setAlert({
+          type: 'success',
+          message: t('productBulkImport.resultSummary', { created: finished?.created || 0, total: finished?.totalRows || 0 }),
+        });
+      } catch (pollError) {
+        if (cancelled) return;
+        setBulkImportJob({ jobId, status: 'error', error: pollError?.message || t('productBulkImport.uploadFailed') });
+        setAlert({ type: 'error', message: pollError?.message || t('productBulkImport.uploadFailed') });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bulkImportJob?.jobId]);
 
   const fetchProducts = async () => {
     try {
@@ -489,8 +548,9 @@ export default function ProductsPage() {
           ebayAccounts={ebayAccounts}
           activeEbayAccountId={activeEbayAccountId}
           isDark={isDark}
+          job={bulkImportJob}
+          onJobStarted={(jobId) => setBulkImportJob({ jobId, status: 'processing' })}
           onClose={() => setBulkImportModalOpen(false)}
-          onSuccess={() => { fetchProducts(); fetchLimits(); }}
         />
       )}
 

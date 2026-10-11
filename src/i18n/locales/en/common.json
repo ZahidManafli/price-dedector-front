@@ -379,7 +379,7 @@
     "fileLabel": "Filled-in Excel file (.xlsx)",
     "templateDownloadFailed": "Could not download the template",
     "uploadFailed": "Could not upload the file",
-    "processingHint": "Adding products and looking up each one's Amazon photo — this can take a few minutes, please keep this window open.",
+    "processingHint": "Adding products and looking up each one's Amazon photo — this can take a few minutes. You can close this window; the list will refresh on its own when it's done.",
     "resultSummary": "{{created}} / {{total}} products added successfully",
     "resultSkipped": "{{skipped}} row(s) skipped:",
     "resultErrorLine": "Row {{row}}: {{reason}}",
