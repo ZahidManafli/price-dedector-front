@@ -145,6 +145,7 @@
     "fileLabel": "Doldurulmuş Excel faylı (.xlsx)",
     "templateDownloadFailed": "Şablon yüklənə bilmədi",
     "uploadFailed": "Fayl yüklənə bilmədi",
+    "processingHint": "Məhsullar əlavə edilir və hər biri üçün Amazon şəkli axtarılır — bu bir neçə dəqiqə çəkə bilər, zəhmət olmasa pəncərəni bağlamayın.",
     "resultSummary": "{{created}} / {{total}} məhsul uğurla əlavə edildi",
     "resultSkipped": "{{skipped}} sətir keçildi:",
     "resultErrorLine": "Sətir {{row}}: {{reason}}",

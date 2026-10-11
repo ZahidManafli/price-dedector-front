@@ -127,6 +127,7 @@ export const productAPI = {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
   downloadBulkImportTemplate: () => api.get('/products/bulk-import/template', { responseType: 'blob' }),
+  pollBulkImport: (jobId) => api.get(`/products/bulk-import/${encodeURIComponent(jobId)}`),
 };
 
 // Settings APIs

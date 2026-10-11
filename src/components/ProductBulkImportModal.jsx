@@ -25,6 +25,34 @@ function findMatchingAccount(accounts = [], value) {
   return accounts.find((account) => getAccountKeys(account).includes(target)) || null;
 }
 
+// POST /products/bulk-import only kicks the import off in the background
+// (fetching each row's real Amazon photo can take a while) and returns a
+// jobId right away — this polls GET /products/bulk-import/:jobId until it's
+// done or error, same contract as pollAmazonLookupConfirmJob in
+// AmazonLookupPage.jsx. No overall timeout: a large batch legitimately takes
+// longer, and this must never report "failed" while the backend is still
+// genuinely working through it — only a run of actually-failed poll requests
+// gives up.
+async function pollProductBulkImportJob(jobId, { intervalMs = 2000, maxConsecutiveFailures = 10 } = {}) {
+  let consecutiveFailures = 0;
+  for (;;) {
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    let pollRes;
+    try {
+      pollRes = await productAPI.pollBulkImport(jobId);
+      consecutiveFailures = 0;
+    } catch (pollErr) {
+      consecutiveFailures += 1;
+      if (consecutiveFailures >= maxConsecutiveFailures) throw pollErr;
+      continue; // eslint-disable-line no-continue
+    }
+    const status = pollRes?.data?.status;
+    if (status === 'done') return pollRes.data;
+    if (status === 'error') throw new Error(pollRes?.data?.error || 'Fayl yüklənə bilmədi');
+    // status === 'processing' -> keep polling
+  }
+}
+
 // Bulk-add products from an uploaded .xlsx spreadsheet instead of one at a
 // time — see backend-for-server's productController.js (bulkImportProducts /
 // downloadBulkImportTemplate) for the exact column-matching rules. Mirrors
@@ -85,9 +113,14 @@ export default function ProductBulkImportModal({ onClose, onSuccess, ebayAccount
           formData.append('tradingAccountId', selectedAcc.tradingAccountId);
         }
       }
-      const res = await productAPI.bulkImport(formData);
-      setResult(res?.data || null);
-      if ((res?.data?.created || 0) > 0) {
+      const startRes = await productAPI.bulkImport(formData);
+      const jobId = startRes?.data?.jobId;
+      if (!jobId) {
+        throw new Error(t('productBulkImport.uploadFailed'));
+      }
+      const finished = await pollProductBulkImportJob(jobId);
+      setResult(finished || null);
+      if ((finished?.created || 0) > 0) {
         onSuccess?.();
       }
     } catch (uploadError) {
@@ -178,6 +211,13 @@ export default function ProductBulkImportModal({ onClose, onSuccess, ebayAccount
               <p className={`mt-1.5 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{file.name}</p>
             )}
           </div>
+
+          {uploading && !result && !error && (
+            <div className={`rounded-xl border p-3 flex items-start gap-2 ${isDark ? 'border-blue-900 bg-blue-950/30' : 'border-blue-200 bg-blue-50'}`}>
+              <Loader2 size={16} className="shrink-0 mt-0.5 animate-spin text-blue-500" />
+              <p className="text-sm text-blue-700 dark:text-blue-300">{t('productBulkImport.processingHint')}</p>
+            </div>
+          )}
 
           {error && (
             <div className={`rounded-xl border p-3 flex items-start gap-2 ${isDark ? 'border-red-900 bg-red-950/30' : 'border-red-200 bg-red-50'}`}>
