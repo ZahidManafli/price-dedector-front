@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { amazonAPI, ebayAPI, dewisoAPI, walletAPI } from '../services/api';
+import { amazonAPI, ebayAPI, dewisoAPI, studioAPI, walletAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import AutoListProgressStepper from '../components/AutoListProgressStepper';
@@ -126,6 +126,11 @@ export default function AmazonLookupPage() {
   const [activeEbayAccountId, setActiveEbayAccountId] = useState(null);
   const [autoListSettings, setAutoListSettings] = useState(null);
   const [dewisoTemplates, setDewisoTemplates] = useState([]);
+  // The user's single Design Studio workspace (design_projects is one row per
+  // user — see migration 101), or null if they haven't created one yet (or
+  // don't have design_studio plan access, in which case listProjects()
+  // 403s and this just stays null — that option is simply not offered).
+  const [designStudioWorkspace, setDesignStudioWorkspace] = useState(null);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
   const [walletBalanceAzn, setWalletBalanceAzn] = useState(null);
@@ -322,6 +327,17 @@ export default function AmazonLookupPage() {
       adRatePercent: autoListSettings?.adRatePercent != null ? String(autoListSettings.adRatePercent) : '',
       defaultDewisoTemplateId: autoListSettings?.defaultDewisoTemplateId || '',
       coverImagePrompt: autoListSettings?.coverImagePrompt || '',
+      useDesignStudioCover: autoListSettings?.useDesignStudioCover || false,
+      // Drives which of the 3 cover-image UI blocks is shown below — kept as its
+      // own field (rather than derived from coverImagePrompt/useDesignStudioCover
+      // on every render) so picking "custom prompt" before typing anything, or
+      // picking "Design Studio" before having a workspace yet, doesn't silently
+      // snap back to "default" while the user is still deciding.
+      coverImageMode: autoListSettings?.useDesignStudioCover
+        ? 'designStudio'
+        : autoListSettings?.coverImagePrompt
+          ? 'prompt'
+          : 'default',
     });
     setSettingsModalOpen(true);
     if (!dewisoTemplates.length) {
@@ -330,6 +346,10 @@ export default function AmazonLookupPage() {
         .then((res) => setDewisoTemplates(Array.isArray(res?.data?.items) ? res.data.items : []))
         .catch(() => {});
     }
+    studioAPI
+      .listProjects()
+      .then((res) => setDesignStudioWorkspace(Array.isArray(res?.data?.items) ? res.data.items[0] || null : null))
+      .catch(() => setDesignStudioWorkspace(null));
   };
 
   const saveSettings = async () => {
@@ -343,7 +363,11 @@ export default function AmazonLookupPage() {
         defaultProfitUsd: Number(settingsForm.defaultProfitUsd) || 0,
         adRatePercent: String(settingsForm.adRatePercent).trim() === '' ? null : Number(settingsForm.adRatePercent),
         defaultDewisoTemplateId: settingsForm.defaultDewisoTemplateId || null,
-        coverImagePrompt: settingsForm.coverImagePrompt?.trim() || null,
+        // Mutually exclusive — only the mode the user actually picked is ever
+        // sent as active, so switching modes can never leave a stale prompt
+        // or a stale "use my design" flag silently still in effect.
+        coverImagePrompt: settingsForm.coverImageMode === 'prompt' ? settingsForm.coverImagePrompt?.trim() || null : null,
+        useDesignStudioCover: settingsForm.coverImageMode === 'designStudio',
       });
       setAutoListSettings(response?.data?.settings || null);
       setSettingsModalOpen(false);
@@ -1818,18 +1842,88 @@ export default function AmazonLookupPage() {
 
               <div>
                 <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  {t('amazonLookupPage.coverImagePromptLabel')}
+                  {t('amazonLookupPage.coverImageModeLabel')}
                 </label>
-                <textarea
-                  value={settingsForm.coverImagePrompt}
-                  onChange={(e) => setSettingsForm((prev) => ({ ...prev, coverImagePrompt: e.target.value.slice(0, 1000) }))}
-                  rows={3}
-                  placeholder={t('amazonLookupPage.coverImagePromptPlaceholder')}
-                  className="input-base resize-none"
-                />
-                <p className={`text-[11px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  {t('amazonLookupPage.coverImagePromptHint')}
-                </p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {['default', 'prompt', 'designStudio'].map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setSettingsForm((prev) => ({ ...prev, coverImageMode: mode }))}
+                      className={`rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition-colors ${
+                        settingsForm.coverImageMode === mode
+                          ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500'
+                          : isDark
+                            ? 'border-slate-700 text-slate-400 hover:border-slate-600'
+                            : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                      }`}
+                    >
+                      {t(`amazonLookupPage.coverImageMode_${mode}`)}
+                    </button>
+                  ))}
+                </div>
+
+                {settingsForm.coverImageMode === 'prompt' && (
+                  <div className="mt-2">
+                    <textarea
+                      value={settingsForm.coverImagePrompt}
+                      onChange={(e) => setSettingsForm((prev) => ({ ...prev, coverImagePrompt: e.target.value.slice(0, 1000) }))}
+                      rows={3}
+                      placeholder={t('amazonLookupPage.coverImagePromptPlaceholder')}
+                      className="input-base resize-none"
+                    />
+                    <p className={`text-[11px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {t('amazonLookupPage.coverImagePromptHint')}
+                    </p>
+                  </div>
+                )}
+
+                {settingsForm.coverImageMode === 'designStudio' && (
+                  <div className="mt-2">
+                    {designStudioWorkspace ? (
+                      <div
+                        className={`flex items-center gap-2.5 rounded-lg border p-2 ${
+                          isDark ? 'border-slate-700 bg-slate-800/60' : 'border-slate-200 bg-slate-50'
+                        }`}
+                      >
+                        {designStudioWorkspace.thumbnailUrl ? (
+                          <img
+                            src={designStudioWorkspace.thumbnailUrl}
+                            alt=""
+                            className="w-12 h-12 rounded object-cover border border-black/5 shrink-0"
+                          />
+                        ) : (
+                          <div
+                            className={`w-12 h-12 rounded border shrink-0 flex items-center justify-center ${
+                              isDark ? 'border-slate-600' : 'border-slate-300'
+                            }`}
+                          >
+                            <ImageIcon size={16} className={isDark ? 'text-slate-500' : 'text-slate-400'} />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-xs font-semibold truncate ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                            {designStudioWorkspace.title || t('amazonLookupPage.designStudioUntitled')}
+                          </p>
+                          <p className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                            {t('amazonLookupPage.designStudioWorkspaceHint')}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className={`rounded-lg border p-2.5 text-[11px] ${
+                          isDark ? 'border-slate-700 bg-slate-800/60 text-slate-400' : 'border-slate-200 bg-slate-50 text-slate-500'
+                        }`}
+                      >
+                        <p className="mb-1.5">{t('amazonLookupPage.designStudioNoWorkspace')}</p>
+                        <RouterLink to="/studio" className="font-semibold text-indigo-500 hover:underline">
+                          {t('amazonLookupPage.designStudioGoCreate')}
+                        </RouterLink>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
