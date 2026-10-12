@@ -34,14 +34,17 @@
     <meta name="twitter:image" content="https://checkila.com/checkila-analysis.jpg" />
     <!--
       /logo-2.png is the full horizontal lockup (cart icon + "Checkila"
-      wordmark, 1536x1024) — fine as an og:image, wrong for a favicon. It was
-      previously declared here mislabeled as a 32x32 icon, which Google's
-      Search favicon requirements reject outright (favicons must be square);
-      that's why the logo never appeared next to checkila.com in Google
-      search results even though browsers happily (if blurrily) scaled the
-      whole rectangular image down for the tab icon. These are square crops
-      of just the cart mark, generated from logo-2.png, at the sizes Google
-      and browsers actually expect.
+      wordmark, 1536x1024) — fine as an og:image, wrong for a favicon as-is.
+      It was previously declared here mislabeled as a 32x32 icon, which
+      Google's Search favicon requirements reject outright (favicons must be
+      square); that's why the logo never appeared next to checkila.com in
+      Google search results even though browsers happily (if blurrily)
+      scaled the whole rectangular image down for the tab icon. These are
+      square versions of the SAME full icon+"Checkila" wordmark (trimmed and
+      padded square, not cropped down to just the cart mark), at the sizes
+      Google and browsers actually expect — the text is only really legible
+      from 48px up, but keeping it in every size was an explicit choice over
+      a cleaner icon-only mark at the smallest sizes.
     -->
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
