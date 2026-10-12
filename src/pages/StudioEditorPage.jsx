@@ -193,7 +193,14 @@ export default function StudioEditorPage() {
     if (!canvas) return;
     setSaving(true);
     try {
-      const canvasJson = JSON.stringify(canvas.toJSON(['data']));
+      // canvas.toObject(['data']), NOT canvas.toJSON(['data']) — Fabric v6's
+      // Canvas.toJSON() ignores whatever argument it's called with and just
+      // calls this.toObject() with none, silently dropping 'data' and losing
+      // handleToggleProductSlot's isProductSlot flag on every save. toObject
+      // actually forwards propertiesToInclude down to each object; the
+      // resulting shape is otherwise identical and loadFromJSON reads it the
+      // same way.
+      const canvasJson = JSON.stringify(canvas.toObject(['data']));
       const maxDim = Math.max(dims.widthPx, dims.heightPx);
       const thumbnailDataUrl = exportDataUrl(Math.min(1, 400 / maxDim));
       await studioAPI.saveProject(projectId, { title: title || undefined, canvasJson, thumbnailDataUrl });
@@ -217,7 +224,7 @@ export default function StudioEditorPage() {
     clearTimeout(historyRef.current.timer);
     historyRef.current.timer = setTimeout(() => {
       const h = historyRef.current;
-      const json = JSON.stringify(canvas.toJSON(['data']));
+      const json = JSON.stringify(canvas.toObject(['data']));
       if (h.stack[h.index] === json) return;
       h.stack = h.stack.slice(0, h.index + 1);
       h.stack.push(json);
@@ -420,7 +427,7 @@ export default function StudioEditorPage() {
         setCanvasBackground(canvas.backgroundColor);
 
         canvas.requestRenderAll();
-        historyRef.current = { stack: [JSON.stringify(canvas.toJSON(['data']))], index: 0, suppress: false, timer: null };
+        historyRef.current = { stack: [JSON.stringify(canvas.toObject(['data']))], index: 0, suppress: false, timer: null };
         setLoading(false);
         if (legacyImages.length) scheduleAutosave();
       } catch {
