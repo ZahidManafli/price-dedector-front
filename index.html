@@ -32,8 +32,23 @@
       content="Track pricing, convert Amazon tracking numbers into eBay-ready codes automatically, and automate smarter dropshipping and eBay workflows with Checkila."
     />
     <meta name="twitter:image" content="https://checkila.com/checkila-analysis.jpg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/logo-2.png" />
-    <link rel="apple-touch-icon" href="/logo-2.png" />
+    <!--
+      /logo-2.png is the full horizontal lockup (cart icon + "Checkila"
+      wordmark, 1536x1024) — fine as an og:image, wrong for a favicon. It was
+      previously declared here mislabeled as a 32x32 icon, which Google's
+      Search favicon requirements reject outright (favicons must be square);
+      that's why the logo never appeared next to checkila.com in Google
+      search results even though browsers happily (if blurrily) scaled the
+      whole rectangular image down for the tab icon. These are square crops
+      of just the cart mark, generated from logo-2.png, at the sizes Google
+      and browsers actually expect.
+    -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <!--
       Baseline structured data, present in the raw HTML before any JavaScript
       runs. React (src/utils/seo.js -> applySeo) finds this same element by id
