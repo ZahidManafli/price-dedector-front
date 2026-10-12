@@ -605,6 +605,8 @@
     "designStudioUntitled": "Дизайн без названия",
     "designStudioNoWorkspace": "Вы ещё ничего не создали в Design Studio.",
     "designStudioGoCreate": "Открыть Design Studio →",
+    "designStudioNoSlotMarked": "В этом дизайне ещё не отмечена область для фото товара. Откройте дизайн, выберите фигуру, куда должно встать фото, и нажмите «Отметить как область фото товара».",
+    "designStudioGoMarkSlot": "Открыть и отметить область →",
     "previewGalleryTitle": "Галерея ({{count}} изображений)",
     "coverImageBadge": "Обложка",
     "previewPriceLabel": "Цена",
@@ -1430,6 +1432,7 @@
     "duplicate": "Дублировать",
     "bringToFront": "На передний план",
     "sendToBack": "На задний план",
+    "markProductSlot": "Отметить как область фото товара",
     "loadFailed": "Не удалось загрузить дизайн",
     "selectObjectHint": "Выберите элемент, чтобы увидеть его свойства"
   }

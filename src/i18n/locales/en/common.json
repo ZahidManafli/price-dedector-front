@@ -811,6 +811,8 @@
     "designStudioUntitled": "Untitled design",
     "designStudioNoWorkspace": "You haven't created anything in Design Studio yet.",
     "designStudioGoCreate": "Open Design Studio →",
+    "designStudioNoSlotMarked": "This design doesn't have a product photo area marked yet. Open it, select the shape where the photo should go, and use the \"Mark as product photo area\" button.",
+    "designStudioGoMarkSlot": "Open and mark the area →",
     "previewGalleryTitle": "Gallery ({{count}} images)",
     "coverImageBadge": "Cover",
     "previewPriceLabel": "Price",
@@ -1497,6 +1499,7 @@
     "duplicate": "Duplicate",
     "bringToFront": "Bring to front",
     "sendToBack": "Send to back",
+    "markProductSlot": "Mark as product photo area",
     "loadFailed": "Failed to load design",
     "selectObjectHint": "Select an element to see its properties"
   }

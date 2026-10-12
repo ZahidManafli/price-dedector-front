@@ -605,6 +605,8 @@
     "designStudioUntitled": "Adsız dizayn",
     "designStudioNoWorkspace": "Design Studioda hələ heç nə yaratmamısınız.",
     "designStudioGoCreate": "Design Studio-nu aç →",
+    "designStudioNoSlotMarked": "Bu dizaynda hələ məhsul şəkli üçün sahə işarələnməyib. Dizaynı açın, şəklin qoyulacağı fiquru seçin və \"Məhsul şəkli sahəsi kimi işarələ\" düyməsini basın.",
+    "designStudioGoMarkSlot": "Aç və sahəni işarələ →",
     "previewGalleryTitle": "Qalereya ({{count}} şəkil)",
     "coverImageBadge": "Ön kapak",
     "previewPriceLabel": "Qiymət",
@@ -1430,6 +1432,7 @@
     "duplicate": "Dublikat",
     "bringToFront": "Önə gətir",
     "sendToBack": "Arxaya göndər",
+    "markProductSlot": "Məhsul şəkli sahəsi kimi işarələ",
     "loadFailed": "Dizayn yüklənmədi",
     "selectObjectHint": "Xüsusiyyətləri görmək üçün bir element seçin"
   }

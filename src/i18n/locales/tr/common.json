@@ -605,6 +605,8 @@
     "designStudioUntitled": "Adsız tasarım",
     "designStudioNoWorkspace": "Design Studio'da henüz bir şey oluşturmadınız.",
     "designStudioGoCreate": "Design Studio'yu aç →",
+    "designStudioNoSlotMarked": "Bu tasarımda henüz ürün fotoğrafı alanı işaretlenmedi. Tasarımı açın, fotoğrafın geleceği şekli seçin ve \"Ürün fotoğrafı alanı olarak işaretle\" butonuna basın.",
+    "designStudioGoMarkSlot": "Aç ve alanı işaretle →",
     "previewGalleryTitle": "Galeri ({{count}} görsel)",
     "coverImageBadge": "Kapak",
     "previewPriceLabel": "Fiyat",
@@ -1430,6 +1432,7 @@
     "duplicate": "Çoğalt",
     "bringToFront": "Öne getir",
     "sendToBack": "Arkaya gönder",
+    "markProductSlot": "Ürün fotoğrafı alanı olarak işaretle",
     "loadFailed": "Tasarım yüklenemedi",
     "selectObjectHint": "Özelliklerini görmek için bir öğe seçin"
   }

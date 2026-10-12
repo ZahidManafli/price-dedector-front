@@ -6,7 +6,7 @@ import {
   ArrowLeft, Loader2, Undo2, Redo2, Save, Download, Type, Shapes as ShapesIcon,
   ImageUp, Trash2, Copy, BringToFront, SendToBack, ZoomIn, ZoomOut, Maximize,
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, ChevronDown,
-  Search, LayoutGrid, ImageOff,
+  Search, LayoutGrid, ImageOff, ImagePlus,
 } from 'lucide-react';
 import { studioAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
@@ -193,7 +193,7 @@ export default function StudioEditorPage() {
     if (!canvas) return;
     setSaving(true);
     try {
-      const canvasJson = JSON.stringify(canvas.toJSON());
+      const canvasJson = JSON.stringify(canvas.toJSON(['data']));
       const maxDim = Math.max(dims.widthPx, dims.heightPx);
       const thumbnailDataUrl = exportDataUrl(Math.min(1, 400 / maxDim));
       await studioAPI.saveProject(projectId, { title: title || undefined, canvasJson, thumbnailDataUrl });
@@ -217,7 +217,7 @@ export default function StudioEditorPage() {
     clearTimeout(historyRef.current.timer);
     historyRef.current.timer = setTimeout(() => {
       const h = historyRef.current;
-      const json = JSON.stringify(canvas.toJSON());
+      const json = JSON.stringify(canvas.toJSON(['data']));
       if (h.stack[h.index] === json) return;
       h.stack = h.stack.slice(0, h.index + 1);
       h.stack.push(json);
@@ -283,6 +283,12 @@ export default function StudioEditorPage() {
         fontStyle: obj.fontStyle || 'normal',
         underline: !!obj.underline,
         textAlign: obj.textAlign || 'left',
+        // Whether THIS object is the one marked as "product photo area" (see
+        // handleToggleProductSlot) — read off Fabric's own custom-metadata
+        // `data` bag, which round-trips through save/undo/redo as long as
+        // 'data' is passed to toJSON/toObject (see saveProject, pushHistory,
+        // and the initial history snapshot).
+        isProductSlot: !!obj.data?.isProductSlot,
       });
     };
 
@@ -414,7 +420,7 @@ export default function StudioEditorPage() {
         setCanvasBackground(canvas.backgroundColor);
 
         canvas.requestRenderAll();
-        historyRef.current = { stack: [JSON.stringify(canvas.toJSON())], index: 0, suppress: false, timer: null };
+        historyRef.current = { stack: [JSON.stringify(canvas.toJSON(['data']))], index: 0, suppress: false, timer: null };
         setLoading(false);
         if (legacyImages.length) scheduleAutosave();
       } catch {
@@ -616,6 +622,29 @@ export default function StudioEditorPage() {
     obj.set(props);
     canvas.requestRenderAll();
     setSelected((prev) => (prev ? { ...prev, ...props } : prev));
+    pushHistory();
+  };
+
+  // Marks the selected object as the rectangle where the real Amazon product
+  // photo gets deterministically composited in (sharp, server-side, zero AI
+  // cost) by Checkila Smart's auto-listing pipeline — see
+  // generateCoverImageFromDesignTemplate in the backend. Only one object on
+  // the canvas can be the slot at a time (toggling one on always clears any
+  // previous one), since the server only ever reads a single bounding box
+  // back out of canvas_json.
+  const handleToggleProductSlot = () => {
+    const canvas = fabricCanvasRef.current;
+    const obj = canvas?.getActiveObject();
+    if (!canvas || !obj) return;
+    const nextValue = !obj.data?.isProductSlot;
+    if (nextValue) {
+      canvas.getObjects().forEach((o) => {
+        if (o !== obj && o.data?.isProductSlot) o.set('data', { ...o.data, isProductSlot: false });
+      });
+    }
+    obj.set('data', { ...(obj.data || {}), isProductSlot: nextValue });
+    canvas.requestRenderAll();
+    setSelected((prev) => (prev ? { ...prev, isProductSlot: nextValue } : prev));
     pushHistory();
   };
 
@@ -994,6 +1023,15 @@ export default function StudioEditorPage() {
                   <button type="button" onClick={handleDuplicate} title={t('studioEditorPage.duplicate')} className={toolbarBtnClass(isDark, false)}><Copy size={14} /></button>
                   <button type="button" onClick={handleBringToFront} title={t('studioEditorPage.bringToFront')} className={toolbarBtnClass(isDark, false)}><BringToFront size={14} /></button>
                   <button type="button" onClick={handleSendToBack} title={t('studioEditorPage.sendToBack')} className={toolbarBtnClass(isDark, false)}><SendToBack size={14} /></button>
+                  <div className={`w-px h-5 mx-0.5 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                  <button
+                    type="button"
+                    onClick={handleToggleProductSlot}
+                    title={t('studioEditorPage.markProductSlot')}
+                    className={toolbarBtnClass(isDark, !!selected?.isProductSlot)}
+                  >
+                    <ImagePlus size={14} />
+                  </button>
                   <div className={`w-px h-5 mx-0.5 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
                   <button type="button" onClick={handleDelete} title={t('studioEditorPage.delete')} className={`p-1.5 rounded-lg transition-colors ${isDark ? 'text-red-400 hover:bg-red-950/40' : 'text-red-500 hover:bg-red-50'}`}><Trash2 size={14} /></button>
                 </div>

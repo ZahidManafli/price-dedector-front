@@ -1910,7 +1910,18 @@ export default function AmazonLookupPage() {
 
                 {settingsForm.coverImageMode === 'designStudio' && (
                   <div className="mt-2">
-                    {designStudioWorkspace ? (
+                    {designStudioWorkspace && !designStudioWorkspace.hasProductSlot ? (
+                      <div
+                        className={`rounded-lg border p-2.5 text-[11px] ${
+                          isDark ? 'border-amber-800 bg-amber-950/30 text-amber-300' : 'border-amber-300 bg-amber-50 text-amber-700'
+                        }`}
+                      >
+                        <p className="mb-1.5">{t('amazonLookupPage.designStudioNoSlotMarked')}</p>
+                        <RouterLink to={`/studio/${designStudioWorkspace.id}`} className="font-semibold hover:underline">
+                          {t('amazonLookupPage.designStudioGoMarkSlot')}
+                        </RouterLink>
+                      </div>
+                    ) : designStudioWorkspace ? (
                       <div
                         className={`flex items-center gap-2.5 rounded-lg border p-2 ${
                           isDark ? 'border-slate-700 bg-slate-800/60' : 'border-slate-200 bg-slate-50'
