@@ -243,7 +243,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       setAlert({
         type: 'error',
         message:
-          error.response?.data?.message ||
+          error.response?.data?.error ||
           (isEditMode ? t('productFormPage.failedUpdate') : t('productFormPage.failedAdd')),
       });
     } finally {
