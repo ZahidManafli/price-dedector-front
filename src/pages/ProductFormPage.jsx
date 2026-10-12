@@ -63,6 +63,8 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
     productName: '',
     amazonAsin: '',
     ebayItemId: '',
+    isVariationProduct: false,
+    variationSku: '',
     currentAmazonPrice: '',
     currentEbayPrice: '',
     adRate: '',
@@ -117,6 +119,8 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
           productName: product.productName || '',
           amazonAsin: product.amazonAsin || extractAmazonAsin(product.amazonLink || ''),
           ebayItemId: product.ebayItemId || '',
+          isVariationProduct: !!product.isVariationProduct,
+          variationSku: product.ebayVariationSku || '',
           currentAmazonPrice: product.currentAmazonPrice ?? '',
           currentEbayPrice: product.currentEbayPrice ?? '',
           adRate: product.adRate ?? '',
@@ -187,6 +191,11 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       return;
     }
 
+    if (formData.isVariationProduct && !String(formData.variationSku || '').trim()) {
+      setAlert({ type: 'error', message: t('productFormPage.variationSkuRequired') });
+      return;
+    }
+
     if (!formData.currentAmazonPrice || !formData.currentEbayPrice) {
       setAlert({ type: 'error', message: t('productFormPage.enterBothPrices') });
       return;
@@ -204,6 +213,8 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       formDataObj.append('productName', formData.productName);
       formDataObj.append('amazonAsin', formData.amazonAsin.trim().toUpperCase());
       formDataObj.append('ebayItemId', String(formData.ebayItemId || '').trim());
+      formDataObj.append('isVariationProduct', String(!!formData.isVariationProduct));
+      formDataObj.append('variationSku', formData.isVariationProduct ? String(formData.variationSku || '').trim() : '');
       formDataObj.append('currentAmazonPrice', formData.currentAmazonPrice);
       formDataObj.append('currentEbayPrice', formData.currentEbayPrice);
       formDataObj.append('adRate', formData.adRate || '0');
@@ -330,6 +341,44 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
               disabled={loading}
               required
             />
+          </div>
+
+          {/* Variation product + SKU — eBay has no single top-level price/quantity to
+              revise on a multi-variation listing, only per-variation ones, each keyed
+              by its own SKU (see ebayService.js's reviseInventoryStatusTrading). Left
+              unchecked (the default), price/stock sync behaves exactly as it always
+              has — no SKU is ever required or used. */}
+          <div className="space-y-2 rounded-lg border border-slate-200 p-3">
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                name="isVariationProduct"
+                checked={formData.isVariationProduct}
+                onChange={handleChange}
+                disabled={loading}
+                className="mt-0.5 h-4 w-4 rounded border-slate-400 text-blue-600 focus:ring-blue-500/40"
+              />
+              <span>
+                <span className="block text-sm font-medium text-gray-700">
+                  {t('productFormPage.isVariationProduct')}
+                </span>
+                <span className="block text-[11px] text-slate-500">
+                  {t('productFormPage.isVariationProductHint')}
+                </span>
+              </span>
+            </label>
+            {formData.isVariationProduct ? (
+              <input
+                type="text"
+                name="variationSku"
+                value={formData.variationSku}
+                onChange={handleChange}
+                placeholder={t('productFormPage.variationSkuPlaceholder')}
+                className="input-base"
+                disabled={loading}
+                required
+              />
+            ) : null}
           </div>
 
           {/* eBay Account selection (if multiple accounts) */}
