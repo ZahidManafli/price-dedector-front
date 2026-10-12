@@ -493,23 +493,33 @@ export default function StudioEditorPage() {
   // behavior) rather than a small fixed offset from the top-left corner —
   // the latter tucked every new object into the corner, easy to miss on a
   // large canvas and confusing to find ("appears far to the left").
+  //
+  // left/top below are each object's CENTER point, not its top-left corner —
+  // Fabric v6's actual default is originX/originY = 'center' (verified in
+  // node_modules/fabric/dist/index.mjs's fabricObjectDefaultValues), which
+  // this codebase never overrides. An earlier version of this function used
+  // top-left-origin math here (centerX - width / 2, etc.), which under a
+  // center-origin object shifts everything up-left by half its own
+  // width/height instead of actually centering it — the same root cause
+  // behind the product-photo-slot mispositioning bug (see
+  // extractProductSlotFromCanvasJson in routes/designStudio.js).
   const addHeading = () => {
     const width = Math.min(400, dims.widthPx - 120);
     addObject(new Textbox(t('studioEditorPage.addHeading'), {
-      left: (dims.widthPx - width) / 2, top: dims.heightPx / 2 - 32,
+      left: dims.widthPx / 2, top: dims.heightPx / 2 - 32,
       fontSize: 48, fontWeight: 'bold', fill: '#111827', fontFamily: 'Arial', width,
     }));
   };
   const addText = () => {
     const width = Math.min(300, dims.widthPx - 120);
     addObject(new Textbox(t('studioEditorPage.addText'), {
-      left: (dims.widthPx - width) / 2, top: dims.heightPx / 2 - 14,
+      left: dims.widthPx / 2, top: dims.heightPx / 2 + 14,
       fontSize: 24, fill: '#111827', fontFamily: 'Arial', width,
     }));
   };
-  const addRectangle = () => addObject(new Rect({ left: dims.widthPx / 2 - 90, top: dims.heightPx / 2 - 60, width: 180, height: 120, fill: '#6366F1' }));
-  const addCircle = () => addObject(new Circle({ left: dims.widthPx / 2 - 70, top: dims.heightPx / 2 - 70, radius: 70, fill: '#22C55E' }));
-  const addTriangleShape = () => addObject(new Triangle({ left: dims.widthPx / 2 - 75, top: dims.heightPx / 2 - 65, width: 150, height: 130, fill: '#F97316' }));
+  const addRectangle = () => addObject(new Rect({ left: dims.widthPx / 2, top: dims.heightPx / 2, width: 180, height: 120, fill: '#6366F1' }));
+  const addCircle = () => addObject(new Circle({ left: dims.widthPx / 2, top: dims.heightPx / 2, radius: 70, fill: '#22C55E' }));
+  const addTriangleShape = () => addObject(new Triangle({ left: dims.widthPx / 2, top: dims.heightPx / 2, width: 150, height: 130, fill: '#F97316' }));
   const addLine = () => addObject(new Line(
     [dims.widthPx / 2 - 100, dims.heightPx / 2, dims.widthPx / 2 + 100, dims.heightPx / 2],
     { stroke: '#111827', strokeWidth: 4 }
@@ -544,7 +554,9 @@ export default function StudioEditorPage() {
     const maxH = dims.heightPx * 0.8;
     const scale = Math.min(1, maxW / img.width, maxH / img.height);
     img.scale(scale);
-    img.set({ left: (dims.widthPx - img.width * scale) / 2, top: (dims.heightPx - img.height * scale) / 2 });
+    // Center-origin (see the comment on addHeading above) — the image's own
+    // center point is just the canvas's center, no half-size subtraction.
+    img.set({ left: dims.widthPx / 2, top: dims.heightPx / 2 });
     canvas.add(img);
     canvas.setActiveObject(img);
     canvas.requestRenderAll();
