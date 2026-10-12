@@ -187,6 +187,51 @@ export default function StudioEditorPage() {
     }
   }, [dims]);
 
+  // The single flat thumbnail/export has no z-order information once
+  // rasterized to a PNG — pasting the real Amazon product photo "on top" of
+  // it would always cover every decorative element, even ones the user
+  // deliberately sent BEHIND the product photo area with "Send to back"
+  // (e.g. a "20% OFF" badge meant to sit on top of the product, not under
+  // it). Splits the design into two layers around the marked slot instead:
+  // everything stacked below it (opaque, real background) and everything
+  // stacked above it (transparent background, so only the above-the-slot
+  // elements paint anything) — the backend compositor then layers these
+  // correctly: below → real product photo → above (see
+  // designTemplateCompositor.js). Exported at a much higher resolution than
+  // the small UI thumbnail (capped at 400px) since these feed directly into
+  // the actual eBay listing's cover image, not just a settings-panel preview.
+  const exportLayeredSlotImages = useCallback((slotObj) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !slotObj) return { belowDataUrl: null, aboveDataUrl: null };
+    const objects = canvas.getObjects();
+    const slotIndex = objects.indexOf(slotObj);
+    if (slotIndex === -1) return { belowDataUrl: null, aboveDataUrl: null };
+
+    const maxDim = Math.max(dims.widthPx, dims.heightPx);
+    const multiplier = Math.min(1, 1600 / maxDim);
+    const originalVisibility = objects.map((o) => o.visible);
+    const originalBackground = canvas.backgroundColor;
+
+    try {
+      // Below layer: hide the slot itself and everything stacked above it;
+      // keep the canvas's own real (opaque) background.
+      objects.forEach((o, i) => { o.visible = i < slotIndex; });
+      const belowDataUrl = exportDataUrl(multiplier);
+
+      // Above layer: hide the slot and everything stacked below/at it; make
+      // the background transparent so only the above-the-slot elements show.
+      objects.forEach((o, i) => { o.visible = i > slotIndex; });
+      canvas.backgroundColor = '';
+      const aboveDataUrl = exportDataUrl(multiplier);
+
+      return { belowDataUrl, aboveDataUrl };
+    } finally {
+      objects.forEach((o, i) => { o.visible = originalVisibility[i]; });
+      canvas.backgroundColor = originalBackground;
+      canvas.requestRenderAll();
+    }
+  }, [dims, exportDataUrl]);
+
   // ── Save ─────────────────────────────────────────────────────────────────
   const saveProject = useCallback(async () => {
     const canvas = fabricCanvasRef.current;
@@ -203,7 +248,15 @@ export default function StudioEditorPage() {
       const canvasJson = JSON.stringify(canvas.toObject(['data']));
       const maxDim = Math.max(dims.widthPx, dims.heightPx);
       const thumbnailDataUrl = exportDataUrl(Math.min(1, 400 / maxDim));
-      await studioAPI.saveProject(projectId, { title: title || undefined, canvasJson, thumbnailDataUrl });
+      const slotObj = canvas.getObjects().find((o) => o.data?.isProductSlot);
+      const { belowDataUrl, aboveDataUrl } = exportLayeredSlotImages(slotObj);
+      await studioAPI.saveProject(projectId, {
+        title: title || undefined,
+        canvasJson,
+        thumbnailDataUrl,
+        belowLayerDataUrl: belowDataUrl,
+        aboveLayerDataUrl: aboveDataUrl,
+      });
     } catch {
       // best-effort — local edits stay in the canvas either way; next autosave/Save retries
     } finally {
