@@ -45,7 +45,7 @@ function initialForm(selectedPlanId = '', requestType = 'subscription', defaultV
     phoneNumber: defaultValues.phoneNumber || '',
     planId: selectedPlanId,
     requestedCredits: defaultValues.requestedCredits || '',
-    amazonLookupLimitPerWeek: '',
+    trackingCreditsLimit: '',
     productsLimit: '',
     marketAnalysisCreditsLimit: '',
     ebayAccountsLimit: '',
@@ -239,7 +239,7 @@ export default function SubscriptionRequestModal({
       const isCustomPlan = form.planId === 'custom';
       if (isCustomPlan) {
         const requiredNumbers = [
-          form.amazonLookupLimitPerWeek,
+          form.trackingCreditsLimit,
           form.productsLimit,
           form.marketAnalysisCreditsLimit,
           form.ebayAccountsLimit,
@@ -267,7 +267,7 @@ export default function SubscriptionRequestModal({
 
         if (isCustomPlan) {
           payload.requestedLimits = {
-            amazonLookupLimitPerWeek: Number(form.amazonLookupLimitPerWeek),
+            trackingCreditsLimit: Number(form.trackingCreditsLimit),
             productsLimit: Number(form.productsLimit),
             marketAnalysisCreditsLimit: Number(form.marketAnalysisCreditsLimit),
             ebayAccountsLimit: Number(form.ebayAccountsLimit),
@@ -509,9 +509,9 @@ export default function SubscriptionRequestModal({
                     <input
                       type="number"
                       min="0"
-                      value={form.amazonLookupLimitPerWeek}
-                      onChange={(e) => setForm((p) => ({ ...p, amazonLookupLimitPerWeek: e.target.value }))}
-                      placeholder={t('subscriptionRequestModal.amazonLookupsPerWeek')}
+                      value={form.trackingCreditsLimit}
+                      onChange={(e) => setForm((p) => ({ ...p, trackingCreditsLimit: e.target.value }))}
+                      placeholder={t('subscriptionRequestModal.trackingCreditsLimit')}
                       className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
                     />
                     <input

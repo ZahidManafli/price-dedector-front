@@ -444,6 +444,29 @@ export default function AdminPanelPage() {
     }
   };
 
+  const onSetCustomPrice = async (requestId) => {
+    const action = requestAction[requestId] || {};
+    const price = Number(action.customPrice);
+    if (!Number.isFinite(price) || price <= 0) {
+      setAlert({ type: 'error', message: t('adminPanelPage.enterValidPrice') });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await adminAPI.setCustomPlanPrice(requestId, {
+        price,
+        adminNote: action.adminNote || '',
+      });
+      await refreshData();
+      setAlert({ type: 'success', message: t('adminPanelPage.paymentLinkSent') });
+    } catch (err) {
+      setAlert({ type: 'error', message: err?.response?.data?.error || err.message || t('adminPanelPage.failedToSendPaymentLink') });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const pendingRequests = useMemo(
     () => requests.filter((r) => (r.status || 'pending') === 'pending'),
     [requests]
@@ -1448,10 +1471,36 @@ export default function AdminPanelPage() {
                         <div className="mt-2 rounded-lg border border-cyan-200 bg-cyan-50/70 p-2 text-xs text-slate-700 dark:border-cyan-900/40 dark:bg-cyan-900/20 dark:text-cyan-100">
                           <p className="font-semibold">{t('adminPanelPage.customRequestedLimits')}</p>
                           <p className="mt-1">
-                            {t('adminPanelPage.amazonPerWeek')}: {req.requestedLimits?.amazonLookupLimitPerWeek ?? t('adminPanelPage.na')} | {t('adminPanelPage.products')}: {req.requestedLimits?.productsLimit ?? t('adminPanelPage.na')} | {t('adminPanelPage.checkilaAnalysisCredits')}: {req.requestedLimits?.marketAnalysisCreditsLimit ?? t('adminPanelPage.na')} | {t('adminPanelPage.ebayAccounts')}: {req.requestedLimits?.ebayAccountsLimit ?? t('adminPanelPage.na')}
+                            {t('adminPanelPage.trackingCredits')}: {req.requestedLimits?.trackingCreditsLimit ?? req.requestedLimits?.amazonLookupLimitPerWeek ?? t('adminPanelPage.na')} | {t('adminPanelPage.products')}: {req.requestedLimits?.productsLimit ?? t('adminPanelPage.na')} | {t('adminPanelPage.checkilaAnalysisCredits')}: {req.requestedLimits?.marketAnalysisCreditsLimit ?? t('adminPanelPage.na')} | {t('adminPanelPage.ebayAccounts')}: {req.requestedLimits?.ebayAccountsLimit ?? t('adminPanelPage.na')}
                           </p>
                           {req.customNote ? <p className="mt-1">{t('adminPanelPage.note')}: {req.customNote}</p> : null}
                         </div>
+                      ) : null}
+
+                      {isPending && (req.planId === 'custom' || req.planCategory === 'custom') ? (
+                        req.customPlanPrice ? (
+                          <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50/70 p-2 text-xs text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-200">
+                            {t('adminPanelPage.customPriceSet', {
+                              price: Number(req.customPlanPrice).toFixed(2),
+                              expires: req.customLinkExpiresAt ? new Date(req.customLinkExpiresAt).toLocaleString() : t('adminPanelPage.na'),
+                            })}
+                          </div>
+                        ) : (
+                          <div className="mt-2 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder={t('adminPanelPage.customPricePlaceholder')}
+                              value={action.customPrice || ''}
+                              onChange={(e) => setRequestAction((prev) => ({ ...prev, [req.id]: { ...prev[req.id], customPrice: e.target.value } }))}
+                              className="input-base"
+                            />
+                            <button type="button" onClick={() => onSetCustomPrice(req.id)} className="btn-primary px-4 py-2 whitespace-nowrap">
+                              {t('adminPanelPage.sendPaymentLink')}
+                            </button>
+                          </div>
+                        )
                       ) : null}
 
                       {isPending ? (
