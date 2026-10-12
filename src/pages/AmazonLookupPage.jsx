@@ -106,6 +106,32 @@ async function pollAmazonLookupConfirmJob(jobId, { intervalMs = 2000, maxConsecu
   }
 }
 
+// Same job-row/poll contract as pollAmazonLookupConfirmJob above, for
+// POST /ebay/amazon-lookup/prepare — that route also now only kicks the
+// Amazon scrape + ZIK search + ChatGPT copy (and sometimes an OpenAI cover
+// image edit) off in the background and returns a jobId right away, since
+// that combination routinely ran long enough to hit a reverse-proxy timeout
+// (504) even though the backend went on to finish the run successfully.
+async function pollAmazonLookupPrepareJob(jobId, { intervalMs = 2000, maxConsecutiveFailures = 10 } = {}) {
+  let consecutiveFailures = 0;
+  for (;;) {
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    let pollRes;
+    try {
+      pollRes = await ebayAPI.pollAmazonAutoListingPrepare(jobId);
+      consecutiveFailures = 0;
+    } catch (pollErr) {
+      consecutiveFailures += 1;
+      if (consecutiveFailures >= maxConsecutiveFailures) throw pollErr;
+      continue; // eslint-disable-line no-continue
+    }
+    const status = pollRes?.data?.status;
+    if (status === 'done') return pollRes.data;
+    if (status === 'error') throw new Error(pollRes?.data?.error || 'Failed to prepare listing');
+    // status === 'processing' -> keep polling
+  }
+}
+
 export default function AmazonLookupPage() {
   const { isDark } = useTheme();
   const { user } = useAuth();
@@ -395,7 +421,11 @@ export default function AmazonLookupPage() {
       try {
         onPhaseChange?.('prepare');
         const prepareRes = await ebayAPI.prepareAmazonAutoListing({ asin, ebayAccountId: activeEbayAccountId, mode: aiMode });
-        const prepared = prepareRes?.data;
+        const prepareJobId = prepareRes?.data?.jobId;
+        if (!prepareJobId) {
+          return { status: 'error', message: t('amazonLookupPage.failedAutoList') };
+        }
+        const prepared = await pollAmazonLookupPrepareJob(prepareJobId);
         // The AI cost of this run (whatever it was) has already been charged
         // to the wallet by the time /prepare responds, regardless of what
         // happens next — keep the header chip in sync immediately.

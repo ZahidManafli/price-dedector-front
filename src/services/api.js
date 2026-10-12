@@ -268,6 +268,7 @@ export const ebayAPI = {
   getAmazonLookupSettings: (ebayAccountId) => api.get('/ebay/amazon-lookup/settings', { params: { ebayAccountId } }),
   saveAmazonLookupSettings: (payload) => api.put('/ebay/amazon-lookup/settings', payload),
   prepareAmazonAutoListing: (payload) => api.post('/ebay/amazon-lookup/prepare', payload),
+  pollAmazonAutoListingPrepare: (jobId) => api.get(`/ebay/amazon-lookup/prepare/${encodeURIComponent(jobId)}`),
   confirmAmazonAutoListing: (payload) => api.post('/ebay/amazon-lookup/confirm', payload),
   pollAmazonAutoListingConfirm: (jobId) => api.get(`/ebay/amazon-lookup/confirm/${encodeURIComponent(jobId)}`),
   sellSimilar: (listingId) => api.post('/ebay/listing/sell-similar', { listingId }),
