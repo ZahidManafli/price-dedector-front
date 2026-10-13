@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowDown, ArrowUp, ArrowUpDown, Check, ExternalLink, FileSpreadsheet,
-  Grid3X3, List, MoreVertical, PackageCheck, PackageX, Pencil, Plus, RefreshCw, Search, Trash2,
+  ArrowDown, ArrowUp, ArrowUpDown, Bell, Check, ExternalLink, FileSpreadsheet,
+  Grid3X3, List, MoreVertical, PackageCheck, PackageX, Pencil, Plus, RefreshCw, Search, Send, Trash2,
   TrendingDown, TrendingUp, X,
 } from 'lucide-react';
 import { ebayAPI, productAPI, settingsAPI } from '../services/api';
@@ -233,6 +233,165 @@ function CheckSettingsPopover({ product, isDark, t, onClose, onSave }) {
   );
 }
 
+// Same link LandingPage.jsx's marketing CTA uses — there is no deep-link/
+// token handshake for connecting Telegram in this app; linking happens
+// entirely inside the bot conversation itself (DM it, press "Log in", type
+// your Checkila email/password). This button just gets the user into that
+// chat.
+const TELEGRAM_BOT_URL = 'https://t.me/Checkila_bot';
+
+function ToggleSwitch({ checked, onChange, disabled, isDark }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+        disabled
+          ? isDark ? 'bg-slate-700 cursor-not-allowed' : 'bg-slate-200 cursor-not-allowed'
+          : checked ? 'bg-blue-600' : isDark ? 'bg-slate-700' : 'bg-slate-300'
+      }`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+          checked && !disabled ? 'translate-x-4' : 'translate-x-0.5'
+        } ${disabled ? 'opacity-70' : ''}`}
+      />
+    </button>
+  );
+}
+
+// Page-level (not per-product) settings for whether the automated price/
+// stock/title check system (runPriceCheckJob cron job + the manual Compare
+// button — see backend utils/productCheckNotifications.js) is allowed to
+// email/Telegram-message this user at all. Reuses the SAME users.preferences
+// "Email on price change" toggle that already existed on the Settings page
+// (that one just had no backend effect until now) — this is a second,
+// more convenient place to reach it, not a separate setting. The Telegram
+// toggle is additionally gated on having linked Telegram at all; when not
+// linked, it's shown disabled with a button into the bot chat instead.
+function NotificationSettingsModal({ isDark, t, onClose }) {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [prefs, setPrefs] = useState({ emailOnPriceChange: true, telegramOnPriceChange: true, telegramConnected: false });
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    settingsAPI
+      .getPreferences()
+      .then((res) => {
+        if (cancelled) return;
+        const data = res?.data || {};
+        setPrefs({
+          emailOnPriceChange: data.emailOnPriceChange !== false,
+          telegramOnPriceChange: data.telegramOnPriceChange !== false,
+          telegramConnected: !!data.telegramConnected,
+        });
+      })
+      .catch(() => { if (!cancelled) setError(t('productsPage.notificationSettingsLoadFailed')); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const updatePref = async (key, value) => {
+    const previous = prefs[key];
+    setPrefs((prev) => ({ ...prev, [key]: value }));
+    setSaving(true);
+    setError(null);
+    try {
+      await settingsAPI.updatePreferences({ [key]: value });
+    } catch {
+      setPrefs((prev) => ({ ...prev, [key]: previous }));
+      setError(t('productsPage.notificationSettingsSaveFailed'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const telegramToggleDisabled = loading || saving || !prefs.telegramConnected || !prefs.emailOnPriceChange;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div className={`w-full max-w-md rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className={`text-base font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+            {t('productsPage.notificationSettingsTitle')}
+          </h2>
+          <button type="button" onClick={onClose} className={isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-700'}>
+            <X size={18} />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="py-8 flex justify-center">
+            <RefreshCw size={20} className="animate-spin text-slate-400" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
+
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+                  {t('productsPage.notificationEmailLabel')}
+                </p>
+                <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {t('productsPage.notificationEmailHint')}
+                </p>
+              </div>
+              <ToggleSwitch
+                checked={prefs.emailOnPriceChange}
+                disabled={loading || saving}
+                isDark={isDark}
+                onChange={(value) => updatePref('emailOnPriceChange', value)}
+              />
+            </div>
+
+            <div className={`pt-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+                    {t('productsPage.notificationTelegramLabel')}
+                  </p>
+                  <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {!prefs.telegramConnected
+                      ? t('productsPage.notificationTelegramNotConnectedHint')
+                      : !prefs.emailOnPriceChange
+                        ? t('productsPage.notificationTelegramNeedsMasterHint')
+                        : t('productsPage.notificationTelegramHint')}
+                  </p>
+                </div>
+                <ToggleSwitch
+                  checked={prefs.telegramOnPriceChange}
+                  disabled={telegramToggleDisabled}
+                  isDark={isDark}
+                  onChange={(value) => updatePref('telegramOnPriceChange', value)}
+                />
+              </div>
+
+              {!prefs.telegramConnected && (
+                <a
+                  href={TELEGRAM_BOT_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-white text-xs font-semibold px-3 py-1.5 transition"
+                >
+                  <Send size={13} />
+                  {t('productsPage.notificationConnectTelegram')}
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ProductsPage() {
@@ -262,6 +421,7 @@ export default function ProductsPage() {
   const [inlineValues, setInlineValues] = useState({});
   const [savingInline, setSavingInline] = useState(false);
   const [checkSettingsOpenId, setCheckSettingsOpenId] = useState(null);
+  const [notificationSettingsOpen, setNotificationSettingsOpen] = useState(false);
   const sortDropRef = useRef(null);
 
   useEffect(() => {
@@ -554,6 +714,10 @@ export default function ProductsPage() {
         />
       )}
 
+      {notificationSettingsOpen && (
+        <NotificationSettingsModal isDark={isDark} t={t} onClose={() => setNotificationSettingsOpen(false)} />
+      )}
+
       {alert && (
         <div className="mb-5">
           <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
@@ -724,6 +888,21 @@ export default function ProductsPage() {
             <span className="hidden sm:inline">Table</span>
           </button>
         </div>
+
+        {/* Notification settings — whether the price/stock/title check
+            system (cron + manual Compare) emails/Telegram-messages this
+            user; see NotificationSettingsModal above. */}
+        <button
+          type="button"
+          onClick={() => setNotificationSettingsOpen(true)}
+          title={t('productsPage.notificationSettingsTitle')}
+          className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition ${
+            isDark ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-white'
+          }`}
+        >
+          <Bell size={14} />
+          <span className="hidden sm:inline">{t('productsPage.notificationSettingsButton')}</span>
+        </button>
       </div>
 
       {/* ── Count row ── */}
