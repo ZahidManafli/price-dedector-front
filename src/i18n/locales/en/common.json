@@ -22,6 +22,7 @@
     "theme": "Theme",
     "logout": "Logout",
     "ebayStatus": "eBay Status",
+    "ebayMessages": "eBay Messages",
     "replayTour": "Replay onboarding tour"
   },
   "auth": {

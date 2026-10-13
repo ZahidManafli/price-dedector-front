@@ -28,6 +28,7 @@ import {
   Gavel,
   LifeBuoy,
   Palette,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -38,6 +39,7 @@ import { ebayAPI, supportAPI } from '../services/api';
 import { TAB_KEYS } from '../utils/planAccess';
 import { useTour } from '../context/TourContext';
 import { useEbayData } from '../context/EbayDataContext';
+import EbayMessagesSidebar from './EbayMessagesSidebar';
 
 function NavBadge({ count }) {
   if (!count || count <= 0) return null;
@@ -68,6 +70,7 @@ export default function Sidebar() {
   const { isCollapsed, toggleSidebar } = useSidebar();
   const { replayTour } = useTour();
   const [activeEbayLabel, setActiveEbayLabel] = useState(null);
+  const [messagesSidebarOpen, setMessagesSidebarOpen] = useState(false);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const { newOrdersCount, newCasesCount, clearOrdersBadge, clearCasesBadge } = useEbayData();
   const isMentor = user?.role === 'admin' || !!user?.isMentor;
@@ -200,8 +203,18 @@ export default function Sidebar() {
           {!isCollapsed && (
             <div className="flex items-center gap-3 w-full">
               <img src="/logo-2.png" alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700/50 flex-shrink-0" />
-              <div className="min-w-0">
-                <span className="block text-lg font-semibold text-slate-900 dark:text-white">Checkila</span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-lg font-semibold text-slate-900 dark:text-white">Checkila</span>
+                  <button
+                    type="button"
+                    onClick={() => setMessagesSidebarOpen(true)}
+                    title={t('sidebar.ebayMessages')}
+                    className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:text-slate-500 dark:hover:text-blue-300 dark:hover:bg-blue-950/40 transition-colors"
+                  >
+                    <MessageSquare size={16} />
+                  </button>
+                </div>
                 {activeEbayLabel ? (
                   <span className="block text-xs text-slate-500 dark:text-slate-300 truncate">
                     {t('sidebar.ebayStatus')}: <span className="font-medium text-slate-700 dark:text-slate-100">{activeEbayLabel}</span>
@@ -448,6 +461,10 @@ export default function Sidebar() {
           className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
           onClick={() => setIsOpen(false)}
         />
+      )}
+
+      {messagesSidebarOpen && (
+        <EbayMessagesSidebar onClose={() => setMessagesSidebarOpen(false)} />
       )}
     </>
   );

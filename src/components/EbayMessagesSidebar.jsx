@@ -1,0 +1,670 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  X, Send, MessageSquare, RefreshCw, Archive, ArchiveRestore, Trash2, ArrowLeft,
+  Plus, ChevronRight, Paperclip, Tag, Hash, Clock,
+} from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import { ebayAPI } from '../services/api';
+
+// General-purpose "all eBay messages" panel — every conversation on the
+// account, of EITHER conversation type (FROM_MEMBERS: buyer/seller messages,
+// FROM_EBAY: eBay's own official notices), not scoped to a single order or
+// buyer. This is deliberately a SEPARATE component from OrderMessageSidebar
+// (which stays untouched) even though both call the same backend
+// GET/POST /ebay/messages* endpoints (routes/ebay.js — those were already
+// generic, not order-specific, so no backend changes were needed here at
+// all) — OrderMessageSidebar's UX (buyer-only, item-only, no type switch) is
+// a different, narrower product surface than this one.
+const CONVERSATION_TYPES = [
+  { value: 'FROM_MEMBERS', labelKey: 'buyers' },
+  { value: 'FROM_EBAY', labelKey: 'ebay' },
+];
+
+function sortMessagesAscending(msgs) {
+  return [...msgs].sort((a, b) => {
+    const ad = new Date(a.createdDate || 0).getTime();
+    const bd = new Date(b.createdDate || 0).getTime();
+    return ad - bd;
+  });
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffH = (now - d) / 3600000;
+    if (diffH < 24) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (diffH < 168) return d.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
+
+function statusColors(status, dark) {
+  switch (String(status || '').toUpperCase()) {
+    case 'ACTIVE': return dark ? 'bg-green-900/40 text-green-300' : 'bg-green-100 text-green-700';
+    case 'ARCHIVE':
+    case 'ARCHIVED': return dark ? 'bg-yellow-900/40 text-yellow-300' : 'bg-yellow-100 text-yellow-700';
+    case 'DELETE':
+    case 'DELETED': return dark ? 'bg-red-900/40 text-red-300' : 'bg-red-100 text-red-700';
+    default: return dark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-500';
+  }
+}
+
+function ConversationCard({ convo, onClick, dark }) {
+  const other = convo.otherParty?.username || convo.buyer?.username || convo.recipient || 'eBay';
+  const title = convo.conversationTitle || '';
+  const latest = convo.latestMessage || (Array.isArray(convo.messages) ? convo.messages.at(-1) : null);
+  const previewText = latest?.messageBody || '';
+  const previewDate = latest?.createdDate || convo.createdDate || '';
+  const unread = convo.unreadCount || convo.messagesSummary?.unreadCount || 0;
+  const status = convo.conversationStatus || 'ACTIVE';
+
+  return (
+    <button
+      onClick={() => onClick(convo)}
+      className={`w-full text-left p-4 rounded-xl border transition-all group ${
+        dark
+          ? 'bg-gray-800 border-gray-700 hover:border-gray-500 hover:bg-gray-750'
+          : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center text-sm font-bold ${
+          dark ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-700'
+        }`}>
+          {other[0]?.toUpperCase() || 'U'}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className={`font-semibold text-sm truncate ${dark ? 'text-gray-100' : 'text-gray-800'}`}>{other}</span>
+              {unread > 0 && (
+                <span className="flex-shrink-0 h-5 min-w-5 px-1.5 rounded-full text-xs font-bold bg-blue-500 text-white flex items-center justify-center">
+                  {unread}
+                </span>
+              )}
+            </div>
+            <span className={`text-xs flex-shrink-0 ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(previewDate)}</span>
+          </div>
+          {title && (
+            <p className={`text-xs font-medium truncate mt-0.5 ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{title}</p>
+          )}
+          <p className={`text-xs truncate mt-0.5 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+            {previewText || '—'}
+          </p>
+          <div className="flex items-center justify-between mt-2 gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${statusColors(status, dark)}`}>{status}</span>
+              {convo.referenceId && (
+                <span className={`text-xs flex items-center gap-1 truncate ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
+                  <Tag size={10} className="flex-shrink-0" /> {convo.referenceId}
+                </span>
+              )}
+            </div>
+            <ChevronRight size={14} className={`flex-shrink-0 transition-transform group-hover:translate-x-0.5 ${dark ? 'text-gray-600' : 'text-gray-300'}`} />
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function MessageBubble({ message, isMe, dark }) {
+  const text = message.messageBody || '';
+  const subject = message.subject || '';
+  const dateStr = message.createdDate || '';
+  const sender = message.senderUsername || '';
+  const media = Array.isArray(message.messageMedia) ? message.messageMedia : [];
+  const images = media.filter((m) => !m.mediaType || /^image\//i.test(m.mediaType) || m.mediaType === 'IMAGE');
+  const otherMedia = media.filter((m) => !images.includes(m));
+
+  return (
+    <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-4`}>
+      {!isMe && (
+        <div className={`w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center text-xs font-bold mr-2 mt-1 ${
+          dark ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-600'
+        }`}>
+          {sender[0]?.toUpperCase() || 'U'}
+        </div>
+      )}
+      <div className={`flex flex-col max-w-[74%] ${isMe ? 'items-end' : 'items-start'}`}>
+        {!isMe && sender && (
+          <span className={`text-xs mb-1 px-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{sender}</span>
+        )}
+        {images.map((img, i) => (
+          <a key={i} href={img.mediaUrl} target="_blank" rel="noopener noreferrer" className="mb-1.5 block">
+            <img
+              src={img.mediaUrl}
+              alt={img.mediaName || 'attachment'}
+              className="max-w-full max-h-64 rounded-xl object-cover border border-black/10"
+            />
+          </a>
+        ))}
+        {otherMedia.map((m, i) => (
+          <a
+            key={i}
+            href={m.mediaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`mb-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs underline ${
+              dark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-600'
+            }`}
+          >
+            <Paperclip size={11} /> {m.mediaName || m.mediaType || 'Attachment'}
+          </a>
+        ))}
+        {subject && (
+          <span className={`text-xs font-semibold mb-1 px-1 ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{subject}</span>
+        )}
+        {text && (
+          <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed break-words ${
+            isMe
+              ? dark ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-blue-500 text-white rounded-br-sm'
+              : dark ? 'bg-gray-700 text-gray-100 rounded-bl-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+          }`}>
+            {text}
+          </div>
+        )}
+        <span className={`text-xs mt-1 px-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{formatDate(dateStr)}</span>
+      </div>
+      {isMe && (
+        <div className={`w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center text-xs font-bold ml-2 mt-1 ${
+          dark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-700'
+        }`}>
+          Me
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function EbayMessagesSidebar({ onClose }) {
+  const { theme } = useTheme();
+  const dark = theme === 'dark';
+
+  const [conversationType, setConversationType] = useState('FROM_MEMBERS');
+  const [view, setView] = useState('list'); // 'list' | 'thread'
+  const [conversations, setConversations] = useState([]);
+  const [selectedConvo, setSelectedConvo] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [loadingConvos, setLoadingConvos] = useState(true);
+  const [loadingMsgs, setLoadingMsgs] = useState(false);
+  const [error, setError] = useState(null);
+  const [msgError, setMsgError] = useState(null);
+  const [composeText, setComposeText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [newConvoMode, setNewConvoMode] = useState(false);
+  const [newConvoUsername, setNewConvoUsername] = useState('');
+  const [newConvoItemId, setNewConvoItemId] = useState('');
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [attachedImage, setAttachedImage] = useState(null); // { dataUrl, fileName }
+  const [attachError, setAttachError] = useState(null);
+
+  const bottomRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+
+  const handlePickImage = useCallback((e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setAttachError(null);
+    if (!file.type.startsWith('image/')) {
+      setAttachError('Please select an image file');
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setAttachError('Image must be smaller than 8MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setAttachedImage({ dataUrl: reader.result, fileName: file.name });
+    reader.onerror = () => setAttachError('Failed to read image');
+    reader.readAsDataURL(file);
+  }, []);
+
+  const scrollToBottom = () => bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+
+  const loadMessages = useCallback(async (convo) => {
+    setLoadingMsgs(true);
+    setMsgError(null);
+    setMessages([]);
+    try {
+      const resp = await ebayAPI.getConversationMessages(convo.conversationId, {
+        conversationType: convo.conversationType || conversationType,
+        limit: 50,
+      });
+      const msgs = resp?.data?.messages || [];
+      setMessages(sortMessagesAscending(msgs));
+      ebayAPI.updateConversation({
+        conversationId: convo.conversationId,
+        conversationType: convo.conversationType || conversationType,
+        read: true,
+      }).catch(() => {});
+    } catch (err) {
+      setMsgError(err?.response?.data?.error || err.message || 'Failed to load messages');
+    } finally {
+      setLoadingMsgs(false);
+    }
+  }, [conversationType]);
+
+  const openConversation = useCallback((convo) => {
+    setSelectedConvo(convo);
+    setNewConvoMode(false);
+    setView('thread');
+    loadMessages(convo);
+  }, [loadMessages]);
+
+  const loadConversations = useCallback(async () => {
+    setLoadingConvos(true);
+    setError(null);
+    try {
+      const resp = await ebayAPI.getOrderConversations({ conversationType, limit: 50 });
+      const convos = resp?.data?.conversations || [];
+      setConversations(convos);
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Failed to load conversations');
+    } finally {
+      setLoadingConvos(false);
+    }
+  }, [conversationType]);
+
+  const handleSend = useCallback(async () => {
+    const text = composeText.trim();
+    if ((!text && !attachedImage) || sending) return;
+    setSending(true);
+    setMsgError(null);
+    try {
+      const payload = { messageText: text || '📷 Photo' };
+      if (attachedImage) {
+        payload.imageDataUrl = attachedImage.dataUrl;
+        payload.imageFileName = attachedImage.fileName;
+      }
+      if (!newConvoMode && selectedConvo) {
+        payload.conversationId = selectedConvo.conversationId;
+      } else {
+        const recipient = newConvoUsername.trim();
+        if (!recipient) {
+          setMsgError('Enter the recipient\'s eBay username');
+          setSending(false);
+          return;
+        }
+        payload.otherPartyUsername = recipient;
+        if (newConvoItemId.trim()) payload.reference = { referenceId: newConvoItemId.trim(), referenceType: 'LISTING' };
+      }
+      await ebayAPI.sendMessage(payload);
+      setComposeText('');
+      setAttachedImage(null);
+      if (!newConvoMode && selectedConvo) {
+        const resp = await ebayAPI.getConversationMessages(selectedConvo.conversationId, {
+          conversationType: selectedConvo.conversationType || conversationType,
+          limit: 50,
+        });
+        setMessages(sortMessagesAscending(resp?.data?.messages || []));
+      } else {
+        setNewConvoMode(false);
+        setNewConvoUsername('');
+        setNewConvoItemId('');
+        setView('list');
+        await loadConversations();
+      }
+    } catch (err) {
+      setMsgError(err?.response?.data?.error || err.message || 'Failed to send message');
+    } finally {
+      setSending(false);
+    }
+  }, [composeText, attachedImage, sending, newConvoMode, selectedConvo, newConvoUsername, newConvoItemId, conversationType, loadConversations]);
+
+  // eBay's UpdateConversationRequest wants the imperative form (ACTIVE /
+  // ARCHIVE / DELETE) — not the past-tense form (ARCHIVED / DELETED) that
+  // GetAllMyConversationsResponse itself returns for conversationStatus. See
+  // the attached Message API spec's UpdateConversationRequest schema.
+  const toggleStatus = useCallback(async (nextStatus) => {
+    if (!selectedConvo || updatingStatus) return;
+    setUpdatingStatus(true);
+    try {
+      await ebayAPI.updateConversation({
+        conversationId: selectedConvo.conversationId,
+        conversationType: selectedConvo.conversationType || conversationType,
+        conversationStatus: nextStatus,
+      });
+      setSelectedConvo((c) => ({ ...c, conversationStatus: nextStatus }));
+      setConversations((prev) => prev.map((c) =>
+        c.conversationId === selectedConvo.conversationId ? { ...c, conversationStatus: nextStatus } : c
+      ));
+    } catch (err) {
+      setMsgError(err?.response?.data?.error || err.message || 'Failed to update');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  }, [selectedConvo, updatingStatus, conversationType]);
+
+  useEffect(() => { loadConversations(); }, [loadConversations]);
+  useEffect(() => { if (messages.length) scrollToBottom(); }, [messages]);
+
+  const isMe = (msg) => {
+    const senderName = msg?.senderUsername || '';
+    const otherParty = selectedConvo?.otherParty?.username || selectedConvo?.buyer?.username || '';
+    if (!senderName || !otherParty) return false;
+    return senderName.toLowerCase() !== otherParty.toLowerCase();
+  };
+
+  const convoStatus = (selectedConvo?.conversationStatus || 'ACTIVE').toUpperCase();
+  const isArchived = convoStatus === 'ARCHIVE' || convoStatus === 'ARCHIVED';
+  const otherParty = selectedConvo?.otherParty?.username || selectedConvo?.buyer?.username || 'eBay';
+  const showThread = view === 'thread' || newConvoMode;
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
+
+      <div className={`fixed right-0 top-0 h-full z-50 w-[540px] max-w-[92vw] flex flex-col shadow-2xl ${
+        dark ? 'bg-gray-900 border-l border-gray-700' : 'bg-white border-l border-gray-200'
+      }`}>
+
+        {/* Header */}
+        <div className={`flex items-center gap-3 px-5 py-4 border-b flex-shrink-0 ${
+          dark ? 'border-gray-700' : 'border-gray-200'
+        }`}>
+          {showThread && (
+            <button
+              onClick={() => { setView('list'); setSelectedConvo(null); setMessages([]); setNewConvoMode(false); }}
+              className={`p-1.5 rounded-lg transition-colors ${dark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
+            >
+              <ArrowLeft size={16} />
+            </button>
+          )}
+          <div className={`p-2 rounded-lg flex-shrink-0 ${dark ? 'bg-blue-900/40' : 'bg-blue-50'}`}>
+            <MessageSquare size={16} className="text-blue-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className={`font-semibold text-base truncate ${dark ? 'text-gray-100' : 'text-gray-800'}`}>
+              {newConvoMode ? 'New Message' : showThread ? (selectedConvo?.conversationTitle || `@${otherParty}`) : 'eBay Messages'}
+            </h2>
+            <p className={`text-xs truncate ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+              {newConvoMode
+                ? 'Send a new message to any eBay user'
+                : showThread
+                  ? [selectedConvo?.conversationId, selectedConvo?.referenceId].filter(Boolean).join(' · ')
+                  : 'Every conversation on your connected eBay account'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {showThread && !newConvoMode && selectedConvo && (
+              <button
+                onClick={() => toggleStatus(isArchived ? 'ACTIVE' : 'ARCHIVE')}
+                disabled={updatingStatus}
+                title={isArchived ? 'Restore' : 'Archive'}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  !isArchived
+                    ? dark ? 'bg-yellow-900/40 text-yellow-300 hover:bg-yellow-900/60' : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                    : dark ? 'bg-green-900/40 text-green-300 hover:bg-green-900/60' : 'bg-green-50 text-green-700 hover:bg-green-100'
+                }`}
+              >
+                {isArchived ? <ArchiveRestore size={12} /> : <Archive size={12} />}
+                {updatingStatus ? '…' : isArchived ? 'Restore' : 'Archive'}
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className={`p-2 rounded-lg transition-colors ${dark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Type switch (hidden inside a thread — switching type mid-thread makes no sense) */}
+        {!showThread && (
+          <div className={`flex gap-1.5 px-5 py-2.5 border-b flex-shrink-0 ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
+            {CONVERSATION_TYPES.map((t) => (
+              <button
+                key={t.value}
+                onClick={() => setConversationType(t.value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  conversationType === t.value
+                    ? 'bg-blue-600 text-white'
+                    : dark ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {t.value === 'FROM_MEMBERS' ? 'Buyers / Sellers' : 'eBay'}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Full conversation details strip (thread view) — every field the
+            Message API returns for a conversation, per the user's request to
+            surface all available info. */}
+        {showThread && !newConvoMode && selectedConvo && (
+          <div className={`px-5 py-2.5 border-b text-xs flex-shrink-0 space-y-1 ${
+            dark ? 'bg-gray-800/50 border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-100 text-gray-500'
+          }`}>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${statusColors(convoStatus, dark)}`}>
+                {convoStatus}
+              </span>
+              <span>{selectedConvo.conversationType || conversationType}</span>
+              {selectedConvo.createdDate && (
+                <span className="inline-flex items-center gap-1"><Clock size={10} /> {formatDate(selectedConvo.createdDate)}</span>
+              )}
+            </div>
+            {(selectedConvo.referenceId || selectedConvo.referenceType) && (
+              <div className="inline-flex items-center gap-1">
+                <Hash size={10} /> {selectedConvo.referenceType || 'LISTING'}: <span className={`font-mono ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{selectedConvo.referenceId}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Body */}
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+
+          {/* ── CONVERSATIONS LIST ── */}
+          {!showThread && (
+            <div className="flex-1 overflow-y-auto p-4">
+              {loadingConvos ? (
+                <div className="space-y-3">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className={`h-24 rounded-xl animate-pulse ${dark ? 'bg-gray-800' : 'bg-gray-100'}`} />
+                  ))}
+                </div>
+              ) : error ? (
+                <div className={`p-4 rounded-xl border ${dark ? 'bg-red-900/20 border-red-800 text-red-300' : 'bg-red-50 border-red-200 text-red-600'}`}>
+                  <p className="text-sm font-semibold">Could not load conversations</p>
+                  <p className="text-xs mt-1 opacity-80">{error}</p>
+                  <button onClick={loadConversations} className="mt-3 flex items-center gap-1.5 text-xs font-medium underline underline-offset-2">
+                    <RefreshCw size={11} /> Retry
+                  </button>
+                </div>
+              ) : conversations.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${dark ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                    <MessageSquare size={28} className={dark ? 'text-gray-600' : 'text-gray-400'} />
+                  </div>
+                  <p className={`font-semibold text-base mb-1 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>No conversations</p>
+                  <p className={`text-sm mb-6 max-w-xs ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
+                    Nothing here yet for this message type.
+                  </p>
+                  <button
+                    onClick={() => { setNewConvoMode(true); setView('thread'); }}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium transition-colors"
+                  >
+                    <Plus size={15} /> Send Message
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className={`text-xs font-medium ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
+                    </p>
+                    <button
+                      onClick={loadConversations}
+                      className={`flex items-center gap-1.5 text-xs ${dark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      <RefreshCw size={11} /> Refresh
+                    </button>
+                  </div>
+                  {conversations.map((c) => (
+                    <ConversationCard key={c.conversationId} convo={{ ...c, conversationType }} onClick={openConversation} dark={dark} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── MESSAGE THREAD ── */}
+          {showThread && (
+            <>
+              <div className="flex-1 overflow-y-auto px-4 py-4">
+                {newConvoMode ? (
+                  <div className="space-y-3 mb-4">
+                    <div>
+                      <label className={`block text-xs font-medium mb-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>eBay username</label>
+                      <input
+                        type="text"
+                        value={newConvoUsername}
+                        onChange={(e) => setNewConvoUsername(e.target.value)}
+                        placeholder="Recipient's eBay username"
+                        className={`w-full rounded-lg border px-3 py-2 text-sm outline-none ${
+                          dark ? 'bg-gray-800 border-gray-600 text-gray-100 placeholder:text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-800 placeholder:text-gray-400'
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <label className={`block text-xs font-medium mb-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Listing item ID (optional)</label>
+                      <input
+                        type="text"
+                        value={newConvoItemId}
+                        onChange={(e) => setNewConvoItemId(e.target.value)}
+                        placeholder="e.g. 123456789012"
+                        className={`w-full rounded-lg border px-3 py-2 text-sm outline-none ${
+                          dark ? 'bg-gray-800 border-gray-600 text-gray-100 placeholder:text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-800 placeholder:text-gray-400'
+                        }`}
+                      />
+                    </div>
+                  </div>
+                ) : loadingMsgs ? (
+                  <div className="space-y-4">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div key={i} className={`flex ${i % 2 ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`h-12 rounded-2xl animate-pulse ${i % 2 ? 'w-52' : 'w-44'} ${dark ? 'bg-gray-800' : 'bg-gray-100'}`} />
+                      </div>
+                    ))}
+                  </div>
+                ) : msgError ? (
+                  <div className={`p-4 rounded-xl border ${dark ? 'bg-red-900/20 border-red-800 text-red-300' : 'bg-red-50 border-red-200 text-red-600'}`}>
+                    <p className="text-sm font-semibold">Failed to load messages</p>
+                    <p className="text-xs mt-1 opacity-80">{msgError}</p>
+                    {selectedConvo && (
+                      <button onClick={() => loadMessages(selectedConvo)} className="mt-3 flex items-center gap-1.5 text-xs font-medium underline underline-offset-2">
+                        <RefreshCw size={11} /> Retry
+                      </button>
+                    )}
+                  </div>
+                ) : messages.length === 0 ? (
+                  <p className={`text-center text-sm py-10 ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
+                    No messages in this conversation yet.
+                  </p>
+                ) : (
+                  <>
+                    {messages.map((msg, idx) => (
+                      <MessageBubble key={msg.messageId || idx} message={msg} isMe={isMe(msg)} dark={dark} />
+                    ))}
+                    <div ref={bottomRef} />
+                  </>
+                )}
+              </div>
+
+              {/* Compose — eBay's FROM_EBAY conversations are read-only notices
+                  (you can't reply to eBay itself through this API), so the
+                  box is hidden for that type. */}
+              {conversationType !== 'FROM_EBAY' && (
+                <div className={`flex-shrink-0 border-t px-4 py-3 ${dark ? 'border-gray-700 bg-gray-900' : 'border-gray-200 bg-white'}`}>
+                  {msgError && !loadingMsgs && (
+                    <p className={`text-xs mb-2 ${dark ? 'text-red-400' : 'text-red-500'}`}>{msgError}</p>
+                  )}
+                  {attachError && (
+                    <p className={`text-xs mb-2 ${dark ? 'text-red-400' : 'text-red-500'}`}>{attachError}</p>
+                  )}
+                  {attachedImage && (
+                    <div className="relative inline-block mb-2">
+                      <img
+                        src={attachedImage.dataUrl}
+                        alt={attachedImage.fileName}
+                        className="h-20 w-20 object-cover rounded-lg border border-black/10"
+                      />
+                      <button
+                        onClick={() => setAttachedImage(null)}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black"
+                      >
+                        <X size={11} />
+                      </button>
+                    </div>
+                  )}
+                  <div className={`flex items-end gap-2 rounded-xl border px-3 py-2 transition-colors ${
+                    dark ? 'bg-gray-800 border-gray-600 focus-within:border-blue-500' : 'bg-gray-50 border-gray-200 focus-within:border-blue-400'
+                  }`}>
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePickImage} />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      title="Attach image"
+                      className={`flex-shrink-0 p-2 rounded-lg transition-colors ${dark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-200 text-gray-500'}`}
+                    >
+                      <Paperclip size={16} />
+                    </button>
+                    <textarea
+                      value={composeText}
+                      onChange={(e) => setComposeText(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                      placeholder="Write a message… (Enter to send, Shift+Enter for new line)"
+                      maxLength={2000}
+                      rows={3}
+                      className={`flex-1 resize-none bg-transparent text-sm outline-none leading-relaxed ${
+                        dark ? 'text-gray-100 placeholder:text-gray-500' : 'text-gray-800 placeholder:text-gray-400'
+                      }`}
+                    />
+                    <button
+                      onClick={handleSend}
+                      disabled={(!composeText.trim() && !attachedImage) || sending}
+                      className={`flex-shrink-0 p-2.5 rounded-lg transition-all ${
+                        (composeText.trim() || attachedImage) && !sending
+                          ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                          : dark ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      {sending ? <RefreshCw size={15} className="animate-spin" /> : <Send size={15} />}
+                    </button>
+                  </div>
+                  <div className="flex justify-between items-center mt-1.5 px-1">
+                    <span className={`text-xs ${dark ? 'text-gray-600' : 'text-gray-400'}`}>Shift+Enter for new line</span>
+                    <span className={`text-xs ${composeText.length > 1800 ? 'text-orange-400' : dark ? 'text-gray-600' : 'text-gray-400'}`}>
+                      {composeText.length}/2000
+                    </span>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Footer — new message button (only in list view, buyer/seller type) */}
+        {!showThread && !loadingConvos && !error && conversationType !== 'FROM_EBAY' && (
+          <div className={`flex-shrink-0 px-5 py-3 border-t ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
+            <button
+              onClick={() => { setNewConvoMode(true); setView('thread'); }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium transition-colors"
+            >
+              <Plus size={15} /> New Message
+            </button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}

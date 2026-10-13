@@ -22,6 +22,7 @@
     "theme": "Tema",
     "logout": "Çıxış",
     "ebayStatus": "eBay Statusu",
+    "ebayMessages": "eBay Mesajları",
     "replayTour": "Onboarding turunu yenidən oynat"
   },
   "auth": {
