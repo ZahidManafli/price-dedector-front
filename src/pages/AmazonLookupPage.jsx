@@ -205,10 +205,14 @@ export default function AmazonLookupPage() {
     const TAX_RATE = 0;
     const AD_RATE = 0;
     const FIXED_FEE = 0.25;
+    // Mirrors backend-for-server/src/services/feeModel.js's computeEbayPriceForProfit
+    // exactly (same comment there) — must stay in sync by hand so this preview always
+    // matches the price Amazon Lookup's auto-listing pipeline actually charges.
+    const PROFIT_DISPLAY_FACTOR = 0.72;
     const denominator = 1 - (1 + TAX_RATE) * (FINAL_VALUE_FEE_RATE + AD_RATE);
     if (denominator <= 0) return { target: parsedTarget, cogs, ebayPrice: 0 };
 
-    const ebayPrice = (cogs + parsedTarget + FIXED_FEE) / denominator;
+    const ebayPrice = (cogs + parsedTarget / PROFIT_DISPLAY_FACTOR + FIXED_FEE) / denominator;
     return {
       target: parsedTarget,
       cogs,

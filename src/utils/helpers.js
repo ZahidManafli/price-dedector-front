@@ -13,6 +13,15 @@
  * - adRate: promoted listing percentage as a decimal (default 0)
  * - fixedFee: fixed transaction fee in USD (default 0.30)
  */
+// The raw fee-formula result overstates what a seller actually keeps (real-world
+// costs this model doesn't line-item: returns/refunds, packaging, disputes, etc.) —
+// PROFIT_DISPLAY_FACTOR scales every profit figure this module produces down to a
+// realistic net. Mirrors backend-for-server/src/utils/profitCalculator.js exactly.
+// calculateRecommendedEbayPrice (the inverse of calculateProfit) divides by the same
+// factor before solving, so "preserve the user's profit" still means preserving the
+// SAME post-factor number they were already shown, not the raw one.
+const PROFIT_DISPLAY_FACTOR = 0.72;
+
 export const calculateProfit = (ebayPrice, amazonPrice, options = {}) => {
   const salePrice = parseFloat(ebayPrice) || 0; // Sale Price
   const cogs = parseFloat(amazonPrice) || 0; // COGS
@@ -26,14 +35,16 @@ export const calculateProfit = (ebayPrice, amazonPrice, options = {}) => {
 
   const grossAmount = salePrice * (1 + taxRate);
   const feeTotal = grossAmount * (fvfRate + adRate) + fixedFee;
-  const netProfit = salePrice - cogs - feeTotal;
+  const netProfit = (salePrice - cogs - feeTotal) * PROFIT_DISPLAY_FACTOR;
 
   return Math.round(netProfit * 100) / 100; // Round to 2 decimal places
 };
 
 export const calculateRecommendedEbayPrice = (amazonPrice, targetProfit = 0, options = {}) => {
   const cost = parseFloat(amazonPrice) || 0;
-  const desiredProfit = parseFloat(targetProfit) || 0;
+  // targetProfit is a PROFIT_DISPLAY_FACTOR-scaled figure — convert back to the
+  // raw fee-formula's own scale before solving (see calculateProfit above).
+  const desiredProfit = (parseFloat(targetProfit) || 0) / PROFIT_DISPLAY_FACTOR;
   const taxRate = Number.isFinite(Number(options.taxRate)) ? Number(options.taxRate) : 0.06;
   const fvfRate = Number.isFinite(Number(options.fvfRate)) ? Number(options.fvfRate) : 0.136;
   const adRate = Number.isFinite(Number(options.adRate)) ? Number(options.adRate) : 0;
