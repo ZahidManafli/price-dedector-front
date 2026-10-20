@@ -636,7 +636,10 @@
     "failedToStartAmazon": "Failed to start Amazon connection",
     "failedToStartEbay": "Failed to start eBay connection",
     "failedUpdateEbayName": "Failed to update eBay connection name",
-    "settingsSaved": "Settings saved successfully!"
+    "settingsSaved": "Settings saved successfully!",
+    "securitySectionDesc": "Manage your password and keep your account secure.",
+    "notificationsSectionDesc": "Control your email notifications and how often you receive them.",
+    "requestsSectionDesc": "Track the status of your subscription and credit top-up requests."
   },
   "common": {
     "loading": "Loading...",

@@ -1031,7 +1031,10 @@
     "sendEmailWhenPricesChange": "Qiymətlər dəyişdikdə e-poçt göndər",
     "settingsSaved": "Ayarlar uğurla saxlanıldı!",
     "updating": "Yenilənir...",
-    "weeklySummary": "Həftəlik xülasə"
+    "weeklySummary": "Həftəlik xülasə",
+    "securitySectionDesc": "Şifrənizi idarə edin və hesabınızı qorunmuş saxlayın.",
+    "notificationsSectionDesc": "E-poçt bildirişlərinizi və onların tezliyini tənzimləyin.",
+    "requestsSectionDesc": "Göndərdiyiniz abunəlik və kredit sorğularının statusuna baxın."
   },
   "orderDetailPage": {
     "noOrder": {

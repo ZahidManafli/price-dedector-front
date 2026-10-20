@@ -1031,7 +1031,10 @@
     "sendEmailWhenPricesChange": "Отправлять email при изменении цен",
     "settingsSaved": "Настройки успешно сохранены!",
     "updating": "Обновление...",
-    "weeklySummary": "Еженедельная сводка"
+    "weeklySummary": "Еженедельная сводка",
+    "securitySectionDesc": "Управляйте паролем и обеспечьте безопасность своего аккаунта.",
+    "notificationsSectionDesc": "Настройте уведомления по электронной почте и их частоту.",
+    "requestsSectionDesc": "Отслеживайте статус ваших запросов на подписку и пополнение кредитов."
   },
   "orderDetailPage": {
     "noOrder": {

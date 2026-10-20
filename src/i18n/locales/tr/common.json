@@ -1031,7 +1031,10 @@
     "sendEmailWhenPricesChange": "Fiyatlar değiştiğinde e-posta gönder",
     "settingsSaved": "Ayarlar başarıyla kaydedildi!",
     "updating": "Güncelleniyor...",
-    "weeklySummary": "Haftalık özet"
+    "weeklySummary": "Haftalık özet",
+    "securitySectionDesc": "Şifrenizi yönetin ve hesabınızı güvende tutun.",
+    "notificationsSectionDesc": "E-posta bildirimlerinizi ve sıklığını yönetin.",
+    "requestsSectionDesc": "Abonelik ve kredi yükleme taleplerinizin durumunu takip edin."
   },
   "orderDetailPage": {
     "noOrder": {

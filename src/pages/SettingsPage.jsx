@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCircle2, CreditCard, Link2, Mail, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { Bell, CheckCircle2, ClipboardList, CreditCard, Link2, Mail, Package, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { amazonOAuthAPI, aquilineAPI, authAPI, ebayAPI, paymentsAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
@@ -58,6 +58,43 @@ function myRequestStatusBadgeClass(status, isDark) {
   if (status === 'rejected') return isDark ? 'bg-red-900/30 text-red-200' : 'bg-red-100 text-red-700';
   if (status === 'cancelled') return isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-500';
   return isDark ? 'bg-amber-900/30 text-amber-200' : 'bg-amber-100 text-amber-700';
+}
+
+function ToggleSwitch({ checked, onChange, disabled, isDark }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      disabled={disabled}
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-40 ${
+        checked ? 'bg-indigo-600' : isDark ? 'bg-slate-700' : 'bg-slate-300'
+      }`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+          checked ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
+    </button>
+  );
+}
+
+function SectionHeader({ icon: Icon, title, description, isDark }) {
+  return (
+    <div className="mb-5">
+      <div className="flex items-center gap-3">
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${isDark ? 'bg-indigo-500/10 text-indigo-300' : 'bg-indigo-50 text-indigo-600'}`}>
+          <Icon size={18} />
+        </span>
+        <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{title}</h2>
+      </div>
+      {description && (
+        <p className={`mt-1.5 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{description}</p>
+      )}
+    </div>
+  );
 }
 
 export default function SettingsPage() {
@@ -689,10 +726,25 @@ export default function SettingsPage() {
     e.preventDefault();
   };
 
+  const displayName = [user?.name, user?.surname].filter(Boolean).join(' ').trim() || user?.email || t('settingsPage.unknown');
+  const avatarInitial = (displayName || '?').trim().charAt(0).toUpperCase() || '?';
+  const planBadgeLabel = limits?.plan?.name || null;
+  const hasRenewalSection = (!!defaultCard && isTrialPlan) || showRenewalCta;
+
+  const navItems = [
+    { id: 'security', label: t('settingsPage.security'), icon: ShieldCheck },
+    { id: 'plans', label: t('settingsPage.plans'), icon: Package },
+    { id: 'billing', label: 'Ödəniş', icon: CreditCard },
+    { id: 'requests', label: 'Sorğularım', icon: ClipboardList },
+    { id: 'ebay', label: t('settingsPage.ebay'), icon: Link2 },
+    { id: 'amazon', label: t('settingsPage.amazon'), icon: Link2 },
+    { id: 'notifications', label: t('settingsPage.notifications'), icon: Bell },
+  ];
+
   return (
     <div className="page-shell">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="page-title mb-8">{t('settingsPage.title')}</h1>
+      <div className="max-w-6xl mx-auto">
+        <h1 className="page-title mb-6">{t('settingsPage.title')}</h1>
 
         {alert && (
           <div className="mb-6">
@@ -704,432 +756,448 @@ export default function SettingsPage() {
           </div>
         )}
 
-        <div className={`mb-6 rounded-xl p-1 border ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
-          <div className="grid grid-cols-2 md:grid-cols-7 gap-1">
-            {[
-              { id: 'security', label: t('settingsPage.security') },
-              { id: 'plans', label: t('settingsPage.plans') },
-              { id: 'billing', label: 'Ödəniş' },
-              { id: 'requests', label: 'Sorğularım' },
-              { id: 'ebay', label: t('settingsPage.ebay') },
-              { id: 'amazon', label: t('settingsPage.amazon') },
-              { id: 'notifications', label: t('settingsPage.notifications') },
-            ].map((tab) => (
+        {/* Profile summary header */}
+        <div className="glass-card p-5 mb-6 flex flex-wrap items-center gap-4">
+          <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl font-semibold text-white ${isDark ? 'bg-indigo-500' : 'bg-indigo-600'}`}>
+            {avatarInitial}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className={`text-base font-semibold truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{displayName}</p>
+            {user?.email && (
+              <p className={`text-sm truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{user.email}</p>
+            )}
+          </div>
+          {planBadgeLabel && (
+            <span className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${
+              isDark ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30' : 'bg-indigo-50 text-indigo-700 border-indigo-100'
+            }`}>
+              {planBadgeLabel}
+            </span>
+          )}
+        </div>
+
+        {/* Mobile section switcher */}
+        <div className="md:hidden mb-4 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+          {navItems.map((tab) => {
+            const TabIcon = tab.icon;
+            const isActiveTab = settingsTab === tab.id;
+            return (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setSettingsTab(tab.id)}
-                className={`px-3 py-2 text-sm rounded-lg transition ${
-                  settingsTab === tab.id
-                    ? 'bg-indigo-600 text-white shadow-sm'
+                className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-medium transition ${
+                  isActiveTab
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : isDark
-                      ? 'text-slate-300 hover:text-slate-100'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'border border-slate-700 bg-slate-900 text-slate-300'
+                      : 'border border-slate-200 bg-slate-100 text-slate-600'
                 }`}
               >
+                <TabIcon size={14} />
                 {tab.label}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
 
-        {settingsTab === 'security' && (
-        <div className="glass-card p-4 md:p-5 mb-6">
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            <h2 className={`text-lg font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-              <ShieldCheck size={16} />
-              {t('settingsPage.accountSecurity')}
-            </h2>
-            <div className="grid gap-3 md:grid-cols-3">
-              <input
-                type="password"
-                value={passwordForm.currentPassword}
-                onChange={(e) => setPasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
-                placeholder={t('settingsPage.currentPassword')}
-                className="input-base"
-                disabled={passwordSaving}
-              />
-              <input
-                type="password"
-                value={passwordForm.newPassword}
-                onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
-                placeholder={t('settingsPage.newPassword')}
-                className="input-base"
-                disabled={passwordSaving}
-              />
-              <input
-                type="password"
-                value={passwordForm.confirmPassword}
-                onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-                placeholder={t('settingsPage.confirmNewPassword')}
-                className="input-base"
-                disabled={passwordSaving}
-              />
-            </div>
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={passwordSaving}
-                className="rounded-xl bg-indigo-600 text-white px-5 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
-              >
-                {passwordSaving ? t('settingsPage.updating') : t('settingsPage.changePassword')}
-              </button>
-            </div>
-          </form>
-        </div>
-        )}
-
-        {settingsTab === 'plans' && (
-        <div className="glass-card p-4 md:p-5 mb-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className={`text-lg font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                <Mail size={16} />
-                {t('settingsPage.requestCreditTopUp')}
-              </h2>
-              <p className={`text-sm mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                {t('settingsPage.requestMoreCredits')}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => openRequestModal('update_credits')}
-                className="rounded-xl bg-emerald-600 text-white px-4 py-2.5 hover:bg-emerald-700 transition"
-              >
-                {t('settingsPage.requestCreditTopUp')}
-              </button>
-              <button
-                type="button"
-                onClick={() => openRequestModal('reset_credits')}
-                className="rounded-xl bg-slate-800 text-white px-4 py-2.5 hover:bg-slate-700 transition"
-              >
-                {t('settingsPage.requestSubscriptionReset')}
-              </button>
-            </div>
-          </div>
-        </div>
-        )}
-
-        {settingsTab === 'billing' && (
-        <div className="glass-card p-4 md:p-5 mb-6 space-y-5">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className={`text-lg font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                <CreditCard size={16} />
-                Ödəniş kartları
-              </h2>
-              <p className={`text-sm mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                Kart məlumatlarınız birbaşa Epoint tərəfindən saxlanılır, biz kart nömrənizi görmürük.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => setHistoryOpen(true)}
-                className={`rounded-xl px-4 py-2.5 border transition ${
-                  isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                Ödəniş tarixçəsi
-              </button>
-              <button
-                type="button"
-                onClick={handleAddCard}
-                disabled={addingCard}
-                className="rounded-xl bg-indigo-600 text-white px-4 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
-              >
-                {addingCard ? 'Açılır...' : 'Kart əlavə et'}
-              </button>
-            </div>
-          </div>
-
-          {cardsLoading ? (
-            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Yüklənir...</p>
-          ) : cards.length === 0 ? (
-            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Hələ heç bir kart əlavə edilməyib.</p>
-          ) : (
-            <div className="space-y-2">
-              {cards.map((card) => (
-                <div
-                  key={card.id}
-                  className={`flex items-center justify-between rounded-lg p-3 ${
-                    isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
-                  }`}
-                >
-                  <div>
-                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                      {card.cardMask || 'Kart'} {card.isDefault && <span className="ml-2 text-xs font-semibold text-indigo-500">Əsas</span>}
-                    </p>
-                    {card.cardName && (
-                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{card.cardName}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {!card.isDefault && (
-                      <button
-                        type="button"
-                        onClick={() => handleSetDefaultCard(card.id)}
-                        className={`text-xs font-semibold ${isDark ? 'text-indigo-300 hover:text-indigo-200' : 'text-indigo-600 hover:text-indigo-700'}`}
-                      >
-                        Əsas et
-                      </button>
-                    )}
+        <div className="flex flex-col gap-6 md:flex-row md:items-start">
+          {/* Desktop sidebar navigation */}
+          <nav className="hidden md:block w-[240px] shrink-0">
+            <div className="glass-card sticky top-6 p-2">
+              <div className="space-y-1">
+                {navItems.map((tab) => {
+                  const TabIcon = tab.icon;
+                  const isActiveTab = settingsTab === tab.id;
+                  return (
                     <button
+                      key={tab.id}
                       type="button"
-                      onClick={() => handleDeleteCard(card.id)}
-                      className={`p-1.5 rounded-lg ${isDark ? 'text-red-300 hover:bg-red-500/10' : 'text-red-600 hover:bg-red-50'}`}
-                      title="Kartı sil"
+                      onClick={() => setSettingsTab(tab.id)}
+                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                        isActiveTab
+                          ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25'
+                          : isDark
+                            ? 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      }`}
                     >
-                      <Trash2 size={14} />
+                      <TabIcon size={18} className={isActiveTab ? '' : 'text-slate-400'} />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </nav>
+
+          {/* Content area */}
+          <div className="min-w-0 flex-1 space-y-6">
+            {settingsTab === 'security' && (
+            <div className="glass-card p-5 md:p-6">
+              <SectionHeader icon={ShieldCheck} title={t('settingsPage.accountSecurity')} description={t('settingsPage.securitySectionDesc')} isDark={isDark} />
+              <div className={`-mx-5 md:-mx-6 border-t px-5 pt-5 md:px-6 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <input
+                      type="password"
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => setPasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
+                      placeholder={t('settingsPage.currentPassword')}
+                      className="input-base"
+                      disabled={passwordSaving}
+                    />
+                    <input
+                      type="password"
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
+                      placeholder={t('settingsPage.newPassword')}
+                      className="input-base"
+                      disabled={passwordSaving}
+                    />
+                    <input
+                      type="password"
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                      placeholder={t('settingsPage.confirmNewPassword')}
+                      className="input-base"
+                      disabled={passwordSaving}
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={passwordSaving}
+                      className="btn-primary"
+                    >
+                      {passwordSaving ? t('settingsPage.updating') : t('settingsPage.changePassword')}
                     </button>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {defaultCard && isTrialPlan && (
-            <div>
-              <button
-                type="button"
-                onClick={() => navigate('/upgrade-plan')}
-                className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-4 py-2 hover:bg-blue-700 transition"
-              >
-                Planı yüksəlt
-              </button>
-              <p className={`text-xs mt-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Trial plan üçün onlayn ödəniş edilə bilməz — davam etmək üçün planınızı yüksəldin.
-              </p>
-            </div>
-          )}
-
-          {showRenewalCta && !renewalPickerOpen && (
-            <div>
-              <button
-                type="button"
-                onClick={() => setRenewalPickerOpen(true)}
-                className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-4 py-2 hover:bg-blue-700 transition"
-              >
-                İndi planı yenilə
-              </button>
-              <p className={`text-xs mt-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                {isPlanExpired
-                  ? 'Planınızın müddəti bitib. Davam etmək üçün indi yeniləyin.'
-                  : `Planınızın müddətinin bitməsinə ${daysUntilExpiry} gün qalıb. İndi yeniləyə bilərsiniz.`}
-              </p>
-            </div>
-          )}
-
-          {showRenewalCta && renewalPickerOpen && (
-            <div className="space-y-2">
-              <p className={`text-xs font-semibold uppercase tracking-widest ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Ödəniş üsulunu seçin
-              </p>
-              <div className="flex flex-wrap items-center gap-3">
-                {defaultCard && (
-                  <button
-                    type="button"
-                    onClick={handlePayNow}
-                    disabled={payingNow}
-                    className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-4 py-2 hover:bg-blue-700 transition disabled:opacity-50"
-                  >
-                    {payingNow ? 'Ödəniş edilir...' : 'Kart'}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={handlePayNowGooglePay}
-                  disabled={payingNowWidget}
-                  className="rounded-lg border border-emerald-500 text-emerald-500 text-sm font-semibold px-4 py-2 hover:bg-emerald-500/10 transition disabled:opacity-50"
-                >
-                  {payingNowWidget ? 'Yüklənir...' : `${walletLabel} ilə ödə`}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRenewalPickerOpen(false)}
-                  className={`text-xs font-semibold ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  Ləğv et
-                </button>
-              </div>
-              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                {defaultCard
-                  ? `Əsas kartınızdan və ya ${walletLabel} ilə planınızın qiymətini (tracking add-on varsa, onunla birlikdə) indi çıxarır və planınızı 1 ay uzadır.`
-                  : `${walletLabel} ilə planınızın qiymətini (tracking add-on varsa, onunla birlikdə) indi çıxarır və planınızı 1 ay uzadır.`}
-              </p>
-            </div>
-          )}
-
-          <GooglePayModal
-            widgetUrl={renewalWidgetUrl}
-            onCancel={() => setRenewalWidgetUrl('')}
-            onPoll={pollRenewalWidgetStatus}
-            title={walletLabel}
-          />
-
-          <div className={`rounded-lg p-3 md:p-4 flex items-center justify-between gap-4 ${
-            isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
-          }`}>
-            <div>
-              <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Avtomatik yeniləmə</p>
-              <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Aktiv edilərsə, planınızın bitmə tarixində əsas kartınızdan avtomatik ödəniş çıxarılacaq.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleToggleAutoRenew}
-              disabled={autoRenewSaving || (!autoRenewEnabled && cards.length === 0)}
-              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-40 ${
-                autoRenewEnabled ? 'bg-indigo-600' : isDark ? 'bg-slate-700' : 'bg-slate-300'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                  autoRenewEnabled ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-        )}
-
-        {settingsTab === 'requests' && (
-        <div className="glass-card p-4 md:p-5 mb-6">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Sorğularım</h2>
-            <button
-              type="button"
-              onClick={loadMyRequests}
-              disabled={myRequestsLoading}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition disabled:opacity-50 ${
-                isDark ? 'border-slate-700 text-slate-300 hover:bg-white/5' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              {myRequestsLoading ? 'Yüklənir...' : 'Yenilə'}
-            </button>
-          </div>
-
-          {myRequestsLoading ? (
-            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Yüklənir...</p>
-          ) : myRequests.length === 0 ? (
-            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Hələ heç bir sorğunuz yoxdur.</p>
-          ) : (
-            <div className="space-y-3">
-              {myRequests.map((row) => (
-                <div
-                  key={row.id}
-                  className={`rounded-lg p-3 md:p-4 ${isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                        {myRequestTypeLabel(row)}
-                      </p>
-                      <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {row.createdAt ? new Date(row.createdAt).toLocaleString() : ''}
-                      </p>
-                    </div>
-                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${myRequestStatusBadgeClass(row.status, isDark)}`}>
-                      {myRequestStatusLabel(row.status)}
-                    </span>
-                  </div>
-
-                  <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-                    <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                      {row.amount != null ? `${Number(row.amount).toFixed(2)} AZN` : null}
-                      {row.requestedCredits ? ` — +${row.requestedCredits} kredit` : ''}
-                      {row.includeTracking ? ' (+ Tracking Add-on)' : ''}
-                    </p>
-                    {row.status === 'pending' && (
-                      <button
-                        type="button"
-                        onClick={() => handleCancelRequest(row.id)}
-                        disabled={cancellingRequestId === row.id}
-                        className="rounded-lg border border-red-500 text-red-500 text-xs font-semibold px-3 py-1.5 hover:bg-red-500/10 transition disabled:opacity-50"
-                      >
-                        {cancellingRequestId === row.id ? 'Ləğv edilir...' : 'Ləğv et'}
-                      </button>
-                    )}
-                  </div>
-
-                  {row.status === 'rejected' && row.adminNote ? (
-                    <p className="mt-2 text-xs text-red-400">Səbəb: {row.adminNote}</p>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        )}
-
-        {(settingsTab === 'notifications' || settingsTab === 'ebay' || settingsTab === 'amazon') && (
-        <div className="glass-card p-4 md:p-5">
-          <form onSubmit={handleSettingsSubmit} className="space-y-5">
-            {/* Email Notifications */}
-            {settingsTab === 'notifications' && (
-            <div className={`rounded-lg p-3 md:p-4 ${
-              isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
-            }`}>
-              <h2 className={`text-lg font-semibold mb-3 flex items-center gap-2 ${
-                isDark ? 'text-slate-100' : 'text-slate-900'
-              }`}>
-                <Bell size={16} />
-                {t('settingsPage.emailNotifications')}
-              </h2>
-
-              <label className={`flex items-center gap-3 mb-3 rounded-lg p-2.5 ${
-                isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'
-              }`}>
-                <input
-                  type="checkbox"
-                  name="emailOnPriceChange"
-                  checked={preferences.emailOnPriceChange}
-                  onChange={handleChange}
-                  className="w-4 h-4"
-                  disabled={loading}
-                />
-                <span className={isDark ? 'text-slate-200' : 'text-slate-700'}>
-                  {t('settingsPage.sendEmailWhenPricesChange')}
-                </span>
-              </label>
-
-              <div className="ml-6">
-                <label className={`block text-sm font-semibold mb-2 ${
-                  isDark ? 'text-slate-300' : 'text-gray-700'
-                }`}>
-                  {t('settingsPage.notificationFrequency')}
-                </label>
-                <select
-                  name="emailNotificationFrequency"
-                  value={preferences.emailNotificationFrequency}
-                  onChange={handleChange}
-                  className="input-base"
-                  disabled={!preferences.emailOnPriceChange || loading}
-                >
-                  <option value="instant">{t('settingsPage.instant')}</option>
-                  <option value="daily">{t('settingsPage.dailySummary')}</option>
-                  <option value="weekly">{t('settingsPage.weeklySummary')}</option>
-                </select>
+                </form>
               </div>
             </div>
             )}
 
-            {/* eBay Integration */}
-            {settingsTab === 'ebay' && (
-            <div className={`rounded-lg p-3 md:p-4 ${
-              isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
-            }`}>
-              <h2 className={`text-lg font-semibold mb-2 flex items-center gap-2 ${
-                isDark ? 'text-slate-100' : 'text-slate-900'
-              }`}>
-                <Link2 size={16} />
-                {t('settingsPage.ebayIntegration')}
-              </h2>
-              <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                {t('settingsPage.ebayIntegrationDescription')}
-              </p>
+            {settingsTab === 'plans' && (
+            <div className="glass-card p-5 md:p-6">
+              <SectionHeader icon={Package} title={t('settingsPage.requestCreditTopUp')} description={t('settingsPage.requestMoreCredits')} isDark={isDark} />
+              <div className={`-mx-5 md:-mx-6 flex flex-wrap gap-3 border-t px-5 pt-5 md:px-6 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <button
+                  type="button"
+                  onClick={() => openRequestModal('update_credits')}
+                  className="rounded-xl bg-emerald-600 text-white px-4 py-2.5 hover:bg-emerald-700 transition"
+                >
+                  {t('settingsPage.requestCreditTopUp')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openRequestModal('reset_credits')}
+                  className="rounded-xl bg-slate-800 text-white px-4 py-2.5 hover:bg-slate-700 transition"
+                >
+                  {t('settingsPage.requestSubscriptionReset')}
+                </button>
+              </div>
+            </div>
+            )}
+
+            {settingsTab === 'billing' && (
+            <div className="glass-card p-5 md:p-6 space-y-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <SectionHeader icon={CreditCard} title="Ödəniş kartları" description="Kart məlumatlarınız birbaşa Epoint tərəfindən saxlanılır, biz kart nömrənizi görmürük." isDark={isDark} />
+                <div className="flex flex-wrap gap-3 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setHistoryOpen(true)}
+                    className={`rounded-xl px-4 py-2.5 border transition ${
+                      isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    Ödəniş tarixçəsi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddCard}
+                    disabled={addingCard}
+                    className="rounded-xl bg-indigo-600 text-white px-4 py-2.5 hover:bg-indigo-700 transition disabled:opacity-50"
+                  >
+                    {addingCard ? 'Açılır...' : 'Kart əlavə et'}
+                  </button>
+                </div>
+              </div>
+
+              <div className={`-mx-5 md:-mx-6 border-t px-5 pt-5 md:px-6 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+              {cardsLoading ? (
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Yüklənir...</p>
+              ) : cards.length === 0 ? (
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Hələ heç bir kart əlavə edilməyib.</p>
+              ) : (
+                <div className="space-y-2">
+                  {cards.map((card) => (
+                    <div
+                      key={card.id}
+                      className={`flex items-center justify-between rounded-lg p-3 ${
+                        isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
+                      }`}
+                    >
+                      <div>
+                        <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                          {card.cardMask || 'Kart'} {card.isDefault && <span className="ml-2 text-xs font-semibold text-indigo-500">Əsas</span>}
+                        </p>
+                        {card.cardName && (
+                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{card.cardName}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {!card.isDefault && (
+                          <button
+                            type="button"
+                            onClick={() => handleSetDefaultCard(card.id)}
+                            className={`text-xs font-semibold ${isDark ? 'text-indigo-300 hover:text-indigo-200' : 'text-indigo-600 hover:text-indigo-700'}`}
+                          >
+                            Əsas et
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCard(card.id)}
+                          className={`p-1.5 rounded-lg ${isDark ? 'text-red-300 hover:bg-red-500/10' : 'text-red-600 hover:bg-red-50'}`}
+                          title="Kartı sil"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              </div>
+
+              {hasRenewalSection && (
+              <div className={`-mx-5 md:-mx-6 space-y-4 border-t px-5 pt-5 md:px-6 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                {defaultCard && isTrialPlan && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/upgrade-plan')}
+                      className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-4 py-2 hover:bg-blue-700 transition"
+                    >
+                      Planı yüksəlt
+                    </button>
+                    <p className={`text-xs mt-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Trial plan üçün onlayn ödəniş edilə bilməz — davam etmək üçün planınızı yüksəldin.
+                    </p>
+                  </div>
+                )}
+
+                {showRenewalCta && !renewalPickerOpen && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setRenewalPickerOpen(true)}
+                      className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-4 py-2 hover:bg-blue-700 transition"
+                    >
+                      İndi planı yenilə
+                    </button>
+                    <p className={`text-xs mt-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {isPlanExpired
+                        ? 'Planınızın müddəti bitib. Davam etmək üçün indi yeniləyin.'
+                        : `Planınızın müddətinin bitməsinə ${daysUntilExpiry} gün qalıb. İndi yeniləyə bilərsiniz.`}
+                    </p>
+                  </div>
+                )}
+
+                {showRenewalCta && renewalPickerOpen && (
+                  <div className="space-y-2">
+                    <p className={`text-xs font-semibold uppercase tracking-widest ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Ödəniş üsulunu seçin
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {defaultCard && (
+                        <button
+                          type="button"
+                          onClick={handlePayNow}
+                          disabled={payingNow}
+                          className="rounded-lg bg-blue-600 text-white text-sm font-semibold px-4 py-2 hover:bg-blue-700 transition disabled:opacity-50"
+                        >
+                          {payingNow ? 'Ödəniş edilir...' : 'Kart'}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handlePayNowGooglePay}
+                        disabled={payingNowWidget}
+                        className="rounded-lg border border-emerald-500 text-emerald-500 text-sm font-semibold px-4 py-2 hover:bg-emerald-500/10 transition disabled:opacity-50"
+                      >
+                        {payingNowWidget ? 'Yüklənir...' : `${walletLabel} ilə ödə`}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRenewalPickerOpen(false)}
+                        className={`text-xs font-semibold ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+                      >
+                        Ləğv et
+                      </button>
+                    </div>
+                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {defaultCard
+                        ? `Əsas kartınızdan və ya ${walletLabel} ilə planınızın qiymətini (tracking add-on varsa, onunla birlikdə) indi çıxarır və planınızı 1 ay uzadır.`
+                        : `${walletLabel} ilə planınızın qiymətini (tracking add-on varsa, onunla birlikdə) indi çıxarır və planınızı 1 ay uzadır.`}
+                    </p>
+                  </div>
+                )}
+              </div>
+              )}
+
+              <GooglePayModal
+                widgetUrl={renewalWidgetUrl}
+                onCancel={() => setRenewalWidgetUrl('')}
+                onPoll={pollRenewalWidgetStatus}
+                title={walletLabel}
+              />
+
+              <div className={`-mx-5 md:-mx-6 border-t px-5 pt-5 md:px-6 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <div className={`rounded-lg p-3 md:p-4 flex items-center justify-between gap-4 ${
+                  isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
+                }`}>
+                  <div>
+                    <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Avtomatik yeniləmə</p>
+                    <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Aktiv edilərsə, planınızın bitmə tarixində əsas kartınızdan avtomatik ödəniş çıxarılacaq.
+                    </p>
+                  </div>
+                  <ToggleSwitch
+                    checked={autoRenewEnabled}
+                    onChange={handleToggleAutoRenew}
+                    disabled={autoRenewSaving || (!autoRenewEnabled && cards.length === 0)}
+                    isDark={isDark}
+                  />
+                </div>
+              </div>
+            </div>
+            )}
+
+            {settingsTab === 'requests' && (
+            <div className="glass-card p-5 md:p-6">
+              <div className="flex items-start justify-between gap-3">
+                <SectionHeader icon={ClipboardList} title="Sorğularım" description={t('settingsPage.requestsSectionDesc')} isDark={isDark} />
+                <button
+                  type="button"
+                  onClick={loadMyRequests}
+                  disabled={myRequestsLoading}
+                  className={`shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg border transition disabled:opacity-50 ${
+                    isDark ? 'border-slate-700 text-slate-300 hover:bg-white/5' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {myRequestsLoading ? 'Yüklənir...' : 'Yenilə'}
+                </button>
+              </div>
+
+              <div className={`-mx-5 md:-mx-6 border-t px-5 pt-5 md:px-6 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+              {myRequestsLoading ? (
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Yüklənir...</p>
+              ) : myRequests.length === 0 ? (
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Hələ heç bir sorğunuz yoxdur.</p>
+              ) : (
+                <div className="space-y-3">
+                  {myRequests.map((row) => (
+                    <div
+                      key={row.id}
+                      className={`rounded-lg p-3 md:p-4 ${isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                            {myRequestTypeLabel(row)}
+                          </p>
+                          <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                            {row.createdAt ? new Date(row.createdAt).toLocaleString() : ''}
+                          </p>
+                        </div>
+                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${myRequestStatusBadgeClass(row.status, isDark)}`}>
+                          {myRequestStatusLabel(row.status)}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                        <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                          {row.amount != null ? `${Number(row.amount).toFixed(2)} AZN` : null}
+                          {row.requestedCredits ? ` — +${row.requestedCredits} kredit` : ''}
+                          {row.includeTracking ? ' (+ Tracking Add-on)' : ''}
+                        </p>
+                        {row.status === 'pending' && (
+                          <button
+                            type="button"
+                            onClick={() => handleCancelRequest(row.id)}
+                            disabled={cancellingRequestId === row.id}
+                            className="rounded-lg border border-red-500 text-red-500 text-xs font-semibold px-3 py-1.5 hover:bg-red-500/10 transition disabled:opacity-50"
+                          >
+                            {cancellingRequestId === row.id ? 'Ləğv edilir...' : 'Ləğv et'}
+                          </button>
+                        )}
+                      </div>
+
+                      {row.status === 'rejected' && row.adminNote ? (
+                        <p className="mt-2 text-xs text-red-400">Səbəb: {row.adminNote}</p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+              </div>
+            </div>
+            )}
+
+            {(settingsTab === 'notifications' || settingsTab === 'ebay' || settingsTab === 'amazon') && (
+            <div className="glass-card p-5 md:p-6">
+              <form onSubmit={handleSettingsSubmit} className="space-y-5">
+                {/* Email Notifications */}
+                {settingsTab === 'notifications' && (
+                <div>
+                  <SectionHeader icon={Bell} title={t('settingsPage.emailNotifications')} description={t('settingsPage.notificationsSectionDesc')} isDark={isDark} />
+
+                  <div className={`rounded-lg p-3 md:p-4 ${
+                    isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
+                  }`}>
+                    <div className={`flex items-center justify-between gap-3 rounded-lg p-2.5 ${
+                      isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'
+                    }`}>
+                      <span className={isDark ? 'text-slate-200' : 'text-slate-700'}>
+                        {t('settingsPage.sendEmailWhenPricesChange')}
+                      </span>
+                      <ToggleSwitch
+                        checked={!!preferences.emailOnPriceChange}
+                        onChange={() => setPreferences((prev) => ({ ...prev, emailOnPriceChange: !prev.emailOnPriceChange }))}
+                        disabled={loading}
+                        isDark={isDark}
+                      />
+                    </div>
+
+                    <div className="mt-4">
+                      <label className={`block text-sm font-semibold mb-2 ${
+                        isDark ? 'text-slate-300' : 'text-gray-700'
+                      }`}>
+                        {t('settingsPage.notificationFrequency')}
+                      </label>
+                      <select
+                        name="emailNotificationFrequency"
+                        value={preferences.emailNotificationFrequency}
+                        onChange={handleChange}
+                        className="input-base"
+                        disabled={!preferences.emailOnPriceChange || loading}
+                      >
+                        <option value="instant">{t('settingsPage.instant')}</option>
+                        <option value="daily">{t('settingsPage.dailySummary')}</option>
+                        <option value="weekly">{t('settingsPage.weeklySummary')}</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                )}
+
+                {/* eBay Integration */}
+                {settingsTab === 'ebay' && (
+                <div>
+                  <SectionHeader icon={Link2} title={t('settingsPage.ebayIntegration')} description={t('settingsPage.ebayIntegrationDescription')} isDark={isDark} />
               <div className={`inline-flex rounded-xl p-1 mb-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-100 border border-slate-200'}`}>
                 <button
                   type="button"
@@ -1568,28 +1636,13 @@ export default function SettingsPage() {
                   })}
                 </div>
               )}
-            </div>
-            )}
+                </div>
+                )}
 
-            {/* Amazon OAuth */}
-            {settingsTab === 'amazon' && (
-              <div
-                className={`rounded-lg p-3 md:p-4 ${
-                  isDark ? 'border border-slate-700 bg-slate-900/60' : 'border border-slate-200 bg-white'
-                }`}
-              >
-                <h2
-                  className={`text-lg font-semibold mb-2 flex items-center gap-2 ${
-                    isDark ? 'text-slate-100' : 'text-slate-900'
-                  }`}
-                >
-                  <Link2 size={16} />
-                  {t('settingsPage.amazonLogin')}
-                </h2>
-                <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  {t('settingsPage.amazonLoginDescription')}
-                </p>
-
+                {/* Amazon OAuth */}
+                {settingsTab === 'amazon' && (
+                <div>
+                  <SectionHeader icon={Link2} title={t('settingsPage.amazonLogin')} description={t('settingsPage.amazonLoginDescription')} isDark={isDark} />
                 <div
                   className={`rounded-lg p-3 mb-3 ${
                     isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'
@@ -1791,35 +1844,37 @@ export default function SettingsPage() {
                       : t('settingsPage.aquilineSaveProfile', { defaultValue: 'Save Aquiline profile' })}
                   </button>
                 </div>
-              </div>
-            )}
-
-            {/* Buttons */}
-            <div className={`pt-3 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-              <div className="flex gap-4">
-                {settingsTab === 'notifications' && (
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="btn-primary"
-                  >
-                    {loading ? t('settingsPage.saving') : t('settingsPage.saveSettings')}
-                  </button>
+                </div>
                 )}
-                <button
-                  type="button"
-                  onClick={() => navigate('/dashboard')}
-                  className="btn-secondary"
-                >
-                  {t('back')}
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-        )}
 
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Buttons */}
+                <div className={`pt-3 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                  <div className="flex gap-4">
+                    {settingsTab === 'notifications' && (
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="btn-primary"
+                      >
+                        {loading ? t('settingsPage.saving') : t('settingsPage.saveSettings')}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => navigate('/dashboard')}
+                      className="btn-secondary"
+                    >
+                      {t('back')}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="glass-card p-3">
             <p className={`text-sm font-medium flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
               <Mail size={14} />
