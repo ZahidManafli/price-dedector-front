@@ -10,15 +10,42 @@
  *   useTheme from your ThemeContext
  */
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ThumbsUp, MessageSquare, Send, Loader2,
-  ChevronLeft, PlayCircle, X, Clock, Lock,
+  ChevronLeft, PlayCircle, Clock, Lock,
+  GraduationCap, Search, CheckCircle2, RefreshCw,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth }  from '../context/AuthContext';
 import { learningAPI } from '../services/api';
+import Alert from '../components/Alert';
+
+// Client-side only "watched" tracking (no backend field for this exists) —
+// same localStorage-persisted-preference pattern already used elsewhere in
+// this app (e.g. ProductsPage's `products_view`). Purely cosmetic progress
+// cue; never sent to the server, never blocks anything.
+const WATCHED_STORAGE_KEY = 'learning_videos_watched';
+
+function loadWatchedIds() {
+  try {
+    const raw = localStorage.getItem(WATCHED_STORAGE_KEY);
+    const ids = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(ids) ? ids : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveWatchedIds(set) {
+  try {
+    localStorage.setItem(WATCHED_STORAGE_KEY, JSON.stringify([...set]));
+  } catch {
+    // best-effort — a private window or disabled storage just means the
+    // checkmark doesn't persist across visits, nothing else breaks.
+  }
+}
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -114,6 +141,8 @@ export default function LearningVideosPage() {
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState(null);
   const [purchasing,    setPurchasing]    = useState(false);
+  const [searchQuery,   setSearchQuery]   = useState('');
+  const [watchedIds,    setWatchedIds]    = useState(() => loadWatchedIds());
 
   // Selected video detail
   const [activeVideo,   setActiveVideo]   = useState(null);
@@ -145,6 +174,15 @@ export default function LearningVideosPage() {
 
   useEffect(() => { loadVideos(); }, [loadVideos]);
 
+  const filteredVideos = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return videos;
+    return videos.filter((v) =>
+      String(v.title || '').toLowerCase().includes(q) ||
+      String(v.description || '').toLowerCase().includes(q)
+    );
+  }, [videos, searchQuery]);
+
   // ── Open video ─────────────────────────────────────────────────────────────
   const openVideo = async (video) => {
     setActiveVideo(video);
@@ -153,6 +191,16 @@ export default function LearningVideosPage() {
     setCommentError(null);
     setCommentOk(false);
     setDetailLoading(true);
+    // A paid video the user hasn't unlocked yet isn't actually "watched" —
+    // only mark it once they can genuinely see the content.
+    if (!video.isPaid || video.hasAccess) {
+      setWatchedIds((prev) => {
+        if (prev.has(video.id)) return prev;
+        const next = new Set(prev).add(video.id);
+        saveWatchedIds(next);
+        return next;
+      });
+    }
     try {
       const res = await learningAPI.get(video.id);
       setActiveVideo(res?.data?.video || video);
@@ -232,7 +280,6 @@ export default function LearningVideosPage() {
   };
 
   // ─── Style tokens ──────────────────────────────────────────────────────────
-  const bg      = isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900';
   const card    = isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200';
   const muted   = isDark ? 'text-slate-400' : 'text-slate-500';
   const inputCn = `w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
@@ -240,25 +287,60 @@ export default function LearningVideosPage() {
       ? 'bg-slate-800 border-slate-600 text-slate-100 placeholder-slate-500'
       : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
   }`;
+  const watchedCount = videos.filter((v) => watchedIds.has(v.id)).length;
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className={`min-h-screen ${bg}`}>
-      <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="page-shell">
+      <div className="max-w-[1480px] mx-auto">
 
         {/* Page header */}
-        <div className="mb-8">
-          <h1 className={`text-2xl font-bold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>
-            📚 Dropshipping on Checkila
-          </h1>
-          <p className={`mt-1 text-sm ${muted}`}>
-            Watch our guides and master dropshipping with Checkila.
-          </p>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex items-center gap-4">
+            <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
+              isDark ? 'bg-indigo-500/10 text-indigo-300' : 'bg-indigo-50 text-indigo-600'
+            }`}>
+              <GraduationCap size={24} />
+            </span>
+            <div>
+              <h1 className="page-title">Dərslik Videoları</h1>
+              <p className={`mt-1 text-sm ${muted}`}>
+                Checkila ilə dropshipping-i addım-addım öyrənin.
+              </p>
+            </div>
+          </div>
+
+          {!activeVideo && !loading && videos.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                isDark ? 'border-slate-700 bg-slate-900 text-slate-300' : 'border-slate-200 bg-white text-slate-600'
+              }`}>
+                <PlayCircle size={13} /> {videos.length} dərs
+              </span>
+              {watchedCount > 0 && (
+                <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                  isDark ? 'border-emerald-800 bg-emerald-950/40 text-emerald-300' : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                }`}>
+                  <CheckCircle2 size={13} /> {watchedCount} izlənilib
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={loadVideos}
+                title="Yenilə"
+                className={`inline-flex items-center justify-center rounded-full border p-2 transition ${
+                  isDark ? 'border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                <RefreshCw size={14} />
+              </button>
+            </div>
+          )}
         </div>
 
         {error && (
-          <div className="rounded-xl border border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30 px-4 py-3 text-sm text-red-700 dark:text-red-300 mb-6">
-            {error}
+          <div className="mb-6">
+            <Alert type="error" message={error} onClose={() => setError(null)} />
           </div>
         )}
 
@@ -271,7 +353,7 @@ export default function LearningVideosPage() {
               onClick={closeVideo}
               className={`inline-flex items-center gap-1.5 text-sm font-medium transition ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}
             >
-              <ChevronLeft size={16} /> All videos
+              <ChevronLeft size={16} /> Bütün dərslər
             </button>
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
@@ -314,11 +396,11 @@ export default function LearningVideosPage() {
                   <VideoPlayer video={activeVideo} />
                 )}
 
-                <div>
+                <div className={`rounded-2xl border p-5 ${card}`}>
                   <h2 className={`text-xl font-bold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>
                     {activeVideo.title}
                   </h2>
-                  <div className={`flex items-center gap-4 mt-2 text-sm ${muted}`}>
+                  <div className={`flex flex-wrap items-center gap-4 mt-2 text-sm ${muted}`}>
                     {activeVideo.duration_seconds && (
                       <span className="flex items-center gap-1">
                         <Clock size={13} /> {fmtDuration(activeVideo.duration_seconds)}
@@ -330,6 +412,11 @@ export default function LearningVideosPage() {
                     <span className="flex items-center gap-1">
                       <MessageSquare size={13} /> {comments.length}
                     </span>
+                    {watchedIds.has(activeVideo.id) && (
+                      <span className={`flex items-center gap-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                        <CheckCircle2 size={13} /> İzlənilib
+                      </span>
+                    )}
                   </div>
                   {activeVideo.description && (
                     <p className={`mt-3 text-sm leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
@@ -349,7 +436,7 @@ export default function LearningVideosPage() {
                     }`}
                   >
                     <ThumbsUp size={15} />
-                    {activeVideo.user_liked ? 'Liked' : 'Like'}
+                    {activeVideo.user_liked ? 'Bəyənildi' : 'Bəyən'}
                     <span className={`text-xs ${activeVideo.user_liked ? 'text-blue-200' : muted}`}>
                       {activeVideo.like_count || 0}
                     </span>
@@ -359,20 +446,23 @@ export default function LearningVideosPage() {
 
               {/* Right: comments */}
               <div className={`rounded-2xl border flex flex-col ${card}`} style={{ maxHeight: '600px' }}>
-                <div className={`px-4 py-3 border-b font-semibold text-sm flex-shrink-0 ${isDark ? 'border-slate-700 text-slate-100' : 'border-slate-200 text-slate-800'}`}>
-                  Comments ({comments.length})
+                <div className={`px-4 py-3 border-b font-semibold text-sm flex-shrink-0 flex items-center gap-2 ${isDark ? 'border-slate-700 text-slate-100' : 'border-slate-200 text-slate-800'}`}>
+                  <MessageSquare size={15} /> Şərhlər ({comments.length})
                 </div>
 
                 {/* Comment list */}
                 <div className="flex-1 overflow-y-auto px-4">
                   {detailLoading ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 size={20} className="animate-spin text-slate-400" />
+                    <div className="space-y-3 py-4">
+                      {[0, 1, 2].map((i) => (
+                        <div key={i} className={`h-14 rounded-xl animate-pulse ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
+                      ))}
                     </div>
                   ) : comments.length === 0 ? (
-                    <p className={`py-6 text-sm text-center ${muted}`}>
-                      Be the first to leave a comment!
-                    </p>
+                    <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+                      <MessageSquare size={24} className={muted} />
+                      <p className={`text-sm ${muted}`}>İlk şərhi siz yazın!</p>
+                    </div>
                   ) : (
                     comments.map((c) => (
                       <CommentItem key={c.id} comment={c} isDark={isDark} />
@@ -383,8 +473,8 @@ export default function LearningVideosPage() {
                 {/* Comment form */}
                 <div className={`p-4 border-t flex-shrink-0 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                   {commentOk && (
-                    <p className="text-xs text-emerald-500 mb-2">
-                      ✓ Comment sent — the admin has been notified by email.
+                    <p className="text-xs text-emerald-500 mb-2 flex items-center gap-1">
+                      <CheckCircle2 size={12} /> Şərh göndərildi — admin e-poçtla xəbərdar olundu.
                     </p>
                   )}
                   {commentError && (
@@ -396,7 +486,7 @@ export default function LearningVideosPage() {
                       rows={2}
                       value={commentBody}
                       onChange={(e) => setCommentBody(e.target.value)}
-                      placeholder="Write a comment… (admin will be notified)"
+                      placeholder="Şərh yazın… (admin xəbərdar olunacaq)"
                       className={`${inputCn} flex-1`}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -422,22 +512,52 @@ export default function LearningVideosPage() {
         ) : (
           /* ── Video grid ──────────────────────────────────────────────────── */
           <>
+            {!loading && videos.length > 4 && (
+              <div className="relative mb-5 max-w-sm">
+                <Search size={15} className={`absolute left-3 top-1/2 -translate-y-1/2 ${muted}`} />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Dərslərdə axtar..."
+                  className={`w-full rounded-xl border pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/40 ${
+                    isDark ? 'bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
+                  }`}
+                />
+              </div>
+            )}
+
             {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 size={28} className="animate-spin text-slate-400" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+                  <div key={i} className={`rounded-2xl border overflow-hidden ${card}`}>
+                    <div className={`w-full animate-pulse ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} style={{ paddingTop: '56.25%' }} />
+                    <div className="p-4 space-y-2">
+                      <div className={`h-3.5 rounded animate-pulse ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                      <div className={`h-3 w-2/3 rounded animate-pulse ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : videos.length === 0 ? (
               <div className={`rounded-2xl border p-12 text-center ${card}`}>
                 <PlayCircle size={40} className={`mx-auto mb-3 ${muted}`} />
-                <p className={`text-sm ${muted}`}>No learning videos are available yet. Check back soon!</p>
+                <p className={`text-sm ${muted}`}>Hələ heç bir dərslik videosu yoxdur. Tezliklə yoxlayın!</p>
+              </div>
+            ) : filteredVideos.length === 0 ? (
+              <div className={`rounded-2xl border p-12 text-center ${card}`}>
+                <Search size={32} className={`mx-auto mb-3 ${muted}`} />
+                <p className={`text-sm ${muted}`}>"{searchQuery}" üzrə heç nə tapılmadı.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {videos.map((video) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                {filteredVideos.map((video) => {
+                  const watched = watchedIds.has(video.id);
+                  return (
                   <div
                     key={video.id}
                     onClick={() => openVideo(video)}
-                    className={`rounded-2xl border cursor-pointer overflow-hidden transition hover:shadow-lg hover:-translate-y-0.5 ${card}`}
+                    className={`group rounded-2xl border cursor-pointer overflow-hidden transition hover:shadow-lg hover:-translate-y-0.5 ${card}`}
                   >
                     {/* Thumbnail */}
                     <div className="relative w-full bg-slate-800" style={{ paddingTop: '56.25%' }}>
@@ -463,8 +583,13 @@ export default function LearningVideosPage() {
                           {video.hasAccess ? 'Alınıb' : `${Number(video.priceAzn).toFixed(2)} AZN`}
                         </span>
                       )}
+                      {watched && (
+                        <span className="absolute top-2 right-2 inline-flex items-center justify-center rounded-full bg-emerald-600/90 p-1 text-white">
+                          <CheckCircle2 size={13} />
+                        </span>
+                      )}
                       {/* Play overlay */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition bg-black/30">
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition bg-black/30">
                         <PlayCircle size={44} className="text-white drop-shadow" />
                       </div>
                     </div>
@@ -499,7 +624,8 @@ export default function LearningVideosPage() {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>
