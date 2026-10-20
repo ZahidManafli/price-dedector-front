@@ -1034,7 +1034,17 @@
     "weeklySummary": "Haftalık özet",
     "securitySectionDesc": "Şifrenizi yönetin ve hesabınızı güvende tutun.",
     "notificationsSectionDesc": "E-posta bildirimlerinizi ve sıklığını yönetin.",
-    "requestsSectionDesc": "Abonelik ve kredi yükleme taleplerinizin durumunu takip edin."
+    "requestsSectionDesc": "Abonelik ve kredi yükleme taleplerinizin durumunu takip edin.",
+    "plansSectionTipTitle": "Talepler nasıl işler",
+    "plansSectionTipBody": "Her talebi bir yönetici bizzat inceler — sonucu (reddedilirse nedenini de) \"Taleplerim\" bölümünde görürsünüz.",
+    "billingSectionTipTitle": "Güvenli ödeme",
+    "billingSectionTipBody": "Kart bilgileriniz doğrudan Epoint tarafından işlenir — Checkila tam kart numaranızı asla saklamaz.",
+    "requestsSectionTipTitle": "Durum güncellemeleri",
+    "requestsSectionTipBody": "Onaylanan talepler otomatik uygulanır. Reddedilirse, yöneticinin notunu ilgili talebin yanında görebilirsiniz.",
+    "ebaySectionTipTitle": "Birden fazla hesap",
+    "ebaySectionTipBody": "Bağlı her eBay hesabının kendi ilanları, senkronizasyon durumu ve bağlantı geçmişi ayrı tutulur — aktif hesabı istediğiniz zaman değiştirebilirsiniz.",
+    "amazonSectionTipTitle": "Amazon'u neden bağlamalı",
+    "amazonSectionTipBody": "Bağlı bir Amazon hesabı, izlediğiniz tüm ürünler için fiyat/stok kontrollerini daha hızlı ve güvenilir hale getirir."
   },
   "orderDetailPage": {
     "noOrder": {

@@ -639,7 +639,17 @@
     "settingsSaved": "Settings saved successfully!",
     "securitySectionDesc": "Manage your password and keep your account secure.",
     "notificationsSectionDesc": "Control your email notifications and how often you receive them.",
-    "requestsSectionDesc": "Track the status of your subscription and credit top-up requests."
+    "requestsSectionDesc": "Track the status of your subscription and credit top-up requests.",
+    "plansSectionTipTitle": "How requests work",
+    "plansSectionTipBody": "An admin reviews every request personally — you'll see the outcome (and a note if it's declined) under \"My requests\".",
+    "billingSectionTipTitle": "Secure payments",
+    "billingSectionTipBody": "Your card details are processed directly by Epoint — Checkila never stores your full card number.",
+    "requestsSectionTipTitle": "Status updates",
+    "requestsSectionTipBody": "Approved requests apply automatically. If one is declined, the admin's reason appears right on that request.",
+    "ebaySectionTipTitle": "Multiple accounts",
+    "ebaySectionTipBody": "Each connected eBay account keeps its own listings, sync status, and connection history — switch the active one anytime.",
+    "amazonSectionTipTitle": "Why connect Amazon",
+    "amazonSectionTipBody": "A connected Amazon account makes price and stock checks faster and more reliable across all your tracked products."
   },
   "common": {
     "loading": "Loading...",

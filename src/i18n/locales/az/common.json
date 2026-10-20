@@ -1034,7 +1034,17 @@
     "weeklySummary": "Həftəlik xülasə",
     "securitySectionDesc": "Şifrənizi idarə edin və hesabınızı qorunmuş saxlayın.",
     "notificationsSectionDesc": "E-poçt bildirişlərinizi və onların tezliyini tənzimləyin.",
-    "requestsSectionDesc": "Göndərdiyiniz abunəlik və kredit sorğularının statusuna baxın."
+    "requestsSectionDesc": "Göndərdiyiniz abunəlik və kredit sorğularının statusuna baxın.",
+    "plansSectionTipTitle": "Sorğular necə işləyir",
+    "plansSectionTipBody": "Hər sorğuya admin şəxsən baxır — nəticəni (rədd olunubsa səbəbini də) \"Sorğularım\" bölməsində görəcəksiniz.",
+    "billingSectionTipTitle": "Təhlükəsiz ödəniş",
+    "billingSectionTipBody": "Kart məlumatlarınız birbaşa Epoint tərəfindən emal olunur — Checkila heç vaxt tam kart nömrənizi saxlamır.",
+    "requestsSectionTipTitle": "Status yenilənmələri",
+    "requestsSectionTipBody": "Təsdiqlənən sorğular avtomatik tətbiq olunur. Rədd edilibsə, admin qeydini elə həmin sorğunun yanında görə bilərsiniz.",
+    "ebaySectionTipTitle": "Çoxlu hesab",
+    "ebaySectionTipBody": "Qoşulmuş hər eBay hesabının öz elanları, sinxronizasiya statusu və qoşulma tarixçəsi ayrıca saxlanılır — istənilən vaxt aktivi dəyişə bilərsiniz.",
+    "amazonSectionTipTitle": "Amazonu niyə qoşmalı",
+    "amazonSectionTipBody": "Qoşulmuş Amazon hesabı izlənən bütün məhsullarınız üçün qiymət/stok yoxlamalarını daha sürətli və etibarlı edir."
   },
   "orderDetailPage": {
     "noOrder": {

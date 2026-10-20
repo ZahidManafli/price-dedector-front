@@ -741,9 +741,23 @@ export default function SettingsPage() {
     { id: 'notifications', label: t('settingsPage.notifications'), icon: Bell },
   ];
 
+  // Context-sensitive right-rail tip per active tab — on a wide screen this
+  // fills the space that used to render as plain empty background next to a
+  // single narrow card (e.g. the billing tab's payment-cards list). Every
+  // tab gets one so none of them looks unfinished on a large monitor.
+  const tabTip = {
+    security: { icon: ShieldCheck, title: t('settingsPage.accountSecurity'), body: t('settingsPage.accountSecurityNote') },
+    plans: { icon: Package, title: t('settingsPage.plansSectionTipTitle'), body: t('settingsPage.plansSectionTipBody') },
+    billing: { icon: CreditCard, title: t('settingsPage.billingSectionTipTitle'), body: t('settingsPage.billingSectionTipBody') },
+    requests: { icon: ClipboardList, title: t('settingsPage.requestsSectionTipTitle'), body: t('settingsPage.requestsSectionTipBody') },
+    ebay: { icon: Link2, title: t('settingsPage.ebaySectionTipTitle'), body: t('settingsPage.ebaySectionTipBody') },
+    amazon: { icon: Link2, title: t('settingsPage.amazonSectionTipTitle'), body: t('settingsPage.amazonSectionTipBody') },
+    notifications: { icon: Mail, title: t('settingsPage.notificationChannel'), body: t('settingsPage.notificationChannelDescription') },
+  }[settingsTab] || null;
+
   return (
     <div className="page-shell">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-[1480px] mx-auto">
         <h1 className="page-title mb-6">{t('settingsPage.title')}</h1>
 
         {alert && (
@@ -831,8 +845,11 @@ export default function SettingsPage() {
             </div>
           </nav>
 
-          {/* Content area */}
-          <div className="min-w-0 flex-1 space-y-6">
+          {/* Content area — on xl+ screens, widen into a content+tip-rail grid
+              instead of leaving the extra width blank; tabs with nothing
+              contextual to say (tabTip null) just get a wider single column. */}
+          <div className={`min-w-0 flex-1 ${tabTip ? 'xl:grid xl:grid-cols-[1fr_320px] xl:items-start xl:gap-6' : ''}`}>
+          <div className="min-w-0 space-y-6">
             {settingsTab === 'security' && (
             <div className="glass-card p-5 md:p-6">
               <SectionHeader icon={ShieldCheck} title={t('settingsPage.accountSecurity')} description={t('settingsPage.securitySectionDesc')} isDark={isDark} />
@@ -1872,26 +1889,22 @@ export default function SettingsPage() {
             </div>
             )}
           </div>
-        </div>
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="glass-card p-3">
-            <p className={`text-sm font-medium flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-              <Mail size={14} />
-              {t('settingsPage.notificationChannel')}
-            </p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              {t('settingsPage.notificationChannelDescription')}
-            </p>
-          </div>
-          <div className="glass-card p-3">
-            <p className={`text-sm font-medium flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-              <ShieldCheck size={14} />
-              {t('settingsPage.accountSecurity')}
-            </p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              {t('settingsPage.accountSecurityNote')}
-            </p>
+          {/* Context-sensitive tip rail — only rendered (and only takes up
+              grid space) when the active tab has one; see tabTip above. */}
+          {tabTip && (
+            <div className="hidden xl:block">
+              <div className="glass-card sticky top-6 p-5">
+                <div className={`mb-2 flex items-center gap-2 text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  <tabTip.icon size={16} className={isDark ? 'text-indigo-300' : 'text-indigo-600'} />
+                  {tabTip.title}
+                </div>
+                <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {tabTip.body}
+                </p>
+              </div>
+            </div>
+          )}
           </div>
         </div>
 
