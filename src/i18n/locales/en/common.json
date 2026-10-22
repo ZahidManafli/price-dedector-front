@@ -491,8 +491,20 @@
     "saved": "Check settings updated",
     "failedSave": "Failed to update check settings"
   },
+  "birthdayModal": {
+    "title": "Add your date of birth",
+    "description": "So the Checkila team can send you a happy birthday message on your special day.",
+    "required": "Please enter your date of birth",
+    "failed": "Failed to save date of birth",
+    "saving": "Saving...",
+    "save": "Save"
+  },
   "settingsPage": {
     "title": "Settings",
+    "dateOfBirth": "Date of birth",
+    "dateOfBirthHint": "The Checkila team sends a birthday greeting on this date every year.",
+    "dateOfBirthSaved": "Date of birth updated",
+    "dateOfBirthFailed": "Failed to update date of birth",
     "fetched": "Fetched",
     "environment": "Environment",
     "missingEbayAuthUrl": "Missing eBay auth URL",

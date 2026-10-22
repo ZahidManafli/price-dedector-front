@@ -7,6 +7,7 @@ import { useAuth } from './context/AuthContext';
 import { useSidebar, SidebarProvider } from './context/SidebarContext';
 import { LanguageProvider } from './context/LanguageContext';
 import Sidebar from './components/Sidebar';
+import BirthdayModal from './components/BirthdayModal';
 import { TourProvider } from './context/TourContext';
 
 // Pages
@@ -136,7 +137,7 @@ const AdminProtectedRoute = ({ children }) => {
 };
 
 function AppContent() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const { isCollapsed } = useSidebar();
   const hasToken = typeof window !== 'undefined' ? !!localStorage.getItem('authToken') : false;
   // The Studio editor (not its gallery) wants full screen real estate for the
@@ -157,6 +158,7 @@ function AppContent() {
     <div className="flex h-screen bg-gray-50 dark:bg-slate-950">
       <ActivityTracker />
       {isAuthenticated && hasToken && !hideSidebar && <Sidebar />}
+      {isAuthenticated && hasToken && user && !user.dateOfBirth && <BirthdayModal />}
       <main className={`flex-1 overflow-auto transition-all duration-300 ${isAuthenticated && hasToken && !hideSidebar ? '' : 'w-full'}`}>
         <div className="min-h-screen">
           <React.Suspense fallback={<RouteFallback />}>

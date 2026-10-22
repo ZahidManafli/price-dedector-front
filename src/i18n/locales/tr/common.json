@@ -886,8 +886,20 @@
     "yes": "Evet",
     "no": "Hayır"
   },
+  "birthdayModal": {
+    "title": "Doğum tarihinizi girin",
+    "description": "Checkila ekibi doğum gününüzde size güzel bir kutlama gönderebilsin diye.",
+    "required": "Lütfen doğum tarihinizi girin",
+    "failed": "Doğum tarihi kaydedilemedi",
+    "saving": "Kaydediliyor...",
+    "save": "Kaydet"
+  },
   "settingsPage": {
     "title": "Ayarlar",
+    "dateOfBirth": "Doğum tarihi",
+    "dateOfBirthHint": "Checkila ekibi her yıl bu tarihte size doğum günü kutlaması gönderir.",
+    "dateOfBirthSaved": "Doğum tarihi güncellendi",
+    "dateOfBirthFailed": "Doğum tarihi güncellenemedi",
     "fetched": "Alındı",
     "environment": "Ortam",
     "missingEbayAuthUrl": "eBay yetkilendirme URL'si eksik",

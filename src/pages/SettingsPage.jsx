@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCircle2, ClipboardList, CreditCard, Link2, Mail, Package, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { Bell, Cake, CheckCircle2, ClipboardList, CreditCard, Link2, Mail, Package, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { amazonOAuthAPI, aquilineAPI, authAPI, ebayAPI, paymentsAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
@@ -101,7 +101,7 @@ function SectionHeader({ icon: Icon, title, description, isDark }) {
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
-  const { user } = useAuth();
+  const { user, patchUser } = useAuth();
   const { t } = useTranslation();
   const [preferences, setPreferences] = useState({
     emailOnPriceChange: true,
@@ -138,6 +138,8 @@ export default function SettingsPage() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [dateOfBirth, setDateOfBirth] = useState(user?.dateOfBirth || '');
+  const [birthdaySaving, setBirthdaySaving] = useState(false);
   const [requestModal, setRequestModal] = useState(null);
   const [ebayTab, setEbayTab] = useState('overview');
   const [settingsTab, setSettingsTab] = useState('security');
@@ -266,6 +268,22 @@ export default function SettingsPage() {
       setAlert({ type: 'error', message: error.response?.data?.error || t('settingsPage.failedChangePassword') });
     } finally {
       setPasswordSaving(false);
+    }
+  };
+
+  const handleBirthdaySubmit = async (e) => {
+    e.preventDefault();
+    if (!dateOfBirth) return;
+
+    try {
+      setBirthdaySaving(true);
+      await authAPI.setBirthday(dateOfBirth);
+      patchUser({ dateOfBirth });
+      setAlert({ type: 'success', message: t('settingsPage.dateOfBirthSaved') });
+    } catch (error) {
+      setAlert({ type: 'error', message: error.response?.data?.error || t('settingsPage.dateOfBirthFailed') });
+    } finally {
+      setBirthdaySaving(false);
     }
   };
 
@@ -894,6 +912,31 @@ export default function SettingsPage() {
                       {passwordSaving ? t('settingsPage.updating') : t('settingsPage.changePassword')}
                     </button>
                   </div>
+                </form>
+              </div>
+            </div>
+            )}
+
+            {settingsTab === 'security' && (
+            <div className="glass-card p-5 md:p-6">
+              <SectionHeader icon={Cake} title={t('settingsPage.dateOfBirth')} description={t('settingsPage.dateOfBirthHint')} isDark={isDark} />
+              <div className={`-mx-5 md:-mx-6 border-t px-5 pt-5 md:px-6 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <form onSubmit={handleBirthdaySubmit} className="flex flex-wrap items-end gap-3">
+                  <input
+                    type="date"
+                    value={dateOfBirth}
+                    max={new Date().toISOString().slice(0, 10)}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    disabled={birthdaySaving}
+                    className="input-base max-w-xs"
+                  />
+                  <button
+                    type="submit"
+                    disabled={birthdaySaving || !dateOfBirth}
+                    className="btn-primary"
+                  >
+                    {birthdaySaving ? t('settingsPage.updating') : t('birthdayModal.save')}
+                  </button>
                 </form>
               </div>
             </div>

@@ -156,6 +156,23 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
+  // Small-field profile updates (so far: date of birth — BirthdayModal.jsx and
+  // SettingsPage.jsx's "Doğum günü" field both call this after a successful
+  // save) that only need to patch the already-cached user object, same
+  // "merge + re-persist to localStorage, no full re-login" pattern as
+  // syncPermissionsFromLimits above.
+  const patchUser = (partial) => {
+    if (!partial) return;
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...partial };
+      try {
+        localStorage.setItem('authUser', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const logout = async () => {
     setError(null);
     try {
@@ -189,6 +206,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     setSession,
     syncPermissionsFromLimits,
+    patchUser,
     maintenance,
     isAuthenticated: !!user,
     isPlanExpired,
