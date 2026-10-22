@@ -28,11 +28,38 @@ const EMPTY_FORM = {
   thumbnail_url: '',
   duration_seconds: '',
   sort_order: '',
+  linked_page_key: '',
   is_published: true,
   is_paid: false,
   price_azn: '',
   free_access_user_ids: [],
 };
+
+// Same TAB_KEYS vocabulary used for plan-access gating
+// (frontend-with-new-backend/src/utils/planAccess.js) and in Sidebar.jsx's
+// nav — this is what TutorialVideoButton.jsx resolves the current route to
+// before looking it up against GET /api/learning-videos/page-links.
+const PAGE_LINK_OPTIONS = [
+  { value: '', label: '— Bağlanmayıb —' },
+  { value: 'dashboard', label: 'Panel' },
+  { value: 'products', label: 'Məhsullar' },
+  { value: 'listings', label: 'Siyahılar' },
+  { value: 'orders', label: 'Sifarişlər' },
+  { value: 'tracking', label: 'İzləmə' },
+  { value: 'cases', label: 'İddialar' },
+  { value: 'support', label: 'Support' },
+  { value: 'buyer_crm', label: 'Alıcı CRM' },
+  { value: 'amazon_lookup', label: 'Checkila Smart' },
+  { value: 'ebay_calculator', label: 'eBay Kalkulyator' },
+  { value: 'market_analysis', label: 'Checkila Analizi' },
+  { value: 'market_insight', label: 'Market Insight' },
+  { value: 'dewiso', label: 'Dewiso' },
+  { value: 'design_studio', label: 'Dizayn Studiyası' },
+  { value: 'profit_table', label: 'Mənfəət Cədvəli' },
+  { value: 'referrals', label: 'Referrals' },
+  { value: 'settings', label: 'Ayarlar' },
+  { value: 'admin', label: 'Admin Panel' },
+];
 
 // Classic iOS-style switch — matches SettingsPage.jsx's auto-renew toggle markup.
 function Switch({ checked, onChange, disabled }) {
@@ -190,6 +217,7 @@ export default function AdminVideosTab() {
       thumbnail_url:    video.thumbnail_url || '',
       duration_seconds: video.duration_seconds ?? '',
       sort_order:       video.sort_order ?? '',
+      linked_page_key:  video.linked_page_key || '',
       is_published:     Boolean(video.is_published),
       is_paid:          isPaid,
       price_azn:        video.priceAzn ?? video.price_azn ?? '',
@@ -264,6 +292,7 @@ export default function AdminVideosTab() {
       fd.append('description', form.description?.trim() || '');
       fd.append('duration_seconds', form.duration_seconds !== '' ? Number(form.duration_seconds) : '');
       fd.append('sort_order',  form.sort_order !== '' ? Number(form.sort_order) : 0);
+      fd.append('linked_page_key', form.linked_page_key || '');
       fd.append('is_published', form.is_published ? '1' : '0');
       fd.append('is_paid', form.is_paid ? '1' : '0');
       if (form.is_paid) {
@@ -407,6 +436,11 @@ export default function AdminVideosTab() {
                   {Boolean(video.isPaid ?? video.is_paid) && (
                     <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 rounded px-1.5 py-0.5">
                       {video.priceAzn ?? video.price_azn} AZN
+                    </span>
+                  )}
+                  {video.linked_page_key && (
+                    <span className="text-[10px] font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 rounded px-1.5 py-0.5">
+                      {PAGE_LINK_OPTIONS.find((o) => o.value === video.linked_page_key)?.label || video.linked_page_key}
                     </span>
                   )}
                 </div>
@@ -656,6 +690,25 @@ export default function AdminVideosTab() {
                     placeholder="0"
                   />
                 </div>
+              </div>
+
+              {/* Page link — drives the "Təlim videosu" button shown at the
+                  top of the matching page (TutorialVideoButton.jsx). */}
+              <div>
+                <label className={label}>Hansı səhifəyə bağlıdır?</label>
+                <select
+                  name="linked_page_key"
+                  value={form.linked_page_key}
+                  onChange={handleField}
+                  className={input}
+                >
+                  {PAGE_LINK_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Seçilsə, həmin səhifədə yuxarıda "Təlim videosu" düyməsi görünəcək və klikləndə bu video yeni tabda açılacaq.
+                </p>
               </div>
 
               {/* Published */}

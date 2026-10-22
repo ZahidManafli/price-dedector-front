@@ -556,6 +556,8 @@ export const zikAPI = {
 export const learningAPI = {
   list:   ()     => api.get('/api/learning-videos'),
   get:    (id)   => api.get(`/api/learning-videos/${id}`),
+  // { links: { [pageKey]: videoId } } — backs TutorialVideoButton.jsx.
+  getPageLinks: () => api.get('/api/learning-videos/page-links'),
 
   // Always send as multipart/form-data so the backend can receive
   // either a video_url string OR a video_file upload (same for thumbnail).

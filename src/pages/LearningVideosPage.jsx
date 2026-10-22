@@ -11,7 +11,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ThumbsUp, MessageSquare, Send, Loader2,
   ChevronLeft, PlayCircle, Clock, Lock,
@@ -136,6 +136,7 @@ export default function LearningVideosPage() {
   const { isDark } = useTheme();
   const { user }   = useAuth();
   const navigate   = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [videos,        setVideos]        = useState([]);
   const [loading,       setLoading]       = useState(true);
@@ -213,6 +214,16 @@ export default function LearningVideosPage() {
   };
 
   const closeVideo = () => { setActiveVideo(null); setComments([]); };
+
+  // Lets TutorialVideoButton.jsx open a specific video directly (in a new
+  // tab, via /learning?video=<id>) instead of landing on the plain grid —
+  // openVideo already re-fetches the full video record by id on its own, so
+  // a bare {id} placeholder is enough to kick that off.
+  useEffect(() => {
+    const videoId = searchParams.get('video');
+    if (videoId) openVideo({ id: videoId });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Buy access (lifetime, one-time Epoint payment) ────────────────────────
   const handlePurchase = async (video) => {
