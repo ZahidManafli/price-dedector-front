@@ -897,7 +897,6 @@
   "settingsPage": {
     "title": "Настройки",
     "dateOfBirth": "Дата рождения",
-    "dateOfBirthHint": "Команда Checkila ежегодно поздравляет вас с днём рождения в эту дату.",
     "dateOfBirthSaved": "Дата рождения обновлена",
     "dateOfBirthFailed": "Не удалось обновить дату рождения",
     "fetched": "Получено",

@@ -925,7 +925,7 @@ export default function SettingsPage() {
 
             {settingsTab === 'security' && (
             <div className="glass-card p-5 md:p-6">
-              <SectionHeader icon={Cake} title={t('settingsPage.dateOfBirth')} description={t('settingsPage.dateOfBirthHint')} isDark={isDark} />
+              <SectionHeader icon={Cake} title={t('settingsPage.dateOfBirth')} isDark={isDark} />
               <div className={`-mx-5 md:-mx-6 border-t px-5 pt-5 md:px-6 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                 <form onSubmit={handleBirthdaySubmit} className="flex flex-wrap items-end gap-3">
                   <input

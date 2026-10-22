@@ -897,7 +897,6 @@
   "settingsPage": {
     "title": "Ayarlar",
     "dateOfBirth": "Doğum tarihi",
-    "dateOfBirthHint": "Checkila ekibi her yıl bu tarihte size doğum günü kutlaması gönderir.",
     "dateOfBirthSaved": "Doğum tarihi güncellendi",
     "dateOfBirthFailed": "Doğum tarihi güncellenemedi",
     "fetched": "Alındı",

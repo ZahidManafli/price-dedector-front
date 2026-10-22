@@ -897,7 +897,6 @@
   "settingsPage": {
     "title": "Ayarlar",
     "dateOfBirth": "Doğum günü",
-    "dateOfBirthHint": "Checkila komandası hər il bu tarixdə sizə ad günü təbriki göndərir.",
     "dateOfBirthSaved": "Doğum günü yeniləndi",
     "dateOfBirthFailed": "Doğum günü yenilənmədi",
     "fetched": "Alındı",
