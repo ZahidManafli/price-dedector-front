@@ -139,6 +139,12 @@ export default function SettingsPage() {
     confirmPassword: '',
   });
   const [dateOfBirth, setDateOfBirth] = useState(user?.dateOfBirth || '');
+
+  // user loads asynchronously (AuthContext verifies the token after mount), so
+  // the useState initializer above often runs before dateOfBirth is known yet.
+  useEffect(() => {
+    setDateOfBirth(user?.dateOfBirth || '');
+  }, [user?.dateOfBirth]);
   const [birthdaySaving, setBirthdaySaving] = useState(false);
   const [requestModal, setRequestModal] = useState(null);
   const [ebayTab, setEbayTab] = useState('overview');
