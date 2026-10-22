@@ -22,7 +22,7 @@ import TutorialVideoButton from '../components/TutorialVideoButton';
 // and trusts only its own number (from the caller's own role/mentor flag,
 // never anything the client sends) — this is purely for the live preview.
 function computeTrackingCreditsPrice(credits, isPrivileged = false) {
-  const rate = isPrivileged ? 0.22 : 0.35;
+  const rate = isPrivileged ? 0.20 : 0.35;
   return (Number(credits) || 0) / 3 * rate;
 }
 
