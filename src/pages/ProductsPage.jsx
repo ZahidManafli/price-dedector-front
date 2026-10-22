@@ -11,6 +11,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
 import { ProductFormModal } from './ProductFormPage';
 import ProductBulkImportModal from '../components/ProductBulkImportModal';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { buildAmazonProductUrl, calculateProfit, formatCurrency } from '../utils/helpers';
@@ -731,6 +732,7 @@ export default function ProductsPage() {
           <p className="page-subtitle">{t('productsPage.subtitle')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <TutorialVideoButton />
           <button onClick={() => navigate('/market-analysis')} className="btn-secondary">
             {t('productsPage.openAnalysis')}
           </button>

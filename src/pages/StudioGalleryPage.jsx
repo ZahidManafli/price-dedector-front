@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Palette, Loader2, Plus, Pencil, Trash2, ImageOff, UploadCloud } from 'lucide-react';
 import { studioAPI } from '../services/api';
 import Alert from '../components/Alert';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -224,6 +225,7 @@ export default function StudioGalleryPage() {
           <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('studioPage.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
+          <TutorialVideoButton />
           {isAdmin && (
             <>
               <button

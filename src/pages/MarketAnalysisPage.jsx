@@ -13,6 +13,7 @@ import useBrowseSearch from '../hooks/useBrowseSearch';
 import { calculateProfit, formatCurrency } from '../utils/helpers';
 import { browseAPI, ebayAPI, settingsAPI } from '../services/api';
 import ListOnEbayModal from '../components/ListOnEbayModal';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 import ListOnInventoryModal from '../components/ListOnInventoryModal';
 import PurchaseHistoryModal from '../components/PurchaseHistoryModal';
 import { useTheme } from '../context/ThemeContext';
@@ -1126,6 +1127,7 @@ export default function MarketAnalysisPage() {
             <Heart size={14} fill="currentColor" className="text-rose-500" />
             {t('marketAnalysisPage.savedSellers')} ({savedSellers.length})
           </button>
+          <TutorialVideoButton />
         </div>
       </header>
 

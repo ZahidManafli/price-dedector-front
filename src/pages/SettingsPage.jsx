@@ -6,6 +6,7 @@ import Alert from '../components/Alert';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import PaymentHistoryDrawer from '../components/PaymentHistoryDrawer';
 import GooglePayModal from '../components/GooglePayModal';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -758,7 +759,10 @@ export default function SettingsPage() {
   return (
     <div className="page-shell">
       <div className="max-w-[1480px] mx-auto">
-        <h1 className="page-title mb-6">{t('settingsPage.title')}</h1>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <h1 className="page-title">{t('settingsPage.title')}</h1>
+          <TutorialVideoButton />
+        </div>
 
         {alert && (
           <div className="mb-6">

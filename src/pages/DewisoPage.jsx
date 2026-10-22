@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next';
 import { dewisoAPI } from '../services/api';
 import Alert from '../components/Alert';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 import { useTheme } from '../context/ThemeContext';
 import { Sparkles, X, Loader2 } from 'lucide-react';
 
@@ -1494,8 +1495,11 @@ export default function DewisoPage() {
   return (
     <div className="page-shell">
       {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className={`page-title ${isDark ? 'text-slate-100' : ''}`}>{t('dewisoPage.title')}</h1>
+      <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <h1 className={`page-title ${isDark ? 'text-slate-100' : ''}`}>{t('dewisoPage.title')}</h1>
+          <TutorialVideoButton />
+        </div>
         <button className="btn-primary" onClick={saveTemplate} disabled={saving}>
           {saving ? t('dewisoPage.saving') : t('dewisoPage.saveToHistory')}
         </button>

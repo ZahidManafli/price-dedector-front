@@ -39,12 +39,16 @@ function resolvePageKey(pathname) {
   return PATH_TO_PAGE_KEY[firstSegment] || null;
 }
 
-// Mounted ONCE in App.jsx (alongside <Sidebar/>, not per-page) — fetches the
-// admin-configured page->video links a single time for the whole session,
-// then just re-resolves which (if any) video applies as the route changes.
-// Renders nothing when the current page has no linked video, or none was
-// ever configured for it.
-export default function TutorialVideoButton() {
+// Dropped INLINE into each page's own header/toolbar row, next to whatever
+// buttons already live there (Yenilə, Keşi Təmizlə, etc.) — an earlier
+// version of this rendered as one `fixed`-position overlay mounted globally
+// in App.jsx instead, which looked clean in isolation but physically
+// overlapped those existing per-page buttons on several pages once actually
+// used alongside them. Auto-detects the current page from the route, same
+// as before — a page only needs to add `<TutorialVideoButton />` somewhere
+// in its own header JSX, no prop required. Renders nothing when the current
+// page has no linked video.
+export default function TutorialVideoButton({ className = '' }) {
   const location = useLocation();
   const { isDark } = useTheme();
   const [links, setLinks] = useState(null); // null = not loaded yet
@@ -65,13 +69,13 @@ export default function TutorialVideoButton() {
     <button
       type="button"
       onClick={() => window.open(`/learning?video=${encodeURIComponent(videoId)}`, '_blank', 'noopener,noreferrer')}
-      className={`fixed right-5 top-3 z-30 inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold shadow-sm backdrop-blur transition hover:shadow-md ${
+      className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-medium shadow-sm transition hover:shadow-md ${
         isDark
-          ? 'border-indigo-500/30 bg-slate-900/90 text-indigo-300 hover:bg-slate-800'
-          : 'border-indigo-100 bg-white/90 text-indigo-600 hover:bg-indigo-50'
-      }`}
+          ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20'
+          : 'border-indigo-100 bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+      } ${className}`}
     >
-      <PlayCircle size={14} />
+      <PlayCircle size={15} />
       Təlim videosu
     </button>
   );

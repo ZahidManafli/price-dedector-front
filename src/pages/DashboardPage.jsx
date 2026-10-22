@@ -15,6 +15,7 @@ import FinanceAnalyticsSection from '../components/FinanceAnalyticsSection';
 import PaymentMethodPicker from '../components/PaymentMethodPicker';
 import WalletTopupModal from '../components/WalletTopupModal';
 import WalletHistoryModal from '../components/WalletHistoryModal';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 
 // Formula: (credits / 3) * rate AZN — e.g. 6 credits at 0.35 -> (6/3)*0.35 = 0.70 AZN.
 // Mirrors computeTrackingCreditsTopUpPrice on the backend, which recomputes
@@ -960,7 +961,10 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <h1 className="page-title mb-5">{t('dashboard.title')}</h1>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="page-title">{t('dashboard.title')}</h1>
+        <TutorialVideoButton />
+      </div>
 
       <div className="mb-5" data-tour="dashboard-plan-card">
         <div className={`glass-card p-5 border ${isDark ? 'bg-slate-950 text-white border-slate-800' : 'bg-slate-100 text-slate-900 border-slate-300'}`}>

@@ -7,7 +7,6 @@ import { useAuth } from './context/AuthContext';
 import { useSidebar, SidebarProvider } from './context/SidebarContext';
 import { LanguageProvider } from './context/LanguageContext';
 import Sidebar from './components/Sidebar';
-import TutorialVideoButton from './components/TutorialVideoButton';
 import { TourProvider } from './context/TourContext';
 
 // Pages
@@ -158,7 +157,6 @@ function AppContent() {
     <div className="flex h-screen bg-gray-50 dark:bg-slate-950">
       <ActivityTracker />
       {isAuthenticated && hasToken && !hideSidebar && <Sidebar />}
-      {isAuthenticated && hasToken && !hideSidebar && <TutorialVideoButton />}
       <main className={`flex-1 overflow-auto transition-all duration-300 ${isAuthenticated && hasToken && !hideSidebar ? '' : 'w-full'}`}>
         <div className="min-h-screen">
           <React.Suspense fallback={<RouteFallback />}>

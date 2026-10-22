@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { casesAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 
 // ─── FIELD HELPERS ──────────────────────────────────────────────────────────────
 // eBay's Post-Order API wraps dates as DateTime objects ({ value, formattedValue })
@@ -620,6 +621,7 @@ export default function CasesPage() {
           Cases
         </h1>
         <div className="flex items-center gap-2">
+          <TutorialVideoButton />
           {activeResource === 'cancellations' && (
             <button type="button" onClick={runCheckEligibility} className="btn-secondary text-sm flex items-center gap-1.5">
               <ShieldCheck size={14} />

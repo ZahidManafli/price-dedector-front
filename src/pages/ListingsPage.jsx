@@ -10,6 +10,7 @@ import {
 import FeedbackSidebar from '../components/FeedbackSidebar';
 import ScheduledListingsPanel from '../components/ScheduledListingsPanel';
 import EbayAccountSwitcher from '../components/EbayAccountSwitcher';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 import { useTheme } from '../context/ThemeContext';
 
 export default function ListingsPage() {
@@ -549,10 +550,13 @@ export default function ListingsPage() {
   return (
     <div className="page-shell">
       <div className="flex items-center justify-between mb-6">
-        <h1 className={`page-title flex items-center gap-2 ${isDark ? 'text-slate-100' : ''}`}>
-          <Package size={18} />
-          {t('listingsPage.title')}
-        </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className={`page-title flex items-center gap-2 ${isDark ? 'text-slate-100' : ''}`}>
+            <Package size={18} />
+            {t('listingsPage.title')}
+          </h1>
+          <TutorialVideoButton />
+        </div>
         {ebayStatus.connected ? (
           <div className={`text-sm flex items-center gap-3 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
             {(ebayStatus.activeAccountLabel || ebayStatus.accountId) && (

@@ -6,6 +6,7 @@ import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X, Trash2, 
 import Swal from 'sweetalert2';
 import { ebayAPI, settingsAPI, API_BASE_URL } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 
 // Amazon's tracking-page URL structure — mirrors buildAmazonTrackingUrl in
 // backend-for-server/src/routes/ebay.js and extension/background.js. Always this
@@ -1608,6 +1609,7 @@ export default function TrackingPage() {
           Tracking
         </h1>
         <div className="flex items-center gap-2 flex-wrap">
+          <TutorialVideoButton />
           <button
             type="button"
             onClick={() => setShowMobileTracker(true)}

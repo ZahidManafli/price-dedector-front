@@ -16,6 +16,7 @@ import AdminVideosTab from '../components/AdminVideosTab';
 import AdminReviewsTab from '../components/AdminReviewsTab';
 import AdminAnalytics from '../components/AdminAnalytics';
 import DateRangePicker from '../components/DateRangePicker';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 
 function safeToString(v) {
   if (v === null || v === undefined) return '';
@@ -865,6 +866,7 @@ export default function AdminPanelPage() {
               {t('adminPanelPage.adminUsers')}: <span className="font-semibold">{adminCount}</span>
             </p>
           </div>
+          <TutorialVideoButton />
         </div>
 
         <div className="mb-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">

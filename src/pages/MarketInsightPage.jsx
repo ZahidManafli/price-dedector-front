@@ -5,6 +5,7 @@ import {
 import { zikAPI } from '../services/api';
 import AmazonFinderSidebar from '../components/AmazonFinderSidebar';
 import UpcomingEventsCalendar from '../components/UpcomingEventsCalendar';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 import { countryCodeToFlagEmoji } from '../utils/helpers';
 
 const AMAZON_ICON_URL = 'https://www.amazon.com/favicon.ico';
@@ -200,6 +201,7 @@ export default function MarketInsightPage() {
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
+          <TutorialVideoButton />
           {/* Mode toggle */}
           <div className="flex items-center rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold">
             <button

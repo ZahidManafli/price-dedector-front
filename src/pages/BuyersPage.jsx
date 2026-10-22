@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { buyersAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const AVATAR_COLORS = [
@@ -217,6 +218,7 @@ export default function BuyersPage() {
             </h1>
             <p className={`text-sm mt-0.5 ${c.sub}`}>eBay sifarişlərinizdən avtomatik toplanmış alıcı məlumatları</p>
           </div>
+          <TutorialVideoButton />
         </div>
 
         {/* ── Stats row ──────────────────────────────────────────────────── */}

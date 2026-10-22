@@ -4,6 +4,7 @@ import { supportAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getSocket } from '../services/socket';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 
 const PRIORITY_OPTIONS = [
   { value: 'low', label: 'Aşağı' },
@@ -1527,6 +1528,7 @@ export default function SupportPage() {
           Support
         </h1>
         <div className="flex items-center gap-2">
+          <TutorialVideoButton />
           <button
             type="button"
             onClick={loadAllData}

@@ -14,6 +14,7 @@ import {
 import Swal from 'sweetalert2';
 import { TrendingUp, Plus, Trash2, X, ChevronDown, Loader2, Info } from 'lucide-react';
 import OrderDetailModal from '../components/OrderDetailModal';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 
 // ─── Profit formula ────────────────────────────────────────────────────────────
 // Net profit = eBay total due seller (the entry's ebay_payout — already net of eBay's
@@ -445,11 +446,14 @@ export default function ProfitTablePage() {
   return (
     <div className="page-shell">
       {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="page-title flex items-center gap-2">
-          <TrendingUp size={18} />
-          {t('profitTablePage.title')}
-        </h1>
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <h1 className="page-title flex items-center gap-2">
+            <TrendingUp size={18} />
+            {t('profitTablePage.title')}
+          </h1>
+          <TutorialVideoButton />
+        </div>
         <button
           type="button"
           onClick={() => setShowForm((p) => !p)}

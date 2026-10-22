@@ -8,6 +8,7 @@ import { ArrowDownUp, Loader2, MessageSquare, Package, Link2, Search, SlidersHor
 import OrderMessageSidebar from '../components/OrderMessageSidebar';
 import OrderDetailModal from '../components/OrderDetailModal';
 import EbayAccountSwitcher from '../components/EbayAccountSwitcher';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 import { profitAPI } from '../services/api';
 import { copyAddressToExtension } from '../utils/checkilaExtensionBridge';
 
@@ -816,10 +817,13 @@ export default function OrdersPage() {
   return (
     <div className="page-shell">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="page-title flex items-center gap-2">
-          <Package size={18} />
-          {t('ordersPage.title')}
-        </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="page-title flex items-center gap-2">
+            <Package size={18} />
+            {t('ordersPage.title')}
+          </h1>
+          <TutorialVideoButton />
+        </div>
         {ebayStatus.connected ? (
           <div className={`text-sm flex items-center gap-3 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
             {(ebayStatus.activeAccountLabel || ebayStatus.accountId) ? (

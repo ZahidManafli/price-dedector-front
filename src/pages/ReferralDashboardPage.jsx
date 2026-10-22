@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { referralAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 
 // ── Tiny sparkline / area chart (no external lib needed) ──────────────────────
 function PayoutsChart({ payouts, currency }) {
@@ -179,9 +180,12 @@ export default function ReferralDashboardPage() {
   return (
     <div className="page-shell">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
-          <h1 className="page-title">Referrals</h1>
-          <p className="page-subtitle">View your referral pages, members, and payout totals.</p>
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="page-title">Referrals</h1>
+            <p className="page-subtitle">View your referral pages, members, and payout totals.</p>
+          </div>
+          <TutorialVideoButton />
         </div>
 
         {error && (

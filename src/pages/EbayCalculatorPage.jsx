@@ -4,6 +4,7 @@ import { formatCurrency, calculateProfit } from '../utils/helpers';
 import { useTranslation } from 'react-i18next';
 import { Calculator, Sparkles, TrendingUp } from 'lucide-react';
 import { applySeo } from '../utils/seo';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 
 export default function EbayCalculatorPage() {
   const { isDark } = useTheme();
@@ -70,18 +71,21 @@ export default function EbayCalculatorPage() {
             isDark ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200'
           }`}
         >
-          <div className="flex items-start gap-3">
-            <div className="h-11 w-11 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
-              <Calculator size={22} />
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="flex items-start gap-3">
+              <div className="h-11 w-11 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+                <Calculator size={22} />
+              </div>
+              <div>
+                <h1 className={`text-3xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  {t('ebayCalculatorPage.title')}
+                </h1>
+                <p className={`mt-1 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  {t('ebayCalculatorPage.subtitle')}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className={`text-3xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                {t('ebayCalculatorPage.title')}
-              </h1>
-              <p className={`mt-1 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                {t('ebayCalculatorPage.subtitle')}
-              </p>
-            </div>
+            <TutorialVideoButton />
           </div>
         </div>
 

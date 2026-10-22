@@ -6,6 +6,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import AutoListProgressStepper from '../components/AutoListProgressStepper';
 import WalletTopupModal from '../components/WalletTopupModal';
 import WalletHistoryModal from '../components/WalletHistoryModal';
+import TutorialVideoButton from '../components/TutorialVideoButton';
 import {
   buildAmazonProductUrl,
   extractAmazonAsin,
@@ -674,6 +675,7 @@ export default function AmazonLookupPage() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
+              <TutorialVideoButton className="!border-white/20 !bg-white/10 !text-white hover:!bg-white/20" />
               <button
                 type="button"
                 onClick={() => setWalletTopupModalOpen(true)}
