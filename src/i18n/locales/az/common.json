@@ -178,6 +178,8 @@
   "productDetailPage": {
     "failedLoad": "Məhsul detalları yükləmə uğursuz oldu",
     "compareTriggered": "Qiymət müqayisəsi başladı. Güncellemələr üçün e-poçtunuzu yoxlayın!",
+    "compareQueued": "Qiymət və stok arxa planda yoxlanılır — tamamlananda bildiriş alacaqsınız.",
+    "compareTimedOut": "Yoxlama gözlənildiyindən uzun çəkir. Tamamlananda yenə də bildiriş alacaqsınız.",
     "compareEbaySyncFailed": "Amazon qiyməti dəyişdi, lakin eBay yenilənmədi: {{error}}",
     "compareEbayNotSynced": "Amazon qiyməti dəyişdi, lakin eBay ilə sinxronizasiya aktiv deyil və ya bağlı elan tapılmadı.",
     "failedCompare": "Qiymətlər müqayisə edilə bilmədi",
@@ -207,6 +209,8 @@
     "enterEmail": "Lütfən bildirişlər üçün e-poçt ünvanınızı daxil edin",
     "updated": "Məhsul uğurla yeniləndi!",
     "added": "Məhsul uğurla əlavə edildi!",
+    "updateQueued": "Məhsul arxa planda yenilənir — tamamlananda bildiriş alacaqsınız.",
+    "addQueued": "Məhsul arxa planda əlavə olunur — tamamlananda bildiriş alacaqsınız.",
     "failedUpdate": "Məhsul yeniləmə uğursuz oldu",
     "failedAdd": "Məhsul əlavə etmə uğursuz oldu",
     "editTitle": "Məhsulu Redaktə Et",

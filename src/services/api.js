@@ -121,7 +121,9 @@ export const productAPI = {
   updateCheckSettings: (id, data) => api.patch(`/products/${id}/check-settings`, data),
   delete: (id) => api.delete(`/products/${id}`),
   getPriceHistory: (id) => api.get(`/products/${id}/history`),
-  comparePrice: (id) => api.get(`/products/${id}/compare`),
+  // Queues a background job (Amazon scrape can now take up to ~90s across
+  // retries) and returns { jobId } right away — poll it with pollJob below.
+  comparePrice: (id) => api.post(`/products/${id}/compare`),
   restock: (id) => api.post(`/products/${id}/restock`),
   markOutOfStock: (id) => api.post(`/products/${id}/mark-out-of-stock`),
   bulkImport: (formData) => api.post('/products/bulk-import', formData, {
@@ -129,6 +131,8 @@ export const productAPI = {
   }),
   downloadBulkImportTemplate: () => api.get('/products/bulk-import/template', { responseType: 'blob' }),
   pollBulkImport: (jobId) => api.get(`/products/bulk-import/${encodeURIComponent(jobId)}`),
+  // Shared poll endpoint for compare/create/update background jobs.
+  pollJob: (jobId) => api.get(`/products/jobs/${encodeURIComponent(jobId)}`),
 };
 
 // Settings APIs
@@ -604,6 +608,15 @@ export const buyersAPI = {
     api.post(`/buyers/${encodeURIComponent(username)}/tags`, { tag, color }),
   deleteTag: (username, tag) =>
     api.delete(`/buyers/${encodeURIComponent(username)}/tags/${encodeURIComponent(tag)}`),
+};
+
+// Bell icon + Notifications page — the in-app log of everything the system
+// has told the user (migration 122), separate from email/Telegram.
+export const notificationsAPI = {
+  list: (limit, offset) => api.get('/notifications', { params: { limit, offset } }),
+  unreadCount: () => api.get('/notifications/unread-count'),
+  markRead: (id) => api.post(`/notifications/${encodeURIComponent(id)}/read`),
+  markAllRead: () => api.post('/notifications/mark-all-read'),
 };
 
 export default api;

@@ -36,6 +36,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useTranslation } from 'react-i18next';
 import { useSidebar } from '../context/SidebarContext';
 import { ebayAPI, supportAPI } from '../services/api';
+import NotificationBell from './NotificationBell';
 import { TAB_KEYS } from '../utils/planAccess';
 import { useTour } from '../context/TourContext';
 import { useEbayData } from '../context/EbayDataContext';
@@ -304,7 +305,7 @@ export default function Sidebar() {
                 <div className="h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-white">
                   <User size={16} />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate text-slate-900 dark:text-white">
                     {displayName}
                   </p>
@@ -321,6 +322,7 @@ export default function Sidebar() {
                     </Link>
                   ) : null}
                 </div>
+                <NotificationBell isDark={isDark} onNavigate={() => setIsOpen(false)} />
               </div>
               <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -425,6 +427,7 @@ export default function Sidebar() {
                 )}
               </div>
 
+              <NotificationBell isDark={isDark} collapsed onNavigate={() => setIsOpen(false)} />
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:hover:text-white transition-colors"

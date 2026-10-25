@@ -44,6 +44,29 @@ async function pollProductBulkImportJob(jobId, { intervalMs = 2000, maxConsecuti
   }
 }
 
+// Same reasoning as pollProductBulkImportJob above, for the add/update
+// product background jobs (productAPI.create/update now just queue these —
+// see productController.js's runProductCreateJob/runProductUpdateJob).
+async function pollProductJob(jobId, { intervalMs = 1500, maxConsecutiveFailures = 10 } = {}) {
+  let consecutiveFailures = 0;
+  for (;;) {
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    let pollRes;
+    try {
+      pollRes = await productAPI.pollJob(jobId);
+      consecutiveFailures = 0;
+    } catch (pollErr) {
+      consecutiveFailures += 1;
+      if (consecutiveFailures >= maxConsecutiveFailures) throw pollErr;
+      continue; // eslint-disable-line no-continue
+    }
+    const status = pollRes?.data?.status;
+    if (status === 'done') return pollRes.data;
+    if (status === 'error') throw new Error(pollRes?.data?.error);
+    // status === 'processing' -> keep polling
+  }
+}
+
 function getProductStatus(p) {
   const amazon = Number(p.currentAmazonPrice || 0);
   if (!amazon) return 'out_of_stock';
@@ -407,6 +430,7 @@ export default function ProductsPage() {
   const [editingProductId, setEditingProductId] = useState(null);
   const [bulkImportModalOpen, setBulkImportModalOpen] = useState(false);
   const [bulkImportJob, setBulkImportJob] = useState(null); // { jobId, status, result, error } or null
+  const [productFormJob, setProductFormJob] = useState(null); // { jobId, jobType, status, error } or null
   const [limits, setLimits] = useState(null);
   const [ebayFilter, setEbayFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -468,6 +492,40 @@ export default function ProductsPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bulkImportJob?.jobId]);
+
+  // Same reasoning as the bulk-import effect above — ProductFormModal only
+  // kicks off the add/update job and closes right away (see
+  // ProductFormPage.jsx), so this page keeps polling it to completion on its
+  // own and refreshes the list the moment it's done. A notification is also
+  // recorded server-side regardless, for anyone who navigates away first.
+  useEffect(() => {
+    const jobId = productFormJob?.jobId;
+    if (!jobId || productFormJob.status !== 'processing') return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        await pollProductJob(jobId);
+        if (cancelled) return;
+        setProductFormJob({ jobId, status: 'done' });
+        fetchProducts();
+        fetchLimits();
+        setAlert({
+          type: 'success',
+          message: productFormJob.jobType === 'update' ? t('productFormPage.updated') : t('productFormPage.added'),
+        });
+      } catch (pollError) {
+        if (cancelled) return;
+        const message = pollError?.message
+          || (productFormJob.jobType === 'update' ? t('productFormPage.failedUpdate') : t('productFormPage.failedAdd'));
+        setProductFormJob({ jobId, status: 'error', error: message });
+        setAlert({ type: 'error', message });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productFormJob?.jobId]);
 
   const fetchProducts = async () => {
     try {
@@ -698,7 +756,7 @@ export default function ProductsPage() {
         <ProductFormModal
           productId={editingProductId}
           onClose={() => { setIsFormOpen(false); setEditingProductId(null); }}
-          onSuccess={() => { fetchProducts(); fetchLimits(); }}
+          onSuccess={(jobId, jobType) => jobId && setProductFormJob({ jobId, jobType, status: 'processing' })}
         />
       )}
 

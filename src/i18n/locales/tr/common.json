@@ -178,6 +178,8 @@
   "productDetailPage": {
     "failedLoad": "Ürün ayrıntıları yüklenemedi",
     "compareTriggered": "Fiyat karşılaştırması tetiklendi. Güncellemeler için e-postanızı kontrol edin!",
+    "compareQueued": "Fiyat ve stok arka planda kontrol ediliyor — tamamlandığında bildirim alacaksınız.",
+    "compareTimedOut": "Kontrol beklenenden uzun sürüyor. Tamamlandığında yine de bildirim alacaksınız.",
     "compareEbaySyncFailed": "Amazon fiyatı değişti, ancak eBay ilanı güncellenemedi: {{error}}",
     "compareEbayNotSynced": "Amazon fiyatı değişti, ancak eBay senkronizasyonu devre dışı veya bağlı bir ilan bulunamadı.",
     "failedCompare": "Fiyatlar karşılaştırılamadı",
@@ -207,6 +209,8 @@
     "enterEmail": "Lütfen bildirimler için e-posta adresinizi girin",
     "updated": "Ürün başarıyla güncellendi!",
     "added": "Ürün başarıyla eklendi!",
+    "updateQueued": "Ürün arka planda güncelleniyor — tamamlandığında bildirim alacaksınız.",
+    "addQueued": "Ürün arka planda ekleniyor — tamamlandığında bildirim alacaksınız.",
     "failedUpdate": "Ürün güncellenemedi",
     "failedAdd": "Ürün eklenemedi",
     "editTitle": "Ürünü Düzenle",

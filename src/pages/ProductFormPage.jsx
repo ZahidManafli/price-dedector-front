@@ -236,18 +236,24 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
         }
       }
 
-      if (isEditMode) {
-        await productAPI.update(productId, formDataObj);
-      } else {
-        await productAPI.create(formDataObj);
-      }
+      // Both now just queue a background job (an Amazon re-scrape can take up
+      // to ~90s across its own internal retries — too slow to risk as one
+      // synchronous request) and return a jobId right away. onSuccess hands
+      // that jobId up to ProductsPage.jsx, which keeps polling it to
+      // completion even after this modal closes (same pattern as its
+      // existing bulk-import job) and refreshes the list when it's done; a
+      // notification is also recorded server-side regardless.
+      const response = isEditMode
+        ? await productAPI.update(productId, formDataObj)
+        : await productAPI.create(formDataObj);
+      const jobId = response?.data?.jobId;
 
       setAlert({
         type: 'success',
-        message: isEditMode ? t('productFormPage.updated') : t('productFormPage.added'),
+        message: isEditMode ? t('productFormPage.updateQueued') : t('productFormPage.addQueued'),
       });
       setTimeout(() => {
-        onSuccess?.();
+        onSuccess?.(jobId, isEditMode ? 'update' : 'create');
         onClose?.();
       }, 600);
     } catch (error) {

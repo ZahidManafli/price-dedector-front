@@ -417,6 +417,8 @@
   "productDetailPage": {
     "failedLoad": "Failed to load product details",
     "compareTriggered": "Price comparison triggered. Check your email for updates!",
+    "compareQueued": "Checking price and stock in the background — you'll be notified when it's done.",
+    "compareTimedOut": "The check is taking longer than expected. You'll still get a notification when it finishes.",
     "compareEbaySyncFailed": "Amazon price changed, but the eBay listing could not be updated: {{error}}",
     "compareEbayNotSynced": "Amazon price changed, but eBay sync is disabled or no linked listing was found.",
     "failedCompare": "Failed to compare prices",
@@ -446,6 +448,8 @@
     "enterEmail": "Please enter your email for notifications",
     "updated": "Product updated successfully!",
     "added": "Product added successfully!",
+    "updateQueued": "Updating the product in the background — you'll be notified when it's done.",
+    "addQueued": "Adding the product in the background — you'll be notified when it's done.",
     "failedUpdate": "Failed to update product",
     "failedAdd": "Failed to add product",
     "editTitle": "Edit Product",

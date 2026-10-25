@@ -45,12 +45,41 @@ export default function ProductDetailPage() {
     }
   };
 
+  // comparePrice now just queues a background job (Amazon scraping can take
+  // up to ~90s across its own internal retries — too slow to risk as one
+  // synchronous request) and returns a jobId right away; this polls it to
+  // completion so the page can still show the result inline the way it
+  // always has. A notification is also recorded server-side regardless, so
+  // the user finds out even if they navigate away before this finishes.
   const handleCompare = async () => {
     if (compareLoading) return;
     try {
       setCompareLoading(true);
-      const response = await productAPI.comparePrice(productId);
-      const result = response?.data || {};
+      const queueRes = await productAPI.comparePrice(productId);
+      const jobId = queueRes?.data?.jobId;
+      if (!jobId) throw new Error(t('productDetailPage.failedCompare'));
+
+      setAlert({ type: 'info', message: t('productDetailPage.compareQueued') });
+
+      const TIMEOUT_MS = 120000;
+      const POLL_MS = 2000;
+      const deadline = Date.now() + TIMEOUT_MS;
+      let result = null;
+      while (Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+        const pollRes = await productAPI.pollJob(jobId);
+        const { status, error: jobError, ...rest } = pollRes?.data || {};
+        if (status === 'done') {
+          result = rest;
+          break;
+        }
+        if (status === 'error') {
+          throw new Error(jobError || t('productDetailPage.failedCompare'));
+        }
+      }
+      if (!result) {
+        throw new Error(t('productDetailPage.compareTimedOut'));
+      }
 
       // The backend can detect an Amazon price change and still fail (or skip)
       // pushing it to eBay — e.g. the eBay API call itself errored, or the
@@ -76,7 +105,7 @@ export default function ProductDetailPage() {
       // Refresh product data
       await fetchProductDetails();
     } catch (error) {
-      setAlert({ type: 'error', message: t('productDetailPage.failedCompare') });
+      setAlert({ type: 'error', message: error?.message || t('productDetailPage.failedCompare') });
     } finally {
       setCompareLoading(false);
     }

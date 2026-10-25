@@ -60,6 +60,7 @@ const TrackingPage = React.lazy(() => import('./pages/TrackingPage'));
 const CasesPage = React.lazy(() => import('./pages/CasesPage'));
 const SupportPage = React.lazy(() => import('./pages/SupportPage'));
 const UpgradePlanPage = React.lazy(() => import('./pages/UpgradePlanPage'));
+const NotificationsPage = React.lazy(() => import('./pages/NotificationsPage'));
 const PaymentSuccessPage = React.lazy(() => import('./pages/PaymentSuccessPage'));
 const PaymentErrorPage = React.lazy(() => import('./pages/PaymentErrorPage'));
 const EpointRedirectPage = React.lazy(() => import('./pages/EpointRedirectPage'));
@@ -215,6 +216,14 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <PlanExpiredPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationsPage />
                 </ProtectedRoute>
               }
             />
