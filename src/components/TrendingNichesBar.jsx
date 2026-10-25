@@ -5,7 +5,18 @@ import { zikAPI } from '../services/api';
 
 const POLL_MS = 2000;
 const TIMEOUT_MS = 45000;
-const MAX_PILLS = 8;
+const PILL_COUNT = 6;
+
+// Fisher-Yates partial shuffle — picks `count` random, non-repeating items
+// without disturbing the source array.
+function sampleRandom(list, count) {
+  const pool = [...list];
+  for (let i = pool.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, count);
+}
 
 // "Try Suggested Searches" strip above MarketSearchBar, with a tab switch
 // between trending niches and trending dropshippers (sellers) — fetched the
@@ -18,8 +29,12 @@ const MAX_PILLS = 8;
 export default function TrendingNichesBar({ onPick, onPickSeller, disabled }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('niches');
-  const [niches, setNiches] = useState([]);
-  const [sellers, setSellers] = useState([]);
+  // A random 6-of-N picked once when the job's data arrives, not recomputed
+  // on every render — otherwise switching tabs or any unrelated re-render
+  // (e.g. the disabled prop flipping during a search) would reshuffle the
+  // pills shown to the user.
+  const [displayNiches, setDisplayNiches] = useState([]);
+  const [displaySellers, setDisplaySellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
 
@@ -40,8 +55,10 @@ export default function TrendingNichesBar({ onPick, onPickSeller, disabled }) {
           const { status, data: jobData, error: jobError } = pollRes.data;
           if (status === 'done') {
             if (!cancelled) {
-              setNiches(Array.isArray(jobData?.niches) ? jobData.niches : []);
-              setSellers(Array.isArray(jobData?.sellers) ? jobData.sellers : []);
+              const niches = Array.isArray(jobData?.niches) ? jobData.niches : [];
+              const sellers = Array.isArray(jobData?.sellers) ? jobData.sellers : [];
+              setDisplayNiches(sampleRandom(niches, PILL_COUNT));
+              setDisplaySellers(sampleRandom(sellers, PILL_COUNT));
             }
             return;
           }
@@ -59,22 +76,7 @@ export default function TrendingNichesBar({ onPick, onPickSeller, disabled }) {
     return () => { cancelled = true; };
   }, []);
 
-  if (failed || (!loading && niches.length === 0 && sellers.length === 0)) return null;
-
-  // Fire-flagged niches surface first (ZIK's own "hot right now" signal), then
-  // the rest by estimated sales — same ordering convention as
-  // MarketInsightPage.jsx's trending niches list.
-  const topNiches = [...niches]
-    .sort((a, b) => {
-      const fireDiff = (b?.isFire ? 1 : 0) - (a?.isFire ? 1 : 0);
-      if (fireDiff !== 0) return fireDiff;
-      return Number(b?.salesEarning || 0) - Number(a?.salesEarning || 0);
-    })
-    .slice(0, MAX_PILLS);
-
-  const topSellers = [...sellers]
-    .sort((a, b) => Number(b?.sales || 0) - Number(a?.sales || 0))
-    .slice(0, MAX_PILLS);
+  if (failed || (!loading && displayNiches.length === 0 && displaySellers.length === 0)) return null;
 
   const tabs = [
     { key: 'niches', label: t('marketAnalysisPage.trendingNichesTab'), icon: Flame },
@@ -83,7 +85,7 @@ export default function TrendingNichesBar({ onPick, onPickSeller, disabled }) {
 
   const renderPillSkeleton = () => (
     <div className="mt-3 flex flex-wrap gap-2">
-      {Array.from({ length: 6 }).map((_, i) => (
+      {Array.from({ length: PILL_COUNT }).map((_, i) => (
         <span key={i} className="h-8 w-28 animate-pulse rounded-full bg-slate-100 dark:bg-slate-800" />
       ))}
     </div>
@@ -122,11 +124,11 @@ export default function TrendingNichesBar({ onPick, onPickSeller, disabled }) {
       {loading ? (
         renderPillSkeleton()
       ) : activeTab === 'niches' ? (
-        topNiches.length === 0 ? (
+        displayNiches.length === 0 ? (
           <p className="mt-3 text-xs text-slate-400">{t('marketAnalysisPage.trendingNoData')}</p>
         ) : (
           <div className="mt-3 flex flex-wrap gap-2">
-            {topNiches.map((item, i) => {
+            {displayNiches.map((item, i) => {
               // ZIK's own currencySymbol field comes back null — estimated sales
               // are always USD regardless, so the tooltip hardcodes $ rather
               // than trusting/blanking on that field.
@@ -147,11 +149,11 @@ export default function TrendingNichesBar({ onPick, onPickSeller, disabled }) {
             })}
           </div>
         )
-      ) : topSellers.length === 0 ? (
+      ) : displaySellers.length === 0 ? (
         <p className="mt-3 text-xs text-slate-400">{t('marketAnalysisPage.trendingNoData')}</p>
       ) : (
         <div className="mt-3 flex flex-wrap gap-2">
-          {topSellers.map((item, i) => {
+          {displaySellers.map((item, i) => {
             const sales = Number(item?.sales || 0);
             const feedback = Number(item?.feedback || 0);
             return (
