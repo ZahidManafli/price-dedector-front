@@ -184,6 +184,8 @@
   "marketAnalysisPage": {
     "title": "Checkila Analysis",
     "subtitle": "Discover market listings with Checkila Analysis and compare pricing opportunities before adding products.",
+    "trendingNichesTitle": "Try Suggested Searches to Get Started Faster",
+    "trendingNichesSubtitle": "Or search the Product or Niche you would like to analyze above (e.g \"Led Light\", \"Radio Scanner\")",
     "imageHeader": "Image",
     "noImage": "N/A",
     "refresh": "Refresh",

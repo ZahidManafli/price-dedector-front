@@ -330,6 +330,8 @@
   "marketAnalysisPage": {
     "title": "Анализ Checkila",
     "subtitle": "Изучайте рыночные объявления с помощью Checkila Analysis и сравнивайте цены перед добавлением товаров.",
+    "trendingNichesTitle": "Попробуйте рекомендуемые запросы для быстрого старта",
+    "trendingNichesSubtitle": "Или найдите товар или нишу для анализа выше (напр. \"Led Light\", \"Radio Scanner\")",
     "imageHeader": "Изображение",
     "noImage": "N/A",
     "refresh": "Обновить",

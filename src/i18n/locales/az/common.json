@@ -330,6 +330,8 @@
   "marketAnalysisPage": {
     "title": "Checkila Analizi",
     "subtitle": "Qiymət və satıcı imkanlarını müqayisə etməzdən əvvəl Checkila Analysis ilə bazar siyahılarını kəşf edin.",
+    "trendingNichesTitle": "Daha Sürətli Başlamaq Üçün Təklif Edilən Axtarışları Sınayın",
+    "trendingNichesSubtitle": "Və ya yuxarıda analiz etmək istədiyiniz məhsulu ya da nişi axtarın (məs. \"Led Light\", \"Radio Scanner\")",
     "imageHeader": "Şəkil",
     "noImage": "Yox",
     "refresh": "Yenilə",

@@ -7,6 +7,7 @@ import Swal from 'sweetalert2';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import MarketSearchBar from '../components/MarketSearchBar';
+import TrendingNichesBar from '../components/TrendingNichesBar';
 import MarketItemCard from '../components/MarketItemCard';
 import MarketComparePanel from '../components/MarketComparePanel';
 import useBrowseSearch from '../hooks/useBrowseSearch';
@@ -1268,6 +1269,15 @@ export default function MarketAnalysisPage() {
             Fast but last 3 day datas
           </button>
         </div>
+
+        <TrendingNichesBar
+          disabled={loading}
+          onPick={(keyword) => {
+            const next = { ...params, q: keyword, sellerUsername: '', type: searchType, offset: 0 };
+            setParams(next);
+            runSearch(next, { force: true });
+          }}
+        />
 
         <MarketSearchBar
           params={params}

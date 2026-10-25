@@ -549,6 +549,7 @@ export const partnerAPI = {
 
 export const zikAPI = {
   requestMarketInsights: () => api.get('/zik/market-insights'),
+  requestTrendingNiches: () => api.get('/zik/trending-niches'),
   requestAmazonFinder: (asin, ebayId) => api.get('/zik/amazon-finder', { params: { asin, ebayId } }),
   requestUpcomingEvents: (globalId = 'US') => api.get('/zik/upcoming-events', { params: { globalId } }),
   pollJob: (jobId) => api.get(`/ebay/extension-scrape/${encodeURIComponent(jobId)}`),
