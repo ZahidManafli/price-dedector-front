@@ -597,17 +597,19 @@ function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerU
     return updated;
   };
 
-  // Only ever offered while fulfillmentStatus === 'ordered' — the backend also
-  // enforces this (409s otherwise), so this can't be bypassed by a stale button
-  // still showing after the status has since moved on.
+  // Offered at every fulfillment stage. The backend also removes every other
+  // tracking row and unmatched-queue entry with the same Amazon order number.
   const handleDeleteTracking = async () => {
     if (deleting) return;
-    if (!window.confirm(`Remove tracking for order ${row.ebayOrderId}? This can't be undone.`)) return;
+    const confirmText = row.amazonOrderId
+      ? `Remove tracking for order ${row.ebayOrderId}? All tracking and unmatched records with Amazon order ${row.amazonOrderId} will also be removed. This can't be undone.`
+      : `Remove tracking for order ${row.ebayOrderId}? This can't be undone.`;
+    if (!window.confirm(confirmText)) return;
     setDeleting(true);
     setError('');
     try {
-      await ebayAPI.deleteOrderTracking(row.ebayOrderId);
-      onDeleted?.(row.id);
+      const res = await ebayAPI.deleteOrderTracking(row.ebayOrderId);
+      onDeleted?.(row.id, res?.data?.amazonOrderId || row.amazonOrderId || null);
     } catch (err) {
       setError(err?.response?.data?.error || err.message || 'Failed to delete tracking');
       setDeleting(false);
@@ -931,22 +933,18 @@ function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerU
               Amazon <Pencil size={11} />
             </button>
           )}
-          {/* Delete — only while still 'ordered' (nothing shipped/tracked yet), so this
-              can never throw away real tracking/shipping history. The backend enforces
-              the same rule regardless of this button's visibility. */}
-          {row.fulfillmentStatus === 'ordered' && (
-            <button
-              type="button"
-              onClick={handleDeleteTracking}
-              disabled={deleting}
-              title="Delete tracking"
-              className={`inline-flex items-center gap-1 rounded-md p-1.5 transition-colors ${
-                isDark ? 'text-rose-400 hover:bg-rose-950/40' : 'text-rose-600 hover:bg-rose-50'
-              }`}
-            >
-              <Trash2 size={13} />
-            </button>
-          )}
+          {/* Delete — available at every status (ordered/shipped/delivered). */}
+          <button
+            type="button"
+            onClick={handleDeleteTracking}
+            disabled={deleting}
+            title="Delete tracking"
+            className={`inline-flex items-center gap-1 rounded-md p-1.5 transition-colors ${
+              isDark ? 'text-rose-400 hover:bg-rose-950/40' : 'text-rose-600 hover:bg-rose-50'
+            }`}
+          >
+            <Trash2 size={13} />
+          </button>
           {/* OrderDetailPage only renders with the full eBay order passed via router
               state (see OrdersPage's navigate(..., { state: { order } })) — this list
               only has the tracking row, not the full order, so send users to the Orders
@@ -1597,8 +1595,14 @@ export default function TrackingPage() {
     loadTrackingCredits();
   };
 
-  const handleRowDeleted = (rowId) => {
-    setRows((prev) => prev.filter((r) => r.id !== rowId));
+  const handleRowDeleted = (rowId, amazonOrderId) => {
+    const amazonId = String(amazonOrderId || '').trim();
+    setRows((prev) =>
+      prev.filter((r) => r.id !== rowId && !(amazonId && String(r.amazonOrderId || '').trim() === amazonId))
+    );
+    if (amazonId) {
+      setUnmatched((prev) => prev.filter((u) => String(u.amazonOrderId || '').trim() !== amazonId));
+    }
   };
 
   return (
