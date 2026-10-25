@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import PaymentMethodPicker from '../components/PaymentMethodPicker';
+import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 
 // ── normalizePlan — mirrors LandingPage exactly ───────────────
 function normalizePlan(raw = {}) {
@@ -319,6 +320,13 @@ export default function UpgradePlanPage() {
   const [codeError, setCodeError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Custom plan request — same SubscriptionRequestModal + public
+  // /subscription-requests + email-verification flow the Landing Page uses
+  // for its "Request custom limits" buttons (planId: 'custom'). This is
+  // intentionally a separate, parallel path from handleUpgrade/handleVerify
+  // above, which only ever handle real, priced plans on this page.
+  const [customRequestOpen, setCustomRequestOpen] = useState(false);
+
   useEffect(() => {
     settingsAPI.getPublicPlans()
       .then((res) => setPlans((res?.data?.plans || []).map(normalizePlan).filter((p) => p.id)))
@@ -405,6 +413,17 @@ export default function UpgradePlanPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const onCustomRequestSuccess = () => {
+    Swal.fire({
+      title: 'Request sent',
+      text: 'Your custom plan request has been sent. Admin will review it and reach you soon.',
+      icon: 'success',
+      background: '#0f172a',
+      color: '#f1f5f9',
+      confirmButtonColor: '#22d3ee',
+    });
   };
 
   const pageBg = isDark ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-900';
@@ -546,6 +565,19 @@ export default function UpgradePlanPage() {
           </div>
         </div>
 
+        {/* Request custom plan — same categories LandingPage offers it on */}
+        {['subscription', 'analytics', 'amazon_monitoring'].includes(activeTab) && (
+          <div className="mb-6 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setCustomRequestOpen(true)}
+              className="rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20"
+            >
+              Request custom limits
+            </button>
+          </div>
+        )}
+
         {/* Plan grid */}
         {loading ? (
           <div className="flex items-center justify-center py-24">
@@ -582,6 +614,16 @@ export default function UpgradePlanPage() {
           <Loader2 className="h-10 w-10 animate-spin text-cyan-400" />
         </div>
       )}
+
+      <SubscriptionRequestModal
+        open={customRequestOpen}
+        onClose={() => setCustomRequestOpen(false)}
+        plans={plans}
+        selectedPlanId="custom"
+        lockPlan={true}
+        defaultValues={{ name: user?.name || '', surname: user?.surname || '', email: user?.email || '' }}
+        onSuccess={onCustomRequestSuccess}
+      />
     </div>
   );
 }
