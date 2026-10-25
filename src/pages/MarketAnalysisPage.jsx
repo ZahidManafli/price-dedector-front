@@ -1277,6 +1277,11 @@ export default function MarketAnalysisPage() {
             setParams(next);
             runSearch(next, { force: true });
           }}
+          onPickSeller={(sellerUsername) => {
+            const next = { ...params, q: '', sellerUsername, type: searchType, offset: 0 };
+            setParams(next);
+            runSearch(next, { force: true });
+          }}
         />
 
         <MarketSearchBar
