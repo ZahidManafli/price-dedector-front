@@ -1553,10 +1553,9 @@
     "runningButton": "AI Analysis {{found}}/{{target}}",
     "adminOnly": "Available to admins only for now",
     "title": "AI Analysis",
-    "preparing": "Picking a trending niche or dropshipper…",
+    "preparing": "Picking a store from the AI Sellers list…",
     "strategy": {
-      "trending_niches": "Trending niche",
-      "trending_dropshippers": "Trending dropshipper"
+      "ai_sellers": "AI Sellers store"
     },
     "status": {
       "running": "running",

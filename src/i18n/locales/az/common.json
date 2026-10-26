@@ -1486,10 +1486,9 @@
     "runningButton": "AI Analiz {{found}}/{{target}}",
     "adminOnly": "Hələlik yalnız adminlər üçün açıqdır",
     "title": "AI Analiz",
-    "preparing": "Trend niş və ya dropshipper seçilir…",
+    "preparing": "AI Sellers siyahısından mağaza seçilir…",
     "strategy": {
-      "trending_niches": "Trend niş",
-      "trending_dropshippers": "Trend dropshipper"
+      "ai_sellers": "AI Sellers mağazası"
     },
     "status": {
       "running": "davam edir",

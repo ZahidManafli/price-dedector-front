@@ -14,6 +14,7 @@ import * as XLSX from 'xlsx';
 import { NotificationsTab } from '../components/NotificationsTab';
 import AdminVideosTab from '../components/AdminVideosTab';
 import AdminReviewsTab from '../components/AdminReviewsTab';
+import AdminAiSellersTab from '../components/AdminAiSellersTab';
 import AdminAnalytics from '../components/AdminAnalytics';
 import DateRangePicker from '../components/DateRangePicker';
 import TutorialVideoButton from '../components/TutorialVideoButton';
@@ -935,6 +936,12 @@ export default function AdminPanelPage() {
             onClick={() => setActiveTab('reviews')}
           >
             Rəylər
+          </button>
+          <button
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'ai-sellers' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
+            onClick={() => setActiveTab('ai-sellers')}
+          >
+            AI Sellers
           </button>
           <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'danger' ? 'bg-red-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
@@ -2004,6 +2011,12 @@ export default function AdminPanelPage() {
         {!loading && activeTab === 'reviews' && (
           <div className="space-y-4">
             <AdminReviewsTab />
+          </div>
+        )}
+
+        {!loading && activeTab === 'ai-sellers' && (
+          <div className="space-y-4">
+            <AdminAiSellersTab />
           </div>
         )}
 
