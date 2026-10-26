@@ -69,6 +69,11 @@ api.interceptors.response.use(
         window.location.href = '/maintenance';
       }
     } else if (status === 403 && code === 'PLAN_TAB_ACCESS_DENIED') {
+      // A request can opt out (config.skipPlanTabRedirect) when it is only a
+      // side widget on a page the user CAN open — e.g. the Trending Niches
+      // strip on Checkila Analysis calls Market Insight's endpoint; it shows
+      // a "no access" lock instead of bouncing the whole page to /dashboard.
+      if (error?.config?.skipPlanTabRedirect) return Promise.reject(error);
       if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
         window.location.href = '/dashboard';
       }
@@ -565,7 +570,7 @@ export const partnerAPI = {
 };
 
 export const zikAPI = {
-  requestMarketInsights: () => api.get('/zik/market-insights'),
+  requestMarketInsights: (config = {}) => api.get('/zik/market-insights', config),
   requestTrendingNiches: () => api.get('/zik/trending-niches'),
   requestAmazonFinder: (asin, ebayId) => api.get('/zik/amazon-finder', { params: { asin, ebayId } }),
   requestUpcomingEvents: (globalId = 'US') => api.get('/zik/upcoming-events', { params: { globalId } }),

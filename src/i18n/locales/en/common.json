@@ -189,6 +189,7 @@
     "trendingNichesTab": "Trending Niches",
     "trendingDropshippersTab": "Trending Dropshippers",
     "trendingNoData": "No data available right now",
+    "trendingLocked": "Your plan does not include Market Insight, so Trending Niches and Trending Dropshippers are locked.",
     "imageHeader": "Image",
     "noImage": "N/A",
     "refresh": "Refresh",

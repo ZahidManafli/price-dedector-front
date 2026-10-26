@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Flame, Sparkles, Users } from 'lucide-react';
+import { Flame, Lock, Sparkles, Users } from 'lucide-react';
 import { zikAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { TAB_KEYS } from '../utils/planAccess';
 
 const POLL_MS = 2000;
 const TIMEOUT_MS = 45000;
@@ -28,6 +30,12 @@ function sampleRandom(list, count) {
 // extension shouldn't block or clutter the real search bar below.
 export default function TrendingNichesBar({ onPick, onPickSeller, disabled }) {
   const { t } = useTranslation();
+  // The data comes from Market Insight's endpoint (plan tab 'market_insight').
+  // Without that tab the strip shows a lock and never calls the endpoint —
+  // the 403 would otherwise send the user from Checkila Analysis to /dashboard.
+  const { hasTabAccess } = useAuth();
+  const canUseMarketInsight = hasTabAccess(TAB_KEYS.MARKET_INSIGHT);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [activeTab, setActiveTab] = useState('niches');
   // A random 6-of-N picked once when the job's data arrives, not recomputed
   // on every render — otherwise switching tabs or any unrelated re-render
@@ -39,11 +47,12 @@ export default function TrendingNichesBar({ onPick, onPickSeller, disabled }) {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (!canUseMarketInsight) return undefined;
     let cancelled = false;
 
     const load = async () => {
       try {
-        const jobRes = await zikAPI.requestMarketInsights();
+        const jobRes = await zikAPI.requestMarketInsights({ skipPlanTabRedirect: true });
         const jobId = jobRes.data?.jobId;
         if (!jobId) throw new Error('Failed to create market insights job');
 
@@ -65,8 +74,13 @@ export default function TrendingNichesBar({ onPick, onPickSeller, disabled }) {
           if (status === 'error') throw new Error(jobError || 'Market insights job failed');
         }
         throw new Error('Timed out');
-      } catch {
-        if (!cancelled) setFailed(true);
+      } catch (err) {
+        if (cancelled) return;
+        if (err?.response?.status === 403 && err?.response?.data?.code === 'PLAN_TAB_ACCESS_DENIED') {
+          setAccessDenied(true);
+        } else {
+          setFailed(true);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -74,7 +88,34 @@ export default function TrendingNichesBar({ onPick, onPickSeller, disabled }) {
 
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [canUseMarketInsight]);
+
+  if (!canUseMarketInsight || accessDenied) {
+    return (
+      <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex items-center gap-2">
+          <Lock size={16} className="text-slate-400" />
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+            {t('marketAnalysisPage.trendingNichesTitle')}
+          </p>
+        </div>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          {t('marketAnalysisPage.trendingLocked')}
+        </p>
+        <div className="mt-3 flex gap-1.5">
+          {['trendingNichesTab', 'trendingDropshippersTab'].map((key) => (
+            <span
+              key={key}
+              className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-400 dark:bg-slate-800 dark:text-slate-500"
+            >
+              <Lock size={12} />
+              {t(`marketAnalysisPage.${key}`)}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (failed || (!loading && displayNiches.length === 0 && displaySellers.length === 0)) return null;
 

@@ -339,6 +339,7 @@
     "trendingNichesTab": "Trend Nişler",
     "trendingDropshippersTab": "Trend Dropshipperlar",
     "trendingNoData": "Şu anda veri yok",
+    "trendingLocked": "Planınız Market Insight içermiyor, bu yüzden Trend Nişler ve Trend Dropshipper'lar kilitli.",
     "imageHeader": "Görsel",
     "noImage": "Yok",
     "refresh": "Yenile",

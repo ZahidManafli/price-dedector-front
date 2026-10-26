@@ -339,6 +339,7 @@
     "trendingNichesTab": "Трендовые ниши",
     "trendingDropshippersTab": "Трендовые дропшипперы",
     "trendingNoData": "Сейчас данных нет",
+    "trendingLocked": "Ваш тариф не включает Market Insight, поэтому трендовые ниши и дропшипперы недоступны.",
     "imageHeader": "Изображение",
     "noImage": "N/A",
     "refresh": "Обновить",
