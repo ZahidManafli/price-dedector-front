@@ -19,6 +19,9 @@ export default function MarketSearchBar({
   searchCost,
   recentSellers = [],
   recentTitles = [],
+  // Optional node rendered right next to the Search button (Checkila
+  // Analysis puts its admin-only AI Analysis button here).
+  extraAction = null,
 }) {
   const { t } = useTranslation();
   const isFastMode = String(searchType || '').trim().toLowerCase() === 'fast';
@@ -84,11 +87,11 @@ export default function MarketSearchBar({
           </div>
         </div>
 
-        <div className="lg:w-64">
+        <div className={extraAction ? 'flex flex-col gap-2 sm:flex-row lg:w-auto' : 'lg:w-64'}>
           <button
             type="submit"
             disabled={disabled}
-            className="flex h-11 w-full flex-col items-center justify-center gap-0.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 text-white shadow-lg shadow-indigo-500/25 transition hover:from-violet-500 hover:to-indigo-500 hover:shadow-xl hover:shadow-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+            className={`flex h-11 ${extraAction ? 'w-full sm:w-64' : 'w-full'} flex-col items-center justify-center gap-0.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 text-white shadow-lg shadow-indigo-500/25 transition hover:from-violet-500 hover:to-indigo-500 hover:shadow-xl hover:shadow-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none`}
           >
             <span className="flex items-center gap-2 text-sm font-semibold">
               <Zap size={14} className="fill-current" />
@@ -103,6 +106,7 @@ export default function MarketSearchBar({
               </span>
             )}
           </button>
+          {extraAction}
         </div>
       </div>
     </form>

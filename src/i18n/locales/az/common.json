@@ -1480,5 +1480,82 @@
     "markProductSlot": "Məhsul şəkli sahəsi kimi işarələ",
     "loadFailed": "Dizayn yüklənmədi",
     "selectObjectHint": "Xüsusiyyətləri görmək üçün bir element seçin"
+  },
+  "aiAnalysis": {
+    "button": "AI Analiz",
+    "runningButton": "AI Analiz {{found}}/{{target}}",
+    "adminOnly": "Hələlik yalnız adminlər üçün açıqdır",
+    "title": "AI Analiz",
+    "preparing": "Trend niş və ya dropshipper seçilir…",
+    "strategy": {
+      "trending_niches": "Trend niş",
+      "trending_dropshippers": "Trend dropshipper"
+    },
+    "status": {
+      "running": "davam edir",
+      "completed": "tamamlandı",
+      "stopped": "dayandı",
+      "cancelled": "ləğv edildi",
+      "failed": "xəta"
+    },
+    "stopReason": {
+      "target_reached": "hədəfə çatıldı",
+      "candidates_exhausted": "başqa namizəd qalmadı",
+      "cancelled": "admin tərəfindən dayandırıldı",
+      "insufficient_balance": "Checkila Smart balansı kifayət deyil",
+      "limit_ai_cost": "AI xərc limiti doldu",
+      "limit_ai_calls": "AI yoxlama limiti doldu",
+      "limit_amazon_searches": "Amazon axtarış limiti doldu",
+      "limit_title_searches": "eBay axtarış limiti doldu",
+      "limit_candidates": "namizəd limiti doldu",
+      "time_limit": "vaxt limiti doldu",
+      "error": "xəta"
+    },
+    "billing": {
+      "charged": "ödənildi",
+      "not_charged": "ödəniş yoxdur (AI sorğusu olmayıb)",
+      "failed": "ödəniş alınmadı",
+      "pending": "gözləyir"
+    },
+    "cancel": "Dayandır",
+    "cancelling": "Dayandırılır…",
+    "close": "Bağla",
+    "confirmed": "Təsdiqlənən",
+    "evaluated": "Yoxlanılan məhsul",
+    "amazonSearches": "Amazon axtarışı",
+    "aiChecks": "AI yoxlaması",
+    "aiCost": "ChatGPT/OpenAI xərci",
+    "platformFee": "Platforma haqqı",
+    "totalCharge": "Smart balansdan çıxılan",
+    "duration": "Müddət",
+    "actual": "faktiki",
+    "estimate": "təxmini — sonda dəqiqləşir",
+    "billingFailed": "Ödəniş alınmadı, yenidən cəhd ediləcək",
+    "sold7d": "7 gündə {{count}} satış",
+    "sold7dLabel": "Satış (son 7 gün)",
+    "feedback": "rəy",
+    "sellThrough": "Sell Through Rate",
+    "totalListings": "Ümumi listing",
+    "totalSold": "Ümumi satış",
+    "openAmazon": "Amazon-da aç",
+    "estimatedProfit": "Təxmini qazanc",
+    "unit": "ədəd",
+    "margin": "Marja",
+    "profitUnavailable": "Bu məhsul üçün qazanc etibarlı hesablana bilmir.",
+    "showDetails": "Ətraflı",
+    "hideDetails": "Gizlət",
+    "verification": "Uyğunluq yoxlaması",
+    "summary": "eBay-də {{ebayPrice}}-a satılır; eyni məhsul Amazon-da {{amazonPrice}}-dır (ASIN {{asin}}). Listing son 7 gündə {{sold7d}} ədəd satıb. Bu məhsul üzrə bazarda sell-through {{str}}, {{listings}} listing və {{totalSold}} satış var. Satıcı {{seller}}, rəy sayı {{feedback}}. Checkila haqq hesabından sonra təxmini qazanc: ədəd başına {{profit}}.",
+    "trend": {
+      "rising": "Sales Trend: satışlar artır.",
+      "falling": "Sales Trend: satışlar azalır.",
+      "steady": "Sales Trend: satışlar sabitdir.",
+      "flat": "Sales Trend: bu dövrdə satış yoxdur.",
+      "none": "Sales Trend məlumatı yoxdur."
+    },
+    "trendPeriod": "Sales Trend: son {{days}} gündə günlük satış sayı (Checkila Analysis ilə eyni məlumat).",
+    "profitDisclaimer": "Qazanc Checkila kalkulyatoru ilə təxminidir (eBay haqları, vergi və sabit haqq daxildir; çatdırılma daxil deyil) və qiymət və ya haqlar dəyişdikcə dəyişir.",
+    "noResults": "Bu analizdə təsdiqlənmiş məhsul tapılmadı.",
+    "limitations": "Məhdudiyyətlər: satış, sell-through və Sales Trend ZIK-dən Checkila extension vasitəsilə gəlir; Amazon qiymətləri analiz anında yoxlanılır; AI yoxlaması incə fərqləri buraxa bilər — listələmədən əvvəl Amazon linkini açın."
   }
 }

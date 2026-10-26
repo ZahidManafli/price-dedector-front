@@ -210,6 +210,15 @@ export const walletAPI = {
   confirmPayment: (requestId) => api.post(`/wallet/topup/confirm/${encodeURIComponent(requestId)}`),
 };
 
+// AI Analysis (admin-only, Checkila Analysis page) — backed by
+// routes/aiAnalysis.js; a run executes in the background and is polled.
+export const aiAnalysisAPI = {
+  start: (body = {}) => api.post('/ai-analysis/runs', body),
+  getLatest: () => api.get('/ai-analysis/runs/latest'),
+  get: (runId) => api.get(`/ai-analysis/runs/${encodeURIComponent(runId)}`),
+  cancel: (runId) => api.post(`/ai-analysis/runs/${encodeURIComponent(runId)}/cancel`),
+};
+
 export const ebayAPI = {
   get: (...args) => api.get(...args),
   post: (...args) => api.post(...args),

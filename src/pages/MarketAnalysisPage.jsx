@@ -18,6 +18,8 @@ import TutorialVideoButton from '../components/TutorialVideoButton';
 import ListOnInventoryModal from '../components/ListOnInventoryModal';
 import PurchaseHistoryModal from '../components/PurchaseHistoryModal';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { AiAnalysisButton, AiAnalysisResults, useAiAnalysisRun } from '../components/AiAnalysisPanel';
 import { calculateLast7DaysSoldCount, calculateLast15DaysSoldCount, fetchPurchaseHistoryRows, normalizeNumericItemId } from '../utils/purchaseHistory';
 // ── Bucket ────────────────────────────────────────────────────────────────────
 import { useBucket, BucketTrigger, BucketDrawer, AddToBucketButton } from '../components/EbayBucket';
@@ -315,6 +317,9 @@ function FastSalesTrendChart({ data, isDark }) {
 
 export default function MarketAnalysisPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const aiAnalysis = useAiAnalysisRun({ enabled: isAdmin });
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -1297,8 +1302,31 @@ export default function MarketAnalysisPage() {
           searchCost={searchCost}
           recentSellers={recentSearches.sellers}
           recentTitles={recentSearches.titles}
+          extraAction={(
+            <AiAnalysisButton
+              isAdmin={isAdmin}
+              run={aiAnalysis.run}
+              starting={aiAnalysis.starting}
+              onStart={aiAnalysis.start}
+              onShow={aiAnalysis.show}
+            />
+          )}
         />
       </div>
+
+      {isAdmin && aiAnalysis.error && !aiAnalysis.visible && (
+        <Alert type="error" message={aiAnalysis.error} autoClose={false} onClose={() => aiAnalysis.setError('')} />
+      )}
+
+      {isAdmin && aiAnalysis.visible && (
+        <AiAnalysisResults
+          run={aiAnalysis.run}
+          error={aiAnalysis.error}
+          onCancel={aiAnalysis.cancel}
+          onDismiss={aiAnalysis.dismiss}
+          renderSalesTrend={(data) => <FastSalesTrendChart data={data} isDark={isDark} />}
+        />
+      )}
 
       {showFastStatisticsPanel && loading ? (
         <section className="flex min-h-[148px] items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/40">

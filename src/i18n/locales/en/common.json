@@ -1547,5 +1547,82 @@
     "markProductSlot": "Mark as product photo area",
     "loadFailed": "Failed to load design",
     "selectObjectHint": "Select an element to see its properties"
+  },
+  "aiAnalysis": {
+    "button": "AI Analysis",
+    "runningButton": "AI Analysis {{found}}/{{target}}",
+    "adminOnly": "Available to admins only for now",
+    "title": "AI Analysis",
+    "preparing": "Picking a trending niche or dropshipper…",
+    "strategy": {
+      "trending_niches": "Trending niche",
+      "trending_dropshippers": "Trending dropshipper"
+    },
+    "status": {
+      "running": "running",
+      "completed": "completed",
+      "stopped": "stopped",
+      "cancelled": "cancelled",
+      "failed": "failed"
+    },
+    "stopReason": {
+      "target_reached": "target reached",
+      "candidates_exhausted": "no more candidates",
+      "cancelled": "cancelled by admin",
+      "insufficient_balance": "Checkila Smart balance too low",
+      "limit_ai_cost": "AI cost limit reached",
+      "limit_ai_calls": "AI check limit reached",
+      "limit_amazon_searches": "Amazon search limit reached",
+      "limit_title_searches": "eBay search limit reached",
+      "limit_candidates": "candidate limit reached",
+      "time_limit": "time limit reached",
+      "error": "error"
+    },
+    "billing": {
+      "charged": "charged",
+      "not_charged": "not charged (no AI calls)",
+      "failed": "billing failed",
+      "pending": "pending"
+    },
+    "cancel": "Stop",
+    "cancelling": "Stopping…",
+    "close": "Close",
+    "confirmed": "Confirmed",
+    "evaluated": "Products evaluated",
+    "amazonSearches": "Amazon searches",
+    "aiChecks": "AI checks",
+    "aiCost": "ChatGPT/OpenAI cost",
+    "platformFee": "Platform fee",
+    "totalCharge": "Smart balance charge",
+    "duration": "Duration",
+    "actual": "actual",
+    "estimate": "estimate — final after the run",
+    "billingFailed": "Billing failed, will be retried",
+    "sold7d": "{{count}} sold / 7 days",
+    "sold7dLabel": "Sold (last 7 days)",
+    "feedback": "feedback",
+    "sellThrough": "Sell Through Rate",
+    "totalListings": "Total listings",
+    "totalSold": "Total sold",
+    "openAmazon": "Open on Amazon",
+    "estimatedProfit": "Estimated profit",
+    "unit": "unit",
+    "margin": "Margin",
+    "profitUnavailable": "Profit cannot be reliably calculated for this product.",
+    "showDetails": "Details",
+    "hideDetails": "Hide details",
+    "verification": "Match verification",
+    "summary": "Sells on eBay for {{ebayPrice}}; the same product costs {{amazonPrice}} on Amazon (ASIN {{asin}}). The listing sold {{sold7d}} unit(s) in the last 7 days. For this product the market shows {{str}} sell-through, {{listings}} listings and {{totalSold}} sold. Seller {{seller}} has {{feedback}} feedback. Estimated profit after Checkila’s fee calculation: {{profit}} per unit.",
+    "trend": {
+      "rising": "Sales Trend: sales are rising.",
+      "falling": "Sales Trend: sales are falling.",
+      "steady": "Sales Trend: sales are steady.",
+      "flat": "Sales Trend: no sales in this period.",
+      "none": "No Sales Trend data available."
+    },
+    "trendPeriod": "Sales Trend: daily units sold over the last {{days}} days (same data as Checkila Analysis).",
+    "profitDisclaimer": "Profit is an estimate from Checkila’s calculator (eBay fees, tax and fixed fee included; shipping not included) and changes when prices or fees change.",
+    "noResults": "No confirmed products were found in this run.",
+    "limitations": "Limitations: sales, sell-through and Sales Trend come from ZIK via the Checkila extension; Amazon prices are checked at the time of the run; AI verification can still miss subtle differences — open the Amazon link before listing."
   }
 }

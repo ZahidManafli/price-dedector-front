@@ -7,12 +7,14 @@ const PAGE_SIZE = 50;
 const TYPE_LABELS = {
   topup: 'Balans artırımı',
   amazon_lookup_charge: 'Checkila Smart xərci',
+  ai_analysis_charge: 'AI Analysis xərci',
   refund: 'Geri qaytarma',
   adjustment: 'Düzəliş',
 };
 
 function formatReference(tx) {
   if (tx.type === 'amazon_lookup_charge' && tx.reference) return `ASIN: ${tx.reference}`;
+  if (tx.type === 'ai_analysis_charge' && tx.reference) return `Run: ${tx.reference.slice(0, 8)}`;
   return null;
 }
 
