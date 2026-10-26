@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Activity, DollarSign, Heart, History, Info, LayoutGrid, List, RefreshCw, Search, SearchCheck, ShoppingBag, Tag, Trash2, TrendingUp, X } from 'lucide-react';
+import { Activity, Bot, DollarSign, Heart, History, Info, LayoutGrid, List, RefreshCw, Search, SearchCheck, ShoppingBag, Tag, Trash2, TrendingUp, X } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Swal from 'sweetalert2';
@@ -19,7 +19,7 @@ import ListOnInventoryModal from '../components/ListOnInventoryModal';
 import PurchaseHistoryModal from '../components/PurchaseHistoryModal';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { AiAnalysisButton, AiAnalysisResults, useAiAnalysisRun } from '../components/AiAnalysisPanel';
+import { AiAnalysisButton, AiAnalysisResults, AiFoundProductsDrawer, useAiAnalysisRun } from '../components/AiAnalysisPanel';
 import { calculateLast7DaysSoldCount, calculateLast15DaysSoldCount, fetchPurchaseHistoryRows, normalizeNumericItemId } from '../utils/purchaseHistory';
 // ── Bucket ────────────────────────────────────────────────────────────────────
 import { useBucket, BucketTrigger, BucketDrawer, AddToBucketButton } from '../components/EbayBucket';
@@ -320,6 +320,7 @@ export default function MarketAnalysisPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const aiAnalysis = useAiAnalysisRun({ enabled: isAdmin });
+  const [aiFoundOpen, setAiFoundOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -1133,6 +1134,12 @@ export default function MarketAnalysisPage() {
             <Heart size={14} fill="currentColor" className="text-rose-500" />
             {t('marketAnalysisPage.savedSellers')} ({savedSellers.length})
           </button>
+          {isAdmin && (
+            <button type="button" onClick={() => setAiFoundOpen(true)} className="btn-secondary flex items-center gap-2">
+              <Bot size={14} className="text-emerald-600" />
+              {t('aiAnalysis.foundButton')}
+            </button>
+          )}
           <TutorialVideoButton />
         </div>
       </header>
@@ -1324,6 +1331,14 @@ export default function MarketAnalysisPage() {
           error={aiAnalysis.error}
           onCancel={aiAnalysis.cancel}
           onDismiss={aiAnalysis.dismiss}
+          renderSalesTrend={(data) => <FastSalesTrendChart data={data} isDark={isDark} />}
+        />
+      )}
+
+      {isAdmin && (
+        <AiFoundProductsDrawer
+          open={aiFoundOpen}
+          onClose={() => setAiFoundOpen(false)}
           renderSalesTrend={(data) => <FastSalesTrendChart data={data} isDark={isDark} />}
         />
       )}

@@ -222,6 +222,8 @@ export const aiAnalysisAPI = {
   getLatest: () => api.get('/ai-analysis/runs/latest'),
   get: (runId) => api.get(`/ai-analysis/runs/${encodeURIComponent(runId)}`),
   cancel: (runId) => api.post(`/ai-analysis/runs/${encodeURIComponent(runId)}/cancel`),
+  // Every product AI Analysis found for the user (all runs, newest first).
+  listOpportunities: (params = {}) => api.get('/ai-analysis/opportunities', { params }),
   // Admin panel -> AI Sellers (the store names a run starts from).
   listSellers: () => api.get('/ai-analysis/sellers'),
   addSeller: (sellerName) => api.post('/ai-analysis/sellers', { sellerName }),

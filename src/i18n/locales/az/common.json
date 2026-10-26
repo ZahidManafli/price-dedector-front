@@ -1556,6 +1556,14 @@
     "trendPeriod": "Sales Trend: son {{days}} gündə günlük satış sayı (Checkila Analysis ilə eyni məlumat).",
     "profitDisclaimer": "Qazanc Checkila kalkulyatoru ilə təxminidir (eBay haqları, vergi və sabit haqq daxildir; çatdırılma daxil deyil) və qiymət və ya haqlar dəyişdikcə dəyişir.",
     "noResults": "Bu analizdə təsdiqlənmiş məhsul tapılmadı.",
-    "limitations": "Məhdudiyyətlər: satış, sell-through və Sales Trend ZIK-dən Checkila extension vasitəsilə gəlir; Amazon qiymətləri analiz anında yoxlanılır; AI yoxlaması incə fərqləri buraxa bilər — listələmədən əvvəl Amazon linkini açın."
+    "limitations": "Məhdudiyyətlər: satış, sell-through və Sales Trend ZIK-dən Checkila extension vasitəsilə gəlir; Amazon qiymətləri analiz anında yoxlanılır; AI yoxlaması incə fərqləri buraxa bilər — listələmədən əvvəl Amazon linkini açın.",
+    "foundButton": "AI tapdığı məhsullar",
+    "foundTitle": "AI tapdığı məhsullar",
+    "foundSubtitle": "AI Analysis bütün analizlərdə {{count}} məhsul tapıb",
+    "foundEmpty": "AI Analysis hələ heç bir məhsul tapmayıb.",
+    "foundFromStore": "{{store}} mağazasından başlanıb",
+    "backToList": "Siyahıya qayıt",
+    "loadMore": "Daha çox",
+    "loading": "Yüklənir…"
   }
 }

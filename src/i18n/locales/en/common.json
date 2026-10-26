@@ -1623,6 +1623,14 @@
     "trendPeriod": "Sales Trend: daily units sold over the last {{days}} days (same data as Checkila Analysis).",
     "profitDisclaimer": "Profit is an estimate from Checkila’s calculator (eBay fees, tax and fixed fee included; shipping not included) and changes when prices or fees change.",
     "noResults": "No confirmed products were found in this run.",
-    "limitations": "Limitations: sales, sell-through and Sales Trend come from ZIK via the Checkila extension; Amazon prices are checked at the time of the run; AI verification can still miss subtle differences — open the Amazon link before listing."
+    "limitations": "Limitations: sales, sell-through and Sales Trend come from ZIK via the Checkila extension; Amazon prices are checked at the time of the run; AI verification can still miss subtle differences — open the Amazon link before listing.",
+    "foundButton": "AI found products",
+    "foundTitle": "AI found products",
+    "foundSubtitle": "{{count}} product(s) found by AI Analysis across all runs",
+    "foundEmpty": "AI Analysis has not found any products yet.",
+    "foundFromStore": "started from store {{store}}",
+    "backToList": "Back to list",
+    "loadMore": "Load more",
+    "loading": "Loading…"
   }
 }

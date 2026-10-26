@@ -173,25 +173,27 @@ function Stat({ label, value, hint }) {
   );
 }
 
-function OpportunityCard({ opportunity, renderSalesTrend }) {
+// `stacked` lays the eBay / Amazon / profit blocks out vertically (used in
+// the narrow AI found products drawer); `defaultOpen` starts with details shown.
+function OpportunityCard({ opportunity, renderSalesTrend, stacked = false, defaultOpen = false }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const { ebay = {}, amazon = {}, market = {}, profit = {}, verification = {} } = opportunity;
   const trend = describeTrend(market.salesTrend);
   const hasTrend = Array.isArray(market.salesTrend) && market.salesTrend.length > 0;
 
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+      <div className={`grid grid-cols-1 gap-4 ${stacked ? '' : 'lg:grid-cols-12'}`}>
         {/* eBay */}
-        <div className="flex gap-3 lg:col-span-5">
+        <div className={`flex gap-3 ${stacked ? '' : 'lg:col-span-5'}`}>
           {ebay.thumbnail ? (
             <img src={ebay.thumbnail} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" loading="lazy" />
           ) : (
             <div className="h-16 w-16 shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800" />
           )}
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-500">#{opportunity.position} · eBay</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-500">{stacked ? '' : `#${opportunity.position} · `}eBay</p>
             <a href={ebay.url} target="_blank" rel="noreferrer" className="line-clamp-2 text-sm font-semibold text-slate-900 hover:underline dark:text-slate-100">
               {ebay.title}
             </a>
@@ -212,7 +214,7 @@ function OpportunityCard({ opportunity, renderSalesTrend }) {
         </div>
 
         {/* Amazon */}
-        <div className="flex gap-3 lg:col-span-4">
+        <div className={`flex gap-3 ${stacked ? '' : 'lg:col-span-4'}`}>
           {amazon.thumbnail ? (
             <img src={amazon.thumbnail} alt="" className="h-16 w-16 shrink-0 rounded-lg bg-white object-contain" loading="lazy" />
           ) : (
@@ -238,7 +240,7 @@ function OpportunityCard({ opportunity, renderSalesTrend }) {
         </div>
 
         {/* Profit */}
-        <div className="rounded-xl bg-slate-50 p-3 lg:col-span-3 dark:bg-slate-800/60">
+        <div className={`rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60 ${stacked ? '' : 'lg:col-span-3'}`}>
           {profit.available ? (
             <>
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('aiAnalysis.estimatedProfit')}</p>
@@ -395,5 +397,153 @@ export function AiAnalysisResults({ run, error, onCancel, onDismiss, renderSales
         <p className="mt-3 text-[11px] text-slate-400">{t('aiAnalysis.limitations')}</p>
       )}
     </section>
+  );
+}
+
+const FOUND_PAGE_SIZE = 30;
+
+function formatSavedAt(value) {
+  const date = value ? new Date(value) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.toLocaleString() : '';
+}
+
+// Right-hand drawer listing every product AI Analysis found for this user
+// (all runs, saved in ai_analysis_opportunities). Clicking a row opens the
+// same detail card the run results use: STR, Sales Trend, totals, profit,
+// AI verification, eBay and Amazon links.
+export function AiFoundProductsDrawer({ open, onClose, renderSalesTrend }) {
+  const { t } = useTranslation();
+  const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [selectedId, setSelectedId] = useState(null);
+
+  const load = useCallback(async (offset = 0) => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await aiAnalysisAPI.listOpportunities({ limit: FOUND_PAGE_SIZE, offset });
+      const next = res.data?.items || [];
+      setItems((prev) => (offset ? [...prev, ...next] : next));
+      setTotal(Number(res.data?.total || 0));
+    } catch (err) {
+      setError(err?.response?.data?.error || err?.message || 'Failed to load');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Reloaded on every open so products found by a run just now show up.
+  useEffect(() => {
+    if (open) {
+      setSelectedId(null);
+      load(0);
+    }
+  }, [open, load]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+  const selected = items.find((item) => item.id === selectedId) || null;
+
+  return (
+    <div className="fixed inset-0 z-50">
+      <button type="button" className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]" onClick={onClose} aria-label={t('aiAnalysis.close')} />
+      <aside className="absolute right-0 top-0 flex h-full w-full max-w-[560px] flex-col border-l border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.28)] dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
+              <Bot size={18} className="text-emerald-600" />
+              {t('aiAnalysis.foundTitle')}
+            </h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('aiAnalysis.foundSubtitle', { count: total })}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-100 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900"
+            aria-label={t('aiAnalysis.close')}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {error && <p className="mb-3 rounded-xl bg-rose-50 p-3 text-xs text-rose-700 dark:bg-rose-500/10 dark:text-rose-200">{error}</p>}
+
+          {selected ? (
+            <div className="space-y-3">
+              <button type="button" onClick={() => setSelectedId(null)} className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                ← {t('aiAnalysis.backToList')}
+              </button>
+              <p className="text-[11px] text-slate-400">
+                {formatSavedAt(selected.savedAt)}
+                {selected.runSeed ? ` · ${t('aiAnalysis.foundFromStore', { store: selected.runSeed })}` : ''}
+              </p>
+              <OpportunityCard opportunity={selected} renderSalesTrend={renderSalesTrend} stacked defaultOpen />
+            </div>
+          ) : items.length === 0 && !loading ? (
+            <p className="rounded-2xl border border-dashed border-slate-200 p-5 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
+              {t('aiAnalysis.foundEmpty')}
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {items.map((item) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(item.id)}
+                    className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:-translate-y-[1px] hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+                  >
+                    {item.ebay?.thumbnail ? (
+                      <img src={item.ebay.thumbnail} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" loading="lazy" />
+                    ) : (
+                      <div className="h-12 w-12 shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{item.ebay?.title}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        eBay {fmtMoney(item.ebay?.priceUsd, item.ebay?.currency)} · Amazon {fmtMoney(item.amazon?.priceUsd, item.amazon?.currency)} · STR{' '}
+                        {fmtPercent(item.market?.sellThroughPct)}
+                      </p>
+                      <p className="text-[11px] text-slate-400">{formatSavedAt(item.savedAt)}</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p
+                        className={`text-sm font-bold ${
+                          Number(item.profit?.profitPerUnitUsd) > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                        }`}
+                      >
+                        {item.profit?.available ? fmtMoney(item.profit.profitPerUnitUsd, item.profit.currency) : '—'}
+                      </p>
+                      <p className="text-[10px] text-slate-400">{t('aiAnalysis.estimatedProfit')}</p>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {!selected && items.length < total && (
+            <button type="button" onClick={() => load(items.length)} disabled={loading} className="btn-secondary mt-3 w-full text-xs">
+              {loading ? t('aiAnalysis.loading') : t('aiAnalysis.loadMore')}
+            </button>
+          )}
+          {loading && !items.length && (
+            <div className="flex justify-center py-6">
+              <Loader2 size={18} className="animate-spin text-slate-400" />
+            </div>
+          )}
+        </div>
+      </aside>
+    </div>
   );
 }
