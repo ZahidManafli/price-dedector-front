@@ -206,7 +206,7 @@ function OpportunityCard({ opportunity, renderSalesTrend }) {
               ) : (
                 ebay.sellerUsername || '—'
               )}{' '}
-              ({t('aiAnalysis.feedback')}: {fmtNumber(ebay.sellerFeedbackScore)})
+              ({t('aiAnalysis.feedback')}: {fmtNumber(ebay.sellerFeedbackScore)}){ebay.sellerCountry ? ` · ${ebay.sellerCountry}` : ''}
             </p>
           </div>
         </div>
