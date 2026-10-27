@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bot, CheckCircle2, ChevronDown, ExternalLink, Loader2, Lock, ShieldCheck, Square, X } from 'lucide-react';
+import { Bot, CheckCircle2, ChevronDown, ExternalLink, Loader2, Lock, ShieldCheck, SlidersHorizontal, Square, X } from 'lucide-react';
 import { aiAnalysisAPI } from '../services/api';
 
 const POLL_MS = 3000;
@@ -136,6 +136,24 @@ export function useAiAnalysisRun({ enabled }) {
   };
 }
 
+// Opens Checkila Analysis -> AI settings (AiAnalysisSettingsModal.jsx).
+export function AiSettingsButton({ isAdmin, onClick }) {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      onClick={() => isAdmin && onClick()}
+      disabled={!isAdmin}
+      title={!isAdmin ? t('aiAnalysis.adminOnly') : t('aiAnalysis.settings.title')}
+      aria-label={t('aiAnalysis.settings.title')}
+      className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-sm font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto dark:border-emerald-500/30 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
+    >
+      {isAdmin ? <SlidersHorizontal size={14} /> : <Lock size={14} />}
+      <span className="sm:hidden xl:inline">{t('aiAnalysis.settings.button')}</span>
+    </button>
+  );
+}
+
 export function AiAnalysisButton({ isAdmin, run, starting, onStart, onShow, disabled }) {
   const { t } = useTranslation();
   const running = run?.status === 'running';
@@ -193,7 +211,13 @@ function OpportunityCard({ opportunity, renderSalesTrend, stacked = false, defau
             <div className="h-16 w-16 shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800" />
           )}
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-500">{stacked ? '' : `#${opportunity.position} · `}eBay</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-500">{stacked ? '' : `#${opportunity.position} · `}eBay
+              {ebay.isVariation && (
+                <span className="ml-1.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] normal-case text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                  {t('aiAnalysis.variation')}
+                </span>
+              )}
+            </p>
             <a href={ebay.url} target="_blank" rel="noreferrer" className="line-clamp-2 text-sm font-semibold text-slate-900 hover:underline dark:text-slate-100">
               {ebay.title}
             </a>
@@ -284,7 +308,15 @@ function OpportunityCard({ opportunity, renderSalesTrend, stacked = false, defau
             {trend ? t(`aiAnalysis.trend.${trend}`) : t('aiAnalysis.trend.none')}
           </p>
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-            <Stat label={t('aiAnalysis.sold7dLabel')} value={fmtNumber(ebay.sold7d)} />
+            <Stat
+              label={t('aiAnalysis.sold7dLabel')}
+              value={fmtNumber(opportunity.purchaseHistory?.unitsLast7Days ?? ebay.sold7d)}
+              hint={
+                opportunity.purchaseHistory
+                  ? t('aiAnalysis.salesDays', { days: opportunity.purchaseHistory.salesDays })
+                  : null
+              }
+            />
             <Stat label={t('aiAnalysis.sellThrough')} value={fmtPercent(market.sellThroughPct)} hint={market.query ? `“${market.query}”` : null} />
             <Stat label={t('aiAnalysis.totalListings')} value={fmtNumber(market.totalListings)} />
             <Stat label={t('aiAnalysis.totalSold')} value={fmtNumber(market.totalSold)} />
@@ -303,6 +335,22 @@ function OpportunityCard({ opportunity, renderSalesTrend, stacked = false, defau
             <p>
               <span className="font-semibold">{t('aiAnalysis.verification')}:</span> {verification.reason || '—'}
             </p>
+            {verification.checks && (
+              <p className="mt-0.5 flex flex-wrap gap-1.5">
+                {['image', 'title', 'specifics'].map((key) => (
+                  <span
+                    key={key}
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      verification.checks[key] === 'MATCH'
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'
+                        : 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300'
+                    }`}
+                  >
+                    {verification.checks[key] === 'MATCH' ? '✓' : '✗'} {t(`aiAnalysis.check.${key}`)}
+                  </span>
+                ))}
+              </p>
+            )}
             {verification.matchedAttributes?.length > 0 && <p>✓ {verification.matchedAttributes.join(' · ')}</p>}
             <p className="mt-1 text-[11px] text-slate-400">{t('aiAnalysis.profitDisclaimer')}</p>
           </div>

@@ -222,6 +222,9 @@ export const aiAnalysisAPI = {
   getLatest: () => api.get('/ai-analysis/runs/latest'),
   get: (runId) => api.get(`/ai-analysis/runs/${encodeURIComponent(runId)}`),
   cancel: (runId) => api.post(`/ai-analysis/runs/${encodeURIComponent(runId)}/cancel`),
+  // Checkila Analysis -> AI settings (used by every new run).
+  getSettings: () => api.get('/ai-analysis/settings'),
+  saveSettings: (settings) => api.put('/ai-analysis/settings', settings),
   // Every product AI Analysis found for the user (all runs, newest first).
   listOpportunities: (params = {}) => api.get('/ai-analysis/opportunities', { params }),
   // Admin panel -> AI Sellers (the store names a run starts from).

@@ -19,7 +19,8 @@ import ListOnInventoryModal from '../components/ListOnInventoryModal';
 import PurchaseHistoryModal from '../components/PurchaseHistoryModal';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { AiAnalysisButton, AiAnalysisResults, AiFoundProductsDrawer, useAiAnalysisRun } from '../components/AiAnalysisPanel';
+import { AiAnalysisButton, AiAnalysisResults, AiFoundProductsDrawer, AiSettingsButton, useAiAnalysisRun } from '../components/AiAnalysisPanel';
+import AiAnalysisSettingsModal from '../components/AiAnalysisSettingsModal';
 import { calculateLast7DaysSoldCount, calculateLast15DaysSoldCount, fetchPurchaseHistoryRows, normalizeNumericItemId } from '../utils/purchaseHistory';
 // ── Bucket ────────────────────────────────────────────────────────────────────
 import { useBucket, BucketTrigger, BucketDrawer, AddToBucketButton } from '../components/EbayBucket';
@@ -321,6 +322,7 @@ export default function MarketAnalysisPage() {
   const isAdmin = user?.role === 'admin';
   const aiAnalysis = useAiAnalysisRun({ enabled: isAdmin });
   const [aiFoundOpen, setAiFoundOpen] = useState(false);
+  const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -1310,13 +1312,16 @@ export default function MarketAnalysisPage() {
           recentSellers={recentSearches.sellers}
           recentTitles={recentSearches.titles}
           extraAction={(
-            <AiAnalysisButton
-              isAdmin={isAdmin}
-              run={aiAnalysis.run}
-              starting={aiAnalysis.starting}
-              onStart={aiAnalysis.start}
-              onShow={aiAnalysis.show}
-            />
+            <div className="flex gap-2">
+              <AiAnalysisButton
+                isAdmin={isAdmin}
+                run={aiAnalysis.run}
+                starting={aiAnalysis.starting}
+                onStart={aiAnalysis.start}
+                onShow={aiAnalysis.show}
+              />
+              <AiSettingsButton isAdmin={isAdmin} onClick={() => setAiSettingsOpen(true)} />
+            </div>
           )}
         />
       </div>
@@ -1333,6 +1338,10 @@ export default function MarketAnalysisPage() {
           onDismiss={aiAnalysis.dismiss}
           renderSalesTrend={(data) => <FastSalesTrendChart data={data} isDark={isDark} />}
         />
+      )}
+
+      {isAdmin && (
+        <AiAnalysisSettingsModal open={aiSettingsOpen} onClose={() => setAiSettingsOpen(false)} />
       )}
 
       {isAdmin && (
