@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, Loader2, PackageCheck, TrendingUp, AlertTriangle, ShoppingBag } from 'lucide-react';
+import { Bell, CheckCheck, Loader2, PackageCheck, TrendingUp, AlertTriangle, ShoppingBag, ShoppingCart } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { notificationsAPI } from '../services/api';
 import Alert from '../components/Alert';
@@ -12,6 +12,7 @@ const PAGE_SIZE = 30;
 // Unknown/future types fall back to a plain bell, so a new type added later
 // never looks broken here.
 function iconForType(type) {
+  if (type === 'ebay_new_order') return ShoppingCart;
   if (type === 'product_price_alert') return TrendingUp;
   if (type === 'product_auto_stock') return PackageCheck;
   if (type === 'product_compare_done') return CheckCheck;
