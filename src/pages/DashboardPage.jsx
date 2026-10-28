@@ -569,10 +569,11 @@ export default function DashboardPage() {
   const trackingEmpty = trackingCreditsLeft != null && trackingCreditsLeft <= 0;
 
   const userPlan = limits?.plan || null;
-  const userPlanCategory = String(userPlan?.category || '').toLowerCase();
-  const isTrialPlan = String(userPlan?.name || '').toLowerCase().includes('trial');
-  const canRequestTrackingCredits =
-    userPlanCategory !== 'analytics' && userPlanCategory !== 'amazon_monitoring' && !isTrialPlan;
+  // Decided by the backend (GET /settings/limits -> trackingCredits.canPurchase,
+  // services/trackingAccessService.js): only users who actually have tracking —
+  // e.g. a Subscription plan WITH the tracking add-on — may buy more credits.
+  // The same rule is enforced again on submission and before payment.
+  const canRequestTrackingCredits = limits?.trackingCredits?.canPurchase === true;
 
   const onOpenUpgradeRequest = () => {
     navigate('/upgrade-plan');
@@ -1284,7 +1285,7 @@ export default function DashboardPage() {
             </button>
           ) : (
             <p className={`mt-3 text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              Not available on Analytics or Amazon Monitoring plans.
+              {limits?.trackingCredits?.purchaseBlockedReason || 'Tracking credits are not available on your plan.'}
             </p>
           )}
         </div>
