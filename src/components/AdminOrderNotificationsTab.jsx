@@ -10,7 +10,9 @@ import {
   RefreshCw,
   Search,
   ShoppingCart,
+  Stethoscope,
   Store,
+  X,
 } from 'lucide-react';
 import { adminAPI } from '../services/api';
 
@@ -263,10 +265,338 @@ function OrdersView() {
   );
 }
 
+function KeyValue({ label, value, bad }) {
+  return (
+    <div className="flex justify-between gap-3 border-b border-slate-100 py-1 text-xs last:border-0 dark:border-slate-700">
+      <span className="text-slate-500 dark:text-slate-400">{label}</span>
+      <span className={`text-right font-medium ${bad ? 'text-red-600 dark:text-red-400' : 'text-slate-800 dark:text-slate-100'}`}>
+        {value == null || value === '' ? '—' : String(value)}
+      </span>
+    </div>
+  );
+}
+
+const WEBHOOK_URL = 'https://back.checkila.com/ebay/platform-notifications';
+
+// Runs GetNotificationPreferences (Application + User) and GetNotificationsUsage
+// for one subscribed account — i.e. asks eBay what IT thinks is configured and
+// what it has (or hasn't) delivered, optionally for one sold item.
+function DiagnosticsPanel({ subscription, onClose }) {
+  const [itemId, setItemId] = useState('');
+  const [hours, setHours] = useState(48);
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+
+  const run = async (e) => {
+    e?.preventDefault();
+    setRunning(true);
+    setError('');
+    setResult(null);
+    try {
+      const res = await adminAPI.diagnoseOrderNotifications({
+        userId: subscription.userId,
+        ebayAccountId: subscription.ebayAccountId,
+        itemId: itemId.trim() || undefined,
+        hours,
+      });
+      setResult(res.data);
+    } catch (err) {
+      setError(errorMessage(err, 'Diaqnostika alınmadı'));
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const app = result?.application;
+  const userPrefs = Array.isArray(result?.user) ? result.user : null;
+  const usage = result?.usage;
+  const server = result?.server;
+
+  return (
+    <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 dark:border-blue-500/30 dark:bg-blue-500/5">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <p className="flex items-center gap-2 font-semibold text-slate-900 dark:text-white">
+            <Stethoscope className="h-4 w-4 text-blue-600" /> Diaqnostika: {subscription.ebayUserId}
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            eBay-dən soruşulur: bildiriş ayarları və son saatlarda bu hesab üçün nə göndərilib. Satılmış məhsulun Item ID-sini yazsan, həmin
+            məhsul üzrə hər bildirişin taleyi görünəcək.
+          </p>
+        </div>
+        <button type="button" onClick={onClose} className="rounded-md p-1 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      <form onSubmit={run} className="flex flex-wrap items-end gap-2">
+        <label className="text-xs text-slate-600 dark:text-slate-300">
+          Satılan məhsulun Item ID-si (istəyə bağlı)
+          <input
+            value={itemId}
+            onChange={(e) => setItemId(e.target.value)}
+            placeholder="məs. 123456789012"
+            className="mt-1 block w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+          />
+        </label>
+        <label className="text-xs text-slate-600 dark:text-slate-300">
+          Son neçə saat
+          <select
+            value={hours}
+            onChange={(e) => setHours(Number(e.target.value))}
+            className="mt-1 block rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+          >
+            {[24, 48, 72].map((h) => (
+              <option key={h} value={h}>{h} saat</option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="submit"
+          disabled={running}
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+        >
+          {running && <Loader2 className="h-4 w-4 animate-spin" />}
+          Yoxla
+        </button>
+      </form>
+
+      {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">{error}</p>}
+
+      {result && (
+        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800">
+            <p className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-100">Server açarları</p>
+            <KeyValue label="EBAY_DEV_ID" value={server?.devIdSet ? 'var' : 'YOXDUR'} bad={!server?.devIdSet} />
+            <KeyValue label="EBAY_CLIENT_ID (production)" value={server?.productionAppId ? 'bəli' : 'production deyil?'} bad={!server?.productionAppId} />
+            <KeyValue label="EBAY_CLIENT_SECRET" value={server?.certIdSet ? 'var' : 'YOXDUR'} bad={!server?.certIdSet} />
+            <KeyValue label="Server vaxtı (UTC)" value={server?.serverTime} />
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800">
+            <p className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-100">Tətbiq ayarları (eBay portal)</p>
+            {app ? (
+              <>
+                <KeyValue label="Application URL" value={app.applicationUrl} bad={app.applicationUrl !== WEBHOOK_URL} />
+                <KeyValue label="ApplicationEnable" value={app.applicationEnable} bad={app.applicationEnable !== 'Enable'} />
+                <KeyValue label="Payload version" value={app.payloadVersion} />
+                <KeyValue label="Alert" value={[app.alertEnable, app.alertEmail].filter(Boolean).join(' · ')} />
+                {(app.deliveryUrls || []).map((d) => (
+                  <KeyValue key={`${d.name}-${d.url}`} label={`Delivery URL: ${d.name || ''}`} value={`${d.url} (${d.status})`} />
+                ))}
+              </>
+            ) : (
+              <p className="text-xs text-slate-500">Alınmadı</p>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800">
+            <p className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-100">Bu hesabın abunə olduğu hadisələr</p>
+            {userPrefs ? (
+              userPrefs.length ? (
+                userPrefs.map((p) => (
+                  <KeyValue key={p.eventType} label={p.eventType} value={p.eventEnable} bad={p.eventEnable !== 'Enable'} />
+                ))
+              ) : (
+                <p className="text-xs text-red-600 dark:text-red-400">eBay-də bu hesab üçün heç bir hadisə aktiv deyil.</p>
+              )
+            ) : (
+              <p className="text-xs text-slate-500">Alınmadı</p>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800">
+            <p className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+              eBay-in çatdırma statistikası (son {usage?.hours ?? hours} saat)
+            </p>
+            {usage ? (
+              <>
+                <KeyValue label="Çatdırılıb (Delivered)" value={usage.statistics.delivered} />
+                <KeyValue label="Növbədə (new / pending)" value={`${usage.statistics.queuedNew} / ${usage.statistics.queuedPending}`} />
+                <KeyValue label="Vaxtı keçib (Expired)" value={usage.statistics.expired} bad={usage.statistics.expired > 0} />
+                <KeyValue label="Xəta (Error)" value={usage.statistics.errors} bad={usage.statistics.errors > 0} />
+                {(usage.markUpMarkDown || []).map((m) => (
+                  <KeyValue
+                    key={`${m.type}-${m.time}`}
+                    label={`URL ${m.type === 'MarkDown' ? 'söndürülüb' : 'aktivləşib'} · ${formatDate(m.time)}`}
+                    value={m.reason}
+                    bad={m.type === 'MarkDown'}
+                  />
+                ))}
+              </>
+            ) : (
+              <p className="text-xs text-slate-500">Alınmadı</p>
+            )}
+          </div>
+
+          {usage?.itemId && (
+            <div className="rounded-lg border border-slate-200 bg-white p-3 lg:col-span-2 dark:border-slate-700 dark:bg-slate-800">
+              <p className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-100">Item {usage.itemId} üçün eBay-in bildirişləri</p>
+              {usage.notifications.length === 0 ? (
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  eBay bu məhsul üçün heç bir bildiriş yaratmayıb. Satış bu müddətdədirsə, ən çox ehtimal olunan səbəb: listing Checkila (bizim
+                  AppId) ilə yaradılmayıb/redaktə olunmayıb — eBay belə listinglər üçün FixedPriceTransaction göndərmir.
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-xs">
+                    <thead className="text-left text-slate-500">
+                      <tr>
+                        <th className="py-1 pr-3">Hadisə</th>
+                        <th className="py-1 pr-3">Status</th>
+                        <th className="py-1 pr-3">Vaxt</th>
+                        <th className="py-1 pr-3">Cəhd</th>
+                        <th className="py-1 pr-3">URL</th>
+                        <th className="py-1">Xəta</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {usage.notifications.map((n, index) => (
+                        <tr key={`${n.referenceId}-${index}`} className="border-t border-slate-100 dark:border-slate-700">
+                          <td className="py-1 pr-3 font-medium text-slate-800 dark:text-slate-100">{n.type}</td>
+                          <td className={`py-1 pr-3 ${n.deliveryStatus === 'Delivered' ? 'text-emerald-600' : 'text-red-600'}`}>{n.deliveryStatus}</td>
+                          <td className="py-1 pr-3 text-slate-600 dark:text-slate-300">{formatDate(n.deliveryTime)}</td>
+                          <td className="py-1 pr-3 text-slate-600 dark:text-slate-300">{n.retries}</td>
+                          <td className="py-1 pr-3 text-slate-600 dark:text-slate-300">{n.deliveryUrl}</td>
+                          <td className="py-1 text-red-600 dark:text-red-400">{n.errorMessage}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {result.errors?.length > 0 && (
+            <div className="rounded-lg bg-red-50 p-3 text-xs text-red-700 lg:col-span-2 dark:bg-red-500/10 dark:text-red-300">
+              {result.errors.map((e) => (
+                <p key={e.step}>{e.step}: {e.error}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const INBOX_OUTCOME_LABELS = {
+  queued: 'Növbəyə yazıldı',
+  duplicate: 'Təkrar',
+  ignored_event: 'Başqa hadisə',
+  no_dev_id: 'EBAY_DEV_ID yoxdur',
+  bad_signature: 'İmza səhvdir',
+  invalid: 'Natamam',
+  error: 'Server xətası',
+};
+
+function InboxView() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [raw, setRaw] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    adminAPI
+      .listWebhookDeliveries({ limit: 200 })
+      .then((res) => !cancelled && setData(res.data))
+      .catch((err) => !cancelled && setError(errorMessage(err, 'Webhook girişləri yüklənmədi')))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const openRaw = async (id) => {
+    try {
+      const res = await adminAPI.getWebhookDeliveryRaw(id);
+      setRaw({ id, body: res.data?.rawBody || '(saxlanmayıb)' });
+    } catch (err) {
+      setRaw({ id, body: errorMessage(err, 'Yüklənmədi') });
+    }
+  };
+
+  if (loading) return <Loader2 className="mx-auto my-8 h-5 w-5 animate-spin text-slate-400" />;
+  const deliveries = data?.deliveries || [];
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        Serverə {WEBHOOK_URL} ünvanına gələn hər sorğu (son 7 gün). Burada heç nə yoxdursa, eBay ümumiyyətlə heç nə göndərməyib.
+      </p>
+      {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">{error}</p>}
+      <div className="flex flex-wrap gap-2">
+        {(data?.totals || []).map((t) => (
+          <span key={t.outcome} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+            {INBOX_OUTCOME_LABELS[t.outcome] || t.outcome}: {t.count} · son: {formatDate(t.lastAt)}
+          </span>
+        ))}
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
+        <table className="min-w-full text-sm">
+          <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500 dark:bg-slate-900/40 dark:text-slate-400">
+            <tr>
+              <th className="px-3 py-2">Gəlib</th>
+              <th className="px-3 py-2">Nəticə</th>
+              <th className="px-3 py-2">Hadisə</th>
+              <th className="px-3 py-2">Satıcı</th>
+              <th className="px-3 py-2">Item ID</th>
+              <th className="px-3 py-2">Səbəb</th>
+              <th className="px-3 py-2" />
+            </tr>
+          </thead>
+          <tbody>
+            {deliveries.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-3 py-8 text-center text-slate-500 dark:text-slate-400">
+                  Hələ heç bir sorğu gəlməyib.
+                </td>
+              </tr>
+            ) : (
+              deliveries.map((d) => (
+                <tr key={d.id} className="border-t border-slate-100 dark:border-slate-700">
+                  <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-500 dark:text-slate-400">{formatDate(d.receivedAt)}</td>
+                  <td className="px-3 py-2">
+                    <StatusBadge status={d.outcome === 'queued' ? 'processed' : d.outcome === 'duplicate' || d.outcome === 'ignored_event' ? 'ignored' : 'failed'} />
+                    <span className="ml-2 text-xs text-slate-600 dark:text-slate-300">{INBOX_OUTCOME_LABELS[d.outcome] || d.outcome}</span>
+                  </td>
+                  <td className="px-3 py-2 text-slate-700 dark:text-slate-300">{d.eventName || '—'}</td>
+                  <td className="px-3 py-2 text-slate-700 dark:text-slate-300">{d.recipientUserId || '—'}</td>
+                  <td className="px-3 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">{d.itemId || '—'}</td>
+                  <td className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">{d.reason || ''}</td>
+                  <td className="px-3 py-2 text-right">
+                    {Number(d.hasRawBody) ? (
+                      <button type="button" onClick={() => openRaw(d.id)} className="text-xs font-semibold text-blue-600 hover:underline">
+                        XML
+                      </button>
+                    ) : null}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      {raw && (
+        <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800">
+          <div className="mb-2 flex justify-between">
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Sorğu #{raw.id} — xam XML</p>
+            <button type="button" onClick={() => setRaw(null)} className="text-slate-500"><X className="h-4 w-4" /></button>
+          </div>
+          <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-all rounded bg-slate-50 p-2 text-xs text-slate-700 dark:bg-slate-900 dark:text-slate-300">{raw.body}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SubscriptionsView() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [diagnosing, setDiagnosing] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -284,6 +614,7 @@ function SubscriptionsView() {
   return (
     <div className="space-y-3">
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">{error}</p>}
+      {diagnosing && <DiagnosticsPanel key={diagnosing.id} subscription={diagnosing} onClose={() => setDiagnosing(null)} />}
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500 dark:bg-slate-900/40 dark:text-slate-400">
@@ -293,11 +624,12 @@ function SubscriptionsView() {
               <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Abunə tarixi</th>
               <th className="px-3 py-2">Xəta</th>
+              <th className="px-3 py-2" />
             </tr>
           </thead>
           <tbody>
             {subscriptions.length === 0 ? (
-              <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-500 dark:text-slate-400">Hələ abunə olmuş hesab yoxdur — cron ilk işləyəndə əlavə olunacaq.</td></tr>
+              <tr><td colSpan={6} className="px-3 py-8 text-center text-slate-500 dark:text-slate-400">Hələ abunə olmuş hesab yoxdur — cron ilk işləyəndə əlavə olunacaq.</td></tr>
             ) : (
               subscriptions.map((sub) => (
                 <tr key={sub.id} className="border-t border-slate-100 dark:border-slate-700">
@@ -314,6 +646,15 @@ function SubscriptionsView() {
                         </span>
                       </>
                     ) : null}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <button
+                      type="button"
+                      onClick={() => setDiagnosing(sub)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700"
+                    >
+                      <Stethoscope className="h-3.5 w-3.5" /> Diaqnostika
+                    </button>
                   </td>
                 </tr>
               ))
@@ -410,6 +751,7 @@ const VIEWS = [
   { key: 'orders', label: 'Bildirilən sifarişlər' },
   { key: 'subscriptions', label: 'Abunə olmuş hesablar' },
   { key: 'events', label: 'Hadisə növbəsi' },
+  { key: 'inbox', label: 'Webhook girişləri' },
 ];
 
 export default function AdminOrderNotificationsTab() {
@@ -526,6 +868,7 @@ export default function AdminOrderNotificationsTab() {
         {view === 'orders' && <OrdersView />}
         {view === 'subscriptions' && <SubscriptionsView />}
         {view === 'events' && <EventsView />}
+        {view === 'inbox' && <InboxView />}
       </div>
     </div>
   );
