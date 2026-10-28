@@ -15,6 +15,7 @@ import { NotificationsTab } from '../components/NotificationsTab';
 import AdminVideosTab from '../components/AdminVideosTab';
 import AdminReviewsTab from '../components/AdminReviewsTab';
 import AdminAiSellersTab from '../components/AdminAiSellersTab';
+import AdminOrderNotificationsTab from '../components/AdminOrderNotificationsTab';
 import AdminAnalytics from '../components/AdminAnalytics';
 import DateRangePicker from '../components/DateRangePicker';
 import TutorialVideoButton from '../components/TutorialVideoButton';
@@ -942,6 +943,12 @@ export default function AdminPanelPage() {
             onClick={() => setActiveTab('ai-sellers')}
           >
             AI Sellers
+          </button>
+          <button
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'order-notifications' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
+            onClick={() => setActiveTab('order-notifications')}
+          >
+            Sifariş bildirişləri
           </button>
           <button
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'danger' ? 'bg-red-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
@@ -2019,6 +2026,8 @@ export default function AdminPanelPage() {
             <AdminAiSellersTab />
           </div>
         )}
+
+        {!loading && activeTab === 'order-notifications' && <AdminOrderNotificationsTab />}
 
         {!loading && activeTab === 'stripe-webhooks' && (
           <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 lg:gap-6">

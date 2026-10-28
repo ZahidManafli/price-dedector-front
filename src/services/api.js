@@ -479,6 +479,10 @@ export const dewisoAPI = {
 
 // Admin APIs
 export const adminAPI = {
+  getOrderNotificationsOverview: () => api.get('/admin/ebay-order-notifications/overview'),
+  listNotifiedOrders: (params = {}) => api.get('/admin/ebay-order-notifications/orders', { params }),
+  listOrderNotificationSubscriptions: () => api.get('/admin/ebay-order-notifications/subscriptions'),
+  listOrderNotificationEvents: (params = {}) => api.get('/admin/ebay-order-notifications/events', { params }),
   listUsers: () => api.get('/admin/users'),
   blockUser: (userId, reason) => api.post(`/admin/users/${userId}/block`, { block: true, reason }),
   unblockUser: (userId) => api.post(`/admin/users/${userId}/block`, { block: false }),
