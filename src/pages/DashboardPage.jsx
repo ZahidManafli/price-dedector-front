@@ -574,6 +574,8 @@ export default function DashboardPage() {
   // e.g. a Subscription plan WITH the tracking add-on — may buy more credits.
   // The same rule is enforced again on submission and before payment.
   const canRequestTrackingCredits = limits?.trackingCredits?.canPurchase === true;
+  // Older backends don't send canPurchase for Market Analysis — keep the button then.
+  const canRequestMarketAnalysisCredits = limits?.marketAnalysis?.canPurchase !== false;
 
   const onOpenUpgradeRequest = () => {
     navigate('/upgrade-plan');
@@ -1227,19 +1229,25 @@ export default function DashboardPage() {
           <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
             {t('dashboard.sellerSearchCost')}
           </p>
-          <button
-            type="button"
-            onClick={() => setMarketAnalysisCreditsModalOpen(true)}
-            className={`mt-3 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-              marketEmpty
-                ? 'bg-rose-600 text-white hover:bg-rose-700'
-                : isDark
-                  ? 'bg-violet-500 text-slate-950 hover:bg-violet-400'
-                  : 'bg-violet-600 text-white hover:bg-violet-700'
-            }`}
-          >
-            Get more credit
-          </button>
+          {canRequestMarketAnalysisCredits ? (
+            <button
+              type="button"
+              onClick={() => setMarketAnalysisCreditsModalOpen(true)}
+              className={`mt-3 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                marketEmpty
+                  ? 'bg-rose-600 text-white hover:bg-rose-700'
+                  : isDark
+                    ? 'bg-violet-500 text-slate-950 hover:bg-violet-400'
+                    : 'bg-violet-600 text-white hover:bg-violet-700'
+              }`}
+            >
+              Get more credit
+            </button>
+          ) : (
+            <p className={`mt-3 text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              {limits?.marketAnalysis?.purchaseBlockedReason || 'Market Analysis credits are not available on your plan.'}
+            </p>
+          )}
         </div>
 
         {/* Tracking Credits */}
