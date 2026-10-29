@@ -1617,8 +1617,7 @@
       "salesDaysHint": "{{days}}/7 gün — satış həftəyə yayılmalıdır, bir günlük partlayış sayılmır.",
       "errSold": "1 ilə 1000 arasında tam ədəd yazın",
       "summarySales": " Son 7 gündə ən azı {{sold}} satış{{daysPart}} tələb olunur.",
-      "summarySalesDays": " ({{days}} müxtəlif gündə)",
-      "errSalesDays": "{{days}} müxtəlif gündə satış üçün ən azı {{days}} satış lazımdır"
+      "summarySalesDays": " ({{days}} müxtəlif gündə)"
     }
   }
 }

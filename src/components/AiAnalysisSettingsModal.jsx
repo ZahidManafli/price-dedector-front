@@ -162,7 +162,6 @@ export default function AiAnalysisSettingsModal({ open, onClose, onSaved }) {
     else if (n('minPriceUsd') >= n('maxPriceUsd')) errs.maxPriceUsd = t('aiAnalysis.settings.errRange');
     if (!(n('maxSpendUsd') >= 0.3) || n('maxSpendUsd') > 20) errs.maxSpendUsd = t('aiAnalysis.settings.errSpend');
     if (!Number.isInteger(n('minSold7d')) || n('minSold7d') < 1 || n('minSold7d') > 1000) errs.minSold7d = t('aiAnalysis.settings.errSold');
-    else if (Number(form.minSalesDays) > n('minSold7d')) errs.minSalesDays = t('aiAnalysis.settings.errSalesDays', { days: Number(form.minSalesDays) });
     if (sellerMode === 'specific' && !form.startSeller.trim()) errs.startSeller = t('aiAnalysis.settings.errSeller');
     return errs;
   }, [form, sellerMode, t]);
@@ -334,7 +333,11 @@ export default function AiAnalysisSettingsModal({ open, onClose, onSaved }) {
                   <button
                     key={days}
                     type="button"
-                    onClick={() => set('minSalesDays')(days)}
+                    onClick={() => {
+                      set('minSalesDays')(days);
+                      // Sales on N different days need at least N sales.
+                      if (days > (Number(form.minSold7d) || 0)) set('minSold7d')(String(days));
+                    }}
                     className={`rounded-lg py-1.5 text-xs font-semibold transition ${
                       Number(form.minSalesDays) === days
                         ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-white'
@@ -345,7 +348,6 @@ export default function AiAnalysisSettingsModal({ open, onClose, onSaved }) {
                   </button>
                 ))}
               </div>
-              {errors.minSalesDays && <p className="mt-1 text-xs text-rose-600">{errors.minSalesDays}</p>}
               {Number(form.minSalesDays) > 0 && (
                 <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
                   {t('aiAnalysis.settings.salesDaysHint', { days: Number(form.minSalesDays) })}
@@ -457,7 +459,7 @@ export default function AiAnalysisSettingsModal({ open, onClose, onSaved }) {
                   seller: sellerMode === 'specific' && form.startSeller.trim() ? form.startSeller.trim() : t('aiAnalysis.settings.summaryRandomSeller'),
                 })}
                 {t('aiAnalysis.settings.summarySales', {
-                  sold: Number(form.minSold7d),
+                  sold: Math.max(Number(form.minSold7d) || 0, Number(form.minSalesDays) || 0),
                   daysPart: Number(form.minSalesDays) > 0 ? t('aiAnalysis.settings.summarySalesDays', { days: Number(form.minSalesDays) }) : '',
                 })}
               </div>
