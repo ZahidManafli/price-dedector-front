@@ -1675,7 +1675,17 @@
       "errPrice": "Enter a valid price",
       "errRange": "Max price must be greater than min price",
       "errSpend": "Enter an amount from $0.30 to $20",
-      "errSeller": "Enter a store name or choose random"
+      "errSeller": "Enter a store name or choose random",
+      "salesTitle": "Sales in the last 7 days",
+      "salesHint": "The eBay listing must have sold at least this many in the last 7 days. Listings below it are dropped before any search is spent on them.",
+      "salesUnits": "sales",
+      "salesDaysLabel": "Sold on how many different days",
+      "salesDaysAny": "Any",
+      "salesDaysHint": "{{days}}/7 days — sales must be spread over the week, a one-day spike does not count.",
+      "errSold": "Enter a whole number between 1 and 1000",
+      "summarySales": " Requires at least {{sold}} sales in the last 7 days{{daysPart}}.",
+      "summarySalesDays": " (on {{days}} different days)",
+      "errSalesDays": "Sales on {{days}} different days need at least {{days}} sales"
     }
   }
 }

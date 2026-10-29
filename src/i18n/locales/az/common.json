@@ -1608,7 +1608,17 @@
       "errPrice": "Düzgün qiymət daxil edin",
       "errRange": "Maksimum qiymət minimumdan böyük olmalıdır",
       "errSpend": "$0.30 – $20 arası məbləğ daxil edin",
-      "errSeller": "Mağaza adı yazın və ya təsadüfi seçin"
+      "errSeller": "Mağaza adı yazın və ya təsadüfi seçin",
+      "salesTitle": "Son 7 gündə satış",
+      "salesHint": "eBay listingi son 7 gündə ən azı bu qədər satmalıdır. Daha az satan listinglər heç bir axtarış xərclənmədən atılır.",
+      "salesUnits": "ədəd satış",
+      "salesDaysLabel": "Neçə müxtəlif gündə satılmalıdır",
+      "salesDaysAny": "Fərq etməz",
+      "salesDaysHint": "{{days}}/7 gün — satış həftəyə yayılmalıdır, bir günlük partlayış sayılmır.",
+      "errSold": "1 ilə 1000 arasında tam ədəd yazın",
+      "summarySales": " Son 7 gündə ən azı {{sold}} satış{{daysPart}} tələb olunur.",
+      "summarySalesDays": " ({{days}} müxtəlif gündə)",
+      "errSalesDays": "{{days}} müxtəlif gündə satış üçün ən azı {{days}} satış lazımdır"
     }
   }
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Coins, Layers, Loader2, Minus, Plus, RotateCcw, Shuffle, SlidersHorizontal, Store, Target, Wallet, X } from 'lucide-react';
+import { CalendarDays, Coins, Layers, Loader2, Minus, Plus, RotateCcw, Shuffle, SlidersHorizontal, Store, Target, Wallet, X } from 'lucide-react';
 import { aiAnalysisAPI } from '../services/api';
 
 // Same defaults as the backend (aiAnalysisEngine.getDefaultAiSettings).
@@ -12,10 +12,13 @@ const DEFAULTS = {
   includeVariations: false,
   maxSpendUsd: 1,
   startSeller: '',
+  minSold7d: 4,
+  minSalesDays: 4,
 };
 const PLATFORM_FEE_USD = 0.2;
 const PROFIT_CHIPS = [0.5, 0.8, 1, 2, 3];
 const SPEND_CHIPS = [0.5, 1, 2, 5];
+const SOLD_CHIPS = [1, 3, 5, 10, 20];
 const PRICE_PRESETS = [
   [0, 10],
   [0, 15],
@@ -32,6 +35,8 @@ function toForm(settings) {
     includeVariations: Boolean(settings.includeVariations),
     maxSpendUsd: String(settings.maxSpendUsd),
     startSeller: settings.startSeller || '',
+    minSold7d: String(settings.minSold7d ?? DEFAULTS.minSold7d),
+    minSalesDays: Number(settings.minSalesDays ?? DEFAULTS.minSalesDays),
   };
 }
 
@@ -156,6 +161,8 @@ export default function AiAnalysisSettingsModal({ open, onClose, onSaved }) {
     if (!(n('maxPriceUsd') >= 1) || n('maxPriceUsd') > 1000) errs.maxPriceUsd = t('aiAnalysis.settings.errPrice');
     else if (n('minPriceUsd') >= n('maxPriceUsd')) errs.maxPriceUsd = t('aiAnalysis.settings.errRange');
     if (!(n('maxSpendUsd') >= 0.3) || n('maxSpendUsd') > 20) errs.maxSpendUsd = t('aiAnalysis.settings.errSpend');
+    if (!Number.isInteger(n('minSold7d')) || n('minSold7d') < 1 || n('minSold7d') > 1000) errs.minSold7d = t('aiAnalysis.settings.errSold');
+    else if (Number(form.minSalesDays) > n('minSold7d')) errs.minSalesDays = t('aiAnalysis.settings.errSalesDays', { days: Number(form.minSalesDays) });
     if (sellerMode === 'specific' && !form.startSeller.trim()) errs.startSeller = t('aiAnalysis.settings.errSeller');
     return errs;
   }, [form, sellerMode, t]);
@@ -177,6 +184,8 @@ export default function AiAnalysisSettingsModal({ open, onClose, onSaved }) {
         includeVariations: form.includeVariations,
         maxSpendUsd: Number(form.maxSpendUsd),
         startSeller: sellerMode === 'specific' ? form.startSeller.trim() : '',
+        minSold7d: Number(form.minSold7d),
+        minSalesDays: Number(form.minSalesDays),
       };
       const res = await aiAnalysisAPI.saveSettings(payload);
       onSaved?.(res.data?.settings || payload);
@@ -301,6 +310,49 @@ export default function AiAnalysisSettingsModal({ open, onClose, onSaved }) {
               {(errors.minPriceUsd || errors.maxPriceUsd) && <p className="mt-1 text-xs text-rose-600">{errors.minPriceUsd || errors.maxPriceUsd}</p>}
             </Section>
 
+            {/* Last-7-days demand */}
+            <Section icon={CalendarDays} accent="emerald" title={t('aiAnalysis.settings.salesTitle')} hint={t('aiAnalysis.settings.salesHint')}>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max="1000"
+                  step="1"
+                  value={form.minSold7d}
+                  onChange={(e) => set('minSold7d')(e.target.value)}
+                  className={`input-base h-10 w-24 text-center text-lg font-bold ${errors.minSold7d ? 'border-rose-400' : ''}`}
+                  aria-label={t('aiAnalysis.settings.salesTitle')}
+                />
+                <span className="text-xs text-slate-500">{t('aiAnalysis.settings.salesUnits')}</span>
+              </div>
+              <Chips values={SOLD_CHIPS} current={form.minSold7d} onPick={set('minSold7d')} format={(v) => `${v}+`} />
+              {errors.minSold7d && <p className="mt-1 text-xs text-rose-600">{errors.minSold7d}</p>}
+
+              <p className="mt-4 text-xs font-semibold text-slate-700 dark:text-slate-200">{t('aiAnalysis.settings.salesDaysLabel')}</p>
+              <div className="mt-2 grid grid-cols-8 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+                {[0, 1, 2, 3, 4, 5, 6, 7].map((days) => (
+                  <button
+                    key={days}
+                    type="button"
+                    onClick={() => set('minSalesDays')(days)}
+                    className={`rounded-lg py-1.5 text-xs font-semibold transition ${
+                      Number(form.minSalesDays) === days
+                        ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-white'
+                        : 'text-slate-500 dark:text-slate-400'
+                    }`}
+                  >
+                    {days === 0 ? t('aiAnalysis.settings.salesDaysAny') : days}
+                  </button>
+                ))}
+              </div>
+              {errors.minSalesDays && <p className="mt-1 text-xs text-rose-600">{errors.minSalesDays}</p>}
+              {Number(form.minSalesDays) > 0 && (
+                <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+                  {t('aiAnalysis.settings.salesDaysHint', { days: Number(form.minSalesDays) })}
+                </p>
+              )}
+            </Section>
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {/* Variations */}
               <Section icon={Layers} accent="amber" title={t('aiAnalysis.settings.variationsTitle')} hint={t('aiAnalysis.settings.variationsHint')}>
@@ -403,6 +455,10 @@ export default function AiAnalysisSettingsModal({ open, onClose, onSaved }) {
                   spend: Number(form.maxSpendUsd).toFixed(2),
                   variations: form.includeVariations ? t('aiAnalysis.settings.summaryWithVariations') : t('aiAnalysis.settings.summaryNoVariations'),
                   seller: sellerMode === 'specific' && form.startSeller.trim() ? form.startSeller.trim() : t('aiAnalysis.settings.summaryRandomSeller'),
+                })}
+                {t('aiAnalysis.settings.summarySales', {
+                  sold: Number(form.minSold7d),
+                  daysPart: Number(form.minSalesDays) > 0 ? t('aiAnalysis.settings.summarySalesDays', { days: Number(form.minSalesDays) }) : '',
                 })}
               </div>
             )}
