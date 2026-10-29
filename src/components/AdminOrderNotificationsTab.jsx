@@ -848,6 +848,18 @@ export default function AdminOrderNotificationsTab() {
         Son 24 saatda eBay-dən gələn hadisələr: {events24h.processed || 0} göndərildi · {events24h.pending || 0} növbədə ·{' '}
         {events24h.ignored || 0} atıldı · {events24h.failed || 0} xəta
       </p>
+      {overview?.accountDeletion && (
+        <p
+          className={`text-xs ${
+            overview.accountDeletion.configured ? 'text-slate-500 dark:text-slate-400' : 'text-red-600 dark:text-red-400'
+          }`}
+        >
+          Marketplace Account Deletion:{' '}
+          {overview.accountDeletion.configured ? 'quraşdırılıb' : 'EBAY_ACCOUNT_DELETION_VERIFICATION_TOKEN yoxdur'} · növbədə{' '}
+          {overview.accountDeletion.pending} · son bildiriş: {formatDate(overview.accountDeletion.lastReceivedAt)} · son 30 gündə Checkila
+          datasına toxunan silmə: {overview.accountDeletion.matchedBatches30d}
+        </p>
+      )}
 
       <div className="flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-800">
         {VIEWS.map((item) => (

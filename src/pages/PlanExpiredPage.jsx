@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowRight, Clock3, LogOut, Mail } from 'lucide-react';
+import { AlertTriangle, ArrowRight, LogOut, Mail, PauseCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
@@ -11,18 +11,18 @@ function formatDate(value) {
   return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
 }
 
-const GRACE_PERIOD_DAYS = 2;
-
+// An expired account is no longer deleted — it's put on hold: the backend's
+// price/stock checks and auto-stock rules skip it (routes/cron.js) until the
+// plan is renewed, and everything resumes on its own after renewal.
 export default function PlanExpiredPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { isDark } = useTheme();
 
-  const { daysSinceExpiry, daysRemaining } = useMemo(() => {
-    if (!user?.planExpiresAt) return { daysSinceExpiry: 0, daysRemaining: GRACE_PERIOD_DAYS };
+  const daysSinceExpiry = useMemo(() => {
+    if (!user?.planExpiresAt) return 0;
     const expiredAt = new Date(user.planExpiresAt).getTime();
-    const since = Math.max(0, Math.floor((Date.now() - expiredAt) / (24 * 60 * 60 * 1000)));
-    return { daysSinceExpiry: since, daysRemaining: Math.max(0, GRACE_PERIOD_DAYS - since) };
+    return Math.max(0, Math.floor((Date.now() - expiredAt) / (24 * 60 * 60 * 1000)));
   }, [user?.planExpiresAt]);
 
   const pageBg = isDark ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-900';
@@ -54,9 +54,9 @@ export default function PlanExpiredPage() {
               </h1>
 
               <p className="mt-5 max-w-lg text-base leading-8 text-slate-200 md:text-lg">
-                Access to Checkila&apos;s features is paused until you renew. Your account
-                and data are safe for now, but they will be permanently deleted if the
-                plan isn&apos;t renewed in time.
+                Access to Checkila&apos;s features is paused until you renew. Your account,
+                products and eBay connections are kept safe — renew any time and
+                everything picks up right where you left off.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -90,13 +90,13 @@ export default function PlanExpiredPage() {
           {/* Right: status card */}
           <div className={`rounded-[2rem] border p-6 shadow-[0_24px_70px_rgba(15,23,42,0.1)] md:p-8 ${cardBg}`}>
             <div className="flex items-center gap-3">
-              <div className={`rounded-2xl p-3 ${isDark ? 'bg-red-500/10 text-red-300' : 'bg-red-50 text-red-600'}`}>
-                <Clock3 size={24} />
+              <div className={`rounded-2xl p-3 ${isDark ? 'bg-amber-500/10 text-amber-300' : 'bg-amber-50 text-amber-600'}`}>
+                <PauseCircle size={24} />
               </div>
               <div>
-                <h2 className="text-xl font-semibold tracking-tight">Deletion countdown</h2>
+                <h2 className="text-xl font-semibold tracking-tight">Your account is on hold</h2>
                 <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  Renew before the countdown ends to keep your data.
+                  Nothing is deleted — automations are paused until you renew.
                 </p>
               </div>
             </div>
@@ -108,16 +108,16 @@ export default function PlanExpiredPage() {
               <p className="mt-2 text-lg font-semibold">{formatDate(user?.planExpiresAt)}</p>
             </div>
 
-            <div className={`mt-4 rounded-2xl border p-5 ${daysRemaining <= 0 ? 'border-red-400/30 bg-red-500/10' : isDark ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-slate-50'}`}>
+            <div className={`mt-4 rounded-2xl border p-5 ${isDark ? 'border-amber-400/20 bg-amber-500/10' : 'border-amber-200 bg-amber-50'}`}>
               <p className={`text-xs font-semibold uppercase tracking-[0.22em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Time left before permanent deletion
+                Paused while your plan is expired
               </p>
-              <p className={`mt-2 text-lg font-semibold ${daysRemaining <= 0 ? 'text-red-400' : ''}`}>
-                {daysRemaining > 0
-                  ? `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} remaining`
-                  : 'Your account is scheduled for deletion imminently'}
-              </p>
-              <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <ul className="mt-2 space-y-1 text-sm font-medium">
+                <li>• Amazon price &amp; stock checks for your products</li>
+                <li>• Automatic eBay price / quantity updates</li>
+                <li>• Auto-stock rules</li>
+              </ul>
+              <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 {daysSinceExpiry === 0
                   ? 'Your plan expired today.'
                   : `It has been ${daysSinceExpiry} day${daysSinceExpiry === 1 ? '' : 's'} since expiration.`}
@@ -126,9 +126,8 @@ export default function PlanExpiredPage() {
 
             <div className={`mt-6 space-y-3 text-sm leading-6 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
               <p>
-                If you don&apos;t renew or update your plan, your account and everything
-                linked to it — products, connected eBay accounts, and auto-stock rules —
-                will be permanently deleted 2 days after the expiration date.
+                While the checks are paused, Amazon price or stock changes won&apos;t be caught —
+                renew soon so your eBay listings stay profitable and in stock.
               </p>
               <p>
                 Renewing takes a minute: pick a plan, verify the code we email you, and
