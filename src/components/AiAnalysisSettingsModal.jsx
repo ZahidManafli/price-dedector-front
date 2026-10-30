@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarDays, Coins, Layers, Loader2, Minus, Plus, RotateCcw, Shuffle, SlidersHorizontal, Store, Target, Wallet, X } from 'lucide-react';
+import { CalendarDays, Coins, Layers, Loader2, Minus, Plus, RotateCcw, Search, Shuffle, SlidersHorizontal, Store, Target, Wallet, X } from 'lucide-react';
 import { aiAnalysisAPI } from '../services/api';
 
 // Same defaults as the backend (aiAnalysisEngine.getDefaultAiSettings).
@@ -12,6 +12,7 @@ const DEFAULTS = {
   includeVariations: false,
   maxSpendUsd: 1,
   startSeller: '',
+  startKeyword: '',
   minSold7d: 4,
   minSalesDays: 4,
 };
@@ -35,9 +36,16 @@ function toForm(settings) {
     includeVariations: Boolean(settings.includeVariations),
     maxSpendUsd: String(settings.maxSpendUsd),
     startSeller: settings.startSeller || '',
+    startKeyword: settings.startKeyword || '',
     minSold7d: String(settings.minSold7d ?? DEFAULTS.minSold7d),
     minSalesDays: Number(settings.minSalesDays ?? DEFAULTS.minSalesDays),
   };
+}
+
+// Where a run starts: a keyword search, a chosen store, or a random AI Sellers store.
+function startModeOf(settings) {
+  if (settings.startKeyword) return 'keyword';
+  return settings.startSeller ? 'specific' : 'random';
 }
 
 function Section({ icon: Icon, title, hint, children, accent = 'indigo' }) {
@@ -129,7 +137,7 @@ export default function AiAnalysisSettingsModal({ open, onClose, onSaved }) {
         if (cancelled) return;
         const settings = { ...DEFAULTS, ...(settingsRes.data?.settings || {}) };
         setForm(toForm(settings));
-        setSellerMode(settings.startSeller ? 'specific' : 'random');
+        setSellerMode(startModeOf(settings));
         setSellers(sellersRes.data?.sellers || []);
       })
       .catch((err) => !cancelled && setError(err?.response?.data?.error || err?.message || 'Failed to load'))
@@ -163,6 +171,7 @@ export default function AiAnalysisSettingsModal({ open, onClose, onSaved }) {
     if (!(n('maxSpendUsd') >= 0.3) || n('maxSpendUsd') > 20) errs.maxSpendUsd = t('aiAnalysis.settings.errSpend');
     if (!Number.isInteger(n('minSold7d')) || n('minSold7d') < 1 || n('minSold7d') > 1000) errs.minSold7d = t('aiAnalysis.settings.errSold');
     if (sellerMode === 'specific' && !form.startSeller.trim()) errs.startSeller = t('aiAnalysis.settings.errSeller');
+    if (sellerMode === 'keyword' && !form.startKeyword.trim()) errs.startKeyword = t('aiAnalysis.settings.errKeyword');
     return errs;
   }, [form, sellerMode, t]);
 
@@ -183,6 +192,7 @@ export default function AiAnalysisSettingsModal({ open, onClose, onSaved }) {
         includeVariations: form.includeVariations,
         maxSpendUsd: Number(form.maxSpendUsd),
         startSeller: sellerMode === 'specific' ? form.startSeller.trim() : '',
+        startKeyword: sellerMode === 'keyword' ? form.startKeyword.trim() : '',
         minSold7d: Number(form.minSold7d),
         minSalesDays: Number(form.minSalesDays),
       };
@@ -387,10 +397,11 @@ export default function AiAnalysisSettingsModal({ open, onClose, onSaved }) {
 
             {/* Start store */}
             <Section icon={Store} title={t('aiAnalysis.settings.sellerTitle')} hint={t('aiAnalysis.settings.sellerHint')}>
-              <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+              <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
                 {[
                   ['random', Shuffle, t('aiAnalysis.settings.sellerRandom')],
                   ['specific', Store, t('aiAnalysis.settings.sellerSpecific')],
+                  ['keyword', Search, t('aiAnalysis.settings.sellerKeyword')],
                 ].map(([mode, Icon, label]) => (
                   <button
                     key={mode}
@@ -405,7 +416,19 @@ export default function AiAnalysisSettingsModal({ open, onClose, onSaved }) {
                   </button>
                 ))}
               </div>
-              {sellerMode === 'random' ? (
+              {sellerMode === 'keyword' ? (
+                <div className="mt-2">
+                  <input
+                    className={`input-base h-10 text-sm ${errors.startKeyword ? 'border-rose-400' : ''}`}
+                    placeholder={t('aiAnalysis.settings.keywordPlaceholder')}
+                    value={form.startKeyword}
+                    maxLength={120}
+                    onChange={(e) => set('startKeyword')(e.target.value)}
+                  />
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('aiAnalysis.settings.keywordHint')}</p>
+                  {errors.startKeyword && <p className="mt-1 text-xs text-rose-600">{errors.startKeyword}</p>}
+                </div>
+              ) : sellerMode === 'random' ? (
                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                   {t('aiAnalysis.settings.sellerRandomHint', { count: sellers.length })}
                 </p>
@@ -456,7 +479,12 @@ export default function AiAnalysisSettingsModal({ open, onClose, onSaved }) {
                   profit: Number(form.minProfitUsd).toFixed(2),
                   spend: Number(form.maxSpendUsd).toFixed(2),
                   variations: form.includeVariations ? t('aiAnalysis.settings.summaryWithVariations') : t('aiAnalysis.settings.summaryNoVariations'),
-                  seller: sellerMode === 'specific' && form.startSeller.trim() ? form.startSeller.trim() : t('aiAnalysis.settings.summaryRandomSeller'),
+                  seller:
+                    sellerMode === 'keyword' && form.startKeyword.trim()
+                      ? t('aiAnalysis.settings.summaryKeyword', { keyword: form.startKeyword.trim() })
+                      : sellerMode === 'specific' && form.startSeller.trim()
+                        ? form.startSeller.trim()
+                        : t('aiAnalysis.settings.summaryRandomSeller'),
                 })}
                 {t('aiAnalysis.settings.summarySales', {
                   sold: Math.max(Number(form.minSold7d) || 0, Number(form.minSalesDays) || 0),

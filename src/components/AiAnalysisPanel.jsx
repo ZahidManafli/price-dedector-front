@@ -5,6 +5,13 @@ import { aiAnalysisAPI } from '../services/api';
 
 const POLL_MS = 3000;
 
+// A run started from a keyword stores its seed as "keyword:<text>"
+// (backend aiAnalysisEngine.KEYWORD_SEED_LABEL_PREFIX); store seeds are plain names.
+function seedKeyword(seed) {
+  const text = String(seed || '');
+  return text.startsWith('keyword:') ? text.slice('keyword:'.length) : null;
+}
+
 function fmtMoney(value, currency = 'USD', digits = 2) {
   const num = Number(value);
   if (!Number.isFinite(num)) return '—';
@@ -377,7 +384,7 @@ export function AiAnalysisResults({ run, error, onCancel, onDismiss, renderSales
           </h2>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {run.strategy ? t(`aiAnalysis.strategy.${run.strategy}`) : t('aiAnalysis.preparing')}
-            {run.seed ? `: ${run.seed}` : ''}
+            {run.seed ? `: ${seedKeyword(run.seed) !== null ? `"${seedKeyword(run.seed)}"` : run.seed}` : ''}
             {run.stopReason ? ` · ${t(`aiAnalysis.stopReason.${run.stopReason}`, { defaultValue: run.stopReason })}` : ''}
           </p>
         </div>
@@ -534,7 +541,13 @@ export function AiFoundProductsDrawer({ open, onClose, renderSalesTrend }) {
               </button>
               <p className="text-[11px] text-slate-400">
                 {formatSavedAt(selected.savedAt)}
-                {selected.runSeed ? ` · ${t('aiAnalysis.foundFromStore', { store: selected.runSeed })}` : ''}
+                {selected.runSeed
+                  ? ` · ${
+                      seedKeyword(selected.runSeed) !== null
+                        ? t('aiAnalysis.foundFromKeyword', { keyword: seedKeyword(selected.runSeed) })
+                        : t('aiAnalysis.foundFromStore', { store: selected.runSeed })
+                    }`
+                  : ''}
               </p>
               <OpportunityCard opportunity={selected} renderSalesTrend={renderSalesTrend} stacked defaultOpen />
             </div>
