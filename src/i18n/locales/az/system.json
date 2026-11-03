@@ -292,5 +292,103 @@
     "forbidden": "Qadağan",
     "serverError": "Server xətası",
     "tryAgain": "Yenidən cəhd edin"
+  },
+  "actionCenter": {
+    "eyebrow": "Action Center",
+    "title": "Bu gün nə etməli?",
+    "loading": "Tapşırıqlar yüklənir…",
+    "allClear": "Hər şey qaydasındadır — təcili iş yoxdur.",
+    "pending_one": "{{count}} iş diqqətinizi gözləyir",
+    "pending_other": "{{count}} iş diqqətinizi gözləyir",
+    "criticalCount_one": "{{count}} kritik",
+    "criticalCount_other": "{{count}} kritik",
+    "warningCount_one": "{{count}} diqqət",
+    "warningCount_other": "{{count}} diqqət",
+    "refresh": "Yenilə",
+    "refreshing": "Yenilənir…",
+    "updatedAt": "Yeniləndi · {{time}}",
+    "retry": "Yenidən cəhd et",
+    "loadFailed": "Tapşırıqları yükləmək alınmadı",
+    "notSynced": "Məlumat hələ sinxronlaşmayıb. Bir neçə saniyədən sonra yenidən baxın.",
+    "andMore_one": "və daha {{count}}",
+    "andMore_other": "və daha {{count}}",
+    "overdue": "Gecikib · {{time}}",
+    "timeLeft": "{{time}} qalıb",
+    "ago": "{{time}} əvvəl",
+    "needsReply": "Cavab gözləyir",
+    "outOfStock": "Stokda yoxdur",
+    "amazonOrder": "Amazon: {{id}}",
+    "amazonPrice": "Amazon qiyməti: {{price}}",
+    "noSaleDays_one": "{{count}} gün",
+    "noSaleDays_other": "{{count}} gün",
+    "time": {
+      "minutes_one": "{{count}} dəq",
+      "minutes_other": "{{count}} dəq",
+      "hours_one": "{{count}} saat",
+      "hours_other": "{{count}} saat",
+      "days_one": "{{count}} gün",
+      "days_other": "{{count}} gün"
+    },
+    "severity": {
+      "critical": "Kritik",
+      "warning": "Diqqət",
+      "info": "Məlumat",
+      "ok": "Qaydasında"
+    },
+    "caseKind": {
+      "case": "Case",
+      "inquiry": "INR",
+      "cancellation": "Ləğv sorğusu"
+    },
+    "sections": {
+      "shipDeadline": {
+        "title": "Göndərmə vaxtı bitir",
+        "hint": "Növbəti 24 saatda göndərilməli sifarişlər",
+        "unit_one": "sifariş",
+        "unit_other": "sifariş",
+        "clear": "Vaxtı bitən sifariş yoxdur.",
+        "cta": "Sifarişlərə keç"
+      },
+      "toPurchase": {
+        "title": "Amazon-dan alınmalı",
+        "hint": "Ödənilib, hələ Amazon-da sifariş verilməyib",
+        "unit_one": "sifariş",
+        "unit_other": "sifariş",
+        "clear": "Bütün sifarişlər Amazon-dan alınıb.",
+        "cta": "Sifarişlərə keç"
+      },
+      "awaitingTracking": {
+        "title": "Tracking gözləyir",
+        "hint": "Amazon-dan alınıb, tracking eBay-ə yüklənməyib",
+        "unit_one": "sifariş",
+        "unit_other": "sifariş",
+        "clear": "Bütün tracking kodları yüklənib.",
+        "cta": "Tracking səhifəsinə keç"
+      },
+      "openCases": {
+        "title": "Açıq case və sorğular",
+        "hint": "Case, INR və ləğv sorğuları",
+        "unit_one": "açıq sorğu",
+        "unit_other": "açıq sorğu",
+        "clear": "Açıq case və ya sorğu yoxdur.",
+        "cta": "Case-lərə keç"
+      },
+      "stockPrice": {
+        "title": "Stok və qiymət",
+        "hint": "Amazon-da stoku bitən və ya qiyməti qalxan məhsullar",
+        "unit_one": "məhsul",
+        "unit_other": "məhsul",
+        "clear": "Stok və qiymət problemi yoxdur.",
+        "cta": "Məhsullara keç"
+      },
+      "deadStock": {
+        "title": "Satılmayan listinglər",
+        "hint": "30+ gündür satışı olmayan listinglər",
+        "unit_one": "listing",
+        "unit_other": "listing",
+        "clear": "Satılmayan listing yoxdur.",
+        "cta": "Listinglərə keç"
+      }
+    }
   }
 }

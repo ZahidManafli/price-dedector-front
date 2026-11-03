@@ -292,5 +292,103 @@
     "forbidden": "Forbidden",
     "serverError": "Server error",
     "tryAgain": "Try again"
+  },
+  "actionCenter": {
+    "eyebrow": "Action Center",
+    "title": "What needs your attention today",
+    "loading": "Loading your tasks…",
+    "allClear": "You’re all caught up — nothing urgent right now.",
+    "pending_one": "{{count}} item needs your attention",
+    "pending_other": "{{count}} items need your attention",
+    "criticalCount_one": "{{count}} critical",
+    "criticalCount_other": "{{count}} critical",
+    "warningCount_one": "{{count}} to review",
+    "warningCount_other": "{{count}} to review",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing…",
+    "updatedAt": "Updated · {{time}}",
+    "retry": "Try again",
+    "loadFailed": "Could not load your tasks",
+    "notSynced": "Data hasn’t synced yet. Check back in a few seconds.",
+    "andMore_one": "and {{count}} more",
+    "andMore_other": "and {{count}} more",
+    "overdue": "Overdue · {{time}}",
+    "timeLeft": "{{time}} left",
+    "ago": "{{time}} ago",
+    "needsReply": "Needs reply",
+    "outOfStock": "Out of stock",
+    "amazonOrder": "Amazon: {{id}}",
+    "amazonPrice": "Amazon price: {{price}}",
+    "noSaleDays_one": "{{count}} day",
+    "noSaleDays_other": "{{count}} days",
+    "time": {
+      "minutes_one": "{{count}} min",
+      "minutes_other": "{{count}} min",
+      "hours_one": "{{count}} hr",
+      "hours_other": "{{count}} hrs",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days"
+    },
+    "severity": {
+      "critical": "Critical",
+      "warning": "Review",
+      "info": "Info",
+      "ok": "All good"
+    },
+    "caseKind": {
+      "case": "Case",
+      "inquiry": "INR",
+      "cancellation": "Cancellation"
+    },
+    "sections": {
+      "shipDeadline": {
+        "title": "Ship-by deadline",
+        "hint": "Orders that must ship within 24 hours",
+        "unit_one": "order",
+        "unit_other": "orders",
+        "clear": "No orders are close to their ship-by date.",
+        "cta": "Go to orders"
+      },
+      "toPurchase": {
+        "title": "Buy on Amazon",
+        "hint": "Paid orders not yet ordered on Amazon",
+        "unit_one": "order",
+        "unit_other": "orders",
+        "clear": "Every order has been bought on Amazon.",
+        "cta": "Go to orders"
+      },
+      "awaitingTracking": {
+        "title": "Awaiting tracking",
+        "hint": "Bought on Amazon, tracking not on eBay yet",
+        "unit_one": "order",
+        "unit_other": "orders",
+        "clear": "All tracking numbers are uploaded.",
+        "cta": "Go to tracking"
+      },
+      "openCases": {
+        "title": "Open cases & requests",
+        "hint": "Cases, INR inquiries and cancellations",
+        "unit_one": "open request",
+        "unit_other": "open requests",
+        "clear": "No open cases or requests.",
+        "cta": "Go to cases"
+      },
+      "stockPrice": {
+        "title": "Stock & price",
+        "hint": "Out of stock or price went up on Amazon",
+        "unit_one": "product",
+        "unit_other": "products",
+        "clear": "No stock or price issues.",
+        "cta": "Go to products"
+      },
+      "deadStock": {
+        "title": "Not selling",
+        "hint": "Listings with no sales for 30+ days",
+        "unit_one": "listing",
+        "unit_other": "listings",
+        "clear": "No stale listings.",
+        "cta": "Go to listings"
+      }
+    }
   }
 }

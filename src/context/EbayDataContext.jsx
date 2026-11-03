@@ -14,6 +14,9 @@ export const EbayDataProvider = ({ children }) => {
   const { isAuthenticated } = useAuth();
   const [newOrdersCount, setNewOrdersCount] = useState(0);
   const [newCasesCount, setNewCasesCount] = useState(0);
+  // Bumped after every finished bootstrap, so views built on those SQL caches
+  // (the dashboard's Action Center) can reload once fresh data is in.
+  const [syncVersion, setSyncVersion] = useState(0);
   const inFlightRef = useRef(false);
 
   const refreshEbayData = useCallback(async () => {
@@ -35,6 +38,7 @@ export const EbayDataProvider = ({ children }) => {
       // was cached last time.
     } finally {
       inFlightRef.current = false;
+      setSyncVersion((v) => v + 1);
     }
   }, []);
 
@@ -60,6 +64,7 @@ export const EbayDataProvider = ({ children }) => {
   const value = {
     newOrdersCount,
     newCasesCount,
+    syncVersion,
     refreshEbayData,
     clearOrdersBadge,
     clearCasesBadge,

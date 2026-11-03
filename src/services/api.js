@@ -360,6 +360,7 @@ export const ebayAPI = {
   // caches them in SQL, and reports how many are new since the last call — powers the
   // sidebar's red badge counts. Called once on app load and again on active-account switch.
   bootstrap: () => api.get('/ebay/bootstrap'),
+  getActionCenter: () => api.get('/ebay/action-center'),
 };
 
 export const studioAPI = {
