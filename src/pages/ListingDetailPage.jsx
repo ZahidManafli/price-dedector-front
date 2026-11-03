@@ -17,9 +17,7 @@ import {
   ExternalLink,
   ImageOff,
   Loader2,
-  Minus,
   Package,
-  Plus,
   RotateCcw,
   Settings2,
   ShoppingBag,
@@ -29,9 +27,8 @@ import {
 import { ebayAPI, productAPI } from '../services/api';
 import { calculateProfit } from '../utils/helpers';
 import { formatLongDate } from '../utils/dateFormat';
-import RelistPanel from '../components/RelistPanel';
+import ListingChangePanel from '../components/ListingChangePanel';
 
-const TITLE_MAX = 80; // eBay's title length limit
 const RELIST_WINDOW_DAYS = 90; // eBay allows relisting up to 90 days after a listing ends
 
 // ISO 8601 duration from now until `iso` ("P29DT9H35M0S"), as Trading's <TimeLeft>.
@@ -40,6 +37,24 @@ function isoDurationUntil(iso) {
   if (!Number.isFinite(ms) || ms <= 0) return 'PT0S';
   const minutes = Math.floor(ms / 60000);
   return `P${Math.floor(minutes / 1440)}DT${Math.floor((minutes % 1440) / 60)}H${minutes % 60}M0S`;
+}
+
+// Rewrites fields of a Trading <Item> XML block (as GetSellerList returned it),
+// so the page shows a change right away without refetching the listings.
+function patchTradingXml(xml, values = {}, removeSelectors = []) {
+  if (!xml || typeof DOMParser === 'undefined') return xml;
+  try {
+    const doc = new DOMParser().parseFromString(xml, 'text/xml');
+    const root = doc.querySelector('Item') || doc.documentElement;
+    Object.entries(values).forEach(([selector, value]) => {
+      const node = root.querySelector(selector);
+      if (node && value != null) node.textContent = String(value);
+    });
+    removeSelectors.forEach((selector) => root.querySelector(selector)?.remove());
+    return new XMLSerializer().serializeToString(doc);
+  } catch {
+    return xml; // keep the old XML — only cosmetic details would be stale
+  }
 }
 
 // The ended listing as it looks once relisted, so the detail page can open the
@@ -52,32 +67,23 @@ function buildRelistedListing(listing, result, payload) {
   const quantity = payload.quantity;
   const viewUrl = `https://www.ebay.com/itm/${newId}`;
 
-  let rawXml = listing?.rawXml;
-  if (rawXml && typeof DOMParser !== 'undefined') {
-    try {
-      const doc = new DOMParser().parseFromString(rawXml, 'text/xml');
-      const root = doc.querySelector('Item') || doc.documentElement;
-      const set = (selector, value) => {
-        const node = root.querySelector(selector);
-        if (node && value != null) node.textContent = String(value);
-      };
-      set('ItemID', newId);
-      set('Title', title);
-      set('Quantity', quantity);
-      set('SellingStatus > ListingStatus', 'Active');
-      set('SellingStatus > QuantitySold', 0);
-      set('SellingStatus > CurrentPrice', price != null ? Number(price).toFixed(2) : null);
-      set('ListingDetails > StartTime', result.startTime);
-      set('ListingDetails > EndTime', result.endTime);
-      set('ListingDetails > ViewItemURL', viewUrl);
-      set('TimeLeft', isoDurationUntil(result.endTime));
-      if (typeof payload.bestOfferEnabled === 'boolean') set('BestOfferDetails > BestOfferEnabled', payload.bestOfferEnabled);
-      root.querySelector('ListingDetails > RelistedItemID')?.remove();
-      rawXml = new XMLSerializer().serializeToString(doc);
-    } catch {
-      // keep the old XML — only cosmetic details would be stale
-    }
-  }
+  const rawXml = patchTradingXml(
+    listing?.rawXml,
+    {
+      ItemID: newId,
+      Title: title,
+      Quantity: quantity,
+      'SellingStatus > ListingStatus': 'Active',
+      'SellingStatus > QuantitySold': 0,
+      'SellingStatus > CurrentPrice': price != null ? Number(price).toFixed(2) : null,
+      'ListingDetails > StartTime': result.startTime,
+      'ListingDetails > EndTime': result.endTime,
+      'ListingDetails > ViewItemURL': viewUrl,
+      TimeLeft: isoDurationUntil(result.endTime),
+      'BestOfferDetails > BestOfferEnabled': typeof payload.bestOfferEnabled === 'boolean' ? payload.bestOfferEnabled : null,
+    },
+    ['ListingDetails > RelistedItemID']
+  );
 
   return {
     ...listing,
@@ -228,19 +234,6 @@ function KpiTile({ icon: Icon, label, value, sub, tone = 'neutral', isDark }) {
   );
 }
 
-function EditField({ label, hint, counter, children, isDark }) {
-  return (
-    <div>
-      <div className="mb-1.5 flex items-baseline justify-between gap-2">
-        <label className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{label}</label>
-        {counter}
-      </div>
-      {children}
-      {hint ? <p className={`mt-1.5 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{hint}</p> : null}
-    </div>
-  );
-}
-
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ListingDetailPage() {
@@ -251,19 +244,13 @@ export default function ListingDetailPage() {
   const navigate = useNavigate();
   const { listingId: routeListingId } = useParams();
   const openRelistOnLoad = Boolean(location?.state?.openRelist);
-  const relistPanelRef = useRef(null);
+  const changePanelRef = useRef(null);
   const [relistResult, setRelistResult] = useState(null);
   const initialListing = location?.state?.listing || null;
   const [listing, setListing] = useState(initialListing);
   const [listingLoading, setListingLoading] = useState(!initialListing && Boolean(routeListingId));
   const [selectedImage, setSelectedImage] = useState('');
   const [brokenImages, setBrokenImages] = useState(() => new Set());
-  const [titleDraft, setTitleDraft] = useState('');
-  const [priceDraft, setPriceDraft] = useState('');
-  const [quantityDraft, setQuantityDraft] = useState('');
-  const [saveTitleLoading, setSaveTitleLoading] = useState(false);
-  const [savePriceLoading, setSavePriceLoading] = useState(false);
-  const [saveQtyLoading, setSaveQtyLoading] = useState(false);
   const [autoStockEnabled, setAutoStockEnabled] = useState(false);
   const [autoStockQuantity, setAutoStockQuantity] = useState('');
   const [autoStockLoading, setAutoStockLoading] = useState(false);
@@ -272,8 +259,6 @@ export default function ListingDetailPage() {
   const [saveSuccess, setSaveSuccess] = useState('');
   const [matchedProduct, setMatchedProduct] = useState(null);
   const [idCopied, setIdCopied] = useState(false);
-  const skipQuantityDraftSyncRef = useRef(false);
-  const quantityInputRef = useRef(null);
 
   const keyFacts = useMemo(() => {
     if (!listing) return {};
@@ -461,20 +446,6 @@ export default function ListingDetailPage() {
   }, [listingId]);
 
   useEffect(() => {
-    const currentTitle = listing?.listing?.title || listing?.title || listing?.product?.title || '';
-    const currentPrice =
-      listing?.pricingSummary?.price?.value ??
-      (trading?.currentPrice ? String(trading.currentPrice).split(' ')[0] : '');
-    setTitleDraft(currentTitle);
-    setPriceDraft(currentPrice ? String(currentPrice) : '');
-    if (skipQuantityDraftSyncRef.current) {
-      skipQuantityDraftSyncRef.current = false;
-      return;
-    }
-    setQuantityDraft(stockCount !== '' && stockCount != null ? String(stockCount) : '');
-  }, [listing, trading?.currentPrice, stockCount]);
-
-  useEffect(() => {
     if (!listingId || listingId === '-') return;
 
     let active = true;
@@ -507,113 +478,6 @@ export default function ListingDetailPage() {
       active = false;
     };
   }, [listingId]);
-
-  const handleUpdateTitle = async () => {
-    const listingId = keyFacts.listingId;
-    if (!listingId || listingId === '-') return;
-    if (!titleDraft.trim()) {
-      setSaveError(t('listingDetailPage.emptyTitle'));
-      setSaveSuccess('');
-      return;
-    }
-    setSaveTitleLoading(true);
-    setSaveError('');
-    setSaveSuccess('');
-    try {
-      await ebayAPI.updateListing(listingId, { title: titleDraft.trim() });
-      setListing((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          title: titleDraft.trim(),
-          listing: {
-            ...(prev.listing || {}),
-            title: titleDraft.trim(),
-          },
-        };
-      });
-      setSaveSuccess(t('listingDetailPage.titleUpdated'));
-    } catch (err) {
-      setSaveError(err?.response?.data?.error || err?.message || t('listingDetailPage.failedUpdateTitle'));
-    } finally {
-      setSaveTitleLoading(false);
-    }
-  };
-
-  const handleUpdatePrice = async () => {
-    const listingId = keyFacts.listingId;
-    if (!listingId || listingId === '-') return;
-    const parsed = Number(priceDraft);
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      setSaveError(t('listingDetailPage.enterValidPrice'));
-      setSaveSuccess('');
-      return;
-    }
-    setSavePriceLoading(true);
-    setSaveError('');
-    setSaveSuccess('');
-    try {
-      await ebayAPI.updateListing(listingId, { price: parsed, currency: 'USD' });
-      setListing((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          pricingSummary: {
-            ...(prev.pricingSummary || {}),
-            price: {
-              value: parsed.toFixed(2),
-              currency: 'USD',
-            },
-          },
-        };
-      });
-      setSaveSuccess(t('listingDetailPage.priceUpdated'));
-    } catch (err) {
-      setSaveError(err?.response?.data?.error || err?.message || t('listingDetailPage.failedUpdatePrice'));
-    } finally {
-      setSavePriceLoading(false);
-    }
-  };
-
-  const handleUpdateQuantity = async () => {
-    if (!listingId || listingId === '-') return;
-    const parsedStock = Number(quantityDraft);
-    if (!Number.isInteger(parsedStock) || parsedStock < 0) {
-      setSaveError(t('listingDetailPage.enterValidQuantity'));
-      setSaveSuccess('');
-      return;
-    }
-    const quantityToSend = parsedStock;
-    setSaveQtyLoading(true);
-    setSaveError('');
-    setSaveSuccess('');
-    try {
-      skipQuantityDraftSyncRef.current = true;
-      await ebayAPI.updateListing(listingId, { quantity: quantityToSend });
-      setListing((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          quantity: quantityToSend,
-          availableQuantity: quantityToSend,
-          availability: {
-            ...(prev.availability || {}),
-            shipToLocationAvailability: {
-              ...((prev.availability || {}).shipToLocationAvailability || {}),
-              quantity: quantityToSend,
-            },
-          },
-        };
-      });
-      setQuantityDraft(String(parsedStock));
-      setSaveSuccess(t('listingDetailPage.quantityUpdated'));
-    } catch (err) {
-      skipQuantityDraftSyncRef.current = false;
-      setSaveError(err?.response?.data?.error || err?.message || t('listingDetailPage.failedUpdateQuantity'));
-    } finally {
-      setSaveQtyLoading(false);
-    }
-  };
 
   const handleSaveAutoStockRule = async () => {
     if (!listingId || listingId === '-') return;
@@ -651,7 +515,7 @@ export default function ListingDetailPage() {
     if (nextEnabled) {
       setAutoStockEnabled(true);
       if (!autoStockQuantity) {
-        setAutoStockQuantity(quantityDraft !== '' ? String(quantityDraft) : '1');
+        setAutoStockQuantity(Number(stockCount) > 0 ? String(stockCount) : '1');
       }
       return;
     }
@@ -721,7 +585,6 @@ export default function ListingDetailPage() {
     });
   };
   const currentProfit = profitFor(currentPriceValue);
-  const draftProfit = profitFor(priceDraft);
   const margin = currentProfit !== null && currentPriceValue ? Math.round((currentProfit / currentPriceValue) * 100) : null;
 
   // Where the sale price goes: eBay fees + Amazon cost + profit (= price when profitable).
@@ -741,9 +604,56 @@ export default function ListingDetailPage() {
     };
   })();
 
-  const titleDirty = titleDraft.trim() !== String(currentTitle).trim();
-  const priceDirty = priceDraft !== '' && Number(priceDraft) !== Number(currentPriceValue);
-  const qtyDirty = quantityDraft !== '' && Number(quantityDraft) !== Number(stockCount);
+  // eBay won't take a new title once a multi-quantity fixed-price listing has
+  // sold, an auction has bids, or the listing ends within 12 hours.
+  const hoursLeft = (() => {
+    const d = parseIsoDuration(trading?.timeLeft);
+    return d ? d.days * 24 + d.hours + d.minutes / 60 : null;
+  })();
+  const titleLock = isEnded
+    ? null
+    : sold > 0
+      ? 'sold'
+      : Number(trading?.bidCount) > 0
+        ? 'bids'
+        : hoursLeft !== null && hoursLeft < 12 && trading?.listingDuration !== 'GTC'
+          ? 'endingSoon'
+          : null;
+
+  // Apply a successful revision locally (ItemID unchanged) so the page reflects it.
+  const applyRevision = (data, payload) => {
+    const revised = data?.revised || {};
+    const title = revised.title ?? payload.title;
+    const price = revised.price?.value ?? payload.price;
+    const quantity = revised.quantity ?? payload.quantity;
+    const bestOfferEnabled = revised.bestOfferEnabled ?? payload.bestOfferEnabled;
+    setListing((prev) => {
+      if (!prev) return prev;
+      const soldSoFar = Number(trading?.quantitySold || 0);
+      return {
+        ...prev,
+        ...(title != null ? { title, listing: { ...(prev.listing || {}), title } } : {}),
+        ...(price != null ? { pricingSummary: { ...(prev.pricingSummary || {}), price: { value: Number(price).toFixed(2), currency } } } : {}),
+        ...(quantity != null
+          ? {
+              quantity,
+              availableQuantity: quantity,
+              availability: {
+                ...(prev.availability || {}),
+                shipToLocationAvailability: { ...((prev.availability || {}).shipToLocationAvailability || {}), quantity },
+              },
+            }
+          : {}),
+        // Trading's <Quantity> is the total (sold + available).
+        rawXml: patchTradingXml(prev.rawXml, {
+          Title: title,
+          Quantity: quantity != null ? Number(quantity) + soldSoFar : null,
+          'SellingStatus > CurrentPrice': price != null ? Number(price).toFixed(2) : null,
+          'BestOfferDetails > BestOfferEnabled': typeof bestOfferEnabled === 'boolean' ? bestOfferEnabled : null,
+        }),
+      };
+    });
+  };
 
   const timeLeft = !isEnded && trading?.timeLeft ? humanize.duration(trading.timeLeft) : '—';
   const lang = i18n.language;
@@ -751,7 +661,7 @@ export default function ListingDetailPage() {
   // Arrived from the listings table's "Relist" button: jump straight to the form.
   useEffect(() => {
     if (!openRelistOnLoad || !canRelist) return undefined;
-    const timer = setTimeout(() => relistPanelRef.current?.focus(), 150);
+    const timer = setTimeout(() => changePanelRef.current?.focus(), 150);
     return () => clearTimeout(timer);
   }, [openRelistOnLoad, canRelist, listingId]);
 
@@ -988,7 +898,7 @@ export default function ListingDetailPage() {
                   </p>
                   <button
                     type="button"
-                    onClick={() => relistPanelRef.current?.focus()}
+                    onClick={() => changePanelRef.current?.focus()}
                     className="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700"
                   >
                     {t('listingDetailPage.relist.cta')}
@@ -1021,7 +931,7 @@ export default function ListingDetailPage() {
                   <p className={`flex-1 text-sm ${isDark ? 'text-rose-200' : 'text-rose-800'}`}>{t('listingDetailPage.ui.alertOutOfStock')}</p>
                   <button
                     type="button"
-                    onClick={() => quantityInputRef.current?.focus()}
+                    onClick={() => changePanelRef.current?.focus('quantity')}
                     className="shrink-0 rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700"
                   >
                     {t('listingDetailPage.ui.alertOutOfStockCta')}
@@ -1164,8 +1074,9 @@ export default function ListingDetailPage() {
         <aside className="lg:sticky lg:top-4 lg:self-start">
           {isEnded ? (
             canRelist ? (
-              <RelistPanel
-                ref={relistPanelRef}
+              <ListingChangePanel
+                ref={changePanelRef}
+                mode="relist"
                 listingId={String(listingId)}
                 isDark={isDark}
                 currentTitle={currentTitle}
@@ -1177,7 +1088,7 @@ export default function ListingDetailPage() {
                 endedAt={endedAt}
                 money={money}
                 profitFor={matchedProduct ? profitFor : null}
-                onRelisted={(result) => setRelistResult(result)}
+                onDone={(result) => setRelistResult(result)}
                 onOpenRelisted={openRelisted}
               />
             ) : (
@@ -1200,95 +1111,36 @@ export default function ListingDetailPage() {
               </section>
             )
           ) : (
-          <section className={`${card} p-5`}>
-            <h2 className={`text-base font-semibold ${strong}`}>{t('listingDetailPage.quickEditTitle')}</h2>
-            <p className={`mt-0.5 text-xs ${muted}`}>{t('listingDetailPage.ui.quickEditHint')}</p>
+          <div className="space-y-5">
+            <ListingChangePanel
+              ref={changePanelRef}
+              mode="revise"
+              listingId={String(listingId)}
+              isDark={isDark}
+              currentTitle={currentTitle}
+              currentPrice={currentPriceValue}
+              currency={currency}
+              defaultQuantity={Number.isFinite(stockNumber) ? stockNumber : 0}
+              bestOfferEnabled={isTrue(trading?.bestOfferEnabled)}
+              titleLock={titleLock}
+              money={money}
+              profitFor={matchedProduct ? profitFor : null}
+              onDone={applyRevision}
+            />
 
-            {(saveError || saveSuccess) && (
-              <div className={`mt-4 flex items-start gap-2 rounded-xl px-3 py-2.5 text-xs font-medium ${
-                saveError
-                  ? isDark ? 'bg-rose-500/10 text-rose-300' : 'bg-rose-50 text-rose-700'
-                  : isDark ? 'bg-emerald-500/10 text-emerald-300' : 'bg-emerald-50 text-emerald-700'
-              }`}>
-                {saveError ? <AlertTriangle size={14} className="mt-0.5 shrink-0" /> : <Check size={14} className="mt-0.5 shrink-0" />}
-                {saveError || saveSuccess}
-              </div>
-            )}
-
-            <div className="mt-5 space-y-5">
-              <EditField
-                isDark={isDark}
-                label={t('listingDetailPage.titleLabel')}
-                counter={
-                  <span className={`text-[11px] font-semibold tabular-nums ${titleDraft.length > TITLE_MAX ? 'text-rose-500' : titleDraft.length > TITLE_MAX - 10 ? 'text-amber-500' : muted}`}>
-                    {titleDraft.length}/{TITLE_MAX}
-                  </span>
-                }
-              >
-                <textarea
-                  rows={3}
-                  value={titleDraft}
-                  onChange={(e) => setTitleDraft(e.target.value)}
-                  className={`${inputCls} resize-none leading-relaxed`}
-                />
-                <div className="mt-2 flex justify-end">
-                  {saveBtn(titleDirty && titleDraft.length <= TITLE_MAX, saveTitleLoading, handleUpdateTitle)}
+            <section className={`${card} p-5`}>
+              {(saveError || saveSuccess) && (
+                <div className={`mb-4 flex items-start gap-2 rounded-xl px-3 py-2.5 text-xs font-medium ${
+                  saveError
+                    ? isDark ? 'bg-rose-500/10 text-rose-300' : 'bg-rose-50 text-rose-700'
+                    : isDark ? 'bg-emerald-500/10 text-emerald-300' : 'bg-emerald-50 text-emerald-700'
+                }`}>
+                  {saveError ? <AlertTriangle size={14} className="mt-0.5 shrink-0" /> : <Check size={14} className="mt-0.5 shrink-0" />}
+                  {saveError || saveSuccess}
                 </div>
-              </EditField>
-
-              <EditField
-                isDark={isDark}
-                label={t('listingDetailPage.priceLabel2')}
-                hint={
-                  draftProfit !== null && priceDirty
-                    ? <span className={draftProfit >= 0 ? 'text-emerald-500' : 'text-rose-500'}>{t('listingDetailPage.ui.priceProfitHint', { profit: `${draftProfit >= 0 ? '+' : '−'}${money(Math.abs(draftProfit))}` })}</span>
-                    : null
-                }
-              >
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <span className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm ${muted}`}>$</span>
-                    <input type="number" min="0" step="0.01" value={priceDraft} onChange={(e) => setPriceDraft(e.target.value)} className={`${inputCls} pl-7 tabular-nums`} />
-                  </div>
-                  {saveBtn(priceDirty, savePriceLoading, handleUpdatePrice)}
-                </div>
-              </EditField>
-
-              <EditField isDark={isDark} label={t('listingDetailPage.stockCountLabel2')}>
-                <div className="flex gap-2">
-                  <div className={`flex flex-1 items-center rounded-xl border ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-300 bg-white'}`}>
-                    <button
-                      type="button"
-                      aria-label="-1"
-                      onClick={() => setQuantityDraft(String(Math.max(0, (Number(quantityDraft) || 0) - 1)))}
-                      className={`flex h-10 w-10 items-center justify-center rounded-l-xl transition ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'}`}
-                    >
-                      <Minus size={15} />
-                    </button>
-                    <input
-                      ref={quantityInputRef}
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={quantityDraft}
-                      onChange={(e) => setQuantityDraft(e.target.value)}
-                      className={`w-full min-w-0 bg-transparent text-center text-sm font-semibold tabular-nums outline-none ${strong}`}
-                    />
-                    <button
-                      type="button"
-                      aria-label="+1"
-                      onClick={() => setQuantityDraft(String((Number(quantityDraft) || 0) + 1))}
-                      className={`flex h-10 w-10 items-center justify-center rounded-r-xl transition ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'}`}
-                    >
-                      <Plus size={15} />
-                    </button>
-                  </div>
-                  {saveBtn(qtyDirty, saveQtyLoading, handleUpdateQuantity)}
-                </div>
-              </EditField>
-
-              {/* Auto stock */}
-              <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-slate-50'}`}>
+              )}
+              {/* Auto stock */}              {/* Auto stock */}
+              <div>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className={`flex items-center gap-1.5 text-sm font-semibold ${strong}`}>
@@ -1320,8 +1172,8 @@ export default function ListingDetailPage() {
                   </div>
                 )}
               </div>
-            </div>
-          </section>
+            </section>
+          </div>
           )}
         </aside>
       </div>
