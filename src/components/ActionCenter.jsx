@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { ebayAPI } from '../services/api';
 import { useEbayData } from '../context/EbayDataContext';
+import DailyTaskList from './DailyTaskList';
 
 const HOUR_MS = 60 * 60 * 1000;
 const PREVIEW_ROWS = 3;
@@ -402,6 +403,8 @@ export default function ActionCenter({ isDark }) {
           </div>
         </div>
       </div>
+
+      <DailyTaskList isDark={isDark} />
 
       {error ? (
         <div className={`flex items-center justify-between gap-3 rounded-2xl border px-5 py-4 text-sm ${

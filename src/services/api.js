@@ -450,6 +450,8 @@ export const browseAPI = {
 // Amazon lookup (title, description, images, and price)
 export const amazonAPI = {
   lookup: (amazonAsin) => api.post('/amazon/lookup', { amazonAsin }),
+  // Same job the Orders page's "Order on Amazon" button starts (routes/amazon.js).
+  autoOrder: (payload) => api.post('/amazon/auto-order', payload),
   getHistory: (limit = 20) => api.get(`/amazon/history?limit=${limit}`),
 };
 
@@ -649,6 +651,13 @@ export const notificationsAPI = {
   unreadCount: () => api.get('/notifications/unread-count'),
   markRead: (id) => api.post(`/notifications/${encodeURIComponent(id)}/read`),
   markAllRead: () => api.post('/notifications/mark-all-read'),
+};
+
+// Dashboard daily to-do list (backend routes/dailyTasks.js).
+export const dailyTasksAPI = {
+  today: () => api.get('/daily-tasks/today'),
+  refresh: () => api.post('/daily-tasks/refresh'),
+  setDone: (id, done) => api.patch(`/daily-tasks/${encodeURIComponent(id)}`, { done }),
 };
 
 // "What's new" panel (backend routes/whatsNew.js).

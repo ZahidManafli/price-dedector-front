@@ -389,6 +389,27 @@
         "clear": "Satılmayan listing yoxdur.",
         "cta": "Listinglərə keç"
       }
+    },
+    "tasks": {
+      "title": "Bugünkü iş siyahısı",
+      "subtitle": "Hər səhər 07:00-da hər eBay hesabı üçün ayrıca hazırlanır",
+      "progress": "{{done}}/{{total}} tamamlandı",
+      "rebuild": "Siyahını yenilə",
+      "loadFailed": "İş siyahısını yükləmək alınmadı",
+      "notGenerated": "Bugünkü siyahı hələ hazırlanmayıb. \"Siyahını yenilə\" düyməsi ilə indi yarada bilərsiniz.",
+      "noneToday": "Bu gün üçün iş yoxdur. Hər şey qaydasındadır.",
+      "allDone": "{{account}} hesabında bu günün bütün işləri bitdi",
+      "shipPrefix": "Sifarişi göndər: {{title}}",
+      "markDone": "Tamamlandı kimi işarələ",
+      "markOpen": "Yenidən aç",
+      "autoDone": "Avtomatik",
+      "orderSent": "Sifariş extension-a göndərildi. Alış tamamlananda tapşırıq özü bağlanacaq.",
+      "orderFailed": "Amazon sifarişini başlatmaq alınmadı",
+      "addAsin": "ASIN əlavə et",
+      "noAsinHint": "Bu məhsul üçün ASIN yoxdur. Sifarişlər bölməsində ASIN əlavə edin.",
+      "view": "Bax",
+      "viewCase": "Case-ə bax",
+      "viewListings": "Listinglərə bax"
     }
   }
 }

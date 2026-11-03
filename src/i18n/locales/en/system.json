@@ -389,6 +389,27 @@
         "clear": "No stale listings.",
         "cta": "Go to listings"
       }
+    },
+    "tasks": {
+      "title": "Today's task list",
+      "subtitle": "Built every morning at 07:00, separately for each eBay account",
+      "progress": "{{done}}/{{total}} done",
+      "rebuild": "Refresh list",
+      "loadFailed": "Could not load the task list",
+      "notGenerated": "Today's list hasn't been built yet. Use \"Refresh list\" to build it now.",
+      "noneToday": "Nothing to do today. All good.",
+      "allDone": "All of today’s tasks are done for {{account}}",
+      "shipPrefix": "Ship order: {{title}}",
+      "markDone": "Mark as done",
+      "markOpen": "Reopen",
+      "autoDone": "Auto",
+      "orderSent": "Order sent to the extension. The task closes itself once the purchase is linked.",
+      "orderFailed": "Could not start the Amazon order",
+      "addAsin": "Add ASIN",
+      "noAsinHint": "No ASIN for this product yet. Add one on the Orders page.",
+      "view": "View",
+      "viewCase": "View case",
+      "viewListings": "View listings"
     }
   }
 }
