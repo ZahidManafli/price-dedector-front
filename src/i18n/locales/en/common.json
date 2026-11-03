@@ -1023,7 +1023,15 @@
       "quickEditHint": "Changes are applied directly to the eBay listing.",
       "save": "Save",
       "saving": "Saving…",
-      "priceProfitHint": "Estimated profit at this price: {{profit}}"
+      "priceProfitHint": "Estimated profit at this price: {{profit}}",
+      "breakdownTitle": "Price breakdown",
+      "breakdownOf": "of the {{price}} sale price",
+      "ebayFees": "eBay fees",
+      "profitShort": "Profit",
+      "noProductTitle": "Link a product to see profit",
+      "noProductText": "This listing isn’t linked to a product on the Products page. Add its Amazon link to see profit and margin here.",
+      "noReturns": "No returns",
+      "returnsIn": "{{days}} returns"
     }
   },
   "ordersPage": {

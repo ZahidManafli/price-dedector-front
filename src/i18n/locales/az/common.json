@@ -793,7 +793,15 @@
       "quickEditHint": "Dəyişikliklər birbaşa eBay listinginə tətbiq olunur.",
       "save": "Saxla",
       "saving": "Saxlanır…",
-      "priceProfitHint": "Bu qiymətlə təxmini qazanc: {{profit}}"
+      "priceProfitHint": "Bu qiymətlə təxmini qazanc: {{profit}}",
+      "breakdownTitle": "Qiymətin tərkibi",
+      "breakdownOf": "{{price}} satış qiymətindən",
+      "ebayFees": "eBay haqları",
+      "profitShort": "Qazanc",
+      "noProductTitle": "Qazancı görmək üçün məhsula bağlayın",
+      "noProductText": "Bu listing Məhsullar bölməsindəki heç bir məhsula bağlı deyil. Amazon linkini əlavə etsəniz, qazanc və marja burada görünəcək.",
+      "noReturns": "Qaytarma yoxdur",
+      "returnsIn": "{{days}} qaytarma"
     }
   },
   "ordersPage": {

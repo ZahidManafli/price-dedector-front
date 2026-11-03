@@ -639,6 +639,23 @@ export default function ListingDetailPage() {
   const draftProfit = profitFor(priceDraft);
   const margin = currentProfit !== null && currentPriceValue ? Math.round((currentProfit / currentPriceValue) * 100) : null;
 
+  // Where the sale price goes: eBay fees + Amazon cost + profit (= price when profitable).
+  const breakdown = (() => {
+    if (currentProfit === null || !currentPriceValue) return null;
+    const cost = Number(matchedProduct?.currentAmazonPrice) || 0;
+    const fees = Math.max(0, currentPriceValue - cost - currentProfit);
+    const profitPart = Math.max(0, currentProfit);
+    const total = fees + cost + profitPart || 1;
+    return {
+      profit: currentProfit,
+      segments: [
+        { key: 'fees', label: t('listingDetailPage.ui.ebayFees'), value: fees, bar: 'bg-sky-400', pct: (fees / total) * 100 },
+        { key: 'cost', label: t('listingDetailPage.ui.amazonCost'), value: cost, bar: 'bg-amber-400', pct: (cost / total) * 100 },
+        { key: 'profit', label: t('listingDetailPage.ui.profitShort'), value: currentProfit, bar: currentProfit >= 0 ? 'bg-emerald-500' : 'bg-rose-500', pct: (profitPart / total) * 100 },
+      ],
+    };
+  })();
+
   const titleDirty = titleDraft.trim() !== String(currentTitle).trim();
   const priceDirty = priceDraft !== '' && Number(priceDraft) !== Number(currentPriceValue);
   const qtyDirty = quantityDraft !== '' && Number(quantityDraft) !== Number(stockCount);
@@ -731,7 +748,7 @@ export default function ListingDetailPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Gallery */}
           <div className="lg:col-span-6">
-            <div className={`group relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl border ${isDark ? 'border-slate-800 bg-white' : 'border-slate-100 bg-white'}`}>
+            <div className={`group relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl border lg:aspect-auto lg:h-[460px] ${isDark ? 'border-slate-800 bg-white' : 'border-slate-100 bg-white'}`}>
               {activeImage ? (
                 <img
                   src={activeImage}
@@ -788,7 +805,7 @@ export default function ListingDetailPage() {
           </div>
 
           {/* Summary */}
-          <div className="lg:col-span-6">
+          <div className="flex flex-col lg:col-span-6">
             <div className="flex flex-wrap items-center gap-2">
               <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${statusChip.cls}`}>
                 <span className={`h-1.5 w-1.5 rounded-full ${statusChip.dot}`} />
@@ -888,6 +905,65 @@ export default function ListingDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Price breakdown — fills the column under the KPIs */}
+            <div className="mt-5 lg:mt-auto lg:pt-5">
+              {breakdown ? (
+                <div className={`rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-slate-50'}`}>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className={`text-sm font-semibold ${strong}`}>{t('listingDetailPage.ui.breakdownTitle')}</p>
+                    <p className={`text-xs ${muted}`}>{t('listingDetailPage.ui.breakdownOf', { price: money(currentPriceValue, currency) })}</p>
+                  </div>
+                  <div className={`mt-3 flex h-3 w-full overflow-hidden rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                    {breakdown.segments.map((segment) => (
+                      <div key={segment.key} className={`h-full ${segment.bar}`} style={{ width: `${segment.pct}%` }} title={`${segment.label}: ${money(segment.value)}`} />
+                    ))}
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {breakdown.segments.map((segment) => (
+                      <div key={segment.key} className="min-w-0">
+                        <p className={`flex items-center gap-1.5 truncate text-[11px] font-semibold ${muted}`}>
+                          <span className={`h-2 w-2 shrink-0 rounded-full ${segment.bar}`} />
+                          {segment.label}
+                        </p>
+                        <p className={`mt-0.5 text-sm font-bold tabular-nums ${segment.key === 'profit' ? (breakdown.profit >= 0 ? 'text-emerald-500' : 'text-rose-500') : strong}`}>
+                          {segment.key === 'profit' ? `${breakdown.profit >= 0 ? '+' : '−'}${money(Math.abs(breakdown.profit))}` : money(segment.value)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  to="/products"
+                  className={`flex items-center gap-3 rounded-2xl border border-dashed p-4 transition ${isDark ? 'border-slate-700 hover:border-indigo-500/60 hover:bg-indigo-500/5' : 'border-slate-300 hover:border-indigo-300 hover:bg-indigo-50/50'}`}
+                >
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isDark ? 'bg-indigo-500/15' : 'bg-indigo-50'}`}>
+                    <CircleDollarSign size={18} className="text-indigo-500" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-sm font-semibold ${strong}`}>{t('listingDetailPage.ui.noProductTitle')}</p>
+                    <p className={`text-xs ${muted}`}>{t('listingDetailPage.ui.noProductText')}</p>
+                  </div>
+                  <ChevronRight size={16} className={muted} />
+                </Link>
+              )}
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[
+                  [Truck, humanize.shipTo(trading?.shipToLocations)],
+                  [Package, humanize.returnsAccepted(trading?.returnsAccepted) === false ? t('listingDetailPage.ui.noReturns') : t('listingDetailPage.ui.returnsIn', { days: humanize.returnsWithin(trading?.returnsWithin) })],
+                  [Clock3, humanize.listingDuration(trading?.listingDuration)],
+                ]
+                  .filter(([, text]) => text && text !== '—')
+                  .map(([Icon, text]) => (
+                    <span key={text} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${isDark ? 'border-slate-800 text-slate-300' : 'border-slate-200 text-slate-600'}`}>
+                      <Icon size={12} />
+                      {text}
+                    </span>
+                  ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -895,23 +971,6 @@ export default function ListingDetailPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* Details */}
         <div className="space-y-5 lg:col-span-2">
-          {matchedProduct && (
-            <SectionCard icon={CircleDollarSign} title={t('listingDetailPage.ui.profitTitle')} isDark={isDark} accent="text-emerald-500">
-              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <KpiTile isDark={isDark} icon={ShoppingBag} label={t('listingDetailPage.ui.amazonCost')} value={money(matchedProduct.currentAmazonPrice)} />
-                <KpiTile
-                  isDark={isDark}
-                  icon={CircleDollarSign}
-                  label={t('listingDetailPage.ui.estProfit')}
-                  value={currentProfit === null ? '—' : `${currentProfit >= 0 ? '+' : '−'}${money(Math.abs(currentProfit))}`}
-                  tone={currentProfit === null ? 'neutral' : currentProfit >= 0 ? 'success' : 'danger'}
-                />
-                <KpiTile isDark={isDark} icon={Zap} label={t('listingDetailPage.ui.margin')} value={margin === null ? '—' : `${margin}%`} tone={margin === null ? 'neutral' : margin >= 0 ? 'success' : 'danger'} />
-              </div>
-              <p className={`mt-3 text-xs ${muted}`}>{t('listingDetailPage.ui.profitNote')}</p>
-            </SectionCard>
-          )}
-
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <SectionCard icon={Truck} title={t('listingDetailPage.ui.shippingTitle')} isDark={isDark}>
               <dl>
