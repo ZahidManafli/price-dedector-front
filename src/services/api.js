@@ -263,13 +263,6 @@ export const ebayAPI = {
     api.delete(`/ebay/listings/${encodeURIComponent(listingId)}`, { params }),
   sendDeadStockNotify: () => api.post('/ebay/dead-stock/notify'),
   updateListing: (listingId, payload) => api.patch(`/ebay/listings/${listingId}`, payload),
-  getEndedListings: () => api.get('/ebay/listings/ended'),
-  // payload: { title?, price?, quantity?, bestOfferEnabled?, verify? } — verify only returns fees
-  relistListing: (listingId, payload) =>
-    api.post(`/ebay/listings/${encodeURIComponent(listingId)}/relist`, payload),
-  // Same payload shape; revises an active listing in place (ItemID unchanged)
-  reviseListing: (listingId, payload) =>
-    api.post(`/ebay/listings/${encodeURIComponent(listingId)}/revise`, payload),
   getListingAutoStockRule: (listingId) => api.get(`/ebay/listings/${encodeURIComponent(listingId)}/auto-stock`),
   saveListingAutoStockRule: (listingId, payload) =>
     api.put(`/ebay/listings/${encodeURIComponent(listingId)}/auto-stock`, payload),
