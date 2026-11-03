@@ -400,7 +400,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="page-shell">
-      <div className="mx-auto max-w-7xl">
+      <div className="w-full">
         {alert && (
           <div className="mb-3">
             <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
@@ -533,7 +533,7 @@ export default function ProductDetailPage() {
                     ))}
                   </div>
                 )}
-                <div className="mt-3 h-64 flex-1 lg:h-auto lg:min-h-[260px]">
+                <div className="mt-3 h-64 flex-1 lg:h-auto lg:min-h-[300px]">
                   {chartData.length > 1 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
