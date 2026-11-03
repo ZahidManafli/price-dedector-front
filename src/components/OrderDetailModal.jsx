@@ -1,11 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { ebayAPI, productAPI } from '../services/api';
+import { buildOrderTimeline } from '../utils/orderTimeline';
+import { CompactJourney } from './order/OrderTimeline';
 import {
   X,
   Loader2,
   AlertCircle,
+  ArrowRight,
   User,
   MapPin,
   CreditCard,
@@ -138,19 +142,21 @@ function paymentTone(status) {
  */
 export default function OrderDetailModal({ orderId, relatedFee, amazonPrice, count, onClose }) {
   const { isDark } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [autoRelatedFee, setAutoRelatedFee] = useState(null);
   const [autoAmazonPrice, setAutoAmazonPrice] = useState(null);
   const [autoCount, setAutoCount] = useState(null);
+  const [timelineData, setTimelineData] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError('');
     setOrder(null);
+    setTimelineData(null);
     ebayAPI
       .getOrderDetail(orderId)
       .then((res) => {
@@ -209,6 +215,28 @@ export default function OrderDetailModal({ orderId, relatedFee, amazonPrice, cou
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order]);
+
+  // Order journey strip (same data as the order page's timeline). Renders from
+  // the order alone right away and fills in once the timeline arrives.
+  useEffect(() => {
+    if (!order?.orderId) return undefined;
+    let cancelled = false;
+    ebayAPI
+      .getOrderTimeline(order.orderId, {
+        legacyOrderId: order.legacyOrderId || '',
+        itemIds: (order.lineItems || []).map((item) => item?.legacyItemId).filter(Boolean).join(','),
+        buyer: order?.buyer?.username || '',
+      })
+      .then((res) => {
+        if (!cancelled) setTimelineData(res?.data || null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [order]);
+
+  const journey = useMemo(() => (order ? buildOrderTimeline(order, timelineData || {}) : null), [order, timelineData]);
 
   useEffect(() => {
     const onKeyDown = (e) => {
@@ -332,6 +360,35 @@ export default function OrderDetailModal({ orderId, relatedFee, amazonPrice, cou
 
           {!loading && !error && order && (
             <div className="space-y-4">
+              {/* Order journey — compact horizontal version of the order page timeline */}
+              {journey && (
+                <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50/60'}`}>
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <p className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {t('orderTimeline.title')}
+                      </p>
+                      {journey.openCases > 0 && (
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-50 text-amber-700'}`}>
+                          <AlertCircle size={10} />
+                          {t('orderTimeline.openCases', { count: journey.openCases })}
+                        </span>
+                      )}
+                    </div>
+                    <Link
+                      to={`/orders/${encodeURIComponent(order.orderId)}`}
+                      state={{ order }}
+                      onClick={onClose}
+                      className={`inline-flex shrink-0 items-center gap-1 text-xs font-semibold ${isDark ? 'text-indigo-300 hover:text-indigo-200' : 'text-indigo-600 hover:text-indigo-700'}`}
+                    >
+                      {t('orderTimeline.compact.fullHistory')}
+                      <ArrowRight size={12} />
+                    </Link>
+                  </div>
+                  <CompactJourney timeline={journey} isDark={isDark} lang={i18n.language} />
+                </div>
+              )}
+
               {/* Financial summary — the headline section */}
               <SectionCard icon={Receipt} title={t('orderDetailModal.sectionFinancial')} isDark={isDark} accent>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">

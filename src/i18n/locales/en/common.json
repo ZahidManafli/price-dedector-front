@@ -1776,7 +1776,13 @@
     "respondBy": "respond by {{date}}",
     "openCases_one": "{{count}} open case",
     "openCases_other": "{{count}} open cases",
-    "upcoming": "Up next"
+    "upcoming": "Up next",
+    "compact": {
+      "paid": "Paid",
+      "notBought": "Not bought",
+      "delivered": "Delivered",
+      "fullHistory": "Full history"
+    }
   },
   "whatsNew": {
     "title": "What's new",

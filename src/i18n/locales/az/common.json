@@ -1709,7 +1709,13 @@
     "respondBy": "cavab müddəti: {{date}}",
     "openCases_one": "{{count}} açıq case",
     "openCases_other": "{{count}} açıq case",
-    "upcoming": "Növbəti mərhələ"
+    "upcoming": "Növbəti mərhələ",
+    "compact": {
+      "paid": "Ödənilib",
+      "notBought": "Alınmayıb",
+      "delivered": "Çatdırılıb",
+      "fullHistory": "Tam tarixçə"
+    }
   },
   "whatsNew": {
     "title": "Yeniliklər",

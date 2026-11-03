@@ -88,6 +88,107 @@ export function StageStepper({ timeline, isDark }) {
   );
 }
 
+// ── Compact horizontal journey (order info modal) ───────────────────────────
+
+// One short line of the most useful fact for each stage.
+function compactDetail(stage, now, t) {
+  switch (stage.key) {
+    case 'ordered':
+      return stage.paidAt ? { text: t('orderTimeline.compact.paid'), tone: 'success' } : null;
+    case 'purchased':
+      if (stage.amazonOrderId) return { text: stage.amazonOrderId, mono: true };
+      return stage.state === 'done' ? null : { text: t('orderTimeline.compact.notBought'), tone: stage.state === 'current' ? 'warn' : 'muted' };
+    case 'shipped': {
+      if (stage.trackingNumber) return { text: stage.trackingNumber, mono: true };
+      if (stage.state === 'done' || !stage.shipBy || stage.state === 'skipped') return null;
+      const left = stage.shipBy - now;
+      const hours = Math.round(Math.abs(left) / HOUR_MS);
+      const time = hours >= 48 ? t('orderTimeline.days', { count: Math.round(hours / 24) }) : t('orderTimeline.hours', { count: Math.max(1, hours) });
+      return left < 0
+        ? { text: t('orderTimeline.shipOverdue', { time }), tone: 'danger' }
+        : { text: t('orderTimeline.shipBy', { time }), tone: left <= 24 * HOUR_MS ? 'warn' : 'muted' };
+    }
+    case 'delivered':
+      if (stage.state === 'done') return { text: t('orderTimeline.compact.delivered'), tone: 'success' };
+      return stage.state === 'current' ? { text: stage.carrierStatus || t('orderTimeline.inTransit'), tone: 'info' } : null;
+    case 'profit':
+      if (stage.profit === null || stage.profit === undefined) return null;
+      return {
+        text: `${stage.profit >= 0 ? '+' : ''}${formatMoney(stage.profit, stage.currency)}${stage.estimated ? ` · ${t('orderTimeline.estimated')}` : ''}`,
+        tone: stage.profit >= 0 ? 'profit' : 'danger',
+        strong: true,
+      };
+    default:
+      return null;
+  }
+}
+
+export function CompactJourney({ timeline, isDark, now = Date.now(), lang }) {
+  const { t } = useTranslation();
+  const toneClass = (tone) =>
+    ({
+      success: isDark ? 'text-emerald-400' : 'text-emerald-600',
+      profit: isDark ? 'text-emerald-400' : 'text-emerald-600',
+      warn: isDark ? 'text-amber-300' : 'text-amber-600',
+      danger: isDark ? 'text-rose-400' : 'text-rose-600',
+      info: isDark ? 'text-indigo-300' : 'text-indigo-600',
+      muted: isDark ? 'text-slate-500' : 'text-slate-400',
+    })[tone] || (isDark ? 'text-slate-300' : 'text-slate-600');
+
+  return (
+    <div className="-mx-1 overflow-x-auto px-1 pb-1">
+      <ol className="flex min-w-[560px] items-start">
+        {timeline.stages.map((stage, index) => {
+          const Icon = stage.state === 'done' ? Check : stage.state === 'skipped' ? XCircle : STAGE_ICONS[stage.key];
+          const next = timeline.stages[index + 1];
+          const lineDone = stage.state === 'done' && next && (next.state === 'done' || next.state === 'current');
+          const detail = compactDetail(stage, now, t);
+          const muted = stage.state === 'pending' || stage.state === 'skipped';
+          return (
+            <li key={stage.key} className="relative flex min-w-0 flex-1 flex-col items-center px-1 text-center">
+              {next && (
+                <span
+                  aria-hidden="true"
+                  className={`absolute left-1/2 top-[13px] h-0.5 w-full ${lineDone ? 'bg-emerald-500' : isDark ? 'bg-slate-800' : 'bg-slate-200'}`}
+                />
+              )}
+              <span className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full ${dotStyles(stage.state, isDark).replace('ring-4', 'ring-2')}`}>
+                <Icon size={13} />
+              </span>
+              <span
+                className={`mt-1.5 text-[11px] font-semibold leading-tight ${
+                  stage.state === 'current'
+                    ? isDark ? 'text-indigo-300' : 'text-indigo-700'
+                    : muted
+                      ? isDark ? 'text-slate-500' : 'text-slate-400'
+                      : isDark ? 'text-slate-200' : 'text-slate-800'
+                }`}
+              >
+                {t(`orderTimeline.stages.${stage.key}.short`)}
+              </span>
+              <span className={`mt-0.5 h-4 text-[10px] leading-4 tabular-nums ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                {stage.at ? formatDateTime(stage.at, lang) : ''}
+              </span>
+              {detail ? (
+                <span
+                  title={detail.text}
+                  className={`mt-0.5 block w-full truncate text-[10px] leading-4 ${detail.mono ? 'font-mono' : ''} ${
+                    detail.strong ? 'text-xs font-bold' : 'font-medium'
+                  } ${toneClass(detail.tone)}`}
+                >
+                  {detail.text}
+                </span>
+              ) : (
+                <span className="mt-0.5 h-4" />
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
 // ── Vertical timeline ───────────────────────────────────────────────────────
 
 function Chip({ tone = 'neutral', isDark, icon: Icon, children }) {
