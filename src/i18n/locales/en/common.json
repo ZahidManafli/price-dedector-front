@@ -480,7 +480,10 @@
       "noDataRange": "Not enough data for this period.",
       "checkHistory": "Check history",
       "onlyChanges": "Show changes only",
-      "showMore": "Show {{count}} more"
+      "showMore": "Show {{count}} more",
+      "savingChanges": "Saving changes and re-checking the Amazon price…",
+      "saved": "Product updated.",
+      "saveFailed": "Could not update the product."
     }
   },
   "productFormPage": {
@@ -526,7 +529,20 @@
     "adRateHint": "This is the promoted listing rate used in profit calculation.",
     "emailHint": "You'll receive alerts when prices change",
     "adding": "Adding Product...",
-    "updating": "Updating Product..."
+    "updating": "Updating Product...",
+    "ui": {
+      "subtitle": "Link an Amazon product to an eBay listing to track price and stock automatically",
+      "basicTitle": "Basic details",
+      "basicHint": "Product name and linked listings",
+      "pricingTitle": "Price & profit",
+      "pricingHint": "Profit is calculated after eBay fees (tax, final value fee, ads)",
+      "margin": "{{margin}}% margin",
+      "ebayFees": "eBay fees",
+      "amazonCost": "Amazon cost",
+      "checksEnabled_one": "{{count}} check enabled",
+      "checksEnabled_other": "{{count}} checks enabled",
+      "notifyTitle": "Notifications"
+    }
   },
   "productChecks": {
     "menuTitle": "Check settings",

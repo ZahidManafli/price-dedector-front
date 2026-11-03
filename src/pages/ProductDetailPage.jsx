@@ -5,6 +5,7 @@ import { buildAmazonProductUrl, extractAmazonAsin, formatCurrency } from '../uti
 import { formatLongDate, formatLongDateTime, formatShortDateTime } from '../utils/dateFormat';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
+import { ProductFormModal } from './ProductFormPage';
 import { useTheme } from '../context/ThemeContext';
 import {
   AlertTriangle,
@@ -154,6 +155,7 @@ export default function ProductDetailPage() {
   const [onlyChanges, setOnlyChanges] = useState(true);
   const [imageBroken, setImageBroken] = useState(false);
   const [copied, setCopied] = useState('');
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     fetchProductDetails();
@@ -241,6 +243,30 @@ export default function ProductDetailPage() {
     } finally {
       setCompareLoading(false);
     }
+  };
+
+  const handleEditSaved = async (jobId) => {
+    if (!jobId) {
+      await fetchProductDetails();
+      return;
+    }
+    setAlert({ type: 'info', message: t('productDetailPage.ui.savingChanges') });
+    const deadline = Date.now() + 120000;
+    while (Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      try {
+        const { status, error } = (await productAPI.pollJob(jobId))?.data || {};
+        if (status === 'done') break;
+        if (status === 'error') {
+          setAlert({ type: 'error', message: error || t('productDetailPage.ui.saveFailed') });
+          return;
+        }
+      } catch {
+        break;
+      }
+    }
+    setAlert({ type: 'success', message: t('productDetailPage.ui.saved') });
+    await fetchProductDetails();
   };
 
   const copy = async (key, value) => {
@@ -385,7 +411,7 @@ export default function ProductDetailPage() {
             {t('productDetailPage.ui.backToProducts')}
           </button>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => navigate(`/edit-product/${productId}`)} className="btn-secondary inline-flex items-center gap-2">
+            <button type="button" onClick={() => setEditOpen(true)} className="btn-secondary inline-flex items-center gap-2">
               <Pencil size={15} />
               {t('productDetailPage.editProduct')}
             </button>
@@ -682,6 +708,9 @@ export default function ProductDetailPage() {
           </section>
         )}
       </div>
+      {editOpen && (
+        <ProductFormModal productId={productId} onClose={() => setEditOpen(false)} onSuccess={(jobId) => handleEditSaved(jobId)} />
+      )}
     </div>
   );
 }

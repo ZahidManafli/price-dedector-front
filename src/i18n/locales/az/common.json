@@ -240,7 +240,10 @@
       "noDataRange": "Bu müddət üçün kifayət qədər məlumat yoxdur.",
       "checkHistory": "Yoxlama tarixçəsi",
       "onlyChanges": "Yalnız dəyişiklikləri göstər",
-      "showMore": "Daha {{count}} göstər"
+      "showMore": "Daha {{count}} göstər",
+      "savingChanges": "Dəyişikliklər yadda saxlanılır, Amazon qiyməti yenidən yoxlanılır…",
+      "saved": "Məhsul yeniləndi.",
+      "saveFailed": "Məhsulu yeniləmək alınmadı."
     }
   },
   "productFormPage": {
@@ -286,7 +289,20 @@
     "adRateHint": "Bu, mənfəət hesablamasında istifadə olunan təbliğ edilən siyahı nisbətidir.",
     "emailHint": "Qiymətlər dəyişdikdə xəbərdarlıq alacaqsınız",
     "adding": "Məhsul əlavə edilir...",
-    "updating": "Məhsul yenilənir..."
+    "updating": "Məhsul yenilənir...",
+    "ui": {
+      "subtitle": "Amazon və eBay məhsulunu bağlayın, qiymət və stok avtomatik izlənsin",
+      "basicTitle": "Əsas məlumat",
+      "basicHint": "Məhsulun adı və bağlı olduğu listinglər",
+      "pricingTitle": "Qiymət və mənfəət",
+      "pricingHint": "Mənfəət eBay haqları (vergi, final value fee, reklam) çıxılmaqla hesablanır",
+      "margin": "{{margin}}% marja",
+      "ebayFees": "eBay haqları",
+      "amazonCost": "Amazon xərci",
+      "checksEnabled_one": "{{count}} yoxlama aktivdir",
+      "checksEnabled_other": "{{count}} yoxlama aktivdir",
+      "notifyTitle": "Bildirişlər"
+    }
   },
   "productChecks": {
     "menuTitle": "Yoxlama tənzimləmələri",
@@ -1941,5 +1957,8 @@
       "fix": "Düzəliş",
       "announcement": "Elan"
     }
+  },
+  "common": {
+    "cancel": "Ləğv et"
   }
 }
