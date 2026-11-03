@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import {
@@ -20,6 +20,7 @@ import {
   Minus,
   Package,
   Plus,
+  RotateCcw,
   Settings2,
   ShoppingBag,
   Truck,
@@ -28,8 +29,74 @@ import {
 import { ebayAPI, productAPI } from '../services/api';
 import { calculateProfit } from '../utils/helpers';
 import { formatLongDate } from '../utils/dateFormat';
+import RelistPanel from '../components/RelistPanel';
 
 const TITLE_MAX = 80; // eBay's title length limit
+const RELIST_WINDOW_DAYS = 90; // eBay allows relisting up to 90 days after a listing ends
+
+// ISO 8601 duration from now until `iso` ("P29DT9H35M0S"), as Trading's <TimeLeft>.
+function isoDurationUntil(iso) {
+  const ms = Date.parse(iso || '') - Date.now();
+  if (!Number.isFinite(ms) || ms <= 0) return 'PT0S';
+  const minutes = Math.floor(ms / 60000);
+  return `P${Math.floor(minutes / 1440)}DT${Math.floor((minutes % 1440) / 60)}H${minutes % 60}M0S`;
+}
+
+// The ended listing as it looks once relisted, so the detail page can open the
+// new listing straight away (the listings cache won't have it until the next refresh).
+function buildRelistedListing(listing, result, payload) {
+  const newId = String(result.listingId);
+  const title = payload.title ?? (listing?.listing?.title || listing?.title);
+  const price = payload.price ?? listing?.pricingSummary?.price?.value;
+  const currency = listing?.pricingSummary?.price?.currency || payload.currency || 'USD';
+  const quantity = payload.quantity;
+  const viewUrl = `https://www.ebay.com/itm/${newId}`;
+
+  let rawXml = listing?.rawXml;
+  if (rawXml && typeof DOMParser !== 'undefined') {
+    try {
+      const doc = new DOMParser().parseFromString(rawXml, 'text/xml');
+      const root = doc.querySelector('Item') || doc.documentElement;
+      const set = (selector, value) => {
+        const node = root.querySelector(selector);
+        if (node && value != null) node.textContent = String(value);
+      };
+      set('ItemID', newId);
+      set('Title', title);
+      set('Quantity', quantity);
+      set('SellingStatus > ListingStatus', 'Active');
+      set('SellingStatus > QuantitySold', 0);
+      set('SellingStatus > CurrentPrice', price != null ? Number(price).toFixed(2) : null);
+      set('ListingDetails > StartTime', result.startTime);
+      set('ListingDetails > EndTime', result.endTime);
+      set('ListingDetails > ViewItemURL', viewUrl);
+      set('TimeLeft', isoDurationUntil(result.endTime));
+      if (typeof payload.bestOfferEnabled === 'boolean') set('BestOfferDetails > BestOfferEnabled', payload.bestOfferEnabled);
+      root.querySelector('ListingDetails > RelistedItemID')?.remove();
+      rawXml = new XMLSerializer().serializeToString(doc);
+    } catch {
+      // keep the old XML — only cosmetic details would be stale
+    }
+  }
+
+  return {
+    ...listing,
+    listingId: newId,
+    title,
+    listing: { ...(listing?.listing || {}), listingId: newId, legacyItemId: newId, title },
+    status: 'Active',
+    pricingSummary: price != null ? { price: { value: Number(price).toFixed(2), currency } } : listing?.pricingSummary,
+    ...(quantity != null ? { quantity, availableQuantity: quantity } : {}),
+    quantitySold: 0,
+    startTime: result.startTime || null,
+    endTime: result.endTime || null,
+    url: viewUrl,
+    relistedItemId: null,
+    relistDeadline: undefined,
+    canRelist: undefined,
+    rawXml,
+  };
+}
 
 // ── Value humanizers (eBay Trading API returns raw enums/booleans) ───────────
 
@@ -181,7 +248,11 @@ export default function ListingDetailPage() {
   const { t, i18n } = useTranslation();
   const humanize = useHumanize(t);
   const location = useLocation();
+  const navigate = useNavigate();
   const { listingId: routeListingId } = useParams();
+  const openRelistOnLoad = Boolean(location?.state?.openRelist);
+  const relistPanelRef = useRef(null);
+  const [relistResult, setRelistResult] = useState(null);
   const initialListing = location?.state?.listing || null;
   const [listing, setListing] = useState(initialListing);
   const [listingLoading, setListingLoading] = useState(!initialListing && Boolean(routeListingId));
@@ -293,6 +364,7 @@ export default function ListingDetailPage() {
         buyerResponsibleShipping: text('BuyerResponsibleForShipping'),
         pictureUrls: allText('PictureDetails > PictureURL'),
         watchCount: text('WatchCount'),
+        relistedItemId: text('ListingDetails > RelistedItemID'),
       };
     } catch {
       return null;
@@ -342,6 +414,7 @@ export default function ListingDetailPage() {
 
   useEffect(() => {
     setListing(initialListing);
+    setRelistResult(null);
   }, [initialListing]);
 
   // Opened via a direct link (e.g. the dashboard's Action Center) without the
@@ -350,15 +423,17 @@ export default function ListingDetailPage() {
     if (initialListing || !routeListingId) return undefined;
     let cancelled = false;
     setListingLoading(true);
+    const wanted = String(routeListingId);
+    const findIn = (res) =>
+      (Array.isArray(res?.data?.items) ? res.data.items : []).find((item) =>
+        [item?.listingId, item?.listing?.listingId, item?.listing?.legacyItemId, item?.offerId, item?.sku].some((v) => String(v || '') === wanted)
+      );
     ebayAPI
       .getListings(0, 200)
-      .then((res) => {
+      // Not live — it may be an ended listing (e.g. a relist reminder link).
+      .then(async (res) => findIn(res) || findIn(await ebayAPI.getEndedListings().catch(() => null)))
+      .then((found) => {
         if (cancelled) return;
-        const items = Array.isArray(res?.data?.items) ? res.data.items : [];
-        const wanted = String(routeListingId);
-        const found = items.find((item) =>
-          [item?.listingId, item?.listing?.listingId, item?.listing?.legacyItemId, item?.offerId, item?.sku].some((v) => String(v || '') === wanted)
-        );
         setListing(found || null);
       })
       .catch(() => !cancelled && setListing(null))
@@ -620,7 +695,17 @@ export default function ListingDetailPage() {
   const isActive = statusRaw === 'active' || statusRaw === 'published';
   const isEnded = /ended|completed|inactive/.test(statusRaw);
   const stockNumber = Number(stockCount);
-  const outOfStock = Number.isFinite(stockNumber) && stockNumber <= 0;
+  const outOfStock = !isEnded && Number.isFinite(stockNumber) && stockNumber <= 0;
+
+  // Relist eligibility: ended, not relisted already, still inside eBay's 90-day window.
+  const endedAt = isEnded ? trading?.endTime || meta.ended || null : null;
+  const relistedItemId = relistResult?.listingId || listing?.relistedItemId || trading?.relistedItemId || null;
+  const relistDeadline = isEnded
+    ? listing?.relistDeadline ||
+      (Number.isFinite(Date.parse(endedAt || '')) ? new Date(Date.parse(endedAt) + RELIST_WINDOW_DAYS * 86400000).toISOString() : null)
+    : null;
+  const relistExpired = Boolean(relistDeadline) && Date.parse(relistDeadline) <= Date.now();
+  const canRelist = isEnded && /^\d+$/.test(String(listingId)) && !relistExpired && (!relistedItemId || Boolean(relistResult));
   const hiddenFromSearch = isTrue(trading?.hideFromSearch);
   const sold = Number(trading?.quantitySold || 0);
   const watchers = Number(trading?.watchCount || keyFacts.watchCount || 0);
@@ -660,8 +745,22 @@ export default function ListingDetailPage() {
   const priceDirty = priceDraft !== '' && Number(priceDraft) !== Number(currentPriceValue);
   const qtyDirty = quantityDraft !== '' && Number(quantityDraft) !== Number(stockCount);
 
-  const timeLeft = trading?.timeLeft ? humanize.duration(trading.timeLeft) : '—';
+  const timeLeft = !isEnded && trading?.timeLeft ? humanize.duration(trading.timeLeft) : '—';
   const lang = i18n.language;
+
+  // Arrived from the listings table's "Relist" button: jump straight to the form.
+  useEffect(() => {
+    if (!openRelistOnLoad || !canRelist) return undefined;
+    const timer = setTimeout(() => relistPanelRef.current?.focus(), 150);
+    return () => clearTimeout(timer);
+  }, [openRelistOnLoad, canRelist, listingId]);
+
+  const openRelisted = (result, payload) => {
+    navigate(`/listings/${encodeURIComponent(String(result.listingId))}`, {
+      replace: false,
+      state: { listing: buildRelistedListing(listing, result, payload) },
+    });
+  };
 
   const card = `rounded-2xl border ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`;
   const muted = isDark ? 'text-slate-400' : 'text-slate-500';
@@ -879,6 +978,43 @@ export default function ListingDetailPage() {
 
             {/* Alerts */}
             <div className="mt-4 space-y-2">
+              {isEnded && canRelist && !relistResult && (
+                <div className={`flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center ${isDark ? 'border-indigo-500/30 bg-indigo-500/10' : 'border-indigo-200 bg-indigo-50'}`}>
+                  <RotateCcw size={18} className="shrink-0 text-indigo-500" />
+                  <p className={`flex-1 text-sm ${isDark ? 'text-indigo-100' : 'text-indigo-900'}`}>
+                    {endedAt
+                      ? t('listingDetailPage.relist.alertEnded', { date: formatLongDate(endedAt, lang) })
+                      : t('listingDetailPage.relist.alertEndedNoDate')}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => relistPanelRef.current?.focus()}
+                    className="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700"
+                  >
+                    {t('listingDetailPage.relist.cta')}
+                  </button>
+                </div>
+              )}
+              {isEnded && relistedItemId && !relistResult && (
+                <div className={`flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center ${isDark ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-emerald-200 bg-emerald-50'}`}>
+                  <Check size={18} className="shrink-0 text-emerald-500" />
+                  <p className={`flex-1 text-sm ${isDark ? 'text-emerald-200' : 'text-emerald-800'}`}>
+                    {t('listingDetailPage.relist.alreadyRelisted', { id: relistedItemId })}
+                  </p>
+                  <Link
+                    to={`/listings/${encodeURIComponent(relistedItemId)}`}
+                    className="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                  >
+                    {t('listingDetailPage.relist.openNew')}
+                  </Link>
+                </div>
+              )}
+              {isEnded && relistExpired && !relistedItemId && (
+                <div className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm ${isDark ? 'border-slate-700 bg-slate-800/60 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
+                  <Clock3 size={18} className="shrink-0" />
+                  {t('listingDetailPage.relist.windowExpired', { days: RELIST_WINDOW_DAYS })}
+                </div>
+              )}
               {outOfStock && isActive && (
                 <div className={`flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center ${isDark ? 'border-rose-500/30 bg-rose-500/10' : 'border-rose-200 bg-rose-50'}`}>
                   <AlertTriangle size={18} className="shrink-0 text-rose-500" />
@@ -991,7 +1127,7 @@ export default function ListingDetailPage() {
               <dl>
                 <DetailRow isDark={isDark} label={t('listingDetailPage.listingDuration')}>{humanize.listingDuration(trading?.listingDuration)}</DetailRow>
                 <DetailRow isDark={isDark} label={t('listingDetailPage.start')}>{formatLongDate(trading?.startTime || meta.created, lang) || '—'}</DetailRow>
-                <DetailRow isDark={isDark} label={t('listingDetailPage.ui.renews')}>{formatLongDate(trading?.endTime || meta.ended, lang) || '—'}</DetailRow>
+                <DetailRow isDark={isDark} label={isEnded ? t('listingDetailPage.relist.endedLabel') : t('listingDetailPage.ui.renews')}>{formatLongDate(trading?.endTime || meta.ended, lang) || '—'}</DetailRow>
                 <DetailRow isDark={isDark} label={t('listingDetailPage.bestOffer')}>
                   <BoolPill value={humanize.bool(trading?.bestOfferEnabled)} isDark={isDark} t={t} />
                 </DetailRow>
@@ -1024,8 +1160,46 @@ export default function ListingDetailPage() {
           </SectionCard>
         </div>
 
-        {/* Quick edit */}
+        {/* Quick edit — or, for an ended listing, relist */}
         <aside className="lg:sticky lg:top-4 lg:self-start">
+          {isEnded ? (
+            canRelist ? (
+              <RelistPanel
+                ref={relistPanelRef}
+                listingId={String(listingId)}
+                isDark={isDark}
+                currentTitle={currentTitle}
+                currentPrice={currentPriceValue}
+                currency={currency}
+                defaultQuantity={Number.isFinite(stockNumber) && stockNumber > 0 ? stockNumber : 1}
+                bestOfferEnabled={isTrue(trading?.bestOfferEnabled)}
+                deadline={relistDeadline}
+                endedAt={endedAt}
+                money={money}
+                profitFor={matchedProduct ? profitFor : null}
+                onRelisted={(result) => setRelistResult(result)}
+                onOpenRelisted={openRelisted}
+              />
+            ) : (
+              <section className={`${card} p-5`}>
+                <div className="flex items-start gap-3">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                    <RotateCcw size={18} className={muted} />
+                  </div>
+                  <div>
+                    <h2 className={`text-base font-semibold ${strong}`}>{t('listingDetailPage.relist.title')}</h2>
+                    <p className={`mt-1 text-xs leading-relaxed ${muted}`}>
+                      {relistedItemId
+                        ? t('listingDetailPage.relist.alreadyRelisted', { id: relistedItemId })
+                        : relistExpired
+                          ? t('listingDetailPage.relist.windowExpired', { days: RELIST_WINDOW_DAYS })
+                          : t('listingDetailPage.relist.unavailable')}
+                    </p>
+                  </div>
+                </div>
+              </section>
+            )
+          ) : (
           <section className={`${card} p-5`}>
             <h2 className={`text-base font-semibold ${strong}`}>{t('listingDetailPage.quickEditTitle')}</h2>
             <p className={`mt-0.5 text-xs ${muted}`}>{t('listingDetailPage.ui.quickEditHint')}</p>
@@ -1148,6 +1322,7 @@ export default function ListingDetailPage() {
               </div>
             </div>
           </section>
+          )}
         </aside>
       </div>
     </div>

@@ -5,7 +5,7 @@ import { ebayAPI } from '../services/api';
 import Alert from '../components/Alert';
 import {
   ArrowDownUp, Check, Loader2, Mail, MessageSquare, Package, Link2,
-  Pencil, Search, SlidersHorizontal, Trash2, AlertTriangle, X,
+  Pencil, RotateCcw, Search, SlidersHorizontal, Trash2, AlertTriangle, X,
 } from 'lucide-react';
 import FeedbackSidebar from '../components/FeedbackSidebar';
 import ScheduledListingsPanel from '../components/ScheduledListingsPanel';
@@ -40,6 +40,11 @@ export default function ListingsPage() {
   const [sendingDeadStockEmail, setSendingDeadStockEmail] = useState(false);
   const [deadStockEmailSent, setDeadStockEmailSent] = useState(false);
   const listingsRequestRef = useRef(0);
+  // Ended listings (relist candidates) come from a separate endpoint and are
+  // only fetched once the user looks at ended/all listings.
+  const [endedItems, setEndedItems] = useState(null);
+  const [endedLoading, setEndedLoading] = useState(false);
+  const endedRequestRef = useRef(0);
 
   // ── Relist frequency ──────────────────────────────────────────────────────
   const [relistFrequencyInput, setRelistFrequencyInput] = useState('');
@@ -152,6 +157,7 @@ export default function ListingsPage() {
       window.dispatchEvent(new Event('ebay:updated'));
       setRelistFrequencyInput('');
       loadRelistFrequency(accountId);
+      setEndedItems(null);
       await loadListings({ forceRefresh: true });
     } catch (err) {
       setError(err?.response?.data?.error || err.message || 'Failed to switch active eBay account');
@@ -177,6 +183,28 @@ export default function ListingsPage() {
       setSavingRelistFrequency(false);
     }
   };
+
+  const loadEndedListings = async () => {
+    const requestId = ++endedRequestRef.current;
+    setEndedLoading(true);
+    try {
+      const res = await ebayAPI.getEndedListings();
+      if (requestId !== endedRequestRef.current) return;
+      setEndedItems(Array.isArray(res?.data?.items) ? res.data.items : []);
+    } catch (err) {
+      if (requestId !== endedRequestRef.current) return;
+      setEndedItems([]);
+      setError(err?.response?.data?.error || t('listingsPage.failedLoadEnded'));
+    } finally {
+      if (requestId === endedRequestRef.current) setEndedLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!ebayStatus.connected || endedItems !== null || endedLoading) return;
+    if (statusFilter === 'COMPLETED' || statusFilter === 'ALL') loadEndedListings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, ebayStatus.connected, endedItems]);
 
   // ── Delete listing ────────────────────────────────────────────────────────
   const handleDeleteListing = async ({ ebayListingId = null, internalSku = null, offerId = null } = {}) => {
@@ -405,11 +433,20 @@ export default function ListingsPage() {
     return Number.isFinite(parsed) ? parsed : null;
   };
 
+  const allItems = useMemo(() => {
+    const live = items || [];
+    if (!endedItems?.length) return live;
+    const seen = new Set(live.map((o) => String(o?.listingId || o?.listing?.legacyItemId || '')).filter(Boolean));
+    return [...live, ...endedItems.filter((o) => !seen.has(String(o?.listingId || '')))];
+  }, [items, endedItems]);
+
   const normalizedItems = useMemo(
     () =>
-      (items || []).map((offer) => {
+      allItems.map((offer) => {
         const id = offer?.offerId || offer?.listingId || offer?.listing?.listingId || offer?.sku || '-';
-        const status = String(offer?.status || offer?.marketplaceId || '-');
+        const rawStatus = String(offer?.status || offer?.marketplaceId || '-');
+        // Trading reports ended listings as "Completed" or "Ended" — show both as Completed.
+        const status = /^(completed|ended)$/i.test(rawStatus) ? 'Completed' : rawStatus;
         const title = offer?.listing?.title || offer?.title || offer?.product?.title || '(no title)';
         let rawQuantity = null, rawSold = null, rawThumb = '', rawStartTime = null, rawWatchCount = null;
         if (offer?.rawXml && typeof DOMParser !== 'undefined') {
@@ -439,7 +476,7 @@ export default function ListingsPage() {
         const stockCount = rawQuantity != null ? Math.max(0, rawQuantity - Number(soldCount || 0)) : fallbackQuantity;
         const priceNumber = parseNumberish(offer?.pricingSummary?.price?.value);
         const daysSinceListed = rawStartTime ? Math.floor((Date.now() - rawStartTime.getTime()) / (1000 * 60 * 60 * 24)) : null;
-        const isDeadStock = soldCount === 0 && daysSinceListed !== null && daysSinceListed >= 30;
+        const isDeadStock = status !== 'Completed' && soldCount === 0 && daysSinceListed !== null && daysSinceListed >= 30;
         return {
           ...offer,
           _id: id,
@@ -455,9 +492,10 @@ export default function ListingsPage() {
             : '-',
           _priceValue: priceNumber,
           _thumb: rawThumb,
+          _isEnded: status === 'Completed',
         };
       }),
-    [items]
+    [allItems]
   );
 
   const filteredItems = useMemo(() => {
@@ -1113,7 +1151,25 @@ export default function ListingsPage() {
                                 </>
                               ) : (
                                 <>
-                                  {ebayListingId && (
+                                  {offer._isEnded && ebayListingId && (
+                                    offer.relistedItemId ? (
+                                      <span className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                        <Check size={12} />
+                                        {t('listingsPage.alreadyRelisted')}
+                                      </span>
+                                    ) : offer.canRelist !== false ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => navigate(`/listings/${encodeURIComponent(String(listingId))}`, { state: { listing: offer, openRelist: true } })}
+                                        className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-indigo-700"
+                                        title={t('listingsPage.relistHint')}
+                                      >
+                                        <RotateCcw size={12} />
+                                        {t('listingsPage.relist')}
+                                      </button>
+                                    ) : null
+                                  )}
+                                  {ebayListingId && !offer._isEnded && (
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -1148,7 +1204,7 @@ export default function ListingsPage() {
                                       Feedback
                                     </button>
                                   )}
-                                  <button
+                                  {!offer._isEnded && <button
                                     type="button"
                                     onClick={() => handleDeleteListing({ ebayListingId, internalSku, offerId })}
                                     disabled={deleteKey && deletingListingId === deleteKey}
@@ -1157,7 +1213,7 @@ export default function ListingsPage() {
                                   >
                                     <Trash2 size={14} />
                                     {deleteKey && deletingListingId === deleteKey ? t('listingsPage.deleting') : t('listingsPage.delete')}
-                                  </button>
+                                  </button>}
                                 </>
                               )}
                             </div>
@@ -1169,7 +1225,9 @@ export default function ListingsPage() {
                   {pagedItems.length === 0 && (
                     <tr>
                       <td colSpan={8} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {t('listingsPage.noListings')}
+                        {endedLoading && statusFilter === 'COMPLETED' ? (
+                          <span className="inline-flex items-center gap-2"><Loader2 size={14} className="animate-spin" />{t('listingsPage.loadingEnded')}</span>
+                        ) : t('listingsPage.noListings')}
                       </td>
                     </tr>
                   )}
