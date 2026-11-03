@@ -1625,5 +1625,115 @@
       "summarySales": " Son 7 gündə ən azı {{sold}} satış{{daysPart}} tələb olunur.",
       "summarySalesDays": " ({{days}} müxtəlif gündə)"
     }
+  },
+  "orderTimeline": {
+    "title": "Sifarişin yolu",
+    "refresh": "Yenilə",
+    "loadFailed": "Tarixçəni yükləmək alınmadı",
+    "now": "İndi",
+    "openOnEbay": "eBay-də aç",
+    "copyOrderId": "Sifariş ID-ni kopyala",
+    "skipped": "Sifariş ləğv olunduğu üçün bu addım baş vermədi",
+    "cancelled": "Sifariş ləğv edildi",
+    "status": {
+      "purchased": "Amazon alışı gözlənilir",
+      "shipped": "Göndərilməyi gözləyir",
+      "delivered": "Yoldadır",
+      "profit": "Çatdırıldı",
+      "complete": "Tamamlandı",
+      "cancelled": "Ləğv edildi"
+    },
+    "stages": {
+      "ordered": {
+        "short": "Sifariş",
+        "title": "eBay sifarişi",
+        "done": "Alıcı sifarişi verdi",
+        "waiting": "Sifariş gözlənilir"
+      },
+      "purchased": {
+        "short": "Amazon",
+        "title": "Amazon alışı",
+        "done": "Məhsul Amazon-dan alındı",
+        "waiting": "Məhsul hələ Amazon-dan alınmayıb"
+      },
+      "shipped": {
+        "short": "Tracking",
+        "title": "Tracking eBay-də",
+        "done": "İzləmə kodu eBay sifarişinə yükləndi",
+        "waiting": "İzləmə kodu hələ eBay-ə yüklənməyib"
+      },
+      "delivered": {
+        "short": "Çatdırılma",
+        "title": "Çatdırılma",
+        "done": "Bağlama alıcıya çatdırıldı",
+        "waiting": "Bağlama yoldadır"
+      },
+      "profit": {
+        "short": "Qazanc",
+        "title": "Qazanc",
+        "done": "Qazanc hesablandı",
+        "waiting": "Qazanc hələ hesablanmayıb",
+        "estimatedText": "eBay ödənişi ilə Amazon xərcinə görə təxmini qazanc"
+      }
+    },
+    "paidAt": "Ödənildi · {{date}}",
+    "amazonOrderId": "Amazon sifariş ID",
+    "amazonOrderIdPlaceholder": "Məs: 114-1234567-1234567",
+    "amazonCost": "Amazon xərci",
+    "trackingNumber": "İzləmə kodu",
+    "sentEarly": "Vaxtında göndərmə üçün erkən yükləndi",
+    "buyerMessaged": "Alıcıya mesaj · {{date}}",
+    "inTransit": "Bağlama yoldadır",
+    "shipBy": "Göndərməyə {{time}} qalıb",
+    "shipOverdue": "Göndərmə {{time}} gecikib",
+    "hours_one": "{{count}} saat",
+    "hours_other": "{{count}} saat",
+    "days_one": "{{count}} gün",
+    "days_other": "{{count}} gün",
+    "purchaseHint": "Məhsulu Amazon-dan aldınızsa, Amazon sifariş ID-sini daxil edin. Tracking avtomatik izlənməyə başlayacaq.",
+    "linkAmazonOrder": "Amazon sifarişini bağla",
+    "linking": "Bağlanır…",
+    "profitTitle": "Qazanc",
+    "profitPending": "Qazanc Amazon alışı bağlandıqdan sonra hesablanacaq.",
+    "estimated": "Təxmini",
+    "estimatedHint": "eBay ödənişi ilə Amazon xərcinin fərqi əsasında təxmini hesablanıb.",
+    "ebayPayout": "eBay ödənişi",
+    "ebayFees": "eBay haqları",
+    "caseKind": {
+      "case": "Case",
+      "inquiry": "INR sorğusu",
+      "cancellation": "Ləğv sorğusu"
+    },
+    "caseOpen": "Açıq",
+    "caseClosed": "Bağlanıb",
+    "respondBy": "cavab müddəti: {{date}}",
+    "openCases_one": "{{count}} açıq case",
+    "openCases_other": "{{count}} açıq case",
+    "upcoming": "Növbəti mərhələ"
+  },
+  "whatsNew": {
+    "title": "Yeniliklər",
+    "subtitle": "Checkila-da son dəyişikliklər",
+    "close": "Bağla",
+    "newBadge": "Yeni",
+    "learnMore": "Ətraflı",
+    "loadFailed": "Yenilikləri yükləmək alınmadı",
+    "emptyTitle": "Hələ yenilik yoxdur",
+    "emptyText": "Yeni funksiyalar əlavə olunanda burada görəcəksiniz.",
+    "buttonUnseen_one": "Yeniliklər · {{count}} yeni",
+    "buttonUnseen_other": "Yeniliklər · {{count}} yeni",
+    "category": {
+      "feature": "Yeni funksiya",
+      "improvement": "Təkmilləşmə",
+      "fix": "Düzəliş",
+      "announcement": "Elan"
+    },
+    "filter": {
+      "all": "Hamısı",
+      "feature": "Yeni funksiya",
+      "improvement": "Təkmilləşmə",
+      "fix": "Düzəliş",
+      "announcement": "Elan"
+    }
   }
 }

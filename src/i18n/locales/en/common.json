@@ -1692,5 +1692,115 @@
       "summarySales": " Requires at least {{sold}} sales in the last 7 days{{daysPart}}.",
       "summarySalesDays": " (on {{days}} different days)"
     }
+  },
+  "orderTimeline": {
+    "title": "Order journey",
+    "refresh": "Refresh",
+    "loadFailed": "Could not load the order history",
+    "now": "Now",
+    "openOnEbay": "Open on eBay",
+    "copyOrderId": "Copy order ID",
+    "skipped": "Skipped because the order was cancelled",
+    "cancelled": "Order cancelled",
+    "status": {
+      "purchased": "Awaiting Amazon purchase",
+      "shipped": "Awaiting shipment",
+      "delivered": "In transit",
+      "profit": "Delivered",
+      "complete": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "stages": {
+      "ordered": {
+        "short": "Order",
+        "title": "eBay order",
+        "done": "The buyer placed the order",
+        "waiting": "Waiting for the order"
+      },
+      "purchased": {
+        "short": "Amazon",
+        "title": "Amazon purchase",
+        "done": "Bought on Amazon",
+        "waiting": "Not bought on Amazon yet"
+      },
+      "shipped": {
+        "short": "Tracking",
+        "title": "Tracking on eBay",
+        "done": "Tracking uploaded to the eBay order",
+        "waiting": "Tracking not uploaded to eBay yet"
+      },
+      "delivered": {
+        "short": "Delivery",
+        "title": "Delivery",
+        "done": "Delivered to the buyer",
+        "waiting": "Package in transit"
+      },
+      "profit": {
+        "short": "Profit",
+        "title": "Profit",
+        "done": "Profit recorded",
+        "waiting": "Profit not recorded yet",
+        "estimatedText": "Estimated from the eBay payout and Amazon cost"
+      }
+    },
+    "paidAt": "Paid · {{date}}",
+    "amazonOrderId": "Amazon order ID",
+    "amazonOrderIdPlaceholder": "e.g. 114-1234567-1234567",
+    "amazonCost": "Amazon cost",
+    "trackingNumber": "Tracking number",
+    "sentEarly": "Uploaded early to ship on time",
+    "buyerMessaged": "Buyer messaged · {{date}}",
+    "inTransit": "Package in transit",
+    "shipBy": "{{time}} left to ship",
+    "shipOverdue": "Shipment {{time}} overdue",
+    "hours_one": "{{count}} hr",
+    "hours_other": "{{count}} hrs",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "purchaseHint": "Bought it on Amazon? Enter the Amazon order ID and tracking will start automatically.",
+    "linkAmazonOrder": "Link Amazon order",
+    "linking": "Linking…",
+    "profitTitle": "Profit",
+    "profitPending": "Profit is calculated once the Amazon purchase is linked.",
+    "estimated": "Estimated",
+    "estimatedHint": "Estimated from the eBay payout minus the Amazon cost.",
+    "ebayPayout": "eBay payout",
+    "ebayFees": "eBay fees",
+    "caseKind": {
+      "case": "Case",
+      "inquiry": "INR inquiry",
+      "cancellation": "Cancellation"
+    },
+    "caseOpen": "Open",
+    "caseClosed": "Closed",
+    "respondBy": "respond by {{date}}",
+    "openCases_one": "{{count}} open case",
+    "openCases_other": "{{count}} open cases",
+    "upcoming": "Up next"
+  },
+  "whatsNew": {
+    "title": "What's new",
+    "subtitle": "The latest changes in Checkila",
+    "close": "Close",
+    "newBadge": "New",
+    "learnMore": "Learn more",
+    "loadFailed": "Could not load updates",
+    "emptyTitle": "No updates yet",
+    "emptyText": "New features will show up here.",
+    "buttonUnseen_one": "What's new · {{count}} new",
+    "buttonUnseen_other": "What's new · {{count}} new",
+    "category": {
+      "feature": "New feature",
+      "improvement": "Improvement",
+      "fix": "Fix",
+      "announcement": "Announcement"
+    },
+    "filter": {
+      "all": "All",
+      "feature": "Features",
+      "improvement": "Improvements",
+      "fix": "Fixes",
+      "announcement": "Announcements"
+    }
   }
 }

@@ -304,6 +304,7 @@ export const ebayAPI = {
   getOrderEarningsDetail: (orderId) => api.get(`/ebay/finance/order-earnings/${encodeURIComponent(orderId)}`),
   getOrderAdFees: () => api.get('/ebay/finance/order-ad-fees'),
   getOrderDetail: (orderId) => api.get(`/ebay/orders/${encodeURIComponent(orderId)}`),
+  getOrderTimeline: (orderId, params = {}) => api.get(`/ebay/orders/${encodeURIComponent(orderId)}/timeline`, { params }),
   getPayoutDetail: (payoutId) => api.get(`/ebay/finance/payout/${encodeURIComponent(payoutId)}`),
   getTransferDetail: (transferId) => api.get(`/ebay/finance/transfer/${encodeURIComponent(transferId)}`),
   getOrders: (offsetOrOptions = 0, limit = 25, options = {}) => {
@@ -648,6 +649,17 @@ export const notificationsAPI = {
   unreadCount: () => api.get('/notifications/unread-count'),
   markRead: (id) => api.post(`/notifications/${encodeURIComponent(id)}/read`),
   markAllRead: () => api.post('/notifications/mark-all-read'),
+};
+
+// "What's new" panel (backend routes/whatsNew.js).
+export const whatsNewAPI = {
+  list: () => api.get('/whats-new'),
+  unseenCount: () => api.get('/whats-new/unseen-count'),
+  markSeen: () => api.post('/whats-new/seen'),
+  adminList: () => api.get('/whats-new/admin/posts'),
+  adminCreate: (payload) => api.post('/whats-new/admin/posts', payload),
+  adminUpdate: (id, payload) => api.put(`/whats-new/admin/posts/${encodeURIComponent(id)}`, payload),
+  adminDelete: (id) => api.delete(`/whats-new/admin/posts/${encodeURIComponent(id)}`),
 };
 
 export default api;

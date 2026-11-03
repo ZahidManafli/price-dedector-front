@@ -37,6 +37,7 @@ import { useTranslation } from 'react-i18next';
 import { useSidebar } from '../context/SidebarContext';
 import { ebayAPI, supportAPI } from '../services/api';
 import NotificationBell from './NotificationBell';
+import WhatsNewButton from './whatsNew/WhatsNewButton';
 import { TAB_KEYS } from '../utils/planAccess';
 import { useTour } from '../context/TourContext';
 import { useEbayData } from '../context/EbayDataContext';
@@ -322,7 +323,10 @@ export default function Sidebar() {
                     </Link>
                   ) : null}
                 </div>
-                <NotificationBell isDark={isDark} onNavigate={() => setIsOpen(false)} />
+                <div className="flex flex-shrink-0 items-center gap-1.5">
+                  <WhatsNewButton isDark={isDark} />
+                  <NotificationBell isDark={isDark} onNavigate={() => setIsOpen(false)} />
+                </div>
               </div>
               <div className="flex gap-2">
                 <div className="relative flex-1">
