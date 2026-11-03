@@ -483,7 +483,8 @@
       "showMore": "Show {{count}} more",
       "savingChanges": "Saving changes and re-checking the Amazon price…",
       "saved": "Product updated.",
-      "saveFailed": "Could not update the product."
+      "saveFailed": "Could not update the product.",
+      "noHistory": "No price checks yet."
     }
   },
   "productFormPage": {

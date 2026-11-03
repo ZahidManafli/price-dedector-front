@@ -30,7 +30,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
-const HISTORY_PAGE = 10;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const RANGES = [
   { key: '7d', days: 7 },
@@ -101,24 +100,6 @@ function Trend({ change, invert = false, isDark }) {
   );
 }
 
-function KpiCard({ icon: Icon, accent, label, value, valueTone, sub, trend, isDark }) {
-  return (
-    <div className={`relative overflow-hidden rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}>
-      <div className="flex items-center justify-between gap-2">
-        <div className={`flex items-center gap-2 text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${accent}`}>
-            <Icon size={14} />
-          </span>
-          {label}
-        </div>
-        {trend}
-      </div>
-      <p className={`mt-3 text-2xl font-bold tracking-tight tabular-nums ${valueTone || (isDark ? 'text-white' : 'text-slate-900')}`}>{value}</p>
-      {sub ? <p className={`mt-0.5 text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{sub}</p> : null}
-    </div>
-  );
-}
-
 function ChartTooltip({ active, payload, label, isDark, t }) {
   if (!active || !payload?.length) return null;
   const row = payload[0]?.payload || {};
@@ -151,7 +132,7 @@ export default function ProductDetailPage() {
   const [compareLoading, setCompareLoading] = useState(false);
   const [alert, setAlert] = useState(null);
   const [range, setRange] = useState('30d');
-  const [visibleRows, setVisibleRows] = useState(HISTORY_PAGE);
+  const [view, setView] = useState('chart');
   const [onlyChanges, setOnlyChanges] = useState(true);
   const [imageBroken, setImageBroken] = useState(false);
   const [copied, setCopied] = useState('');
@@ -269,6 +250,11 @@ export default function ProductDetailPage() {
     await fetchProductDetails();
   };
 
+  const goBack = () => {
+    if (window.history.state?.idx > 0) navigate(-1);
+    else navigate('/products');
+  };
+
   const copy = async (key, value) => {
     try {
       await navigator.clipboard.writeText(String(value));
@@ -340,7 +326,7 @@ export default function ProductDetailPage() {
       <div className="page-shell text-center">
         <p className="text-xl text-slate-600">{t('productDetailPage.notFound')}</p>
         <button
-          onClick={() => navigate('/products')}
+          onClick={goBack}
           className="mt-4 btn-primary"
         >
           {t('productDetailPage.ui.backToProducts')}
@@ -401,312 +387,322 @@ export default function ProductDetailPage() {
     </div>
   );
 
+  const miniStat = (label, value, tone = strong, sub = null, trend = null) => (
+    <div className={`min-w-0 rounded-xl px-3 py-2.5 ${isDark ? 'bg-slate-950/50' : 'bg-slate-50'}`}>
+      <div className="flex items-center justify-between gap-1">
+        <p className={`truncate text-[11px] font-semibold uppercase tracking-wide ${muted}`}>{label}</p>
+        {trend}
+      </div>
+      <p className={`mt-0.5 truncate text-lg font-bold tabular-nums ${tone}`}>{value}</p>
+      {sub ? <p className={`truncate text-[11px] ${muted}`}>{sub}</p> : null}
+    </div>
+  );
+
   return (
     <div className="page-shell">
-      <div className="mx-auto max-w-6xl">
-        {/* Top bar */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <button type="button" onClick={() => navigate('/products')} className="btn-secondary inline-flex items-center gap-2">
-            <ArrowLeft size={16} />
-            {t('productDetailPage.ui.backToProducts')}
-          </button>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => setEditOpen(true)} className="btn-secondary inline-flex items-center gap-2">
-              <Pencil size={15} />
-              {t('productDetailPage.editProduct')}
-            </button>
-            <button
-              type="button"
-              onClick={handleCompare}
-              disabled={compareLoading}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {compareLoading ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
-              {compareLoading ? t('productDetailPage.comparing') : t('productDetailPage.compareNow')}
-            </button>
-          </div>
-        </div>
-
+      <div className="mx-auto max-w-7xl">
         {alert && (
-          <div className="mb-4">
+          <div className="mb-3">
             <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
           </div>
         )}
 
-        {/* Hero */}
-        <section className={`${card} relative mb-5 overflow-hidden p-5 sm:p-6`}>
+        {/* Hero — identity, links and actions in one row */}
+        <section className={`${card} relative mb-4 overflow-hidden p-4`}>
           <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl" />
-          <div className="relative flex flex-col gap-5 sm:flex-row">
-            <div className={`flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-white ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-              {image ? (
-                <img src={image} alt={product.productName} onError={() => setImageBroken(true)} className="h-full w-full object-contain p-2" />
-              ) : (
-                <ImageOff size={28} className="text-slate-300" />
-              )}
+          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center">
+            <div className="flex min-w-0 flex-1 items-center gap-4">
+              <button
+                type="button"
+                onClick={goBack}
+                aria-label={t('productDetailPage.ui.backToProducts')}
+                title={t('productDetailPage.ui.backToProducts')}
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+              >
+                <ArrowLeft size={18} />
+              </button>
+              <div className={`flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-white ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                {image ? (
+                  <img src={image} alt={product.productName} onError={() => setImageBroken(true)} className="h-full w-full object-contain p-1.5" />
+                ) : (
+                  <ImageOff size={24} className="text-slate-300" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className={`truncate text-lg font-bold sm:text-xl ${strong}`} title={product.productName}>{product.productName}</h1>
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  {availability === 'in' && <Chip tone="success" isDark={isDark}>{t('productDetailPage.ui.inStock')}</Chip>}
+                  {availability === 'out' && <Chip tone="danger" isDark={isDark}>{t('productDetailPage.ui.outOfStock')}</Chip>}
+                  {profit !== null && profit < 0 && <Chip tone="danger" icon={AlertTriangle} isDark={isDark}>{t('productDetailPage.ui.unprofitable')}</Chip>}
+                  {product.ebaySyncEnabled && <Chip tone="info" icon={RefreshCw} isDark={isDark}>{t('productDetailPage.ui.autoSync')}</Chip>}
+                  {adRate ? <Chip tone="neutral" icon={Megaphone} isDark={isDark}>{t('productDetailPage.ui.adRate', { rate: adRate })}</Chip> : null}
+                </div>
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  {amazonUrl && linkPill('amazon', <ShoppingCart size={15} className="text-orange-500" />, 'Amazon', amazonAsin, amazonUrl)}
+                  {ebayUrl && linkPill('ebay', <Store size={15} className="text-blue-500" />, 'eBay', ebayItemId, ebayUrl)}
+                </div>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                {availability === 'in' && <Chip tone="success" isDark={isDark}>{t('productDetailPage.ui.inStock')}</Chip>}
-                {availability === 'out' && <Chip tone="danger" isDark={isDark}>{t('productDetailPage.ui.outOfStock')}</Chip>}
-                {profit !== null && profit < 0 && <Chip tone="danger" icon={AlertTriangle} isDark={isDark}>{t('productDetailPage.ui.unprofitable')}</Chip>}
-                {product.ebaySyncEnabled && <Chip tone="info" icon={RefreshCw} isDark={isDark}>{t('productDetailPage.ui.autoSync')}</Chip>}
-                {adRate ? <Chip tone="neutral" icon={Megaphone} isDark={isDark}>{t('productDetailPage.ui.adRate', { rate: adRate })}</Chip> : null}
-              </div>
-              <h1 className={`mt-3 text-xl font-bold leading-snug sm:text-2xl ${strong}`}>{product.productName}</h1>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {amazonUrl && linkPill('amazon', <ShoppingCart size={15} className="text-orange-500" />, 'Amazon', amazonAsin, amazonUrl)}
-                {ebayUrl && linkPill('ebay', <Store size={15} className="text-blue-500" />, 'eBay', ebayItemId, ebayUrl)}
-              </div>
+            <div className="flex shrink-0 flex-wrap gap-2 lg:flex-col xl:flex-row">
+              <button type="button" onClick={() => setEditOpen(true)} className="btn-secondary inline-flex items-center justify-center gap-2">
+                <Pencil size={15} />
+                {t('productDetailPage.editProduct')}
+              </button>
+              <button
+                type="button"
+                onClick={handleCompare}
+                disabled={compareLoading}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {compareLoading ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
+                {compareLoading ? t('productDetailPage.comparing') : t('productDetailPage.compareNow')}
+              </button>
             </div>
           </div>
         </section>
 
-        {/* KPIs */}
-        <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <KpiCard
-            isDark={isDark}
-            icon={ShoppingCart}
-            accent={isDark ? 'bg-orange-500/15 text-orange-400' : 'bg-orange-50 text-orange-600'}
-            label={t('productDetailPage.amazonPrice')}
-            value={formatCurrency(amazonPrice)}
-            trend={<Trend change={pctChange(amazonPrice, product.oldAmazonPrice)} invert isDark={isDark} />}
-            sub={num(product.oldAmazonPrice) && num(product.oldAmazonPrice) !== amazonPrice ? t('productDetailPage.ui.was', { price: formatCurrency(product.oldAmazonPrice) }) : null}
-          />
-          <KpiCard
-            isDark={isDark}
-            icon={Store}
-            accent={isDark ? 'bg-blue-500/15 text-blue-400' : 'bg-blue-50 text-blue-600'}
-            label={t('productDetailPage.ebayPrice')}
-            value={formatCurrency(ebayPrice)}
-            trend={<Trend change={pctChange(ebayPrice, product.oldEbayPrice)} isDark={isDark} />}
-            sub={num(product.oldEbayPrice) && num(product.oldEbayPrice) !== ebayPrice ? t('productDetailPage.ui.was', { price: formatCurrency(product.oldEbayPrice) }) : null}
-          />
-          <KpiCard
-            isDark={isDark}
-            icon={CircleDollarSign}
-            accent={isDark ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}
-            label={t('productDetailPage.profit')}
-            value={profit === null ? '—' : `${profit >= 0 ? '+' : ''}${formatCurrency(profit)}`}
-            valueTone={profit === null ? null : profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}
-            sub={margin !== null ? t('productDetailPage.ui.margin', { margin }) : null}
-          />
-          <KpiCard
-            isDark={isDark}
-            icon={Clock3}
-            accent={isDark ? 'bg-violet-500/15 text-violet-400' : 'bg-violet-50 text-violet-600'}
-            label={t('productDetailPage.lastUpdated')}
-            value={<span className="text-lg">{lastChecked || '—'}</span>}
-            sub={product.lastUpdated ? formatLongDateTime(product.lastUpdated, lang) : null}
-          />
-        </div>
-
-        {/* Breakdown + sync */}
-        <div className="mb-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <section className={`${card} p-5 lg:col-span-2`}>
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className={`text-sm font-semibold ${strong}`}>{t('productDetailPage.ui.breakdownTitle')}</h2>
-              {ebayPrice ? <p className={`text-xs ${muted}`}>{t('productDetailPage.ui.breakdownOf', { price: formatCurrency(ebayPrice) })}</p> : null}
-            </div>
-            {breakdown ? (
-              <>
-                <div className={`mt-4 flex h-3.5 w-full overflow-hidden rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                  {breakdown.map((s) => (
-                    <div key={s.key} className={`h-full ${s.bar}`} style={{ width: `${s.pct}%` }} title={`${s.label}: ${formatCurrency(s.value)}`} />
-                  ))}
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-3">
-                  {breakdown.map((s) => (
-                    <div key={s.key}>
-                      <p className={`flex items-center gap-1.5 text-xs font-semibold ${muted}`}>
-                        <span className={`h-2 w-2 rounded-full ${s.bar}`} />
-                        {s.label}
-                      </p>
-                      <p className={`mt-1 text-base font-bold tabular-nums ${s.key === 'profit' ? (profit >= 0 ? 'text-emerald-500' : 'text-rose-500') : strong}`}>
-                        {s.key === 'profit' ? `${profit >= 0 ? '+' : ''}${formatCurrency(profit)}` : formatCurrency(s.value)}
-                      </p>
-                      <p className={`text-[11px] ${muted}`}>{Math.round((s.key === 'profit' ? profit : s.value) / ebayPrice * 100)}%</p>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <p className={`mt-3 text-sm ${muted}`}>{t('productDetailPage.ui.noBreakdown')}</p>
-            )}
-          </section>
-
-          <section className={`${card} p-5`}>
-            <h2 className={`flex items-center gap-2 text-sm font-semibold ${strong}`}>
-              <RefreshCw size={15} className="text-indigo-500" />
-              {t('productDetailPage.ui.syncTitle')}
-            </h2>
-            <dl className="mt-3 space-y-2.5 text-sm">
-              <div className="flex items-center justify-between gap-3">
-                <dt className={muted}>{t('productDetailPage.ui.autoSync')}</dt>
-                <dd>
-                  <Chip tone={product.ebaySyncEnabled ? 'success' : 'neutral'} isDark={isDark}>
-                    {product.ebaySyncEnabled ? t('productDetailPage.ui.on') : t('productDetailPage.ui.off')}
-                  </Chip>
-                </dd>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <dt className={muted}>{t('productDetailPage.ui.lastSync')}</dt>
-                <dd className={`font-medium ${strong}`}>{product.ebayLastSyncAt ? relativeTime(product.ebayLastSyncAt, t) : '—'}</dd>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <dt className={muted}>{t('productDetailPage.ui.tracking')}</dt>
-                <dd className={`font-medium ${strong}`}>{t('productDetailPage.ui.checks', { count: timeline.length })}</dd>
-              </div>
-              {product.createdAt && (
-                <div className="flex items-center justify-between gap-3">
-                  <dt className={muted}>{t('productDetailPage.ui.since')}</dt>
-                  <dd className={`font-medium ${strong}`}>{formatLongDate(product.createdAt, lang)}</dd>
-                </div>
-              )}
-            </dl>
-            {product.ebayLastSyncError && (
-              <p className={`mt-3 flex items-start gap-2 rounded-xl px-3 py-2 text-xs ${isDark ? 'bg-rose-500/10 text-rose-300' : 'bg-rose-50 text-rose-700'}`}>
-                <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-                <span className="break-words">{product.ebayLastSyncError}</span>
-              </p>
-            )}
-          </section>
-        </div>
-
-        {/* Chart */}
-        {timeline.length > 1 && (
-          <section className={`${card} mb-5 p-5`}>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className={`flex items-center gap-2 text-base font-semibold ${strong}`}>
-                  <TrendingUp size={17} className="text-indigo-500" />
-                  {t('productDetailPage.priceHistory')}
-                </h2>
-                <div className={`mt-1 flex flex-wrap items-center gap-3 text-xs ${muted}`}>
-                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-orange-500" />Amazon</span>
-                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-500" />eBay</span>
-                </div>
-              </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          {/* Left: price history — chart and table share one card */}
+          <section className={`${card} flex flex-col p-4 lg:col-span-8`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className={`inline-flex rounded-xl p-1 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} role="tablist">
-                {RANGES.map((r) => (
+                {[
+                  ['chart', TrendingUp, t('productDetailPage.priceHistory')],
+                  ['table', Clock3, t('productDetailPage.ui.checkHistory')],
+                ].map(([key, Icon, label]) => (
                   <button
-                    key={r.key}
+                    key={key}
                     type="button"
                     role="tab"
-                    aria-selected={range === r.key}
-                    onClick={() => setRange(r.key)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                      range === r.key
-                        ? isDark ? 'bg-slate-950 text-white shadow' : 'bg-white text-slate-900 shadow'
-                        : muted
+                    aria-selected={view === key}
+                    onClick={() => setView(key)}
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                      view === key ? (isDark ? 'bg-slate-950 text-white shadow' : 'bg-white text-slate-900 shadow') : muted
                     }`}
                   >
-                    {t(`productDetailPage.ui.range.${r.key}`)}
+                    <Icon size={13} />
+                    {label}
+                    {key === 'table' ? <span className={`rounded-full px-1.5 text-[10px] ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>{tableRows.length}</span> : null}
                   </button>
                 ))}
               </div>
-            </div>
-
-            {stats && (
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {[
-                  [t('productDetailPage.ui.lowest'), formatCurrency(stats.min)],
-                  [t('productDetailPage.ui.highest'), formatCurrency(stats.max)],
-                  [t('productDetailPage.ui.average'), formatCurrency(stats.avg)],
-                  [t('productDetailPage.ui.priceChanges'), stats.changes],
-                ].map(([label, value]) => (
-                  <div key={label} className={`rounded-xl px-3 py-2.5 ${isDark ? 'bg-slate-950/50' : 'bg-slate-50'}`}>
-                    <p className={`text-[11px] font-semibold uppercase tracking-wide ${muted}`}>{label}</p>
-                    <p className={`mt-0.5 text-sm font-bold tabular-nums ${strong}`}>{value}</p>
+              {view === 'chart' ? (
+                <div className="flex items-center gap-3">
+                  <div className={`hidden items-center gap-3 text-xs sm:flex ${muted}`}>
+                    <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-orange-500" />Amazon</span>
+                    <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-500" />eBay</span>
                   </div>
-                ))}
-              </div>
-            )}
-
-            <div className="mt-4 h-72">
-              {chartData.length > 1 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="pd-ebay" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.28} />
-                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="pd-amazon" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#f97316" stopOpacity={0.22} />
-                        <stop offset="100%" stopColor="#f97316" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid vertical={false} stroke={grid} />
-                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: axis }} axisLine={false} tickLine={false} minTickGap={24} />
-                    <YAxis tick={{ fontSize: 11, fill: axis }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} width={48} domain={['auto', 'auto']} />
-                    <Tooltip content={<ChartTooltip isDark={isDark} t={t} />} cursor={{ stroke: axis, strokeDasharray: '4 4' }} />
-                    <Area type="monotone" dataKey="ebay" stroke="#3b82f6" strokeWidth={2.5} fill="url(#pd-ebay)" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} isAnimationActive={false} />
-                    <Area type="monotone" dataKey="amazon" stroke="#f97316" strokeWidth={2.5} fill="url(#pd-amazon)" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} isAnimationActive={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
+                  <div className={`inline-flex rounded-xl p-1 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                    {RANGES.map((r) => (
+                      <button
+                        key={r.key}
+                        type="button"
+                        aria-pressed={range === r.key}
+                        onClick={() => setRange(r.key)}
+                        className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                          range === r.key ? (isDark ? 'bg-slate-950 text-white shadow' : 'bg-white text-slate-900 shadow') : muted
+                        }`}
+                      >
+                        {t(`productDetailPage.ui.range.${r.key}`)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ) : (
-                <div className={`flex h-full items-center justify-center text-sm ${muted}`}>{t('productDetailPage.ui.noDataRange')}</div>
+                <label className={`inline-flex cursor-pointer items-center gap-2 text-xs font-semibold ${muted}`}>
+                  <input type="checkbox" checked={onlyChanges} onChange={(e) => setOnlyChanges(e.target.checked)} className="h-4 w-4 rounded" />
+                  {t('productDetailPage.ui.onlyChanges')}
+                </label>
               )}
             </div>
-          </section>
-        )}
 
-        {/* History table */}
-        {timeline.length > 0 && (
-          <section className={`${card} overflow-hidden`}>
-            <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5">
-              <h2 className={`text-base font-semibold ${strong}`}>{t('productDetailPage.ui.checkHistory')}</h2>
-              <label className={`inline-flex cursor-pointer items-center gap-2 text-xs font-semibold ${muted}`}>
-                <input type="checkbox" checked={onlyChanges} onChange={(e) => { setOnlyChanges(e.target.checked); setVisibleRows(HISTORY_PAGE); }} className="h-4 w-4 rounded" />
-                {t('productDetailPage.ui.onlyChanges')}
-              </label>
-            </div>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className={isDark ? 'bg-slate-950/50 text-slate-400' : 'bg-slate-50 text-slate-500'}>
-                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">{t('productDetailPage.date')}</th>
-                    <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider">{t('productDetailPage.amazon')}</th>
-                    <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider">{t('productDetailPage.ebay')}</th>
-                    <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider">{t('productDetailPage.profit')}</th>
-                    <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider">{t('productDetailPage.difference')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tableRows.slice(0, visibleRows).map((row) => {
-                    const delta = (value, invert) => {
-                      if (!value || Math.abs(value) < 0.001) return null;
-                      const good = invert ? value < 0 : value > 0;
-                      const Icon = value > 0 ? ArrowUpRight : ArrowDownRight;
-                      return <Icon size={13} className={`inline ${good ? 'text-emerald-500' : 'text-rose-500'}`} />;
-                    };
-                    const diffTone = !row.diff ? muted : row.diff > 0 ? 'text-emerald-500' : 'text-rose-500';
-                    return (
-                      <tr key={row.time} className={`border-t transition ${isDark ? 'border-slate-800 hover:bg-slate-800/40' : 'border-slate-100 hover:bg-slate-50'}`}>
-                        <td className={`whitespace-nowrap px-5 py-3 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{formatLongDateTime(row.time, lang)}</td>
-                        <td className={`whitespace-nowrap px-5 py-3 text-right tabular-nums ${strong}`}>{delta(row.amazonDelta, true)} {formatCurrency(row.amazon)}</td>
-                        <td className={`whitespace-nowrap px-5 py-3 text-right tabular-nums ${strong}`}>{delta(row.ebayDelta, false)} {formatCurrency(row.ebay)}</td>
-                        <td className={`whitespace-nowrap px-5 py-3 text-right font-semibold tabular-nums ${row.profit === null ? muted : row.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{formatCurrency(row.profit)}</td>
-                        <td className={`whitespace-nowrap px-5 py-3 text-right font-semibold tabular-nums ${diffTone}`}>
-                          {!row.diff ? <Minus size={13} className="inline" /> : `${row.diff > 0 ? '+' : ''}${formatCurrency(row.diff)}`}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            {tableRows.length > visibleRows ? (
-              <div className={`border-t p-3 text-center ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                <button type="button" onClick={() => setVisibleRows((n) => n + HISTORY_PAGE)} className="text-sm font-semibold text-indigo-500 hover:underline">
-                  {t('productDetailPage.ui.showMore', { count: Math.min(HISTORY_PAGE, tableRows.length - visibleRows) })}
-                </button>
-              </div>
+            {view === 'chart' ? (
+              <>
+                {stats && (
+                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {[
+                      [t('productDetailPage.ui.lowest'), formatCurrency(stats.min)],
+                      [t('productDetailPage.ui.highest'), formatCurrency(stats.max)],
+                      [t('productDetailPage.ui.average'), formatCurrency(stats.avg)],
+                      [t('productDetailPage.ui.priceChanges'), stats.changes],
+                    ].map(([label, value]) => (
+                      <div key={label} className={`rounded-xl px-3 py-2 ${isDark ? 'bg-slate-950/50' : 'bg-slate-50'}`}>
+                        <p className={`truncate text-[10px] font-semibold uppercase tracking-wide ${muted}`}>{label}</p>
+                        <p className={`text-sm font-bold tabular-nums ${strong}`}>{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-3 h-64 flex-1 lg:h-auto lg:min-h-[260px]">
+                  {chartData.length > 1 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="pd-ebay" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.28} />
+                            <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="pd-amazon" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#f97316" stopOpacity={0.22} />
+                            <stop offset="100%" stopColor="#f97316" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid vertical={false} stroke={grid} />
+                        <XAxis dataKey="label" tick={{ fontSize: 11, fill: axis }} axisLine={false} tickLine={false} minTickGap={24} />
+                        <YAxis tick={{ fontSize: 11, fill: axis }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} width={48} domain={['auto', 'auto']} />
+                        <Tooltip content={<ChartTooltip isDark={isDark} t={t} />} cursor={{ stroke: axis, strokeDasharray: '4 4' }} />
+                        <Area type="monotone" dataKey="ebay" stroke="#3b82f6" strokeWidth={2.5} fill="url(#pd-ebay)" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} isAnimationActive={false} />
+                        <Area type="monotone" dataKey="amazon" stroke="#f97316" strokeWidth={2.5} fill="url(#pd-amazon)" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} isAnimationActive={false} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className={`flex h-full items-center justify-center text-sm ${muted}`}>
+                      {timeline.length > 1 ? t('productDetailPage.ui.noDataRange') : t('productDetailPage.ui.noHistory')}
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
-              <div className="h-2" />
+              <div className={`mt-3 max-h-[420px] overflow-auto rounded-xl border ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                {tableRows.length ? (
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 z-10">
+                      <tr className={isDark ? 'bg-slate-900 text-slate-400' : 'bg-slate-50 text-slate-500'}>
+                        <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">{t('productDetailPage.date')}</th>
+                        <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">{t('productDetailPage.amazon')}</th>
+                        <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">{t('productDetailPage.ebay')}</th>
+                        <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">{t('productDetailPage.profit')}</th>
+                        <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider">{t('productDetailPage.difference')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tableRows.map((row) => {
+                        const delta = (value, invert) => {
+                          if (!value || Math.abs(value) < 0.001) return null;
+                          const good = invert ? value < 0 : value > 0;
+                          const Icon = value > 0 ? ArrowUpRight : ArrowDownRight;
+                          return <Icon size={13} className={`inline ${good ? 'text-emerald-500' : 'text-rose-500'}`} />;
+                        };
+                        const diffTone = !row.diff ? muted : row.diff > 0 ? 'text-emerald-500' : 'text-rose-500';
+                        return (
+                          <tr key={row.time} className={`border-t transition ${isDark ? 'border-slate-800 hover:bg-slate-800/40' : 'border-slate-100 hover:bg-slate-50'}`}>
+                            <td className={`whitespace-nowrap px-4 py-2.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{formatLongDateTime(row.time, lang)}</td>
+                            <td className={`whitespace-nowrap px-4 py-2.5 text-right tabular-nums ${strong}`}>{delta(row.amazonDelta, true)} {formatCurrency(row.amazon)}</td>
+                            <td className={`whitespace-nowrap px-4 py-2.5 text-right tabular-nums ${strong}`}>{delta(row.ebayDelta, false)} {formatCurrency(row.ebay)}</td>
+                            <td className={`whitespace-nowrap px-4 py-2.5 text-right font-semibold tabular-nums ${row.profit === null ? muted : row.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{formatCurrency(row.profit)}</td>
+                            <td className={`whitespace-nowrap px-4 py-2.5 text-right font-semibold tabular-nums ${diffTone}`}>
+                              {!row.diff ? <Minus size={13} className="inline" /> : `${row.diff > 0 ? '+' : ''}${formatCurrency(row.diff)}`}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className={`p-8 text-center text-sm ${muted}`}>{t('productDetailPage.ui.noHistory')}</p>
+                )}
+              </div>
             )}
           </section>
-        )}
+
+          {/* Right: numbers at a glance */}
+          <aside className="flex flex-col gap-4 lg:col-span-4">
+            <section className={`${card} p-4`}>
+              <div className="grid grid-cols-2 gap-2">
+                {miniStat(
+                  t('productDetailPage.amazonPrice'),
+                  formatCurrency(amazonPrice),
+                  strong,
+                  num(product.oldAmazonPrice) && num(product.oldAmazonPrice) !== amazonPrice ? t('productDetailPage.ui.was', { price: formatCurrency(product.oldAmazonPrice) }) : null,
+                  <Trend change={pctChange(amazonPrice, product.oldAmazonPrice)} invert isDark={isDark} />
+                )}
+                {miniStat(
+                  t('productDetailPage.ebayPrice'),
+                  formatCurrency(ebayPrice),
+                  strong,
+                  num(product.oldEbayPrice) && num(product.oldEbayPrice) !== ebayPrice ? t('productDetailPage.ui.was', { price: formatCurrency(product.oldEbayPrice) }) : null,
+                  <Trend change={pctChange(ebayPrice, product.oldEbayPrice)} isDark={isDark} />
+                )}
+                {miniStat(
+                  t('productDetailPage.profit'),
+                  profit === null ? '—' : `${profit >= 0 ? '+' : ''}${formatCurrency(profit)}`,
+                  profit === null ? strong : profit >= 0 ? 'text-emerald-500' : 'text-rose-500',
+                  margin !== null ? t('productDetailPage.ui.margin', { margin }) : null
+                )}
+                {miniStat(t('productDetailPage.lastUpdated'), lastChecked || '—', strong, product.lastUpdated ? formatShortDateTime(product.lastUpdated, lang) : null)}
+              </div>
+
+              <div className={`mt-4 border-t pt-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <h2 className={`text-sm font-semibold ${strong}`}>{t('productDetailPage.ui.breakdownTitle')}</h2>
+                  {ebayPrice ? <p className={`text-[11px] ${muted}`}>{t('productDetailPage.ui.breakdownOf', { price: formatCurrency(ebayPrice) })}</p> : null}
+                </div>
+                {breakdown ? (
+                  <>
+                    <div className={`mt-3 flex h-3 w-full overflow-hidden rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                      {breakdown.map((s) => (
+                        <div key={s.key} className={`h-full ${s.bar}`} style={{ width: `${s.pct}%` }} title={`${s.label}: ${formatCurrency(s.value)}`} />
+                      ))}
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      {breakdown.map((s) => (
+                        <div key={s.key} className="min-w-0">
+                          <p className={`flex items-center gap-1.5 truncate text-[11px] font-semibold ${muted}`}>
+                            <span className={`h-2 w-2 shrink-0 rounded-full ${s.bar}`} />
+                            {s.label}
+                          </p>
+                          <p className={`mt-0.5 text-sm font-bold tabular-nums ${s.key === 'profit' ? (profit >= 0 ? 'text-emerald-500' : 'text-rose-500') : strong}`}>
+                            {s.key === 'profit' ? `${profit >= 0 ? '+' : ''}${formatCurrency(profit)}` : formatCurrency(s.value)}
+                          </p>
+                          <p className={`text-[11px] ${muted}`}>{Math.round(((s.key === 'profit' ? profit : s.value) / ebayPrice) * 100)}%</p>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className={`mt-2 text-xs ${muted}`}>{t('productDetailPage.ui.noBreakdown')}</p>
+                )}
+              </div>
+            </section>
+
+            <section className={`${card} flex-1 p-4`}>
+              <h2 className={`flex items-center gap-2 text-sm font-semibold ${strong}`}>
+                <RefreshCw size={15} className="text-indigo-500" />
+                {t('productDetailPage.ui.syncTitle')}
+              </h2>
+              <dl className="mt-3 space-y-2 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <dt className={muted}>{t('productDetailPage.ui.autoSync')}</dt>
+                  <dd>
+                    <Chip tone={product.ebaySyncEnabled ? 'success' : 'neutral'} isDark={isDark}>
+                      {product.ebaySyncEnabled ? t('productDetailPage.ui.on') : t('productDetailPage.ui.off')}
+                    </Chip>
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className={muted}>{t('productDetailPage.ui.lastSync')}</dt>
+                  <dd className={`font-medium ${strong}`}>{product.ebayLastSyncAt ? relativeTime(product.ebayLastSyncAt, t) : '—'}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className={muted}>{t('productDetailPage.ui.tracking')}</dt>
+                  <dd className={`font-medium ${strong}`}>{t('productDetailPage.ui.checks', { count: timeline.length })}</dd>
+                </div>
+                {product.createdAt && (
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className={muted}>{t('productDetailPage.ui.since')}</dt>
+                    <dd className={`font-medium ${strong}`}>{formatLongDate(product.createdAt, lang)}</dd>
+                  </div>
+                )}
+              </dl>
+              {product.ebayLastSyncError && (
+                <p className={`mt-3 flex items-start gap-2 rounded-xl px-3 py-2 text-xs ${isDark ? 'bg-rose-500/10 text-rose-300' : 'bg-rose-50 text-rose-700'}`}>
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                  <span className="break-words">{product.ebayLastSyncError}</span>
+                </p>
+              )}
+            </section>
+          </aside>
+        </div>
       </div>
       {editOpen && (
         <ProductFormModal productId={productId} onClose={() => setEditOpen(false)} onSuccess={(jobId) => handleEditSaved(jobId)} />

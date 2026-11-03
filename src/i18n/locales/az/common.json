@@ -243,7 +243,8 @@
       "showMore": "Daha {{count}} göstər",
       "savingChanges": "Dəyişikliklər yadda saxlanılır, Amazon qiyməti yenidən yoxlanılır…",
       "saved": "Məhsul yeniləndi.",
-      "saveFailed": "Məhsulu yeniləmək alınmadı."
+      "saveFailed": "Məhsulu yeniləmək alınmadı.",
+      "noHistory": "Hələ qiymət yoxlaması yoxdur."
     }
   },
   "productFormPage": {
