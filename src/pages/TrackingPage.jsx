@@ -1400,6 +1400,30 @@ export default function TrackingPage() {
   const [trackingCredits, setTrackingCredits] = useState(null); // { limit, used, remaining } | null
   const [orderMetaByEbayOrderId, setOrderMetaByEbayOrderId] = useState({}); // ebayOrderId -> { imageUrl, title }
   const [showMobileTracker, setShowMobileTracker] = useState(false);
+  // "Change only TBA": only Amazon TBA codes go through Aquiline; USPS/UPS/FedEx
+  // numbers are posted to eBay as-is (backend utils/directCarrier.js).
+  const [tbaOnly, setTbaOnly] = useState(false);
+  const [tbaOnlySaving, setTbaOnlySaving] = useState(false);
+
+  useEffect(() => {
+    ebayAPI
+      .getTrackingSettings()
+      .then((res) => setTbaOnly(Boolean(res?.data?.tbaOnly)))
+      .catch(() => {});
+  }, []);
+
+  const handleTbaOnlyChange = async (next) => {
+    setTbaOnly(next);
+    setTbaOnlySaving(true);
+    try {
+      await ebayAPI.updateTrackingSettings({ tbaOnly: next });
+    } catch (err) {
+      setTbaOnly(!next);
+      setError(err?.response?.data?.error || err.message || 'Failed to save tracking settings');
+    } finally {
+      setTbaOnlySaving(false);
+    }
+  };
 
   const loadTracked = async () => {
     setLoading(true);
@@ -1614,6 +1638,31 @@ export default function TrackingPage() {
         </h1>
         <div className="flex items-center gap-2 flex-wrap">
           <TutorialVideoButton />
+          <label
+            title={t('trackingTbaOnly.hint')}
+            className={`inline-flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+              tbaOnly
+                ? isDark ? 'border-indigo-500/50 bg-indigo-500/10 text-indigo-200' : 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                : isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+            } ${tbaOnlySaving ? 'opacity-60' : ''}`}
+          >
+            <input
+              type="checkbox"
+              className="peer sr-only"
+              checked={tbaOnly}
+              disabled={tbaOnlySaving}
+              onChange={(e) => handleTbaOnlyChange(e.target.checked)}
+            />
+            <span
+              aria-hidden="true"
+              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-500 ${
+                tbaOnly ? 'bg-indigo-600' : isDark ? 'bg-slate-600' : 'bg-slate-300'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition ${tbaOnly ? 'translate-x-4' : 'translate-x-0.5'}`} />
+            </span>
+            {t('trackingTbaOnly.label')}
+          </label>
           <button
             type="button"
             onClick={() => setShowMobileTracker(true)}
