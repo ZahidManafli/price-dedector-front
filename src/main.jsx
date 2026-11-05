@@ -6,6 +6,7 @@ import './i18n' // Initialize i18n
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { EbayDataProvider } from './context/EbayDataContext'
+import ListingJobToasts from './components/ListingJobToasts'
 
 // After a deploy, a tab still running the previous build asks for chunk files
 // (e.g. TrackingPage-<oldhash>.js) that no longer exist. Reload once to pick up
@@ -30,6 +31,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <AuthProvider>
         <EbayDataProvider>
           <App />
+          <ListingJobToasts />
         </EbayDataProvider>
       </AuthProvider>
     </ThemeProvider>

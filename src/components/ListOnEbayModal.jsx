@@ -32,7 +32,8 @@ function normalizeEbayListingUrl(url) {
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarClock } from 'lucide-react';
+import { AlertTriangle, Bell, CalendarClock, Check, CheckCircle2, CircleDollarSign, ExternalLink, FileText, ImagePlus, Info, ListChecks, Loader2, Pencil, Plus, Rocket, Store, Truck, X, XCircle } from 'lucide-react';
+import { setListingJobHidden, subscribeListingJobs, trackListingJob } from '../utils/listingJobTracker';
 import { ebayAPI, dewisoAPI } from '../services/api';
 import ScheduleListingModal from './ScheduleListingModal';
 import Quill from 'quill';
@@ -353,6 +354,8 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
   // touches the gallery.
   const hasUserEditedImagesRef = useRef(false);
   const [result, setResult] = useState(null);
+  const [jobState, setJobState] = useState(null); // background listing job (services/listingJobs.js)
+  const successReportedRef = useRef(false);
   const [error, setError] = useState(null);
   const quillRef = useRef(null);
   const quillContainerRef = useRef(null);
@@ -709,18 +712,17 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
       return;
     }
 
-    // Normal listing flow
+    // Normal listing flow — runs as a background job (backend services/listingJobs.js):
+    // the user can close the modal right away and is notified when it's done.
     try {
       setSubmitting(true);
-      const res = await ebayAPI.quickList(buildListingPayload());
-
-      const listingResult = res?.data || {};
-      setResult(listingResult);
-
-      // ── Notify parent (bucket) of success ──
-      if (listingResult.success && listingResult.itemId && typeof onSuccess === 'function') {
-        onSuccess(listingResult);
-      }
+      const payload = buildListingPayload();
+      const res = await ebayAPI.startListingJob(payload);
+      const jobId = res?.data?.jobId;
+      if (!jobId) throw new Error(t('listingModal.failedToList'));
+      const job = { id: jobId, status: 'pending', title: payload.title, imageUrl: payload.pictureUrls?.[0] || null, hiddenWhileModalOpen: true };
+      trackListingJob(job);
+      setJobState(job);
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || t('listingModal.failedToList'));
     } finally {
@@ -728,379 +730,407 @@ export default function ListOnEbayModal({ item, scrapedOverride, onClose, isDark
     }
   };
 
+  // Follow the background job while the modal is open (the tracker does the polling).
+  useEffect(() => {
+    if (!jobState?.id) return undefined;
+    const jobId = jobState.id;
+    const unsubscribe = subscribeListingJobs((all) => {
+      const next = all.find((j) => j.id === jobId);
+      if (next) setJobState({ ...next });
+    });
+    return () => {
+      unsubscribe();
+      setListingJobHidden(jobId, false);
+    };
+  }, [jobState?.id]);
+
+  useEffect(() => {
+    if (jobState?.status === 'done' && !successReportedRef.current) {
+      successReportedRef.current = true;
+      setResult({ success: true, itemId: jobState.itemId, listingUrl: jobState.listingUrl });
+      if (typeof onSuccess === 'function') onSuccess({ success: true, itemId: jobState.itemId, listingUrl: jobState.listingUrl });
+    }
+  }, [jobState?.status]);
+
+  const resetForAnother = () => {
+    if (jobState?.id) setListingJobHidden(jobState.id, false);
+    successReportedRef.current = false;
+    setJobState(null);
+    setResult(null);
+    setError(null);
+  };
+
   // ── Style helpers ─────────────────────────────────────────────────────────
-  const base = isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-900';
-  const inputClass = `w-full rounded-lg border px-3 py-2 text-sm outline-none transition ${
+  const muted = isDark ? 'text-slate-400' : 'text-slate-500';
+  const strong = isDark ? 'text-slate-100' : 'text-slate-900';
+  const inputClass = `w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-60 ${
     isDark
-      ? 'bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-400 focus:border-blue-500'
-      : 'bg-white border-slate-300 text-slate-800 placeholder:text-slate-400 focus:border-blue-500'
+      ? 'bg-slate-950 border-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-indigo-500'
+      : 'bg-white border-slate-300 text-slate-800 placeholder:text-slate-400 focus:border-indigo-500'
   }`;
-  const labelClass = `block text-xs font-semibold mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`;
-  const divider = `border-t my-1 ${isDark ? 'border-slate-700/60' : 'border-slate-100'}`;
-  const sectionBox = `rounded-xl border p-4 space-y-3 ${isDark ? 'border-slate-700 bg-slate-800/30' : 'border-slate-200 bg-slate-50'}`;
+  const labelClass = `mb-1.5 block text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`;
+  const sectionBox = `rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-slate-50/70'}`;
+  const SectionTitle = ({ icon: Icon, children, extra }) => (
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <p className={`flex items-center gap-2 text-sm font-semibold ${strong}`}>
+        <Icon size={15} className="text-indigo-500" />
+        {children}
+      </p>
+      {extra}
+    </div>
+  );
+  const policyName = (list, idKey, id) => list.find((p) => p[idKey] === id)?.name;
+  const titleLen = form.title.length;
+  const jobRunning = jobState && (jobState.status === 'pending' || jobState.status === 'processing');
+  const jobFailed = jobState && (jobState.status === 'failed' || jobState.status === 'gone');
+
+  const statusScreen = (icon, tone, title, text, actions, extra = null) => (
+    <div className="flex flex-col items-center px-6 py-12 text-center">
+      <div className={`flex h-16 w-16 items-center justify-center rounded-2xl ${tone}`}>{icon}</div>
+      <h3 className={`mt-5 text-lg font-bold ${strong}`}>{title}</h3>
+      <p className={`mt-2 max-w-md text-sm leading-relaxed ${muted}`}>{text}</p>
+      {extra}
+      <div className="mt-7 flex flex-wrap justify-center gap-2">{actions}</div>
+    </div>
+  );
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div className={`rounded-2xl border shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto ${base}`}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm md:p-6" onClick={(e) => { if (e.target === e.currentTarget && !submitting) onClose(); }}>
+        <div className={`flex max-h-[94vh] w-full ${jobState || result ? 'max-w-xl' : 'max-w-5xl'} flex-col overflow-hidden rounded-2xl border shadow-2xl ${isDark ? 'border-slate-800 bg-slate-950 text-slate-100' : 'border-slate-200 bg-white text-slate-900'}`}>
 
           {/* Header */}
-          <div className={`flex items-center justify-between p-5 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-            <div>
-              <h2 className="text-lg font-semibold">{t('listingModal.title')}</h2>
-              <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                {scrapedOverride ? t('listingModal.activeAccountFromBucket') : t('listingModal.activeAccount')}
-              </p>
+          <div className={`flex items-center justify-between gap-3 border-b px-5 py-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white">
+                <Store size={18} />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold">{isEditBucketItem ? t('listingModal.ui.editBucketTitle') : t('listingModal.title')}</h2>
+                <p className={`truncate text-xs ${muted}`}>
+                  {scrapedOverride ? t('listingModal.activeAccountFromBucket') : t('listingModal.activeAccount')}
+                </p>
+              </div>
             </div>
-            <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl font-bold leading-none">✕</button>
+            <button type="button" onClick={onClose} aria-label={t('listingModal.close')} className={`rounded-lg p-2 transition ${isDark ? 'text-slate-400 hover:bg-slate-800' : 'text-slate-500 hover:bg-slate-100'}`}>
+              <X size={18} />
+            </button>
           </div>
 
-          {/* ── Success state ── */}
-          {result ? (
-            <div className="p-5 space-y-4">
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30 p-4">
-                <p className="text-emerald-700 dark:text-emerald-400 font-semibold text-sm">✅ {t('listingModal.listedSuccessfully')}</p>
-                <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {t('listingModal.itemId')}: <span className="font-mono font-semibold">{result.itemId}</span>
-                </p>
+          {/* ── Background job / result screens ── */}
+          {jobRunning ? (
+            statusScreen(
+              <Loader2 size={28} className="animate-spin text-indigo-500" />,
+              isDark ? 'bg-indigo-500/15' : 'bg-indigo-50',
+              t('listingModal.job.runningTitle'),
+              t('listingModal.job.runningText'),
+              <button type="button" onClick={onClose} className="btn-primary px-6 py-2.5">{t('listingModal.job.closeAndContinue')}</button>,
+              <div className={`mt-5 flex items-center gap-3 rounded-xl border px-4 py-3 text-left ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-slate-50'}`}>
+                {jobState.imageUrl && <img src={jobState.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg bg-white object-contain" />}
+                <div className="min-w-0">
+                  <p className={`line-clamp-2 text-sm font-semibold ${strong}`}>{jobState.title}</p>
+                  <p className={`mt-0.5 flex items-center gap-1.5 text-xs ${muted}`}><Bell size={12} /> {t('listingModal.job.notifyHint')}</p>
+                </div>
+              </div>
+            )
+          ) : jobFailed ? (
+            statusScreen(
+              <XCircle size={30} className="text-rose-500" />,
+              isDark ? 'bg-rose-500/15' : 'bg-rose-50',
+              t('listingModal.job.failedTitle'),
+              jobState.error || t('listingModal.failedToList'),
+              <>
+                <button type="button" onClick={onClose} className="btn-secondary px-5 py-2.5">{t('listingModal.close')}</button>
+                <button type="button" onClick={() => { setListingJobHidden(jobState.id, false); setJobState(null); }} className="btn-primary px-5 py-2.5">{t('listingModal.job.backToForm')}</button>
+              </>
+            )
+          ) : result ? (
+            statusScreen(
+              <CheckCircle2 size={30} className="text-emerald-500" />,
+              isDark ? 'bg-emerald-500/15' : 'bg-emerald-50',
+              t('listingModal.listedSuccessfully'),
+              t('listingModal.job.doneText'),
+              <>
+                <button type="button" onClick={onClose} className="btn-secondary px-5 py-2.5">{t('listingModal.close')}</button>
+                <button type="button" onClick={resetForAnother} className="btn-primary px-5 py-2.5">{t('listingModal.listAnother')}</button>
+              </>,
+              <div className={`mt-5 flex items-center gap-3 rounded-xl border px-4 py-3 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-slate-50'}`}>
+                <span className={`text-xs ${muted}`}>{t('listingModal.itemId')}</span>
+                <span className={`font-mono text-sm font-bold ${strong}`}>{result.itemId}</span>
                 {result.listingUrl && (
-                  <a href={result.listingUrl} target="_blank" rel="noreferrer" className="inline-block mt-2 text-xs text-blue-600 hover:underline font-medium">
-                    {t('listingModal.viewOnEbay')} →
+                  <a href={result.listingUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-500 hover:underline">
+                    {t('listingModal.viewOnEbay')} <ExternalLink size={12} />
                   </a>
                 )}
-                {result.warnings?.length > 0 && (
-                  <div className="mt-3 text-xs text-amber-600 dark:text-amber-400">
-                    <p className="font-semibold">{t('listingModal.warnings')}:</p>
-                    <ul className="list-disc list-inside mt-1 space-y-0.5">
-                      {result.warnings.map((w, i) => <li key={i}>{w?.message || String(w)}</li>)}
-                    </ul>
-                  </div>
-                )}
               </div>
-              <div className="flex gap-2">
-                <button type="button" onClick={onClose} className="btn-secondary flex-1 py-2">{t('listingModal.close')}</button>
-                <button type="button" onClick={() => { setResult(null); setError(null); }} className="btn-primary flex-1 py-2">
-                  {t('listingModal.listAnother')}
-                </button>
-              </div>
-            </div>
+            )
           ) : (
-            <form onSubmit={handleSubmit} className="p-5 space-y-4">
-
-              {/* Image gallery */}
-              <div className={`rounded-xl border overflow-hidden ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
-                {displayUrls.length > 0 ? (
-                  <div className="relative w-full aspect-square bg-black/10 group">
-                    <img
-                      src={displayUrls[selectedImageIdx] || displayUrls[0]}
-                      alt={`Picture ${selectedImageIdx + 1} of ${displayUrls.length}`}
-                      className="w-full h-full object-contain"
-                      onError={(e) => { e.target.src = displayUrls[0]; }}
-                    />
-                    <span className={`absolute top-2 right-2 text-xs font-semibold px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-900/80 text-slate-300' : 'bg-white/80 text-slate-600'}`}>
-                      {selectedImageIdx + 1} / {displayUrls.length}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setEditingImageIdx(selectedImageIdx)}
-                      title="Replace this image"
-                      className={`
-                        absolute top-2 left-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
-                        text-xs font-semibold shadow-md transition-all
-                        opacity-0 group-hover:opacity-100 focus:opacity-100
-                        ${isDark
-                          ? 'bg-slate-800/90 text-slate-200 hover:bg-blue-600 hover:text-white border border-slate-600 hover:border-blue-600'
-                          : 'bg-white/90 text-slate-700 hover:bg-blue-500 hover:text-white border border-slate-200 hover:border-blue-500'
-                        }
-                      `}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                      </svg>
-                      Edit
-                    </button>
-                    {loadingSpecifics && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <span className="text-xs text-white animate-pulse">Loading images…</span>
-                      </div>
-                    )}
+            <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+              <div className="min-h-0 flex-1 overflow-y-auto p-5">
+                {error && (
+                  <div className={`mb-4 flex items-start gap-2 rounded-xl border px-3 py-2.5 text-sm ${isDark ? 'border-rose-800 bg-rose-950/30 text-rose-300' : 'border-rose-200 bg-rose-50 text-rose-700'}`}>
+                    <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                    {error}
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleAddImage}
-                    className={`flex w-full flex-col items-center justify-center gap-1.5 aspect-square text-xs font-medium transition-colors ${
-                      isDark ? 'text-slate-400 hover:bg-slate-800/70' : 'text-slate-500 hover:bg-slate-100'
-                    }`}
-                  >
-                    <span className="text-2xl">📷</span>
-                    {loadingSpecifics ? 'Loading images…' : 'Add an image'}
-                  </button>
                 )}
 
-                {/* Thumbnail strip — click to select, ‹ › to reorder, + to add more */}
-                <div className="flex items-center gap-1.5 p-2 overflow-x-auto">
-                  {displayUrls.map((url, idx) => (
-                    <div key={idx} className="relative shrink-0 group/thumb">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedImageIdx(idx)}
-                        className={`block w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
-                          selectedImageIdx === idx
-                            ? 'border-blue-500 opacity-100'
-                            : isDark ? 'border-slate-600 opacity-60 hover:opacity-100' : 'border-slate-200 opacity-60 hover:opacity-100'
-                        }`}
-                      >
-                        <img src={url} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
-                      </button>
-                      {displayUrls.length > 1 && (
-                        <div className="absolute inset-x-0 -bottom-1 flex justify-center gap-0.5 opacity-0 group-hover/thumb:opacity-100 transition-opacity">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+                  {/* Left: gallery */}
+                  <div className="lg:col-span-5">
+                    <div className="lg:sticky lg:top-0">
+                      <div className={`overflow-hidden rounded-2xl border ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-slate-50'}`}>
+                        {displayUrls.length > 0 ? (
+                          <div className="group relative aspect-square w-full bg-white">
+                            <img
+                              src={displayUrls[selectedImageIdx] || displayUrls[0]}
+                              alt={`Picture ${selectedImageIdx + 1} of ${displayUrls.length}`}
+                              className="h-full w-full object-contain"
+                              onError={(e) => { e.target.src = displayUrls[0]; }}
+                            />
+                            <span className="absolute right-2 top-2 rounded-full bg-slate-900/70 px-2.5 py-1 text-xs font-semibold text-white">
+                              {selectedImageIdx + 1} / {displayUrls.length}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setEditingImageIdx(selectedImageIdx)}
+                              className="absolute left-2 top-2 inline-flex items-center gap-1.5 rounded-lg bg-white/95 px-2.5 py-1.5 text-xs font-semibold text-slate-700 opacity-0 shadow-md transition hover:bg-indigo-600 hover:text-white focus:opacity-100 group-hover:opacity-100"
+                            >
+                              <Pencil size={12} /> {t('listingModal.ui.replaceImage')}
+                            </button>
+                            {loadingSpecifics && (
+                              <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-slate-900/60 py-1.5 text-xs text-white">
+                                <Loader2 size={12} className="animate-spin" /> {t('listingModal.ui.loadingImages')}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
                           <button
                             type="button"
-                            onClick={() => moveImage(idx, -1)}
-                            disabled={idx === 0}
-                            title="Move left"
-                            className={`flex items-center justify-center w-4 h-4 rounded text-[10px] leading-none shadow disabled:opacity-30 disabled:cursor-not-allowed ${
-                              isDark ? 'bg-slate-900 text-slate-200 border border-slate-600' : 'bg-white text-slate-700 border border-slate-300'
-                            }`}
+                            onClick={handleAddImage}
+                            className={`flex aspect-square w-full flex-col items-center justify-center gap-2 text-sm font-medium transition ${isDark ? 'text-slate-400 hover:bg-slate-900' : 'text-slate-500 hover:bg-slate-100'}`}
                           >
-                            ‹
+                            <ImagePlus size={28} />
+                            {loadingSpecifics ? t('listingModal.ui.loadingImages') : t('listingModal.ui.addImage')}
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => moveImage(idx, 1)}
-                            disabled={idx === displayUrls.length - 1}
-                            title="Move right"
-                            className={`flex items-center justify-center w-4 h-4 rounded text-[10px] leading-none shadow disabled:opacity-30 disabled:cursor-not-allowed ${
-                              isDark ? 'bg-slate-900 text-slate-200 border border-slate-600' : 'bg-white text-slate-700 border border-slate-300'
-                            }`}
-                          >
-                            ›
-                          </button>
+                        )}
+
+                        {/* Thumbnails — click to select, ‹ › to reorder, + to add */}
+                        <div className="flex items-center gap-1.5 overflow-x-auto p-2">
+                          {displayUrls.map((url, idx) => (
+                            <div key={idx} className="group/thumb relative shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedImageIdx(idx)}
+                                className={`block h-14 w-14 overflow-hidden rounded-lg border-2 bg-white transition ${
+                                  selectedImageIdx === idx ? 'border-indigo-500' : isDark ? 'border-slate-700 opacity-70 hover:opacity-100' : 'border-slate-200 opacity-75 hover:opacity-100'
+                                }`}
+                              >
+                                <img src={url} alt={`Thumbnail ${idx + 1}`} className="h-full w-full object-contain" />
+                              </button>
+                              {displayUrls.length > 1 && (
+                                <div className="absolute inset-x-0 -bottom-1 flex justify-center gap-0.5 opacity-0 transition group-hover/thumb:opacity-100">
+                                  {[[-1, '‹', idx === 0], [1, '›', idx === displayUrls.length - 1]].map(([dir, glyph, disabled]) => (
+                                    <button
+                                      key={dir}
+                                      type="button"
+                                      onClick={() => moveImage(idx, dir)}
+                                      disabled={disabled}
+                                      className={`flex h-4 w-4 items-center justify-center rounded text-[10px] leading-none shadow disabled:cursor-not-allowed disabled:opacity-30 ${isDark ? 'border border-slate-600 bg-slate-900 text-slate-200' : 'border border-slate-300 bg-white text-slate-700'}`}
+                                    >
+                                      {glyph}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                          {canAddMoreImages && (
+                            <button
+                              type="button"
+                              onClick={handleAddImage}
+                              title={t('listingModal.ui.addImage')}
+                              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border-2 border-dashed transition ${isDark ? 'border-slate-700 text-slate-500 hover:border-indigo-500 hover:text-indigo-400' : 'border-slate-300 text-slate-400 hover:border-indigo-400 hover:text-indigo-500'}`}
+                            >
+                              <Plus size={18} />
+                            </button>
+                          )}
+                        </div>
+                        {displayUrls.length > 0 && (
+                          <p className={`px-3 pb-2.5 text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                            {t('listingModal.ui.imagesCount', { count: displayUrls.length, max: MAX_LISTING_IMAGES })}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Summary card */}
+                      {!isEditBucketItem && (
+                        <div className={`mt-4 rounded-2xl border p-4 ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-white'}`}>
+                          <p className={`text-xs font-semibold uppercase tracking-wide ${muted}`}>{t('listingModal.ui.summary')}</p>
+                          <p className={`mt-1 text-2xl font-extrabold tabular-nums ${strong}`}>{form.price ? `$${Number(form.price).toFixed(2)}` : '—'}</p>
+                          <div className={`mt-2 flex flex-wrap gap-1.5 text-[11px] font-semibold`}>
+                            <span className={`rounded-full px-2 py-0.5 ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>{t('listingModal.ui.qtyShort', { count: Math.max(1, Number(form.quantity) || 1) })}</span>
+                            <span className={`rounded-full px-2 py-0.5 ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>{CONDITION_OPTIONS.find((c) => String(c.id) === String(form.conditionId))?.label || 'New'}</span>
+                            {form.freeShipping && <span className={`rounded-full px-2 py-0.5 ${isDark ? 'bg-emerald-500/15 text-emerald-300' : 'bg-emerald-50 text-emerald-700'}`}>{t('listingModal.ui.freeShipping')}</span>}
+                          </div>
                         </div>
                       )}
                     </div>
-                  ))}
-                  {canAddMoreImages && (
-                    <button
-                      type="button"
-                      onClick={handleAddImage}
-                      title="Add another image"
-                      className={`shrink-0 flex items-center justify-center w-12 h-12 rounded-lg border-2 border-dashed text-lg font-semibold transition-colors ${
-                        isDark ? 'border-slate-600 text-slate-500 hover:border-blue-500 hover:text-blue-400' : 'border-slate-300 text-slate-400 hover:border-blue-400 hover:text-blue-500'
-                      }`}
-                    >
-                      +
-                    </button>
-                  )}
-                </div>
-                {displayUrls.length > 0 && (
-                  <p className={`px-2 pb-2 text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                    {displayUrls.length}/{MAX_LISTING_IMAGES} images · hover a thumbnail to reorder
-                  </p>
-                )}
-              </div>
-
-              {/* Error */}
-              {error && (
-                <div className={`rounded-xl border px-3 py-2.5 text-xs ${isDark ? 'border-red-800 bg-red-950/30 text-red-400' : 'border-red-200 bg-red-50 text-red-600'}`}>
-                  {error}
-                </div>
-              )}
-
-              {/* Basic fields */}
-              <div className={sectionBox}>
-                <div>
-                  <label className={labelClass}>Title <span className="text-red-400">*</span></label>
-                  <input type="text" name="title" value={form.title} onChange={handleChange} className={inputClass} maxLength={80} placeholder="Item title (max 80 chars)" disabled={submitting} />
-                  <p className={`text-xs mt-0.5 text-right ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{form.title.length}/80</p>
-                </div>
-                <div>
-                  <label className="flex items-center gap-2 mb-2 cursor-pointer">
-                    <input type="checkbox" name="useRawDewisoHtml" checked={form.useRawDewisoHtml} onChange={handleChange} disabled={submitting} />
-                    <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                      {t('listingModal.sendRawDewisoHtml')}
-                    </span>
-                  </label>
-                  <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                    {t('listingModal.sendRawDewisoHtmlHint')}
-                  </p>
-                  <label className={labelClass}>Description</label>
-                  <div
-                    ref={quillContainerRef}
-                    className={`rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} max-h-40 overflow-y-auto`}
-                    data-placeholder="Item description"
-                  />
-                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                    {form.useRawDewisoHtml ? t('listingModal.rawHtmlWillBeSent') : t('listingModal.textWillBeConverted')}
-                  </p>
-                </div>
-              </div>
-
-              <div className={divider} />
-
-              {/* Pricing & inventory */}
-              <div className={sectionBox}>
-                <p className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Pricing & Inventory</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelClass}>Price (USD) <span className="text-red-400">*</span></label>
-                    <input type="number" name="price" value={form.price} onChange={handleChange} min="0.01" step="0.01" className={inputClass} placeholder="0.00" disabled={submitting} />
                   </div>
-                  <div>
-                    <label className={labelClass}>Quantity</label>
-                    <input type="number" name="quantity" value={form.quantity} onChange={handleChange} min="1" step="1" className={inputClass} disabled={submitting} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelClass}>Category ID <span className="text-red-400">*</span></label>
-                    <input type="text" name="categoryId" value={form.categoryId} onChange={handleChange} className={inputClass} placeholder="e.g. 9355" disabled={submitting} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Condition</label>
-                    <select name="conditionId" value={form.conditionId} onChange={handleChange} className={inputClass} disabled={submitting}>
-                      {CONDITION_OPTIONS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelClass}>Dispatch Time (days)</label>
-                    <input type="number" name="dispatchTimeMax" value={form.dispatchTimeMax} onChange={handleChange} min="1" step="1" className={inputClass} disabled={submitting} />
-                  </div>
-                  <div className="flex items-end pb-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" name="freeShipping" checked={form.freeShipping} onChange={handleChange} disabled={submitting} />
-                      <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Free Shipping</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
 
-              <div className={divider} />
-
-              {/* Seller Policies */}
-              <div className={sectionBox}>
-                <p className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  Seller Policies
-                  {loadingPolicies && <span className="ml-1.5 font-normal text-blue-400 animate-pulse">loading…</span>}
-                </p>
-                {['paymentPolicyId', 'returnPolicyId', 'fulfillmentPolicyId'].map((policyKey) => {
-                  const labels = { paymentPolicyId: 'Payment Policy', returnPolicyId: 'Return Policy', fulfillmentPolicyId: 'Shipping Policy' };
-                  const lists = { paymentPolicyId: sellerPolicies.paymentPolicies, returnPolicyId: sellerPolicies.returnPolicies, fulfillmentPolicyId: sellerPolicies.fulfillmentPolicies };
-                  const idKey = { paymentPolicyId: 'paymentPolicyId', returnPolicyId: 'returnPolicyId', fulfillmentPolicyId: 'fulfillmentPolicyId' };
-                  const pList = lists[policyKey];
-                  return (
-                    <div key={policyKey}>
-                      <label className={labelClass}>{labels[policyKey]}</label>
-                      <select name={policyKey} value={form[policyKey]} onChange={handleChange} className={inputClass} disabled={submitting || loadingPolicies}>
-                        <option value="">{pList.length === 0 ? 'No policies found — account default will apply' : `Select ${labels[policyKey]}`}</option>
-                        {pList.map((p) => <option key={p[idKey[policyKey]]} value={p[idKey[policyKey]]}>{p.name}</option>)}
-                      </select>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Item Specifics */}
-              {(loadingSpecifics || itemSpecifics.length > 0) && (
-                <>
-                  <div className={divider} />
-                  <div>
-                    <p className={`text-xs font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                      Item Specifics
-                      {loadingSpecifics && <span className="ml-1.5 font-normal text-blue-400 animate-pulse">fetching…</span>}
-                    </p>
-                    {loadingSpecifics && itemSpecifics.length === 0 ? (
-                      <div className={`rounded-lg border px-3 py-2.5 text-xs ${isDark ? 'border-slate-700 bg-slate-800/40 text-slate-500' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
-                        Loading item specifics from listing…
+                  {/* Right: form */}
+                  <div className="space-y-4 lg:col-span-7">
+                    <section className={sectionBox}>
+                      <SectionTitle icon={FileText}>{t('listingModal.ui.detailsTitle')}</SectionTitle>
+                      <div className="mb-1.5 flex items-baseline justify-between">
+                        <label className={labelClass.replace('mb-1.5 ', '')}>{t('listingModal.ui.titleLabel')} <span className="text-rose-500">*</span></label>
+                        <span className={`text-[11px] font-semibold tabular-nums ${titleLen >= 80 ? 'text-amber-500' : muted}`}>{titleLen}/80</span>
                       </div>
-                    ) : (
-                      <div className={`rounded-lg border overflow-hidden text-xs divide-y max-h-52 overflow-y-auto ${isDark ? 'border-slate-700 divide-slate-700' : 'border-slate-200 divide-slate-100'}`}>
-                        {itemSpecifics.map((spec, i) => {
-                          const specLabel = spec.name || spec.label || '';
-                          const specValue = spec.value || '';
-                          const isOrigin = isItemOriginSpec(spec);
-                          const originOptions = COUNTRY_OPTIONS.includes(specValue)
-                            ? COUNTRY_OPTIONS
-                            : [specValue, ...COUNTRY_OPTIONS].filter(Boolean);
-                          return (
-                            <div key={`${specLabel}-${i}`} className={`grid grid-cols-2 gap-3 px-3 py-1.5 items-center ${isDark ? 'bg-slate-800/50' : i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
-                              <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{specLabel}</span>
-                              {isOrigin ? (
-                                <select
-                                  value={specValue || COUNTRY_OPTIONS[0]}
-                                  onChange={(e) => handleItemSpecificChange(i, e.target.value)}
-                                  disabled={submitting}
-                                  className={`w-full rounded-md border px-2 py-1 text-xs outline-none ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-800'}`}
-                                >
-                                  {originOptions.map((c) => <option key={c} value={c}>{c}</option>)}
-                                </select>
-                              ) : (
-                                <span className={isDark ? 'text-slate-200' : 'text-slate-700'}>{specValue}</span>
-                              )}
-                            </div>
-                          );
-                        })}
+                      <input type="text" name="title" value={form.title} onChange={handleChange} className={inputClass} maxLength={80} placeholder={t('listingModal.ui.titlePlaceholder')} disabled={submitting} />
+
+                      <div className="mt-4 mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                        <label className={labelClass.replace('mb-1.5 ', '')}>{t('listingModal.ui.descriptionLabel')}</label>
+                        <label className="inline-flex cursor-pointer items-center gap-2" title={t('listingModal.sendRawDewisoHtmlHint')}>
+                          <input type="checkbox" name="useRawDewisoHtml" checked={form.useRawDewisoHtml} onChange={handleChange} disabled={submitting} className="peer sr-only" />
+                          <span aria-hidden="true" className={`relative inline-flex h-5 w-9 items-center rounded-full transition ${form.useRawDewisoHtml ? 'bg-indigo-600' : isDark ? 'bg-slate-700' : 'bg-slate-300'}`}>
+                            <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition ${form.useRawDewisoHtml ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                          </span>
+                          <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('listingModal.sendRawDewisoHtml')}</span>
+                        </label>
                       </div>
+                      <div
+                        ref={quillContainerRef}
+                        className={`max-h-48 overflow-y-auto rounded-xl border ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-white'}`}
+                        data-placeholder="Item description"
+                      />
+                      <p className={`mt-1.5 text-xs ${muted}`}>
+                        {form.useRawDewisoHtml ? t('listingModal.rawHtmlWillBeSent') : t('listingModal.textWillBeConverted')}
+                      </p>
+                    </section>
+
+                    <section className={sectionBox}>
+                      <SectionTitle icon={CircleDollarSign}>{t('listingModal.ui.pricingTitle')}</SectionTitle>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className={labelClass}>{t('listingModal.ui.price')} <span className="text-rose-500">*</span></label>
+                          <div className="relative">
+                            <span className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm ${muted}`}>$</span>
+                            <input type="number" name="price" value={form.price} onChange={handleChange} min="0.01" step="0.01" className={`${inputClass} pl-7 tabular-nums`} placeholder="0.00" disabled={submitting} />
+                          </div>
+                        </div>
+                        <div>
+                          <label className={labelClass}>{t('listingModal.ui.quantity')}</label>
+                          <input type="number" name="quantity" value={form.quantity} onChange={handleChange} min="1" step="1" className={`${inputClass} tabular-nums`} disabled={submitting} />
+                        </div>
+                        <div>
+                          <label className={labelClass}>{t('listingModal.ui.categoryId')} <span className="text-rose-500">*</span></label>
+                          <input type="text" name="categoryId" value={form.categoryId} onChange={handleChange} className={`${inputClass} font-mono`} placeholder="e.g. 9355" disabled={submitting} />
+                        </div>
+                        <div>
+                          <label className={labelClass}>{t('listingModal.ui.condition')}</label>
+                          <select name="conditionId" value={form.conditionId} onChange={handleChange} className={inputClass} disabled={submitting}>
+                            {CONDITION_OPTIONS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section className={sectionBox}>
+                      <SectionTitle icon={Truck} extra={loadingPolicies ? <Loader2 size={14} className="animate-spin text-indigo-500" /> : null}>
+                        {t('listingModal.ui.shippingTitle')}
+                      </SectionTitle>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className={labelClass}>{t('listingModal.ui.dispatchTime')}</label>
+                          <input type="number" name="dispatchTimeMax" value={form.dispatchTimeMax} onChange={handleChange} min="1" step="1" className={`${inputClass} tabular-nums`} disabled={submitting} />
+                        </div>
+                        <label className={`flex cursor-pointer items-center justify-between gap-3 self-end rounded-xl border px-3 py-2.5 ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-300 bg-white'}`}>
+                          <span className={`text-sm font-medium ${strong}`}>{t('listingModal.ui.freeShipping')}</span>
+                          <input type="checkbox" name="freeShipping" checked={form.freeShipping} onChange={handleChange} disabled={submitting} className="peer sr-only" />
+                          <span aria-hidden="true" className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition ${form.freeShipping ? 'bg-indigo-600' : isDark ? 'bg-slate-700' : 'bg-slate-300'}`}>
+                            <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition ${form.freeShipping ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                          </span>
+                        </label>
+                      </div>
+                      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        {[
+                          ['fulfillmentPolicyId', t('listingModal.ui.shippingPolicy'), sellerPolicies.fulfillmentPolicies],
+                          ['returnPolicyId', t('listingModal.ui.returnPolicy'), sellerPolicies.returnPolicies],
+                          ['paymentPolicyId', t('listingModal.ui.paymentPolicy'), sellerPolicies.paymentPolicies],
+                        ].map(([policyKey, label, pList]) => (
+                          <div key={policyKey}>
+                            <label className={labelClass}>{label}</label>
+                            <select name={policyKey} value={form[policyKey]} onChange={handleChange} className={inputClass} disabled={submitting || loadingPolicies} title={policyName(pList, policyKey, form[policyKey]) || ''}>
+                              <option value="">{pList.length === 0 ? t('listingModal.ui.accountDefault') : t('listingModal.ui.selectPolicy')}</option>
+                              {pList.map((p) => <option key={p[policyKey]} value={p[policyKey]}>{p.name}</option>)}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    {(loadingSpecifics || itemSpecifics.length > 0) && (
+                      <section className={sectionBox}>
+                        <SectionTitle icon={ListChecks} extra={loadingSpecifics ? <Loader2 size={14} className="animate-spin text-indigo-500" /> : <span className={`text-xs ${muted}`}>{itemSpecifics.length}</span>}>
+                          {t('listingModal.ui.specificsTitle')}
+                        </SectionTitle>
+                        {loadingSpecifics && itemSpecifics.length === 0 ? (
+                          <p className={`text-xs ${muted}`}>{t('listingModal.ui.loadingSpecifics')}</p>
+                        ) : (
+                          <div className={`max-h-56 divide-y overflow-y-auto rounded-xl border text-xs ${isDark ? 'divide-slate-800 border-slate-800' : 'divide-slate-100 border-slate-200'}`}>
+                            {itemSpecifics.map((spec, i) => {
+                              const specLabel = spec.name || spec.label || '';
+                              const specValue = spec.value || '';
+                              const isOrigin = isItemOriginSpec(spec);
+                              const originOptions = COUNTRY_OPTIONS.includes(specValue) ? COUNTRY_OPTIONS : [specValue, ...COUNTRY_OPTIONS].filter(Boolean);
+                              return (
+                                <div key={`${specLabel}-${i}`} className={`grid grid-cols-2 items-center gap-3 px-3 py-2 ${isDark ? 'bg-slate-950/40' : 'bg-white'}`}>
+                                  <span className={`font-medium ${muted}`}>{specLabel}</span>
+                                  {isOrigin ? (
+                                    <select
+                                      value={specValue || COUNTRY_OPTIONS[0]}
+                                      onChange={(e) => handleItemSpecificChange(i, e.target.value)}
+                                      disabled={submitting}
+                                      className={`w-full rounded-lg border px-2 py-1 text-xs outline-none ${isDark ? 'border-slate-700 bg-slate-900 text-slate-100' : 'border-slate-300 bg-white text-slate-800'}`}
+                                    >
+                                      {originOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                  ) : (
+                                    <span className={`truncate ${strong}`} title={specValue}>{specValue}</span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </section>
                     )}
                   </div>
-                </>
-              )}
-
-              {/* Warning (only show in normal listing mode) */}
-              {!isEditBucketItem && (
-                <div className={`rounded-xl border p-3 text-xs ${isDark ? 'border-amber-800 bg-amber-950/20 text-amber-200' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
-                  ⚠️ This will create a <strong>live listing</strong> on your active eBay seller account immediately.
                 </div>
-              )}
+              </div>
 
-              {/* Schedule for later — a secondary alternative to listing immediately */}
-              {!isEditBucketItem && (
-                <button
-                  type="button"
-                  onClick={handleOpenSchedule}
-                  disabled={submitting}
-                  className={`w-full py-2.5 rounded-lg border border-dashed text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60 ${
-                    isDark
-                      ? 'border-slate-600 text-slate-300 hover:border-blue-500 hover:text-blue-400'
-                      : 'border-slate-300 text-slate-600 hover:border-blue-400 hover:text-blue-600'
-                  }`}
-                >
-                  <CalendarClock size={16} />
-                  {t('scheduleListing.button')}
-                </button>
-              )}
-
-              {/* Actions */}
-              <div className="flex gap-2 pt-1">
-                <button type="button" onClick={onClose} disabled={submitting} className="btn-secondary flex-1 py-2.5 disabled:opacity-60">{t('listingModal.cancel')}</button>
-                {isEditBucketItem ? (
-                  <button type="submit" disabled={submitting} className="btn-primary flex-1 py-2.5 disabled:opacity-60 flex items-center justify-center gap-2">
-                    {submitting ? (
-                      <>
-                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                        </svg>
-                        {t('listingModal.saving')}
-                      </>
-                    ) : t('listingModal.save')}
+              {/* Footer */}
+              <div className={`flex flex-col gap-3 border-t px-5 py-4 sm:flex-row sm:items-center sm:justify-between ${isDark ? 'border-slate-800 bg-slate-950' : 'border-slate-100 bg-white'}`}>
+                {!isEditBucketItem ? (
+                  <p className={`flex items-center gap-1.5 text-xs ${muted}`}>
+                    <Info size={13} className="shrink-0 text-amber-500" />
+                    {t('listingModal.ui.liveWarning')}
+                  </p>
+                ) : <span />}
+                <div className="flex flex-wrap justify-end gap-2">
+                  <button type="button" onClick={onClose} disabled={submitting} className="btn-secondary px-4 py-2.5 disabled:opacity-60">{t('listingModal.cancel')}</button>
+                  {!isEditBucketItem && (
+                    <button type="button" onClick={handleOpenSchedule} disabled={submitting} className="btn-secondary inline-flex items-center gap-1.5 px-4 py-2.5 disabled:opacity-60">
+                      <CalendarClock size={15} />
+                      {t('scheduleListing.button')}
+                    </button>
+                  )}
+                  <button type="submit" disabled={submitting} className="btn-primary inline-flex items-center justify-center gap-2 px-5 py-2.5 disabled:opacity-60">
+                    {submitting ? <Loader2 size={15} className="animate-spin" /> : isEditBucketItem ? <Check size={15} /> : <Rocket size={15} />}
+                    {isEditBucketItem
+                      ? (submitting ? t('listingModal.saving') : t('listingModal.save'))
+                      : (submitting ? t('listingModal.listing') : t('listingModal.list'))}
                   </button>
-                ) : (
-                  <button type="submit" disabled={submitting} className="btn-primary flex-1 py-2.5 disabled:opacity-60 flex items-center justify-center gap-2">
-                    {submitting ? (
-                      <>
-                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                        </svg>
-                        {t('listingModal.listing')}
-                      </>
-                    ) : t('listingModal.list')}
-                  </button>
-                )}
+                </div>
               </div>
             </form>
           )}

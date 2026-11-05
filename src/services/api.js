@@ -350,6 +350,9 @@ export const ebayAPI = {
   pollExtensionJob: (jobId) => api.get(`/ebay/extension-scrape/${encodeURIComponent(jobId)}`),
   scrapeItemDetails: (url) => api.post('/ebay/scrape-item-details', { url }),
   quickList: (payload) => api.post('/ebay/quick-list', payload),
+  // Background variant: returns { jobId } at once (backend services/listingJobs.js).
+  startListingJob: (payload) => api.post('/ebay/quick-list/jobs', payload),
+  getListingJob: (jobId) => api.get(`/ebay/quick-list/jobs/${encodeURIComponent(jobId)}`),
   inventoryList: (payload) => api.post('/ebay/inventory-list', payload),
   scheduleListing: (payload) => api.post('/ebay/scheduled-listings', payload),
   getScheduledListings: () => api.get('/ebay/scheduled-listings'),
