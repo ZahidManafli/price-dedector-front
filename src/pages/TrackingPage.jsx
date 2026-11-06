@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X, Trash2, Search, Copy, Pencil, Smartphone } from 'lucide-react';
+import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X, Trash2, Search, Copy, Pencil, Smartphone, ChevronLeft, ChevronRight } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { ebayAPI, settingsAPI, API_BASE_URL } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
@@ -1444,12 +1444,22 @@ export default function TrackingPage() {
     }
   };
 
-  const loadTracked = async () => {
+  // 3-month windows (backend GET /ebay/tracking?period=N): 0 = last 3 months,
+  // 1 = the 3 months before that, ... Filters and search apply within the window.
+  const [period, setPeriod] = useState(0);
+  const [periodInfo, setPeriodInfo] = useState({ hasOlder: false, rangeFrom: null, rangeTo: null });
+
+  const loadTracked = async (targetPeriod = period) => {
     setLoading(true);
     setError('');
     try {
-      const res = await ebayAPI.listTracking();
+      const res = await ebayAPI.listTracking({ period: targetPeriod });
       setRows(Array.isArray(res?.data?.tracking) ? res.data.tracking : []);
+      setPeriodInfo({
+        hasOlder: Boolean(res?.data?.hasOlder),
+        rangeFrom: res?.data?.rangeFrom || null,
+        rangeTo: res?.data?.rangeTo || null,
+      });
     } catch (err) {
       setError(err?.response?.data?.error || err.message || 'Failed to load tracking records');
     } finally {
@@ -1554,8 +1564,20 @@ export default function TrackingPage() {
     }
   };
 
+  const goToPeriod = (next) => {
+    if (next < 0 || next === period) return;
+    setPeriod(next);
+    loadTracked(next);
+  };
+
+  const formatPeriodDate = (iso) =>
+    iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  const periodLabel = periodInfo.rangeFrom
+    ? `${formatPeriodDate(periodInfo.rangeFrom)} – ${periodInfo.rangeTo ? formatPeriodDate(periodInfo.rangeTo) : 'Today'}`
+    : '';
+
   useEffect(() => {
-    loadTracked();
+    loadTracked(0);
     loadUnmatched();
     loadEbayAccounts();
     loadTrackingCredits();
@@ -1824,7 +1846,11 @@ export default function TrackingPage() {
                   <tr>
                     <td colSpan={7} className={`px-4 py-8 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       {rows.length === 0
-                        ? 'No tracked orders yet.'
+                        ? period === 0
+                          ? periodInfo.hasOlder
+                            ? 'No tracked orders in the last 3 months. Use "Older" below to see earlier ones.'
+                            : 'No tracked orders yet.'
+                          : 'No tracked orders in this period.'
                         : searchTerm
                           ? 'No tracked orders match your search.'
                           : 'No tracked orders for this eBay store.'}
@@ -1851,6 +1877,45 @@ export default function TrackingPage() {
               </tbody>
             </table>
           </div>
+          {(period > 0 || periodInfo.hasOlder) && (
+            <div
+              className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t text-sm ${
+                isDark ? 'border-slate-800 text-slate-300' : 'border-slate-200 text-slate-600'
+              }`}
+            >
+              <span>
+                <span className="font-medium">{periodLabel}</span>
+                {!loading && (
+                  <span className={isDark ? 'text-slate-500' : 'text-slate-400'}> · {rows.length} tracked</span>
+                )}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => goToPeriod(period - 1)}
+                  disabled={loading || period === 0}
+                  className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed ${
+                    isDark ? 'border-slate-700 hover:bg-slate-800' : 'border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <ChevronLeft size={14} />
+                  Newer
+                </button>
+                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Page {period + 1}</span>
+                <button
+                  type="button"
+                  onClick={() => goToPeriod(period + 1)}
+                  disabled={loading || !periodInfo.hasOlder}
+                  className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed ${
+                    isDark ? 'border-slate-700 hover:bg-slate-800' : 'border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  Older
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

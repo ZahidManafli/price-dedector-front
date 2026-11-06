@@ -330,7 +330,7 @@ export const ebayAPI = {
     api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/refresh`),
   uploadOrderTrackingToEbay: (orderId, payload) =>
     api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/upload-ebay`, payload),
-  listTracking: () => api.get('/ebay/tracking'),
+  listTracking: (params = {}) => api.get('/ebay/tracking', { params }),
   getTrackingSettings: () => api.get('/ebay/tracking/settings'),
   updateTrackingSettings: (payload) => api.put('/ebay/tracking/settings', payload),
   submitAmazonOrderId: (orderId, payload) =>
