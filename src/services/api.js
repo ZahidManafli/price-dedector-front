@@ -401,10 +401,21 @@ export const casesAPI = {
     api.get(`/ebay/cancellations/${encodeURIComponent(cancelId)}`, { params: fieldgroups ? { fieldgroups } : undefined }),
   approveCancellation: (cancelId) => api.post(`/ebay/cancellations/${encodeURIComponent(cancelId)}/approve`),
   rejectCancellation: (cancelId, payload = {}) => api.post(`/ebay/cancellations/${encodeURIComponent(cancelId)}/reject`, payload),
+  createCancellation: (payload) => api.post('/ebay/cancellations/create', payload),
 
   // Case management
   searchCases: (params = {}) => api.get('/ebay/cases', { params }),
   getCase: (caseId) => api.get(`/ebay/cases/${encodeURIComponent(caseId)}`),
+  appealCase: (caseId, payload) => api.post(`/ebay/cases/${encodeURIComponent(caseId)}/appeal`, payload),
+
+  // Returns
+  searchReturns: (params = {}) => api.get('/ebay/returns', { params }),
+  getReturn: (returnId) => api.get(`/ebay/returns/${encodeURIComponent(returnId)}`),
+  returnAction: (returnId, action, payload = {}) => api.post(`/ebay/returns/${encodeURIComponent(returnId)}/${action}`, payload),
+  getReturnFiles: (returnId) => api.get(`/ebay/returns/${encodeURIComponent(returnId)}/files`),
+  getReturnTracking: (returnId, params) => api.get(`/ebay/returns/${encodeURIComponent(returnId)}/tracking`, { params }),
+  getReturnPreferences: () => api.get('/ebay/return-preferences'),
+  setReturnPreferences: (payload) => api.post('/ebay/return-preferences', payload),
 
   // Inquiries
   searchInquiries: (params = {}) => api.get('/ebay/inquiries', { params }),
@@ -412,6 +423,7 @@ export const casesAPI = {
   issueInquiryRefund: (inquiryId, payload = {}) => api.post(`/ebay/inquiries/${encodeURIComponent(inquiryId)}/issue-refund`, payload),
   provideInquiryShipmentInfo: (inquiryId, payload) => api.post(`/ebay/inquiries/${encodeURIComponent(inquiryId)}/provide-shipment-info`, payload),
   sendInquiryMessage: (inquiryId, payload) => api.post(`/ebay/inquiries/${encodeURIComponent(inquiryId)}/send-message`, payload),
+  escalateInquiry: (inquiryId, payload) => api.post(`/ebay/inquiries/${encodeURIComponent(inquiryId)}/escalate`, payload),
 };
 
 export const supportAPI = {

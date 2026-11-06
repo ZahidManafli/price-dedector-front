@@ -16,6 +16,17 @@ import {
   Truck,
   ExternalLink,
   ShieldCheck,
+  Upload,
+  Send,
+  Ban,
+  Settings2,
+  Scale,
+  ArrowUpCircle,
+  PackageCheck,
+  Tag,
+  ThumbsUp,
+  ThumbsDown,
+  Percent,
 } from 'lucide-react';
 import { casesAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
@@ -189,10 +200,152 @@ async function runCheckEligibility() {
   }
 }
 
+// Select + optional/required comment in one dialog.
+async function promptChoice(title, options, { commentLabel = 'Comment', commentRequired = false, confirmText = 'Submit', danger = false } = {}) {
+  const optionsHtml = options.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+  const { value, isConfirmed } = await Swal.fire({
+    title,
+    html:
+      `<select id="swal-choice" class="swal2-select" style="width:80%;display:flex;margin:12px auto">${optionsHtml}</select>` +
+      `<textarea id="swal-comment" class="swal2-textarea" placeholder="${commentLabel}${commentRequired ? '' : ' (optional)'}"></textarea>`,
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: confirmText,
+    confirmButtonColor: danger ? '#e11d48' : '#4f46e5',
+    preConfirm: () => {
+      const choice = document.getElementById('swal-choice')?.value;
+      const comment = document.getElementById('swal-comment')?.value?.trim() || '';
+      if (commentRequired && !comment) { Swal.showValidationMessage(`${commentLabel} is required`); return false; }
+      return { choice, comment };
+    },
+  });
+  return isConfirmed ? value : null;
+}
+
+// Amount (USD) + optional comment.
+async function promptAmount(title, { defaultAmount = '', confirmText = 'Submit' } = {}) {
+  const { value, isConfirmed } = await Swal.fire({
+    title,
+    html:
+      `<input id="swal-amount" type="number" min="0.01" step="0.01" class="swal2-input" placeholder="Amount (USD)" value="${defaultAmount}">` +
+      '<textarea id="swal-comment" class="swal2-textarea" placeholder="Comment for the buyer (optional)"></textarea>',
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: confirmText,
+    preConfirm: () => {
+      const amount = Number(document.getElementById('swal-amount')?.value);
+      if (!(amount > 0)) { Swal.showValidationMessage('Enter a positive amount'); return false; }
+      return { amount, comment: document.getElementById('swal-comment')?.value?.trim() || '' };
+    },
+  });
+  return isConfirmed ? value : null;
+}
+
+// Return shipping label provided by the seller: carrier + tracking number.
+async function promptReturnLabel() {
+  const { value, isConfirmed } = await Swal.fire({
+    title: 'Add return shipping label',
+    html:
+      '<input id="swal-carrier" class="swal2-input" placeholder="Carrier (e.g. USPS)">' +
+      '<input id="swal-tracking" class="swal2-input" placeholder="Tracking number">',
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: 'Add label',
+    preConfirm: () => {
+      const carrierName = document.getElementById('swal-carrier')?.value?.trim();
+      const trackingNumber = document.getElementById('swal-tracking')?.value?.trim();
+      if (!carrierName || !trackingNumber) { Swal.showValidationMessage('Carrier and tracking number are required'); return false; }
+      return { carrierName, carrierEnum: carrierName.toUpperCase().replace(/[^A-Z]/g, ''), trackingNumber };
+    },
+  });
+  return isConfirmed ? value : null;
+}
+
+// Picks one image/PDF and returns { fileName, data (base64), filePurpose }.
+async function promptReturnFile() {
+  const { value: file, isConfirmed } = await Swal.fire({
+    title: 'Upload a file to this return',
+    input: 'file',
+    inputAttributes: { accept: 'image/*,application/pdf' },
+    showCancelButton: true,
+    confirmButtonText: 'Upload',
+    inputValidator: (v) => (!v ? 'Choose a file' : v.size > 5 * 1024 * 1024 ? 'Max 5 MB' : undefined),
+  });
+  if (!isConfirmed || !file) return null;
+  const data = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || '').split(',')[1] || '');
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  return { fileName: file.name, data, filePurpose: /label/i.test(file.name) ? 'LABEL_RELATED' : 'ITEM_RELATED' };
+}
+
+// Seller-initiated cancellation of an order (not tied to an existing request).
+async function runCreateCancellation() {
+  const { value, isConfirmed } = await Swal.fire({
+    title: 'Cancel an order',
+    html:
+      '<input id="swal-order" class="swal2-input" placeholder="Order ID (legacyOrderId)">' +
+      '<select id="swal-reason" class="swal2-select" style="width:80%;display:flex;margin:12px auto">' +
+      '<option value="OUT_OF_STOCK_OR_CANNOT_FULFILL">Out of stock / cannot fulfill</option>' +
+      '<option value="BUYER_ASKED_CANCEL">Buyer asked to cancel</option>' +
+      '<option value="ADDRESS_ISSUES">Problem with the shipping address</option>' +
+      '</select>',
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: 'Cancel order',
+    confirmButtonColor: '#e11d48',
+    preConfirm: () => {
+      const legacyOrderId = document.getElementById('swal-order')?.value?.trim();
+      if (!legacyOrderId) { Swal.showValidationMessage('Order ID is required'); return false; }
+      return { legacyOrderId, cancelReason: document.getElementById('swal-reason')?.value, buyerPaid: true };
+    },
+  });
+  if (!isConfirmed || !value) return false;
+  try {
+    const res = await casesAPI.createCancellation(value);
+    await Swal.fire({ title: 'Cancellation created', text: res?.data?.cancelId ? `Cancel ID: ${res.data.cancelId}` : 'eBay accepted the cancellation.', icon: 'success' });
+    return true;
+  } catch (err) {
+    await Swal.fire({ title: 'Failed', text: err?.response?.data?.error || err.message, icon: 'error' });
+    return false;
+  }
+}
+
+// Account-level return preference (eBay's "require an RMA number").
+async function runReturnPreferences() {
+  let current = false;
+  try {
+    const res = await casesAPI.getReturnPreferences();
+    current = !!res?.data?.rmaRequired;
+  } catch (err) {
+    await Swal.fire({ title: 'Failed', text: err?.response?.data?.error || err.message, icon: 'error' });
+    return;
+  }
+  const { value, isConfirmed } = await Swal.fire({
+    title: 'Return preferences',
+    input: 'checkbox',
+    inputValue: current ? 1 : 0,
+    inputPlaceholder: 'Require an RMA number before buyers ship returns',
+    showCancelButton: true,
+    confirmButtonText: 'Save',
+  });
+  if (!isConfirmed) return;
+  try {
+    await casesAPI.setReturnPreferences({ rmaRequired: !!value });
+    await Swal.fire({ title: 'Saved', icon: 'success', timer: 1500, showConfirmButton: false });
+  } catch (err) {
+    await Swal.fire({ title: 'Failed', text: err?.response?.data?.error || err.message, icon: 'error' });
+  }
+}
+
 // ─── RESOURCE DEFINITIONS ───────────────────────────────────────────────────────
-// Only the endpoints we have exact field-level docs for: Cancellations (Search,
-// Get, Check Eligibility, Approve, Reject), Case management (Search, Get), and
-// Inquiry (Search, Get, Send Message, Provide Shipment Info, Issue Refund).
+// eBay Post-Order API (seller side): Cancellations (Search, Get, Create, Check
+// Eligibility, Approve, Reject), Case management (Search, Get, Appeal), Inquiry
+// (Search, Get, Send Message, Provide Shipment Info, Issue Refund, Escalate) and
+// Returns (Search, Get, Decide, Issue Refund, Mark Received, Send Message, Shipping
+// Label, Escalate, Files, Preferences). "Create Return Request" is buyer-only.
 const RESOURCES = {
   cancellations: {
     label: 'Cancellations',
@@ -307,7 +460,24 @@ const RESOURCES = {
       { label: 'Last modified', value: fmtDate(d.lastModifiedDate) },
       { label: 'Return ID', value: d.returnId || '—' },
     ],
-    actions: () => [],
+    // eBay lets either party appeal once the case has a decision.
+    actions: (id, d, { runAction }) => [
+      {
+        key: 'appeal',
+        label: 'Appeal decision',
+        icon: Scale,
+        tone: 'default',
+        run: async () => {
+          const res = await promptChoice('Appeal case decision', [
+            ['DISAGREE_WITH_FINAL_DECISION', 'I disagree with the final decision'],
+            ['NEW_INFORMATION', 'I have new information'],
+            ['OTHER', 'Other'],
+          ], { commentLabel: 'Explain your appeal', commentRequired: true, confirmText: 'Appeal' });
+          if (!res) return;
+          await runAction('Appeal', () => casesAPI.appealCase(id, { appealReason: res.choice, comments: res.comment }));
+        },
+      },
+    ],
   },
 
   inquiries: {
@@ -393,10 +563,159 @@ const RESOURCES = {
                 await runAction('Send message', () => casesAPI.sendInquiryMessage(id, { content }));
               },
             },
+            {
+              key: 'escalate',
+              label: 'Escalate to case',
+              icon: ArrowUpCircle,
+              tone: 'danger',
+              run: async () => {
+                const res = await promptChoice('Escalate inquiry to an eBay case', [
+                  ['SELLER_ASKS_ESCALATION', 'I want eBay to step in'],
+                  ['OTHERS', 'Other'],
+                ], { commentLabel: 'Comment for eBay', confirmText: 'Escalate', danger: true });
+                if (!res) return;
+                await runAction('Escalate', () => casesAPI.escalateInquiry(id, { escalationReason: res.choice, comments: res.comment }));
+              },
+            },
           ],
   },
+
+  // Return requests (Post-Order Return API) — read-only here: search + detail.
+  returns: {
+    label: 'Returns',
+    description: 'Return requests opened by buyers. Accept, decline, refund, offer a partial refund, add a return label or message the buyer.',
+    lookupLabel: 'returnId',
+    columns: ['Return ID', 'Order', 'Buyer', 'Reason', 'Status', 'Refund', 'Created', 'Respond by', ''],
+    search: (dateFrom, dateTo, { refresh } = {}) =>
+      casesAPI.searchReturns({
+        creation_date_range_from: dateFrom,
+        creation_date_range_to: dateTo,
+        role: 'SELLER',
+        limit: 100,
+        ...(refresh ? { refresh: 1 } : {}),
+      }),
+    extractList: (data) => (Array.isArray(data?.members) ? data.members : []),
+    rowId: (item) => item.returnId,
+    renderRow: (item) => [
+      item.returnId || '—',
+      item.orderId || item.creationInfo?.item?.itemId || '—',
+      item.buyerLoginName || '—',
+      item.creationInfo?.reason ? String(item.creationInfo.reason).replace(/_/g, ' ').toLowerCase() : '—',
+      <StatusPillCell key="status" status={item.status || item.state} />,
+      amountText(item.sellerTotalRefund?.estimatedRefundAmount || item.buyerTotalRefund?.estimatedRefundAmount) || '—',
+      fmtDate(item.creationInfo?.creationDate),
+      fmtDate(item.sellerResponseDue?.respondByDate),
+    ],
+    getDetail: async (id) => {
+      const [res, filesRes] = await Promise.all([
+        casesAPI.getReturn(id),
+        casesAPI.getReturnFiles(id).catch(() => null),
+      ]);
+      const data = res?.data || null;
+      const files = Array.isArray(filesRes?.data?.files) ? filesRes.data.files : [];
+      return data ? { ...(data.summary || data), detail: data.detail || null, files } : null;
+    },
+    detailStatus: (d) => d.status || d.state,
+    detailFields: (d) => [
+      { label: 'State', value: d.state || '—' },
+      { label: 'Type', value: d.currentType ? String(d.currentType).replace(/_/g, ' ').toLowerCase() : '—' },
+      { label: 'Order', value: d.orderId || '—' },
+      { label: 'Item', value: d.detail?.itemDetail?.itemTitle || d.creationInfo?.item?.itemId || '—' },
+      { label: 'Quantity', value: d.creationInfo?.item?.returnQuantity ?? '—' },
+      { label: 'Reason', value: d.creationInfo?.reason ? String(d.creationInfo.reason).replace(/_/g, ' ').toLowerCase() : '—' },
+      { label: 'Buyer comment', value: d.creationInfo?.comments?.content || '—' },
+      { label: 'Refund (estimated)', value: amountText(d.sellerTotalRefund?.estimatedRefundAmount) || '—' },
+      { label: 'Respond by', value: fmtDate(d.sellerResponseDue?.respondByDate) },
+      { label: 'Required action', value: d.sellerResponseDue?.activityDue ? String(d.sellerResponseDue.activityDue).replace(/_/g, ' ').toLowerCase() : '—' },
+      { label: 'Created', value: fmtDate(d.creationInfo?.creationDate) },
+      { label: 'Files', value: d.files?.length ? d.files.map((file) => file.fileName || file.fileId).join(', ') : '—' },
+    ],
+    // Once eBay closes the return nothing more can be done on it.
+    actions: (id, d, { runAction }) => {
+      if (String(d.state || '').toUpperCase() === 'CLOSED') return [];
+      const currency = d.sellerTotalRefund?.estimatedRefundAmount?.currency || 'USD';
+      const estimated = d.sellerTotalRefund?.estimatedRefundAmount?.value || '';
+      return [
+        {
+          key: 'accept', label: 'Accept return', icon: ThumbsUp, tone: 'primary',
+          run: async () => {
+            const comment = await promptText('Accept this return?', { label: 'Message to the buyer (optional)' });
+            if (comment === undefined) return;
+            await runAction('Accept return', () => casesAPI.returnAction(id, 'decide', { decision: 'ACCEPT', comments: comment || undefined }));
+          },
+        },
+        {
+          key: 'refund', label: 'Issue refund', icon: DollarSign, tone: 'primary',
+          run: async () => {
+            const res = await promptAmount('Issue refund', { defaultAmount: estimated, confirmText: 'Refund' });
+            if (!res) return;
+            await runAction('Issue refund', () => casesAPI.returnAction(id, 'issue-refund', { amount: res.amount, currency, comments: res.comment }));
+          },
+        },
+        {
+          key: 'partial', label: 'Offer partial refund', icon: Percent, tone: 'default',
+          run: async () => {
+            const res = await promptAmount('Offer a partial refund (buyer keeps the item)', { confirmText: 'Offer' });
+            if (!res) return;
+            await runAction('Offer partial refund', () => casesAPI.returnAction(id, 'decide', { decision: 'OFFER_PARTIAL_REFUND', partialRefundAmount: res.amount, currency, comments: res.comment }));
+          },
+        },
+        {
+          key: 'received', label: 'Mark as received', icon: PackageCheck, tone: 'default',
+          run: async () => {
+            const ok = await promptConfirm('Mark return as received?', 'Confirms the returned item arrived back to you.', 'Mark received');
+            if (!ok) return;
+            await runAction('Mark as received', () => casesAPI.returnAction(id, 'mark-received', {}));
+          },
+        },
+        {
+          key: 'label', label: 'Add shipping label', icon: Tag, tone: 'default',
+          run: async () => {
+            const payload = await promptReturnLabel();
+            if (!payload) return;
+            await runAction('Add shipping label', () => casesAPI.returnAction(id, 'shipping-label', payload));
+          },
+        },
+        {
+          key: 'message', label: 'Send message', icon: Send, tone: 'default',
+          run: async () => {
+            const content = await promptText('Send message to buyer', { required: true });
+            if (!content) return;
+            await runAction('Send message', () => casesAPI.returnAction(id, 'send-message', { content }));
+          },
+        },
+        {
+          key: 'file', label: 'Upload file', icon: Upload, tone: 'default',
+          run: async () => {
+            const payload = await promptReturnFile();
+            if (!payload) return;
+            await runAction('Upload file', () => casesAPI.returnAction(id, 'upload-file', payload));
+          },
+        },
+        {
+          key: 'decline', label: 'Decline return', icon: ThumbsDown, tone: 'danger',
+          run: async () => {
+            const reason = await promptText('Decline this return', { label: 'Reason (shown to the buyer)', required: true });
+            if (!reason) return;
+            await runAction('Decline return', () => casesAPI.returnAction(id, 'decide', { decision: 'DECLINE', comments: reason }));
+          },
+        },
+        {
+          key: 'escalate', label: 'Escalate to eBay', icon: ArrowUpCircle, tone: 'danger',
+          run: async () => {
+            const res = await promptChoice('Ask eBay to step in', [
+              ['SELLER_ASKS_ESCALATION', 'I want eBay to step in'],
+              ['OTHER', 'Other'],
+            ], { commentLabel: 'Comment for eBay', confirmText: 'Escalate', danger: true });
+            if (!res) return;
+            await runAction('Escalate', () => casesAPI.returnAction(id, 'escalate', { reason: res.choice, comments: res.comment }));
+          },
+        },
+      ];
+    },
+  },
 };
-const RESOURCE_ORDER = ['cancellations', 'cases', 'inquiries'];
+const RESOURCE_ORDER = ['cancellations', 'cases', 'inquiries', 'returns'];
 
 function StatusPillCell({ status }) {
   // isDark is read from context at render time via the wrapping table's theme —
@@ -623,9 +942,25 @@ export default function CasesPage() {
         <div className="flex items-center gap-2">
           <TutorialVideoButton />
           {activeResource === 'cancellations' && (
-            <button type="button" onClick={runCheckEligibility} className="btn-secondary text-sm flex items-center gap-1.5">
-              <ShieldCheck size={14} />
-              Check eligibility
+            <>
+              <button type="button" onClick={runCheckEligibility} className="btn-secondary text-sm flex items-center gap-1.5">
+                <ShieldCheck size={14} />
+                Check eligibility
+              </button>
+              <button
+                type="button"
+                onClick={async () => { if (await runCreateCancellation()) load(activeResource, { refresh: true }); }}
+                className="btn-secondary text-sm flex items-center gap-1.5"
+              >
+                <Ban size={14} />
+                Cancel an order
+              </button>
+            </>
+          )}
+          {activeResource === 'returns' && (
+            <button type="button" onClick={runReturnPreferences} className="btn-secondary text-sm flex items-center gap-1.5">
+              <Settings2 size={14} />
+              Return preferences
             </button>
           )}
           <button
