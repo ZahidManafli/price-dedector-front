@@ -2005,5 +2005,12 @@
   "trackingTbaOnly": {
     "label": "Change only TBA",
     "hint": "Aktiv olanda yalnız Amazon-un TBA kodları Aqualine-a çevrilir. USPS, UPS və FedEx izləmə kodları eBay-ə olduğu kimi yüklənir, göndərildi/çatdırıldı statusu Amazon-dakı statusa görə yenilənir və alıcıya müvafiq mesaj göndərilir."
+  },
+  "trackingDeliveryIssue": {
+    "delay": "Çatdırılma gecikir",
+    "attempted": "Çatdırılma cəhdi uğursuz",
+    "undeliverable": "Çatdırıla bilmir",
+    "returning": "Geri qaytarılır",
+    "newDate": "yeni tarix: {{date}}"
   }
 }

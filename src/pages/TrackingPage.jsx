@@ -574,6 +574,7 @@ async function pollExtensionJobUntilDone(jobId, { timeoutMs = 60_000, intervalMs
 }
 
 function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerUsername, shipToFullName }) {
+  const { t } = useTranslation();
   const [sendingToEbay, setSendingToEbay] = useState(false);
   const [getTrackingModal, setGetTrackingModal] = useState(null); // { phase, message }
   const [updateLabelsModal, setUpdateLabelsModal] = useState(null); // { phase, message }
@@ -793,6 +794,24 @@ function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerU
       </td>
       <td className="px-4 py-3">
         <FulfillmentStepper status={row.fulfillmentStatus} isDark={isDark} />
+        {/* Amazon's tracking page reported a delivery problem (delay / failed
+            attempt / undeliverable / returning — backend utils/deliveryIssue.js). */}
+        {row.deliveryIssue && row.fulfillmentStatus !== 'delivered' && (
+          <div
+            title={row.deliveryIssue.message || ''}
+            className={`mt-1.5 inline-flex max-w-[240px] items-start gap-1.5 rounded-lg border px-2 py-1 text-[11px] font-semibold leading-snug ${
+              row.deliveryIssue.type === 'delay'
+                ? isDark ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' : 'border-amber-200 bg-amber-50 text-amber-700'
+                : isDark ? 'border-rose-500/40 bg-rose-500/10 text-rose-300' : 'border-rose-200 bg-rose-50 text-rose-700'
+            }`}
+          >
+            <AlertTriangle size={12} className="mt-px shrink-0" />
+            <span>
+              {t(`trackingDeliveryIssue.${row.deliveryIssue.type}`, { defaultValue: t('trackingDeliveryIssue.delay') })}
+              {row.deliveryIssue.estimatedDate ? ` · ${t('trackingDeliveryIssue.newDate', { date: row.deliveryIssue.estimatedDate })}` : ''}
+            </span>
+          </div>
+        )}
         {/* Aquiline number takes priority when both exist; otherwise show the real
             carrier tracking number "Get Tracking" captured directly (it only ever
             differs from the Amazon order id once that's actually happened). The

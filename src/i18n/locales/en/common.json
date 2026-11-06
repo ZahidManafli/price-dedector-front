@@ -2069,5 +2069,12 @@
   "trackingTbaOnly": {
     "label": "Change only TBA",
     "hint": "When on, only Amazon TBA codes are converted via Aquiline. USPS, UPS and FedEx tracking numbers are posted to eBay as-is, their shipped/delivered status follows Amazon, and the buyer gets the matching message."
+  },
+  "trackingDeliveryIssue": {
+    "delay": "Delivery delayed",
+    "attempted": "Delivery attempt failed",
+    "undeliverable": "Undeliverable",
+    "returning": "Being returned",
+    "newDate": "new date: {{date}}"
   }
 }
