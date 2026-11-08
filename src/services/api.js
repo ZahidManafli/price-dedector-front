@@ -530,6 +530,12 @@ export const adminAPI = {
   listNotifications: () => api.get('/admin/notifications'),
   // admin sen dnotification
   sendNotification: (data) => api.post('/admin/notifications/send', data),
+  // gifts (Admin panel -> Hədiyyə)
+  listGifts: () => api.get('/admin/gifts'),
+  previewGift: (data) => api.post('/admin/gifts/preview', data),
+  createGift: (data) => api.post('/admin/gifts', data),
+  listGiftRecipients: (id) => api.get(`/admin/gifts/${encodeURIComponent(id)}/recipients`),
+  retryGift: (id) => api.post(`/admin/gifts/${encodeURIComponent(id)}/retry`),
   listMaintenanceWindows: () => api.get('/admin/maintenance'),
   createMaintenanceWindow: (data) => api.post('/admin/maintenance', data),
   updateMaintenanceFlag: (data) => api.patch('/admin/maintenance/flag', data),
