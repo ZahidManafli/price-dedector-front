@@ -7,7 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import PartnersManagement from '../components/PartnersManagement';
 import ZikAccounts from '../components/ZikAccounts';
 import ReferralManagementTab from '../components/ReferralManagementTab';
-import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle, CalendarClock, Clock3, ShieldAlert, Plus, X, Eye, Star, Check, Shield, ChevronDown, Zap, Globe, LifeBuoy } from 'lucide-react';
+import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle, CalendarClock, Clock3, ShieldAlert, Plus, X, Eye, Star, Check, Shield, ChevronDown, Zap, Globe, LifeBuoy, Inbox, Layers, Share2, Handshake, Bell, Sparkles, Gift, ShoppingCart, PlayCircle, Bot, KeyRound, Webhook, Wrench } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { TAB_KEYS, USER_DEFAULT_ALLOWED_TABS } from '../utils/planAccess';
 import * as XLSX from 'xlsx';
@@ -113,10 +113,154 @@ function defaultPlanForm() {
   };
 }
 
+const ADMIN_TAB_STORAGE_KEY = 'checkila.admin.activeTab';
+
+// Grouped navigation for the admin panel. labelKey is an i18n key where one
+// already exists; label is used otherwise.
+const ADMIN_NAV_GROUPS = [
+  {
+    title: 'İstifadəçilər və satış',
+    items: [
+      { key: 'users', labelKey: 'adminPanelPage.usersTab', icon: Users, description: 'Hesablar, planlar, limitlər və gəlir statistikası' },
+      { key: 'requests', labelKey: 'adminPanelPage.requestsTab', icon: Inbox, description: 'Plan və kredit sorğularının təsdiqi' },
+      { key: 'plans', labelKey: 'adminPanelPage.plansTab', icon: Layers, description: 'Abunə planları, qiymətlər və limitlər' },
+      { key: 'referrals', label: 'Referallar', icon: Share2, description: 'Referal kodları, qoşulan istifadəçilər və ödənişlər' },
+      { key: 'partners', labelKey: 'adminPanelPage.partnersTab', icon: Handshake, description: 'Tərəfdaş şirkətlər' },
+    ],
+  },
+  {
+    title: 'Kommunikasiya',
+    items: [
+      { key: 'notifications', labelKey: 'adminPanelPage.notificationsTab', icon: Bell, description: 'Bütün istifadəçilərə email və Telegram bildirişi' },
+      { key: 'whats-new', label: 'Yeniliklər', icon: Sparkles, description: 'İstifadəçilərin "Yeniliklər" panelində gördüyü elanlar' },
+      { key: 'gifts', label: 'Hədiyyə', icon: Gift, description: 'İstifadəçilərə Market Analysis və Tracking krediti hədiyyə et' },
+      { key: 'order-notifications', label: 'Sifariş bildirişləri', icon: ShoppingCart, description: 'eBay sifariş bildirişlərinin vəziyyəti və diaqnostikası' },
+    ],
+  },
+  {
+    title: 'Məzmun',
+    items: [
+      { key: 'videos', labelKey: 'adminPanelPage.videosTab', icon: PlayCircle, description: 'Təlim videoları' },
+      { key: 'reviews', label: 'Rəylər', icon: Star, description: 'İstifadəçi rəyləri' },
+      { key: 'ai-sellers', label: 'AI Sellers', icon: Bot, description: 'AI analiz satıcıları' },
+    ],
+  },
+  {
+    title: 'Sistem',
+    items: [
+      { key: 'zik-accounts', label: 'Zik Accounts', icon: KeyRound, description: 'Analiz məlumat mənbəyi hesabları' },
+      { key: 'stripe-webhooks', label: 'Stripe Webhooks', icon: Webhook, description: 'Stripe ödəniş hadisələri' },
+      { key: 'maintenance', label: 'Maintenance', icon: Wrench, description: 'Texniki xidmət rejimi və pəncərələri' },
+      { key: 'danger', labelKey: 'adminPanelPage.dangerZoneTab', icon: AlertTriangle, danger: true, description: 'Geri qaytarılmayan əməliyyatlar' },
+    ],
+  },
+];
+const ADMIN_NAV_ITEMS = ADMIN_NAV_GROUPS.flatMap((group) => group.items);
+const navLabel = (item, t) => (item.labelKey ? t(item.labelKey) : item.label);
+
+function AdminNav({ activeTab, onSelect, isDark, t }) {
+  const itemClass = (item, active) => {
+    if (active && item.danger) return isDark ? 'bg-red-500/15 text-red-300' : 'bg-red-50 text-red-700';
+    if (active) return isDark ? 'bg-blue-500/15 text-blue-300' : 'bg-blue-50 text-blue-700';
+    if (item.danger) return isDark ? 'text-red-400 hover:bg-red-500/10' : 'text-red-600 hover:bg-red-50';
+    return isDark ? 'text-slate-300 hover:bg-slate-800 hover:text-slate-100' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900';
+  };
+  return (
+    <>
+      {/* Phones / tablets: one scrollable row */}
+      <nav className={`-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 lg:hidden`} aria-label="Admin bölmələri">
+        {ADMIN_NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+          const active = activeTab === item.key;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => onSelect(item.key)}
+              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                active ? '' : isDark ? 'border-slate-800' : 'border-slate-200'
+              } ${active ? (isDark ? 'border-blue-500/40' : 'border-blue-200') : ''} ${itemClass(item, active)}`}
+            >
+              <Icon size={15} />
+              {navLabel(item, t)}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Desktop: grouped, sticky side navigation */}
+      <aside
+        className={`sticky top-4 hidden w-60 shrink-0 rounded-2xl border p-3 lg:block ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`}
+        aria-label="Admin bölmələri"
+      >
+        {ADMIN_NAV_GROUPS.map((group, index) => (
+          <div key={group.title} className={index > 0 ? 'mt-4' : ''}>
+            <p className={`mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{group.title}</p>
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const active = activeTab === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => onSelect(item.key)}
+                    aria-current={active ? 'page' : undefined}
+                    className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium transition ${itemClass(item, active)}`}
+                  >
+                    <Icon size={16} className="shrink-0" />
+                    <span className="truncate">{navLabel(item, t)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </aside>
+    </>
+  );
+}
+
+function AdminSectionHeader({ tab, isDark, t }) {
+  const item = ADMIN_NAV_ITEMS.find((entry) => entry.key === tab);
+  if (!item) return null;
+  const Icon = item.icon;
+  return (
+    <div className="mb-5 flex items-center gap-3">
+      <span
+        className={`flex h-9 w-9 items-center justify-center rounded-lg ${
+          item.danger ? (isDark ? 'bg-red-500/15 text-red-400' : 'bg-red-50 text-red-600') : isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'
+        }`}
+      >
+        <Icon size={18} />
+      </span>
+      <div className="min-w-0">
+        <h2 className={`text-lg font-semibold leading-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{navLabel(item, t)}</h2>
+        <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.description}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPanelPage() {
   const { isDark } = useTheme();
   const { t } = useTranslation('common');
-  const [activeTab, setActiveTab] = useState('users');
+  const [activeTab, setActiveTabState] = useState(() => {
+    try {
+      const saved = localStorage.getItem(ADMIN_TAB_STORAGE_KEY);
+      return ADMIN_NAV_ITEMS.some((item) => item.key === saved) ? saved : 'users';
+    } catch {
+      return 'users';
+    }
+  });
+  const setActiveTab = (key) => {
+    setActiveTabState(key);
+    try {
+      localStorage.setItem(ADMIN_TAB_STORAGE_KEY, key);
+    } catch {
+      // per-browser convenience only
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
 
@@ -859,118 +1003,27 @@ export default function AdminPanelPage() {
 
   return (
     <div className="page-shell">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-5 flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-          <div>
-            <h1 className="page-title flex items-center gap-2">
-              <ShieldCheck size={20} className="text-blue-600" />
-              {t('adminPanelPage.title')}
-            </h1>
-            <p className="page-subtitle">
-              {t('adminPanelPage.adminUsers')}: <span className="font-semibold">{adminCount}</span>
-            </p>
+      <div className="mx-auto max-w-[1520px]">
+        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${isDark ? 'bg-blue-500/15 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+              <ShieldCheck size={22} />
+            </span>
+            <div>
+              <h1 className={`text-2xl font-semibold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('adminPanelPage.title')}</h1>
+              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {t('adminPanelPage.adminUsers')}: <span className="font-semibold">{adminCount}</span>
+              </p>
+            </div>
           </div>
           <TutorialVideoButton />
         </div>
 
-        <div className="mb-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
-          <button
-            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'users' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
-            onClick={() => setActiveTab('users')}
-          >
-            {t('adminPanelPage.usersTab')}
-          </button>
-          <button
-            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'requests' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
-            onClick={() => setActiveTab('requests')}
-          >
-            {t('adminPanelPage.requestsTab')}
-          </button>
-            <button
-              className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'zik-accounts' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
-              onClick={() => setActiveTab('zik-accounts')}
-            >
-              Zik Accounts
-            </button>
-          <button
-            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'plans' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
-            onClick={() => setActiveTab('plans')}
-          >
-            {t('adminPanelPage.plansTab')}
-          </button>
-          <button
-            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'referrals' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
-            onClick={() => setActiveTab('referrals')}
-          >
-            Referals
-          </button>
-          <button
-            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'partners' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
-            onClick={() => setActiveTab('partners')}
-          >
-            {t('adminPanelPage.partnersTab')}
-          </button>
-          <button
-            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'notifications' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
-            onClick={() => setActiveTab('notifications')}
-          >
-            {t('adminPanelPage.notificationsTab')}
-          </button>
-          <button
-            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'maintenance' ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900' : 'text-slate-600 dark:text-slate-300'}`}
-            onClick={() => setActiveTab('maintenance')}
-          >
-            Maintenance
-          </button>
-          {/* <button
-            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'stripe-webhooks' ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
-            onClick={() => setActiveTab('stripe-webhooks')}
-          >
-            Stripe Webhooks
-          </button> */}
-          <button
-            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'videos' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
-            onClick={() => setActiveTab('videos')}
-          >
-            {t('adminPanelPage.videosTab')}
-          </button>
-          <button
-            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'reviews' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
-            onClick={() => setActiveTab('reviews')}
-          >
-            Rəylər
-          </button>
-          <button
-            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'ai-sellers' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
-            onClick={() => setActiveTab('ai-sellers')}
-          >
-            AI Sellers
-          </button>
-          <button
-            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'order-notifications' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
-            onClick={() => setActiveTab('order-notifications')}
-          >
-            Sifariş bildirişləri
-          </button>
-          <button
-            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'whats-new' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
-            onClick={() => setActiveTab('whats-new')}
-          >
-            Yeniliklər
-          </button>
-          <button
-            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'gifts' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
-            onClick={() => setActiveTab('gifts')}
-          >
-            Hədiyyə
-          </button>
-          <button
-            className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${activeTab === 'danger' ? 'bg-red-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
-            onClick={() => setActiveTab('danger')}
-          >
-            {t('adminPanelPage.dangerZoneTab')}
-          </button>
-        </div>
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          <AdminNav activeTab={activeTab} onSelect={setActiveTab} isDark={isDark} t={t} />
+
+          <main className="min-w-0 flex-1">
+            <AdminSectionHeader tab={activeTab} isDark={isDark} t={t} />
 
         {alert && (
           <div className="mb-4">
@@ -990,7 +1043,7 @@ export default function AdminPanelPage() {
                 <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="input-base pl-9 h-9 text-sm" placeholder={t('adminPanelPage.searchUsersPlaceholder')} />
               </div>
-              <select value={userBlockFilter} onChange={e => setUserBlockFilter(e.target.value)} className="input-base h-9 text-sm pr-8" style={{ minWidth: 130 }}>
+              <select value={userBlockFilter} onChange={e => setUserBlockFilter(e.target.value)} className="input-base h-9 w-auto text-sm pr-8" style={{ minWidth: 170 }}>
                 <option value="all">{t('adminPanelPage.allUsers')}</option>
                 <option value="blocked">{t('adminPanelPage.blockedOnly')}</option>
                 <option value="unblocked">{t('adminPanelPage.unblockedOnly')}</option>
@@ -2207,6 +2260,8 @@ export default function AdminPanelPage() {
             </div>
           </div>
         )}
+          </main>
+        </div>
       </div>
     </div>
   );
