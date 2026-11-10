@@ -1444,8 +1444,8 @@ export default function TrackingPage() {
     }
   };
 
-  // 3-month windows (backend GET /ebay/tracking?period=N): 0 = last 3 months,
-  // 1 = the 3 months before that, ... Filters and search apply within the window.
+  // 2-week windows (backend GET /ebay/tracking?period=N): 0 = last 14 days,
+  // 1 = the 14 days before that, ... Filters and search apply within the window.
   const [period, setPeriod] = useState(0);
   const [periodInfo, setPeriodInfo] = useState({ hasOlder: false, rangeFrom: null, rangeTo: null });
 
@@ -1848,7 +1848,7 @@ export default function TrackingPage() {
                       {rows.length === 0
                         ? period === 0
                           ? periodInfo.hasOlder
-                            ? 'No tracked orders in the last 3 months. Use "Older" below to see earlier ones.'
+                            ? 'No tracked orders in the last 2 weeks. Use "Older" below to see earlier ones.'
                             : 'No tracked orders yet.'
                           : 'No tracked orders in this period.'
                         : searchTerm
