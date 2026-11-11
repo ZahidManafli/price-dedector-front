@@ -1330,7 +1330,29 @@
     "messages": "Messages",
     "onThisPage": "{{count}} orders on this page",
     "toShipBanner": "{{count}} orders are waiting to be shipped",
-    "showToShip": "Show"
+    "showToShip": "Show",
+    "tracking": {
+      "colTracking": "Tracking",
+      "add": "Add tracking",
+      "modalTitle": "Add tracking number",
+      "number": "Tracking number",
+      "carrier": "Carrier",
+      "carrierAuto": "Detected automatically from the number",
+      "carrierHint": "USPS, UPS and FedEx numbers are supported.",
+      "tbaHint": "Amazon TBA codes cannot be posted to eBay directly. Add them from the Tracking page.",
+      "unknownHint": "No carrier matches this number. Check it (USPS, UPS or FedEx).",
+      "whatHappens": "On confirm the number is uploaded to the eBay order, the order is marked shipped and the buyer gets the shipped message.",
+      "submit": "Upload to eBay",
+      "submitting": "Uploading…",
+      "cancel": "Cancel",
+      "failed": "Failed to upload tracking",
+      "statusOrdered": "Ordered",
+      "statusShipped": "Shipped",
+      "statusDelivered": "Delivered",
+      "notOnEbay": "Not on eBay yet",
+      "copy": "Copy",
+      "copied": "Copied"
+    }
   },
   "profitTablePage": {
     "title": "Profit Table",

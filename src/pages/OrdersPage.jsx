@@ -6,8 +6,9 @@ import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
 import {
   ArrowDownUp, ArrowUp, ArrowDown, Loader2, MessageSquare, Link2, Search, ShoppingCart, Check, X, TrendingUp, Copy, Info,
-  ChevronLeft, ChevronRight, ImageOff, PackageOpen, CreditCard,
+  ChevronLeft, ChevronRight, ImageOff, PackageOpen, CreditCard, Plus, AlertTriangle,
 } from 'lucide-react';
+import AddTrackingModal from '../components/order/AddTrackingModal';
 import OrderMessageSidebar from '../components/OrderMessageSidebar';
 import OrderDetailModal from '../components/OrderDetailModal';
 import EbayAccountSwitcher from '../components/EbayAccountSwitcher';
@@ -906,6 +907,138 @@ export default function OrdersPage() {
     return d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   };
 
+  // ── Tracking per order (backend POST /ebay/orders/tracking-summary) ─────────
+  const [trackingByOrderId, setTrackingByOrderId] = useState({});
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [addTrackingOrder, setAddTrackingOrder] = useState(null);
+  const [copiedTracking, setCopiedTracking] = useState(null);
+
+  useEffect(() => {
+    const ids = (orders || []).map((o) => String(o?.orderId || '')).filter(Boolean);
+    if (!ids.length) {
+      setTrackingByOrderId({});
+      return undefined;
+    }
+    let cancelled = false;
+    setTrackingLoading(true);
+    ebayAPI
+      .getOrdersTrackingSummary(ids)
+      .then((res) => { if (!cancelled) setTrackingByOrderId(res?.data?.tracking || {}); })
+      .catch(() => { if (!cancelled) setTrackingByOrderId({}); })
+      .finally(() => { if (!cancelled) setTrackingLoading(false); });
+    return () => { cancelled = true; };
+  }, [orders]);
+
+  const handleTrackingSaved = (orderId, tracking) => {
+    setTrackingByOrderId((prev) => ({ ...prev, [orderId]: tracking }));
+    // eBay now has a shipment for it — reflect that in the row without a reload.
+    setOrders((prev) =>
+      prev.map((o) => (String(o?.orderId) === String(orderId) ? { ...o, orderFulfillmentStatus: 'FULFILLED' } : o))
+    );
+  };
+
+  const copyTracking = async (orderId, number) => {
+    try {
+      await navigator.clipboard.writeText(number);
+      setCopiedTracking(orderId);
+      setTimeout(() => setCopiedTracking((cur) => (cur === orderId ? null : cur)), 1500);
+    } catch {
+      // clipboard unavailable
+    }
+  };
+
+  // Same Ordered -> Shipped -> Delivered stages as the Tracking page.
+  const renderTrackingCell = (order, shipmentStatus) => {
+    const orderId = String(order?.orderId || '');
+    const info = trackingByOrderId[orderId];
+    const canAdd = shipmentStatus === 'NOT_STARTED' && !isOrderCancelled(order);
+
+    if (!info || !info.trackingNumber) {
+      if (trackingLoading && !info) return <Loader2 size={13} className={`animate-spin ${faint}`} />;
+      const stage = info?.fulfillmentStatus;
+      return (
+        <div className="flex flex-col items-start gap-1.5">
+          {stage && stage !== 'ordered' && trackingStage(stage)}
+          {canAdd ? (
+            <button
+              type="button"
+              onClick={() => setAddTrackingOrder(order)}
+              className={`inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-dashed px-2 py-1 text-xs font-medium transition ${
+                isDark ? 'border-slate-700 text-slate-300 hover:border-indigo-500 hover:text-indigo-300' : 'border-slate-300 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'
+              }`}
+            >
+              <Plus size={12} />
+              {t('ordersPage.tracking.add')}
+            </button>
+          ) : (
+            !stage && <span className={faint}>—</span>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex min-w-[170px] flex-col items-start gap-1.5">
+        <div className="flex items-center gap-1.5">
+          {info.carrier && (
+            <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wide ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+              {info.carrier}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => copyTracking(orderId, info.trackingNumber)}
+            title={copiedTracking === orderId ? t('ordersPage.tracking.copied') : t('ordersPage.tracking.copy')}
+            className={`inline-flex items-center gap-1 font-mono text-xs ${isDark ? 'text-indigo-300 hover:text-indigo-200' : 'text-indigo-600 hover:text-indigo-800'}`}
+          >
+            {info.trackingNumber}
+            {copiedTracking === orderId ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} className="opacity-60" />}
+          </button>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {trackingStage(info.fulfillmentStatus)}
+          {!info.uploadedToEbay && (
+            <span className={`text-[11px] ${isDark ? 'text-amber-300' : 'text-amber-600'}`}>{t('ordersPage.tracking.notOnEbay')}</span>
+          )}
+        </div>
+        {info.deliveryIssue && info.fulfillmentStatus !== 'delivered' && (
+          <span
+            title={info.deliveryIssue.message || ''}
+            className={`inline-flex max-w-[220px] items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-50 text-amber-700'}`}
+          >
+            <AlertTriangle size={11} className="shrink-0" />
+            <span className="truncate">{info.deliveryIssue.message || info.deliveryIssue.type}</span>
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  // Ordered -> Shipped -> Delivered mini stepper.
+  function trackingStage(status) {
+    const steps = ['ordered', 'shipped', 'delivered'];
+    const current = Math.max(0, steps.indexOf(status === 'shipped' || status === 'delivered' ? status : 'ordered'));
+    const labels = [t('ordersPage.tracking.statusOrdered'), t('ordersPage.tracking.statusShipped'), t('ordersPage.tracking.statusDelivered')];
+    const done = current === 2;
+    return (
+      <span className="inline-flex items-center gap-1.5" title={labels[current]}>
+        <span className="inline-flex items-center">
+          {steps.map((s, i) => (
+            <React.Fragment key={s}>
+              {i > 0 && <span className={`h-0.5 w-2.5 ${i <= current ? 'bg-emerald-500' : isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />}
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  done || i < current ? 'bg-emerald-500' : i === current ? 'bg-blue-500' : isDark ? 'bg-slate-700' : 'bg-slate-300'
+                }`}
+              />
+            </React.Fragment>
+          ))}
+        </span>
+        <span className={`text-xs font-medium ${done ? 'text-emerald-500' : isDark ? 'text-slate-300' : 'text-slate-600'}`}>{labels[current]}</span>
+      </span>
+    );
+  }
+
   // Shipment tabs (drive fulfillmentFilter); counts are for the loaded page.
   const shipmentCounts = useMemo(() => {
     const counts = { ALL: orders.length, NOT_STARTED: 0, FULFILLED: 0, ORDER_CANCELLED: 0 };
@@ -1098,6 +1231,7 @@ export default function OrdersPage() {
                       <th className="px-4 py-3 text-left">{sortHeader('creationDate', t('ordersPage.colOrder'))}</th>
                       <th className="px-4 py-3 text-left">{t('ordersPage.table.buyer')}</th>
                       <th className="px-4 py-3 text-left">{sortHeader('fulfillment', t('ordersPage.colStatus'))}</th>
+                      <th className="px-4 py-3 text-left">{t('ordersPage.tracking.colTracking')}</th>
                       <th className="px-4 py-3 text-right">{sortHeader('total', t('ordersPage.table.total'), 'right')}</th>
                       <th className="px-4 py-3 text-left">Amazon</th>
                       <th className="px-4 py-3 text-left">{t('ordersPage.colProfit')}</th>
@@ -1181,6 +1315,9 @@ export default function OrdersPage() {
                             </div>
                           </td>
 
+                          {/* Tracking (from the Tracking page's records) */}
+                          <td className="px-4 py-3">{renderTrackingCell(order, shipmentStatus)}</td>
+
                           {/* Total */}
                           <td className={`whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums ${strong}`}>
                             {totalValue != null ? `${totalValue} ${totalCurrency || ''}`.trim() : '—'}
@@ -1255,7 +1392,7 @@ export default function OrdersPage() {
 
                     {filteredOrders.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="px-4 py-16 text-center">
+                        <td colSpan={8} className="px-4 py-16 text-center">
                           <div className="flex flex-col items-center">
                             <span className={`mb-3 flex h-12 w-12 items-center justify-center rounded-full ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-400'}`}>
                               <PackageOpen size={20} />
@@ -1301,6 +1438,15 @@ export default function OrdersPage() {
         <OrderMessageSidebar
           order={messagePanelOrder}
           onClose={() => setMessagePanelOrder(null)}
+        />
+      )}
+
+      {addTrackingOrder && (
+        <AddTrackingModal
+          order={addTrackingOrder}
+          isDark={isDark}
+          onClose={() => setAddTrackingOrder(null)}
+          onSaved={handleTrackingSaved}
         />
       )}
 

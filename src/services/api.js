@@ -331,6 +331,10 @@ export const ebayAPI = {
   uploadOrderTrackingToEbay: (orderId, payload) =>
     api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/upload-ebay`, payload),
   listTracking: (params = {}) => api.get('/ebay/tracking', { params }),
+  // Orders page: tracking per order + adding a USPS/UPS/FedEx number by hand.
+  getOrdersTrackingSummary: (orderIds) => api.post('/ebay/orders/tracking-summary', { orderIds }),
+  addManualTracking: (orderId, trackingNumber) =>
+    api.post(`/ebay/orders/${encodeURIComponent(orderId)}/tracking/manual`, { trackingNumber }),
   getTrackingSettings: () => api.get('/ebay/tracking/settings'),
   updateTrackingSettings: (payload) => api.put('/ebay/tracking/settings', payload),
   submitAmazonOrderId: (orderId, payload) =>

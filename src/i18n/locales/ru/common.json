@@ -953,7 +953,29 @@
     "messages": "Сообщения",
     "onThisPage": "Заказов на странице: {{count}}",
     "toShipBanner": "Ожидают отправки: {{count}}",
-    "showToShip": "Показать"
+    "showToShip": "Показать",
+    "tracking": {
+      "colTracking": "Трекинг",
+      "add": "Добавить трекинг",
+      "modalTitle": "Добавить трек-номер",
+      "number": "Трек-номер",
+      "carrier": "Перевозчик",
+      "carrierAuto": "Определяется автоматически по номеру",
+      "carrierHint": "Поддерживаются номера USPS, UPS и FedEx.",
+      "tbaHint": "Коды Amazon TBA нельзя отправить в eBay напрямую. Добавьте их на странице Tracking.",
+      "unknownHint": "Перевозчик по этому номеру не найден. Проверьте номер (USPS, UPS или FedEx).",
+      "whatHappens": "После подтверждения номер загрузится в заказ eBay, заказ станет «Отправлен», покупателю уйдёт сообщение об отправке.",
+      "submit": "Загрузить в eBay",
+      "submitting": "Загрузка…",
+      "cancel": "Отмена",
+      "failed": "Не удалось загрузить трекинг",
+      "statusOrdered": "Заказан",
+      "statusShipped": "Отправлен",
+      "statusDelivered": "Доставлен",
+      "notOnEbay": "Ещё не в eBay",
+      "copy": "Копировать",
+      "copied": "Скопировано"
+    }
   },
   "profitTablePage": {
     "title": "Таблица прибыли",

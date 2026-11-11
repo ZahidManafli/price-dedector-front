@@ -945,7 +945,29 @@
     "messages": "Mesajlar",
     "onThisPage": "Bu sayfada {{count}} sipariş",
     "toShipBanner": "{{count}} sipariş gönderilmeyi bekliyor",
-    "showToShip": "Göster"
+    "showToShip": "Göster",
+    "tracking": {
+      "colTracking": "Takip",
+      "add": "Takip ekle",
+      "modalTitle": "Takip numarası ekle",
+      "number": "Takip numarası",
+      "carrier": "Kargo firması",
+      "carrierAuto": "Numaradan otomatik belirlenir",
+      "carrierHint": "USPS, UPS ve FedEx numaraları desteklenir.",
+      "tbaHint": "Amazon TBA kodları doğrudan eBay'e gönderilemez. Tracking sayfasından ekleyin.",
+      "unknownHint": "Bu numaradan kargo firması bulunamadı. Numarayı kontrol edin (USPS, UPS veya FedEx).",
+      "whatHappens": "Onaylayınca numara eBay siparişine yüklenir, sipariş gönderildi olarak işaretlenir ve alıcıya gönderim mesajı gider.",
+      "submit": "eBay'e yükle",
+      "submitting": "Yükleniyor…",
+      "cancel": "İptal",
+      "failed": "Takip yüklenemedi",
+      "statusOrdered": "Sipariş verildi",
+      "statusShipped": "Gönderildi",
+      "statusDelivered": "Teslim edildi",
+      "notOnEbay": "Henüz eBay'de değil",
+      "copy": "Kopyala",
+      "copied": "Kopyalandı"
+    }
   },
   "profitTablePage": {
     "title": "Kâr Tablosu",

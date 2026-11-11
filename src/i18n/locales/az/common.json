@@ -1100,7 +1100,29 @@
     "messages": "Mesajlar",
     "onThisPage": "Bu səhifədə {{count}} sifariş",
     "toShipBanner": "{{count}} sifariş göndərilməyi gözləyir",
-    "showToShip": "Göstər"
+    "showToShip": "Göstər",
+    "tracking": {
+      "colTracking": "Tracking",
+      "add": "Tracking əlavə et",
+      "modalTitle": "Tracking nömrəsi əlavə et",
+      "number": "Tracking nömrəsi",
+      "carrier": "Carrier",
+      "carrierAuto": "Nömrəyə görə avtomatik təyin olunur",
+      "carrierHint": "USPS, UPS və FedEx nömrələri dəstəklənir.",
+      "tbaHint": "Amazon TBA kodları birbaşa eBay-ə göndərilmir. Onları Tracking səhifəsindən əlavə edin.",
+      "unknownHint": "Bu nömrədən carrier tapılmadı. Nömrəni yoxlayın (USPS, UPS və ya FedEx).",
+      "whatHappens": "Təsdiqlədikdə nömrə eBay sifarişinə yüklənəcək, sifariş \"Göndərilib\" olacaq və alıcıya göndəriş mesajı gedəcək.",
+      "submit": "eBay-ə yüklə",
+      "submitting": "Yüklənir…",
+      "cancel": "Ləğv et",
+      "failed": "Tracking yüklənmədi",
+      "statusOrdered": "Sifariş verilib",
+      "statusShipped": "Göndərilib",
+      "statusDelivered": "Çatdırılıb",
+      "notOnEbay": "eBay-ə yüklənməyib",
+      "copy": "Kopyala",
+      "copied": "Kopyalandı"
+    }
   },
   "profitTablePage": {
     "title": "Mənfəət Cədvəli",
