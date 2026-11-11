@@ -1304,7 +1304,33 @@
       "page": "Page {{page}}",
       "previous": "Previous",
       "next": "Next"
-    }
+    },
+    "subtitle": "Your eBay orders with Amazon ordering and shipment status in one place",
+    "tabs": {
+      "all": "All",
+      "toShip": "To ship",
+      "shipped": "Shipped",
+      "cancelled": "Cancelled"
+    },
+    "status": {
+      "PAID": "Paid",
+      "FULLY_REFUNDED": "Refunded",
+      "PARTIALLY_REFUNDED": "Partially refunded",
+      "PENDING": "Pending",
+      "FAILED": "Failed",
+      "NOT_STARTED": "Not shipped",
+      "IN_PROGRESS": "In progress",
+      "FULFILLED": "Shipped",
+      "ORDER_CANCELLED": "Cancelled"
+    },
+    "paymentAll": "All payments",
+    "colOrder": "Order",
+    "colStatus": "Status",
+    "colProfit": "Profit",
+    "messages": "Messages",
+    "onThisPage": "{{count}} orders on this page",
+    "toShipBanner": "{{count}} orders are waiting to be shipped",
+    "showToShip": "Show"
   },
   "profitTablePage": {
     "title": "Profit Table",

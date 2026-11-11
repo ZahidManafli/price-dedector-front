@@ -4,7 +4,10 @@ import { ebayAPI, productAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
-import { ArrowDownUp, Loader2, MessageSquare, Package, Link2, Search, SlidersHorizontal, ShoppingCart, Check, X, TrendingUp, Copy, Info } from 'lucide-react';
+import {
+  ArrowDownUp, ArrowUp, ArrowDown, Loader2, MessageSquare, Link2, Search, ShoppingCart, Check, X, TrendingUp, Copy, Info,
+  ChevronLeft, ChevronRight, ImageOff, PackageOpen, CreditCard,
+} from 'lucide-react';
 import OrderMessageSidebar from '../components/OrderMessageSidebar';
 import OrderDetailModal from '../components/OrderDetailModal';
 import EbayAccountSwitcher from '../components/EbayAccountSwitcher';
@@ -149,28 +152,56 @@ function CopyAddressButton({ order, isDark, t }) {
     setTimeout(() => setStatus(null), 4000);
   };
 
+  // Compact icon button; the result shows on the icon itself and in its tooltip
+  // so the row layout never jumps.
+  const message =
+    status === 'success'
+      ? t('ordersPage.table.copyAddressSuccess')
+      : status === 'error'
+      ? t('ordersPage.table.copyAddressError')
+      : status === 'unavailable'
+      ? t('ordersPage.table.copyAddressUnavailable')
+      : status === 'copying'
+      ? t('ordersPage.table.copyingAddress')
+      : t('ordersPage.table.copyAddress');
+  const tone =
+    status === 'success'
+      ? isDark ? 'bg-emerald-500/15 text-emerald-300' : 'bg-emerald-50 text-emerald-600'
+      : status === 'error' || status === 'unavailable'
+      ? isDark ? 'bg-rose-500/15 text-rose-300' : 'bg-rose-50 text-rose-600'
+      : isDark ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-100' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900';
+
   return (
-    <div className="flex flex-col items-start gap-1">
+    <span className="relative inline-flex">
       <button
         type="button"
         onClick={handleClick}
         disabled={status === 'copying'}
-        title={t('ordersPage.table.copyAddress')}
-        className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors ${
-          status === 'copying' ? 'opacity-50 cursor-not-allowed' : ''
-        } ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}
+        title={message}
+        aria-label={message}
+        className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition disabled:cursor-not-allowed ${tone}`}
       >
-        {status === 'copying' ? <Loader2 size={12} className="animate-spin" /> : <Copy size={12} />}
-        {status === 'copying' ? t('ordersPage.table.copyingAddress') : t('ordersPage.table.copyAddress')}
+        {status === 'copying' ? (
+          <Loader2 size={15} className="animate-spin" />
+        ) : status === 'success' ? (
+          <Check size={15} />
+        ) : status === 'error' || status === 'unavailable' ? (
+          <X size={15} />
+        ) : (
+          <Copy size={15} />
+        )}
       </button>
       {status && status !== 'copying' && (
-        <span className={`text-[10px] leading-tight max-w-[160px] ${status === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
-          {status === 'success' && t('ordersPage.table.copyAddressSuccess')}
-          {status === 'error' && t('ordersPage.table.copyAddressError')}
-          {status === 'unavailable' && t('ordersPage.table.copyAddressUnavailable')}
+        <span
+          role="status"
+          className={`pointer-events-none absolute right-0 top-full z-20 mt-1 w-56 rounded-lg px-2.5 py-1.5 text-left text-[11px] leading-snug shadow-lg ${
+            status === 'success' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
+          }`}
+        >
+          {message}
         </span>
       )}
-    </div>
+    </span>
   );
 }
 
@@ -806,6 +837,92 @@ export default function OrdersPage() {
     }
   };
 
+  // ── Presentation helpers ───────────────────────────────────────────────────
+  const card = `rounded-2xl border ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`;
+  const muted = isDark ? 'text-slate-400' : 'text-slate-500';
+  const faint = isDark ? 'text-slate-500' : 'text-slate-400';
+  const strong = isDark ? 'text-slate-100' : 'text-slate-900';
+  const body = isDark ? 'text-slate-200' : 'text-slate-700';
+  const fieldCls = `rounded-lg border text-sm outline-none transition focus:ring-2 ${
+    isDark
+      ? 'bg-slate-950 border-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500/30'
+      : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-indigo-100'
+  }`;
+  const iconBtn = `inline-flex h-8 w-8 items-center justify-center rounded-lg transition ${
+    isDark ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-100' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+  }`;
+
+  const sortHeader = (key, label, align = 'left') => {
+    const active = sortKey === key;
+    const Arrow = !active ? ArrowDownUp : sortDir === 'asc' ? ArrowUp : ArrowDown;
+    return (
+      <button
+        type="button"
+        onClick={() => onSort(key)}
+        className={`inline-flex items-center gap-1 uppercase tracking-wider transition ${align === 'right' ? 'flex-row-reverse' : ''} ${
+          active ? (isDark ? 'text-slate-100' : 'text-slate-900') : ''
+        }`}
+      >
+        {label}
+        <Arrow size={12} className={active ? 'opacity-100' : 'opacity-40'} />
+      </button>
+    );
+  };
+
+  // Human-readable status chips instead of raw eBay enums.
+  const statusChip = (value) => {
+    const v = String(value || '').toUpperCase();
+    const tones = {
+      good: isDark ? 'bg-emerald-500/10 text-emerald-300' : 'bg-emerald-50 text-emerald-700',
+      warn: isDark ? 'bg-amber-500/10 text-amber-300' : 'bg-amber-50 text-amber-700',
+      bad: isDark ? 'bg-rose-500/10 text-rose-300' : 'bg-rose-50 text-rose-700',
+      info: isDark ? 'bg-indigo-500/10 text-indigo-300' : 'bg-indigo-50 text-indigo-700',
+      neutral: isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600',
+    };
+    const dots = { good: 'bg-emerald-500', warn: 'bg-amber-500', bad: 'bg-rose-500', info: 'bg-indigo-500', neutral: 'bg-slate-400' };
+    const tone =
+      v === 'PAID' || v === 'FULFILLED'
+        ? 'good'
+        : v === 'NOT_STARTED' || v === 'PENDING'
+        ? 'warn'
+        : v.includes('REFUND') || v === 'ORDER_CANCELLED' || v === 'FAILED'
+        ? 'bad'
+        : v === 'IN_PROGRESS'
+        ? 'info'
+        : 'neutral';
+    const label = v && v !== '-' ? t(`ordersPage.status.${v}`, { defaultValue: v.replace(/_/g, ' ').toLowerCase() }) : '—';
+    return (
+      <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${tones[tone]}`}>
+        <span className={`h-1.5 w-1.5 rounded-full ${dots[tone]}`} />
+        {label}
+      </span>
+    );
+  };
+
+  const formatOrderDate = (value) => {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Shipment tabs (drive fulfillmentFilter); counts are for the loaded page.
+  const shipmentCounts = useMemo(() => {
+    const counts = { ALL: orders.length, NOT_STARTED: 0, FULFILLED: 0, ORDER_CANCELLED: 0 };
+    orders.forEach((o) => {
+      const s = getDerivedShipmentStatus(o);
+      if (counts[s] !== undefined) counts[s] += 1;
+    });
+    return counts;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders]);
+  const shipmentTabs = [
+    { key: 'ALL', label: t('ordersPage.tabs.all') },
+    { key: 'NOT_STARTED', label: t('ordersPage.tabs.toShip'), warn: true },
+    { key: 'FULFILLED', label: t('ordersPage.tabs.shipped') },
+    { key: 'ORDER_CANCELLED', label: t('ordersPage.tabs.cancelled') },
+  ];
+
   if (loading) {
     return (
       <div className="page-shell flex items-center justify-center">
@@ -816,17 +933,28 @@ export default function OrdersPage() {
 
   return (
     <div className="page-shell">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="page-title flex items-center gap-2">
-            <Package size={18} />
-            {t('ordersPage.title')}
-          </h1>
-          <TutorialVideoButton />
-        </div>
-        {ebayStatus.connected ? (
-          <div className={`text-sm flex items-center gap-3 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-            {(ebayStatus.activeAccountLabel || ebayStatus.accountId) ? (
+      <div className="w-full space-y-5">
+        {/* ── Header ── */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${isDark ? 'bg-indigo-500/15 text-indigo-300' : 'bg-indigo-50 text-indigo-600'}`}>
+              <ShoppingCart size={22} />
+            </span>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className={`text-2xl font-semibold tracking-tight ${strong}`}>{t('ordersPage.title')}</h1>
+                {typeof total === 'number' && (
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                    {total}
+                  </span>
+                )}
+              </div>
+              <p className={`text-sm ${muted}`}>{t('ordersPage.subtitle')}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <TutorialVideoButton />
+            {ebayStatus.connected && (ebayStatus.activeAccountLabel || ebayStatus.accountId) ? (
               <EbayAccountSwitcher
                 accounts={ebayAccounts}
                 activeAccountId={activeEbayAccountId}
@@ -837,318 +965,337 @@ export default function OrdersPage() {
                 isDark={isDark}
               />
             ) : null}
-            {typeof total === 'number' ? `${t('ordersPage.table.total')}: ${total}` : null}
           </div>
-        ) : null}
-      </div>
-
-      {error && (
-        <div className="mb-4">
-          <Alert type="error" message={error} onClose={() => setError(null)} />
         </div>
-      )}
 
-      {!ebayStatus.connected ? (
-        <>
-          <div
-            className={`rounded-xl p-6 text-center border ${
-              isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-white border-slate-200'
-            }`}
-          >
-              <p className={`${isDark ? 'text-slate-300' : 'text-slate-600'} mb-4`}> 
-              {t('ordersPage.connectPrompt')}
-            </p>
-            <button type="button" onClick={handleConnect} className="btn-primary inline-flex items-center gap-2">
-              <Link2 size={16} />
-              {t('ordersPage.connectButton')}
-            </button>
-          </div>
+        {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
 
-          {showConnectModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-              <div
-                className={`w-full max-w-md p-6 rounded-xl border ${
-                  isDark ? 'bg-slate-900/80 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-900'
-                }`}
-              >
-                <h2 className="text-lg font-semibold mb-2" style={{ color: isDark ? '#e2e8f0' : undefined }}>
-                  {t('ordersPage.signinRequired')}
-                </h2>
-                <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  {t('ordersPage.signinDescription')}
+        {!ebayStatus.connected ? (
+          <>
+            <div className={`${card} flex flex-col items-center px-6 py-14 text-center`}>
+              <span className={`mb-4 flex h-14 w-14 items-center justify-center rounded-2xl ${isDark ? 'bg-indigo-500/15 text-indigo-300' : 'bg-indigo-50 text-indigo-600'}`}>
+                <Link2 size={24} />
+              </span>
+              <p className={`mb-5 max-w-md text-sm ${muted}`}>{t('ordersPage.connectPrompt')}</p>
+              <button type="button" onClick={handleConnect} className="btn-primary inline-flex items-center gap-2">
+                <Link2 size={16} />
+                {t('ordersPage.connectButton')}
+              </button>
+            </div>
+
+            {showConnectModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+                <div className={`w-full max-w-md rounded-2xl p-6 shadow-2xl ${isDark ? 'bg-slate-900 ring-1 ring-slate-800' : 'bg-white'}`}>
+                  <h2 className={`mb-2 text-lg font-semibold ${strong}`}>{t('ordersPage.signinRequired')}</h2>
+                  <p className={`mb-5 text-sm ${muted}`}>{t('ordersPage.signinDescription')}</p>
+                  <div className="flex justify-end gap-3">
+                    <button type="button" className="btn-secondary" onClick={() => setShowConnectModal(false)}>
+                      {t('listingModal.close')}
+                    </button>
+                    <button type="button" className="btn-primary inline-flex items-center gap-2" onClick={handleConnect}>
+                      <Link2 size={16} />
+                      {t('ordersPage.connectButton')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* ── To-ship nudge ── */}
+            {shipmentCounts.NOT_STARTED > 0 && fulfillmentFilter !== 'NOT_STARTED' && (
+              <div className={`flex flex-wrap items-center gap-3 rounded-2xl border px-4 py-3 ${isDark ? 'border-amber-800/60 bg-amber-950/20' : 'border-amber-200 bg-amber-50'}`}>
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-700'}`}>
+                  <PackageOpen size={16} />
+                </span>
+                <p className={`flex-1 text-sm font-medium ${isDark ? 'text-amber-200' : 'text-amber-900'}`}>
+                  {t('ordersPage.toShipBanner', { count: shipmentCounts.NOT_STARTED })}
                 </p>
-                <div className="flex gap-3 justify-end">
-                  <button type="button" className="btn-secondary" onClick={() => setShowConnectModal(false)}>
-                    {t('listingModal.close')}
+                <button
+                  type="button"
+                  onClick={() => setFulfillmentFilter('NOT_STARTED')}
+                  className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
+                >
+                  {t('ordersPage.showToShip')}
+                </button>
+              </div>
+            )}
+
+            <div className={`${card} overflow-hidden`}>
+              {/* Shipment tabs */}
+              <div className={`flex gap-1 overflow-x-auto border-b px-4 pt-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`} role="tablist">
+                {shipmentTabs.map((tab) => {
+                  const active = String(fulfillmentFilter || 'ALL').toUpperCase() === tab.key;
+                  const count = shipmentCounts[tab.key];
+                  const highlight = tab.warn && count > 0;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setFulfillmentFilter(tab.key)}
+                      className={`-mb-px inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-3 pb-2.5 pt-1 text-sm font-medium transition ${
+                        active
+                          ? highlight
+                            ? 'border-amber-500 text-amber-600'
+                            : isDark ? 'border-indigo-400 text-slate-100' : 'border-indigo-600 text-slate-900'
+                          : `border-transparent ${muted} ${isDark ? 'hover:text-slate-200' : 'hover:text-slate-800'}`
+                      }`}
+                    >
+                      {tab.label}
+                      <span
+                        className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${
+                          highlight
+                            ? isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-700'
+                            : isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Toolbar */}
+              <div className={`flex flex-wrap items-center gap-3 border-b px-4 py-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <label className="relative min-w-[220px] flex-1">
+                  <Search size={15} className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${faint}`} />
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={t('ordersPage.searchPlaceholder')}
+                    className={`${fieldCls} w-full py-2 pl-9 pr-9`}
+                  />
+                  {query && (
+                    <button type="button" onClick={() => setQuery('')} aria-label="Clear" className={`absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 ${faint} hover:opacity-80`}>
+                      <X size={14} />
+                    </button>
+                  )}
+                </label>
+                <label className="relative">
+                  <CreditCard size={14} className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${faint}`} />
+                  <select
+                    value={paymentFilter}
+                    onChange={(e) => setPaymentFilter(e.target.value)}
+                    className={`${fieldCls} py-2 pl-8 pr-8`}
+                  >
+                    <option value="ALL">{t('ordersPage.paymentAll')}</option>
+                    <option value="PAID">{t('ordersPage.status.PAID')}</option>
+                    <option value="FULLY_REFUNDED">{t('ordersPage.status.FULLY_REFUNDED')}</option>
+                  </select>
+                </label>
+                <span className={`ml-auto text-xs ${muted}`}>{t('ordersPage.onThisPage', { count: filteredOrders.length })}</span>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className={`text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'bg-slate-900 text-slate-500' : 'bg-slate-50/80 text-slate-500'}`}>
+                      <th className="px-4 py-3 text-left">{sortHeader('creationDate', t('ordersPage.colOrder'))}</th>
+                      <th className="px-4 py-3 text-left">{t('ordersPage.table.buyer')}</th>
+                      <th className="px-4 py-3 text-left">{sortHeader('fulfillment', t('ordersPage.colStatus'))}</th>
+                      <th className="px-4 py-3 text-right">{sortHeader('total', t('ordersPage.table.total'), 'right')}</th>
+                      <th className="px-4 py-3 text-left">Amazon</th>
+                      <th className="px-4 py-3 text-left">{t('ordersPage.colProfit')}</th>
+                      <th className="px-4 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody className={isDark ? 'divide-y divide-slate-800' : 'divide-y divide-slate-100'}>
+                    {filteredOrders.map((order) => {
+                      const id = order.orderId;
+                      const listingId = String(order?.lineItems?.[0]?.legacyItemId || '').trim();
+                      const listingImageUrl = listingId ? listingImageById.get(listingId) || '' : '';
+                      const payment = order.orderPaymentStatus || '-';
+                      const shipmentStatus = getDerivedShipmentStatus(order);
+                      const totalValue = order?.pricingSummary?.total?.value;
+                      const totalCurrency = order?.pricingSummary?.total?.currency;
+                      const buyer = getBuyerDisplay(order);
+                      const username = String(order?.buyer?.username || '').trim();
+                      const fullName = String(order?.buyer?.buyerRegistrationAddress?.fullName || '').trim();
+                      const itemTitle = order?.lineItems?.[0]?.title || '';
+                      const quantity = Number(order?.lineItems?.[0]?.quantity || 1);
+                      const matchedProduct = listingId ? productByItemId.get(listingId) : null;
+                      const toShip = shipmentStatus === 'NOT_STARTED';
+                      const openDetails = () => navigate(`/orders/${encodeURIComponent(String(id))}`, { state: { order } });
+
+                      return (
+                        <tr
+                          key={id}
+                          className={`group align-middle transition-colors ${
+                            toShip
+                              ? isDark ? 'bg-amber-500/[0.04] hover:bg-amber-500/[0.08]' : 'bg-amber-50/40 hover:bg-amber-50/80'
+                              : isDark ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50/70'
+                          }`}
+                        >
+                          {/* Order: image + item + id + date */}
+                          <td className="px-4 py-3">
+                            <div className="flex min-w-[280px] max-w-[420px] items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={openDetails}
+                                className={`h-14 w-14 shrink-0 overflow-hidden rounded-lg border ${isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}
+                              >
+                                {listingImageUrl ? (
+                                  <img src={listingImageUrl} alt="" loading="lazy" className="h-full w-full object-cover" />
+                                ) : (
+                                  <span className={`flex h-full w-full items-center justify-center ${faint}`}><ImageOff size={16} /></span>
+                                )}
+                              </button>
+                              <div className="min-w-0 flex-1">
+                                <button
+                                  type="button"
+                                  onClick={openDetails}
+                                  title={itemTitle}
+                                  className={`line-clamp-2 text-left font-medium leading-snug hover:underline ${strong}`}
+                                >
+                                  {itemTitle || id}
+                                </button>
+                                <div className={`mt-1 flex flex-wrap items-center gap-x-2 text-xs ${faint}`}>
+                                  <span className={`font-mono ${muted}`}>{id}</span>
+                                  {quantity > 1 && (
+                                    <span className={`rounded px-1.5 font-semibold ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>×{quantity}</span>
+                                  )}
+                                  {order?.creationDate && <span>{formatOrderDate(order.creationDate)}</span>}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Buyer */}
+                          <td className="px-4 py-3">
+                            <div className="min-w-[140px] max-w-[220px]">
+                              <p className={`truncate font-medium ${strong}`} title={buyer}>{fullName || username || '—'}</p>
+                              {fullName && username && <p className={`truncate text-xs ${muted}`}>@{username}</p>}
+                            </div>
+                          </td>
+
+                          {/* Status: shipment + payment */}
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col items-start gap-1">
+                              {statusChip(shipmentStatus)}
+                              {statusChip(payment)}
+                            </div>
+                          </td>
+
+                          {/* Total */}
+                          <td className={`whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums ${strong}`}>
+                            {totalValue != null ? `${totalValue} ${totalCurrency || ''}`.trim() : '—'}
+                          </td>
+
+                          {/* Amazon ASIN + auto-order */}
+                          <td className={`px-4 py-3 ${body}`}>
+                            <AsinCell
+                              order={order}
+                              isDark={isDark}
+                              autoAsin={productAsinMap.get(listingId) || ''}
+                              allOrders={orders}
+                              isCancelled={isOrderCancelled(order)}
+                              isInProfit={profitOrderIds.has(String(id))}
+                            />
+                          </td>
+
+                          {/* Send to profit table */}
+                          <td className="px-4 py-3">
+                            <SendToProfitCell
+                              order={order}
+                              matchedProduct={matchedProduct}
+                              listingImageUrl={listingImageUrl}
+                              buyer={buyer}
+                              isDark={isDark}
+                              t={t}
+                              orderId={String(id)}
+                              alreadySent={profitOrderIds.has(String(id))}
+                              onSent={(oid) => setProfitOrderIds((prev) => new Set([...prev, oid]))}
+                            />
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={() => setInfoOrderId(String(id))}
+                                title={t('ordersPage.table.viewDetails', { defaultValue: 'View order details' })}
+                                aria-label={t('ordersPage.table.viewDetails', { defaultValue: 'View order details' })}
+                                className={iconBtn}
+                              >
+                                <Info size={15} />
+                              </button>
+                              <CopyAddressButton order={order} isDark={isDark} t={t} />
+                              {listingId && (
+                                <button
+                                  type="button"
+                                  onClick={() => setMessagePanelOrder(order)}
+                                  title={t('ordersPage.messages')}
+                                  aria-label={t('ordersPage.messages')}
+                                  className={iconBtn}
+                                >
+                                  <MessageSquare size={15} />
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={openDetails}
+                                className={`ml-1 inline-flex h-8 items-center gap-1 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold transition ${
+                                  isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                                }`}
+                              >
+                                {t('ordersPage.table.details')}
+                                <ChevronRight size={13} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                    {filteredOrders.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-16 text-center">
+                          <div className="flex flex-col items-center">
+                            <span className={`mb-3 flex h-12 w-12 items-center justify-center rounded-full ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-400'}`}>
+                              <PackageOpen size={20} />
+                            </span>
+                            <p className={`text-sm ${muted}`}>{t('ordersPage.empty')}</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination (cursor-based: previous / next) */}
+              <div className={`flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <span className={`text-sm ${muted}`}>{t('ordersPage.pagination.page', { page: page + 1 })}</span>
+                <div className="flex items-center gap-2">
+                  {fetchingPage && <Loader2 size={14} className="animate-spin text-indigo-500" />}
+                  <button
+                    type="button"
+                    onClick={() => page > 0 && loadPage(page - 1)}
+                    disabled={page <= 0 || fetchingPage}
+                    className={`inline-flex h-8 items-center gap-1 rounded-lg border px-2.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+                  >
+                    <ChevronLeft size={14} /> {t('ordersPage.pagination.previous')}
                   </button>
                   <button
                     type="button"
-                    className="btn-primary inline-flex items-center gap-2"
-                    onClick={handleConnect}
+                    onClick={() => canNext && loadPage(page + 1)}
+                    disabled={!canNext || fetchingPage}
+                    className={`inline-flex h-8 items-center gap-1 rounded-lg border px-2.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}
                   >
-                    <Link2 size={16} />
-                    {t('ordersPage.connectButton')}
+                    {t('ordersPage.pagination.next')} <ChevronRight size={14} />
                   </button>
                 </div>
               </div>
             </div>
-          )}
-        </>
-      ) : (
-        <>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-          <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('ordersPage.showing')}</p>
-            <p className={`text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{filteredOrders.length}</p>
-          </div>
-          <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('ordersPage.paid')}</p>
-            <p className={`text-2xl font-bold ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{stats.paid}</p>
-          </div>
-          <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('ordersPage.shipped')}</p>
-            <p className={`text-2xl font-bold ${isDark ? 'text-indigo-300' : 'text-indigo-700'}`}>{stats.fulfilled}</p>
-          </div>
-          <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('ordersPage.refunded')}</p>
-            <p className={`text-2xl font-bold ${isDark ? 'text-rose-300' : 'text-rose-700'}`}>{stats.refunded}</p>
-          </div>
-        </div>
-        <div className={`mb-4 rounded-xl border p-3 ${isDark ? 'bg-slate-900/40 border-slate-700' : 'bg-white border-slate-200'}`}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <label className="relative md:col-span-1">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('ordersPage.searchPlaceholder')}
-                className={`w-full rounded-lg pl-9 pr-3 py-2 text-sm border ${
-                  isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
-                }`}
-              />
-            </label>
-            <label className="relative">
-              <SlidersHorizontal size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <select
-                value={paymentFilter}
-                onChange={(e) => setPaymentFilter(e.target.value)}
-                className={`w-full rounded-lg pl-9 pr-3 py-2 text-sm border ${
-                  isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
-                }`}
-              >
-                <option value="ALL">{t('ordersPage.filter.allPayment')}</option>
-                <option value="PAID">{t('ordersPage.filter.paid')}</option>
-                <option value="FULLY_REFUNDED">{t('ordersPage.filter.fullyRefunded')}</option>
-              </select>
-            </label>
-            <label className="relative">
-              <SlidersHorizontal size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <select
-                value={fulfillmentFilter}
-                onChange={(e) => setFulfillmentFilter(e.target.value)}
-                className={`w-full rounded-lg pl-9 pr-3 py-2 text-sm border ${
-                  isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
-                }`}
-              >
-                <option value="ALL">{t('ordersPage.filter.allShipment')}</option>
-                <option value="NOT_STARTED">{t('ordersPage.filter.notStarted')}</option>
-                <option value="ORDER_CANCELLED">{t('ordersPage.filter.orderCancelled')}</option>
-                <option value="FULFILLED">{t('ordersPage.filter.fulfilled')}</option>
-              </select>
-            </label>
-          </div>
-        </div>
-        <div
-              className={`glass-card p-0 overflow-hidden rounded-xl border ${
-                isDark ? 'bg-slate-900/30 border-slate-800' : 'bg-white border-slate-200'
-              }`}
-            >
-          <div className="overflow-x-auto">
-            <table className={`min-w-full ${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
-              <thead className={isDark ? 'bg-slate-800/70' : 'bg-slate-50'}>
-                <tr>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    {sortLabel('orderId', t('ordersPage.table.orderId'))}
-                  </th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    {t('ordersPage.table.buyer')}
-                  </th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    {sortLabel('payment', t('ordersPage.table.payment'))}
-                  </th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    {sortLabel('fulfillment', t('ordersPage.table.shipment'))}
-                  </th>
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    {sortLabel('total', t('ordersPage.table.total'))}
-                  </th>
-                  {/* ─── NEW: Amazon column ─── */}
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    Amazon
-                  </th>
-                  {/* ─── Ordered / Send to Profit column ─── */}
-                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                    {t('ordersPage.table.ordered')}
-                  </th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className={isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}>
-                {filteredOrders.map((order) => {
-                  const id = order.orderId;
-                  const listingId = String(order?.lineItems?.[0]?.legacyItemId || '').trim();
-                  const listingImageUrl = listingId ? listingImageById.get(listingId) || '' : '';
-                  const payment = order.orderPaymentStatus || '-';
-                  const shipmentStatus = getDerivedShipmentStatus(order);
-                  const totalValue = order?.pricingSummary?.total?.value;
-                  const totalCurrency = order?.pricingSummary?.total?.currency;
-                  const buyer = getBuyerDisplay(order);
-                  const createdAt = order?.creationDate ? new Date(order.creationDate).toLocaleString() : '-';
-
-                  const matchedProduct = listingId ? productByItemId.get(listingId) : null;
-
-                  return (
-                    <React.Fragment key={id}>
-                      <tr className={isDark ? 'bg-slate-900' : 'bg-white'}>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border ${
-                                isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'
-                              }`}
-                            >
-                              {listingImageUrl ? (
-                                <img src={listingImageUrl} alt={order?.lineItems?.[0]?.title || id} className="h-full w-full object-cover" />
-                              ) : (
-                                <div className={`flex h-full w-full items-center justify-center text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                                  No image
-                                </div>
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="font-medium truncate">{id}</div>
-                              <div className={`text-[10px] truncate max-w-[160px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                                {order?.lineItems?.[0]?.title || t('ordersPage.table.orderId')}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{buyer}</td>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${getPill(payment, 'payment')}`}>
-                            {payment}
-                          </span>
-                        </td>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${getPill(shipmentStatus, 'fulfillment')}`}>
-                            {shipmentStatus}
-                          </span>
-                        </td>
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                          {totalValue != null ? `${totalValue} ${totalCurrency || ''}`.trim() : '-'}
-                        </td>
-                        {/* ─── Amazon ASIN + auto-order button ─── */}
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                          <AsinCell
-                            order={order}
-                            isDark={isDark}
-                            autoAsin={productAsinMap.get(String(order?.lineItems?.[0]?.legacyItemId || '').trim()) || ''}
-                            allOrders={orders}
-                            isCancelled={isOrderCancelled(order)}
-                            isInProfit={profitOrderIds.has(String(id))}
-                          />
-                        </td>
-                        {/* ─── Send to Profit button ─── */}
-                        <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                          <SendToProfitCell
-                            order={order}
-                            matchedProduct={matchedProduct}
-                            listingImageUrl={listingImageUrl}
-                            buyer={buyer}
-                            isDark={isDark}
-                            t={t}
-                            orderId={String(id)}
-                            alreadySent={profitOrderIds.has(String(id))}
-                            onSent={(oid) => setProfitOrderIds((prev) => new Set([...prev, oid]))}
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="inline-flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setInfoOrderId(String(id))}
-                              title={t('ordersPage.table.viewDetails', { defaultValue: 'View order details' })}
-                              className={`p-1 rounded-full transition-colors ${
-                                isDark ? 'text-indigo-400 hover:bg-indigo-950/40' : 'text-indigo-500 hover:bg-indigo-50'
-                              }`}
-                            >
-                              <Info size={15} />
-                            </button>
-                            <CopyAddressButton order={order} isDark={isDark} t={t} />
-                            {true && listingId && (
-                              <button
-                                type="button"
-                                onClick={() => setMessagePanelOrder(order)}
-                                className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors ${isDark ? 'border-indigo-800/60 text-indigo-300 hover:bg-indigo-950/40' : 'border-indigo-200 text-indigo-700 hover:bg-indigo-50'}`}
-                                title="Open message panel"
-                              >
-                                <MessageSquare size={12} />
-                                Message Panel
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                navigate(`/orders/${encodeURIComponent(String(id))}`, {
-                                  state: { order },
-                                })
-                              }
-                              className={`inline-flex items-center gap-1 ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`}
-                            >
-                              {t('ordersPage.table.details')}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    </React.Fragment>
-                  );
-                })}
-
-                {filteredOrders.length === 0 && (
-                  <tr>
-                      <td colSpan={8} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {t('ordersPage.empty')}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className={`flex items-center justify-between px-4 py-3 border-t ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}>
-            <div className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{t('ordersPage.pagination.page', { page: page + 1 })}</div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => page > 0 && loadPage(page - 1)}
-                disabled={page <= 0 || fetchingPage}
-                className="btn-secondary"
-              >
-                {t('ordersPage.pagination.previous')}
-              </button>
-              <button
-                type="button"
-                onClick={() => canNext && loadPage(page + 1)}
-                disabled={!canNext || fetchingPage}
-                className="btn-secondary"
-              >
-                {t('ordersPage.pagination.next')}
-              </button>
-            </div>
-          </div>
-        </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
 
       {messagePanelOrder && (
         <OrderMessageSidebar
@@ -1163,4 +1310,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-

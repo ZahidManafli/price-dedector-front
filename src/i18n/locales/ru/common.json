@@ -927,7 +927,33 @@
       "page": "Страница {{page}}",
       "previous": "Предыдущая",
       "next": "Следующая"
-    }
+    },
+    "subtitle": "Заказы eBay, заказ на Amazon и статус отправки в одном месте",
+    "tabs": {
+      "all": "Все",
+      "toShip": "К отправке",
+      "shipped": "Отправлены",
+      "cancelled": "Отменены"
+    },
+    "status": {
+      "PAID": "Оплачен",
+      "FULLY_REFUNDED": "Возврат",
+      "PARTIALLY_REFUNDED": "Частичный возврат",
+      "PENDING": "Ожидает",
+      "FAILED": "Ошибка",
+      "NOT_STARTED": "Не отправлен",
+      "IN_PROGRESS": "В обработке",
+      "FULFILLED": "Отправлен",
+      "ORDER_CANCELLED": "Отменён"
+    },
+    "paymentAll": "Все оплаты",
+    "colOrder": "Заказ",
+    "colStatus": "Статус",
+    "colProfit": "Прибыль",
+    "messages": "Сообщения",
+    "onThisPage": "Заказов на странице: {{count}}",
+    "toShipBanner": "Ожидают отправки: {{count}}",
+    "showToShip": "Показать"
   },
   "profitTablePage": {
     "title": "Таблица прибыли",

@@ -1074,7 +1074,33 @@
       "page": "Səhifə {{page}}",
       "previous": "Əvvəlki",
       "next": "Sonrakı"
-    }
+    },
+    "subtitle": "eBay sifarişləri, Amazon sifarişi və göndəriş vəziyyəti bir yerdə",
+    "tabs": {
+      "all": "Hamısı",
+      "toShip": "Göndəriləcək",
+      "shipped": "Göndərilib",
+      "cancelled": "Ləğv edilib"
+    },
+    "status": {
+      "PAID": "Ödənilib",
+      "FULLY_REFUNDED": "Tam geri qaytarılıb",
+      "PARTIALLY_REFUNDED": "Qismən geri qaytarılıb",
+      "PENDING": "Gözləyir",
+      "FAILED": "Uğursuz",
+      "NOT_STARTED": "Göndərilməyib",
+      "IN_PROGRESS": "Hazırlanır",
+      "FULFILLED": "Göndərilib",
+      "ORDER_CANCELLED": "Ləğv edilib"
+    },
+    "paymentAll": "Bütün ödənişlər",
+    "colOrder": "Sifariş",
+    "colStatus": "Status",
+    "colProfit": "Mənfəət",
+    "messages": "Mesajlar",
+    "onThisPage": "Bu səhifədə {{count}} sifariş",
+    "toShipBanner": "{{count}} sifariş göndərilməyi gözləyir",
+    "showToShip": "Göstər"
   },
   "profitTablePage": {
     "title": "Mənfəət Cədvəli",

@@ -919,7 +919,33 @@
       "page": "Sayfa {{page}}",
       "previous": "Önceki",
       "next": "Sonraki"
-    }
+    },
+    "subtitle": "eBay siparişleri, Amazon siparişi ve gönderim durumu tek yerde",
+    "tabs": {
+      "all": "Tümü",
+      "toShip": "Gönderilecek",
+      "shipped": "Gönderildi",
+      "cancelled": "İptal"
+    },
+    "status": {
+      "PAID": "Ödendi",
+      "FULLY_REFUNDED": "İade edildi",
+      "PARTIALLY_REFUNDED": "Kısmi iade",
+      "PENDING": "Bekliyor",
+      "FAILED": "Başarısız",
+      "NOT_STARTED": "Gönderilmedi",
+      "IN_PROGRESS": "Hazırlanıyor",
+      "FULFILLED": "Gönderildi",
+      "ORDER_CANCELLED": "İptal edildi"
+    },
+    "paymentAll": "Tüm ödemeler",
+    "colOrder": "Sipariş",
+    "colStatus": "Durum",
+    "colProfit": "Kâr",
+    "messages": "Mesajlar",
+    "onThisPage": "Bu sayfada {{count}} sipariş",
+    "toShipBanner": "{{count}} sipariş gönderilmeyi bekliyor",
+    "showToShip": "Göster"
   },
   "profitTablePage": {
     "title": "Kâr Tablosu",
