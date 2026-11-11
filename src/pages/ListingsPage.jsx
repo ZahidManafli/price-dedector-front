@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { ebayAPI } from '../services/api';
 import Alert from '../components/Alert';
 import {
-  ArrowDownUp, Check, Loader2, Mail, MessageSquare, Package, Link2,
-  Pencil, RotateCcw, Search, SlidersHorizontal, Trash2, AlertTriangle, X,
+  ArrowDownUp, ArrowDown, ArrowUp, Check, Loader2, Mail, MessageSquare, Package, Link2,
+  Pencil, RotateCcw, Search, Trash2, AlertTriangle, X, Plus, ExternalLink,
+  ChevronLeft, ChevronRight, Megaphone, Boxes, Eye, Clock, BellRing, ImageOff,
 } from 'lucide-react';
 import FeedbackSidebar from '../components/FeedbackSidebar';
 import ScheduledListingsPanel from '../components/ScheduledListingsPanel';
@@ -553,29 +554,140 @@ export default function ListingsPage() {
       return key;
     });
   };
-  const sortLabel = (key, label) => (
-    <button type="button" onClick={() => onSort(key)} className="inline-flex items-center gap-1">
-      {label}
-      <ArrowDownUp size={12} className={sortKey === key ? 'opacity-100' : 'opacity-40'} />
-    </button>
-  );
 
   const activeCount = useMemo(() => normalizedItems.filter((i) => String(i._status).toUpperCase() === 'ACTIVE').length, [normalizedItems]);
   const completedCount = useMemo(() => normalizedItems.filter((i) => String(i._status).toUpperCase() === 'COMPLETED').length, [normalizedItems]);
   const deadStockCount = useMemo(() => normalizedItems.filter((i) => i._isDeadStock).length, [normalizedItems]);
 
-  const getStatusPill = (statusRaw) => {
-    const status = String(statusRaw || '-').toUpperCase();
-    if (status.includes('ACTIVE')) return isDark ? 'bg-emerald-900/30 text-emerald-300 border-emerald-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    if (status.includes('COMPLETE')) return isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-100 text-slate-700 border-slate-200';
-    return isDark ? 'bg-indigo-900/30 text-indigo-300 border-indigo-800' : 'bg-indigo-50 text-indigo-700 border-indigo-200';
+  // ── Styles ─────────────────────────────────────────────────────────────────
+  const inputCls = (extra = '') =>
+    `rounded-lg border px-2.5 py-1.5 text-sm outline-none transition focus:ring-2 ${
+      isDark
+        ? 'bg-slate-950 border-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500/30'
+        : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-indigo-100'
+    } ${extra}`;
+  const card = `rounded-2xl border ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`;
+  const muted = isDark ? 'text-slate-400' : 'text-slate-500';
+  const faint = isDark ? 'text-slate-500' : 'text-slate-400';
+  const strong = isDark ? 'text-slate-100' : 'text-slate-900';
+  const body = isDark ? 'text-slate-200' : 'text-slate-700';
+  const iconBtn = `inline-flex h-8 w-8 items-center justify-center rounded-lg transition ${
+    isDark ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-100' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+  }`;
+
+  // Sortable column header with a clear direction arrow.
+  const sortLabel = (key, label, align = 'left') => {
+    const active = sortKey === key;
+    const Arrow = !active ? ArrowDownUp : sortDir === 'asc' ? ArrowUp : ArrowDown;
+    return (
+      <button
+        type="button"
+        onClick={() => onSort(key)}
+        className={`inline-flex items-center gap-1 uppercase tracking-wider transition ${align === 'right' ? 'flex-row-reverse' : ''} ${
+          active ? (isDark ? 'text-slate-100' : 'text-slate-900') : ''
+        }`}
+      >
+        {label}
+        <Arrow size={12} className={active ? 'opacity-100' : 'opacity-40'} />
+      </button>
+    );
   };
 
-  // Shared input style
-  const inputCls = (extra = '') =>
-    `rounded-lg border px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-blue-500/40 ${
-      isDark ? 'bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500' : 'bg-white border-slate-300 text-slate-900'
-    } ${extra}`;
+  // Small inline number editor shared by auto stock and ad rate.
+  const renderInlineEditor = ({ value, onChange, onSave, onCancel, saving, min, max, step, placeholder, tone = 'indigo' }) => (
+    <div className="flex items-center gap-1">
+      <input
+        type="number"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') onSave();
+          if (e.key === 'Escape') onCancel();
+        }}
+        placeholder={placeholder}
+        className={inputCls('w-16 px-2 py-1 text-xs')}
+        autoFocus
+      />
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={saving}
+        title={t('listingsPage.save')}
+        className={`flex h-6 w-6 items-center justify-center rounded-md text-white disabled:opacity-50 ${
+          tone === 'emerald' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700'
+        }`}
+      >
+        {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+      </button>
+      <button type="button" onClick={onCancel} title={t('listingsPage.cancel')} className={`flex h-6 w-6 items-center justify-center rounded-md ${faint} hover:opacity-80`}>
+        <X size={11} />
+      </button>
+    </div>
+  );
+
+  // A filled chip for an active setting (click = edit, × = remove) or a dashed
+  // "+ add" chip when nothing is set.
+  const renderSettingChip = ({ active, label, onEdit, onRemove, removing, removeTitle, addLabel, onAdd }) =>
+    active ? (
+      <span
+        className={`inline-flex items-center overflow-hidden rounded-md border text-xs font-semibold ${
+          isDark ? 'border-emerald-800/70 bg-emerald-500/10 text-emerald-300' : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+        }`}
+      >
+        <button type="button" onClick={onEdit} className="px-2 py-0.5 hover:underline">
+          {label}
+        </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={removing}
+          title={removeTitle}
+          className={`border-l px-1.5 py-0.5 transition disabled:opacity-50 ${
+            isDark ? 'border-emerald-800/70 hover:bg-rose-500/20 hover:text-rose-300' : 'border-emerald-200 hover:bg-rose-50 hover:text-rose-600'
+          }`}
+        >
+          {removing ? <Loader2 size={10} className="animate-spin" /> : <X size={10} />}
+        </button>
+      </span>
+    ) : (
+      <button
+        type="button"
+        onClick={onAdd}
+        className={`inline-flex items-center gap-1 rounded-md border border-dashed px-2 py-0.5 text-xs font-medium transition ${
+          isDark ? 'border-slate-700 text-slate-400 hover:border-indigo-500 hover:text-indigo-300' : 'border-slate-300 text-slate-500 hover:border-indigo-400 hover:text-indigo-600'
+        }`}
+      >
+        <Plus size={11} />
+        {addLabel}
+      </button>
+    );
+
+  const getStatusPill = (statusRaw) => {
+    const status = String(statusRaw || '-').toUpperCase();
+    if (status.includes('ACTIVE')) return isDark ? 'bg-emerald-500/10 text-emerald-300' : 'bg-emerald-50 text-emerald-700';
+    if (status.includes('COMPLETE')) return isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600';
+    return isDark ? 'bg-indigo-500/10 text-indigo-300' : 'bg-indigo-50 text-indigo-700';
+  };
+  const statusDot = (statusRaw) => {
+    const status = String(statusRaw || '-').toUpperCase();
+    if (status.includes('ACTIVE')) return 'bg-emerald-500';
+    if (status.includes('COMPLETE')) return 'bg-slate-400';
+    return 'bg-indigo-500';
+  };
+
+  const statusTabs = [
+    { key: 'ALL', label: t('listingsPage.allTab'), count: normalizedItems.length },
+    { key: 'ACTIVE', label: t('listingsPage.statusActive'), count: activeCount },
+    { key: 'COMPLETED', label: t('listingsPage.statusCompleted'), count: endedLoading && endedItems === null ? null : completedCount },
+    { key: 'DEAD_STOCK', label: t('listingsPage.deadStock'), count: deadStockCount, warn: true },
+  ];
+
+  const rangeFrom = filteredItems.length ? page * limit + 1 : 0;
+  const rangeTo = Math.min(filteredItems.length, (page + 1) * limit);
+  const pageCount = Math.max(1, Math.ceil(filteredItems.length / limit));
 
   if (loading) {
     return (
@@ -587,17 +699,28 @@ export default function ListingsPage() {
 
   return (
     <div className="page-shell">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className={`page-title flex items-center gap-2 ${isDark ? 'text-slate-100' : ''}`}>
-            <Package size={18} />
-            {t('listingsPage.title')}
-          </h1>
-          <TutorialVideoButton />
-        </div>
-        {ebayStatus.connected ? (
-          <div className={`text-sm flex items-center gap-3 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-            {(ebayStatus.activeAccountLabel || ebayStatus.accountId) && (
+      <div className="mx-auto max-w-[1600px] space-y-5">
+        {/* ── Header ── */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${isDark ? 'bg-indigo-500/15 text-indigo-300' : 'bg-indigo-50 text-indigo-600'}`}>
+              <Package size={22} />
+            </span>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className={`text-2xl font-semibold tracking-tight ${strong}`}>{t('listingsPage.title')}</h1>
+                {typeof total === 'number' && (
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                    {total}
+                  </span>
+                )}
+              </div>
+              <p className={`text-sm ${muted}`}>{t('listingsPage.subtitle')}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <TutorialVideoButton />
+            {ebayStatus.connected && (ebayStatus.activeAccountLabel || ebayStatus.accountId) && (
               <EbayAccountSwitcher
                 accounts={ebayAccounts}
                 activeAccountId={activeEbayAccountId}
@@ -608,552 +731,447 @@ export default function ListingsPage() {
                 isDark={isDark}
               />
             )}
-            <ScheduledListingsPanel isDark={isDark} variant="inline" />
-            {typeof total === 'number' ? `${t('listingsPage.total')}: ${total}` : null}
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-md border ${isDark ? 'border-slate-700 bg-slate-800/60 text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-700'}`}
-              title={t('listingsPage.relistFrequencyHint')}
-            >
-              {t('listingsPage.relistFrequencyEvery')}
-              <input
-                type="number"
-                min="1"
-                value={relistFrequencyInput}
-                onChange={(e) => setRelistFrequencyInput(e.target.value)}
-                onBlur={handleSaveRelistFrequency}
-                placeholder="-"
-                className={`w-12 text-center rounded-md border px-1 py-0.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/40 ${
-                  isDark ? 'bg-slate-900 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
-                }`}
-              />
-              {t('listingsPage.relistFrequencyDaysSuffix')}
-              {savingRelistFrequency ? (
-                <Loader2 size={13} className="animate-spin" />
-              ) : relistFrequencySaved ? (
-                <Check size={13} className="text-emerald-500" />
-              ) : null}
-            </span>
+            {ebayStatus.connected && <ScheduledListingsPanel isDark={isDark} variant="inline" />}
           </div>
-        ) : null}
-      </div>
-
-      {error && (
-        <div className="mb-4">
-          <Alert type="error" message={error} onClose={() => setError(null)} />
         </div>
-      )}
 
-      {adRateScopeError && (
-        <div className={`mb-4 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${isDark ? 'bg-amber-950/30 border-amber-800 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
-          <span>{t('listingsPage.reconnectForPromotedListings')}</span>
-          <button
-            type="button"
-            onClick={handleConnect}
-            className="shrink-0 rounded-md bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 hover:bg-amber-700"
-          >
-            {t('listingsPage.reconnectEbay')}
-          </button>
-        </div>
-      )}
+        {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
 
-      {!ebayStatus.connected ? (
-        <>
-          <div className={`rounded-xl p-6 text-center border ${isDark ? 'bg-slate-900/60 border-slate-700' : 'glass-card'}`}>
-            <p className={`${isDark ? 'text-slate-300' : 'text-slate-600'} mb-4`}>{t('listingsPage.connectPrompt')}</p>
-            <button type="button" onClick={handleConnect} className="btn-primary inline-flex items-center gap-2">
-              <Link2 size={16} /> {t('listingsPage.connectButton')}
+        {adRateScopeError && (
+          <div className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm ${isDark ? 'border-amber-800 bg-amber-950/30 text-amber-200' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+            <span className="flex items-center gap-2">
+              <AlertTriangle size={16} className="shrink-0" />
+              {t('listingsPage.reconnectForPromotedListings')}
+            </span>
+            <button type="button" onClick={handleConnect} className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700">
+              {t('listingsPage.reconnectEbay')}
             </button>
           </div>
-          {showConnectModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-              <div className={`w-full max-w-md p-6 rounded-xl border ${isDark ? 'bg-slate-900/80 border-slate-700' : 'glass-card'}`}>
-                <h2 className={`text-lg font-semibold mb-2 ${isDark ? 'text-slate-100' : ''}`}>{t('listingsPage.signinRequired')}</h2>
-                <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('listingsPage.signinDescription')}</p>
-                <div className="flex gap-3 justify-end">
-                  <button type="button" className="btn-secondary" onClick={() => setShowConnectModal(false)}>{t('common.close')}</button>
-                  <button type="button" className="btn-primary inline-flex items-center gap-2" onClick={handleConnect}>
-                    <Link2 size={16} /> {t('listingsPage.connectButton')}
+        )}
+
+        {!ebayStatus.connected ? (
+          <>
+            <div className={`${card} flex flex-col items-center px-6 py-14 text-center`}>
+              <span className={`mb-4 flex h-14 w-14 items-center justify-center rounded-2xl ${isDark ? 'bg-indigo-500/15 text-indigo-300' : 'bg-indigo-50 text-indigo-600'}`}>
+                <Link2 size={24} />
+              </span>
+              <p className={`mb-5 max-w-md text-sm ${muted}`}>{t('listingsPage.connectPrompt')}</p>
+              <button type="button" onClick={handleConnect} className="btn-primary inline-flex items-center gap-2">
+                <Link2 size={16} /> {t('listingsPage.connectButton')}
+              </button>
+            </div>
+            {showConnectModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+                <div className={`w-full max-w-md rounded-2xl p-6 shadow-2xl ${isDark ? 'bg-slate-900 ring-1 ring-slate-800' : 'bg-white'}`}>
+                  <h2 className={`mb-2 text-lg font-semibold ${strong}`}>{t('listingsPage.signinRequired')}</h2>
+                  <p className={`mb-5 text-sm ${muted}`}>{t('listingsPage.signinDescription')}</p>
+                  <div className="flex justify-end gap-3">
+                    <button type="button" className="btn-secondary" onClick={() => setShowConnectModal(false)}>{t('common.close')}</button>
+                    <button type="button" className="btn-primary inline-flex items-center gap-2" onClick={handleConnect}>
+                      <Link2 size={16} /> {t('listingsPage.connectButton')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* ── Dead stock banner ── */}
+            {deadStockCount > 0 && !deadStockBannerDismissed && (
+              <div className={`flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center ${isDark ? 'border-amber-800/60 bg-amber-950/20' : 'border-amber-200 bg-amber-50'}`}>
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-700'}`}>
+                  <AlertTriangle size={18} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className={`text-sm font-semibold ${isDark ? 'text-amber-200' : 'text-amber-900'}`}>
+                    {t('listingsPage.deadStockBannerTitle', { count: deadStockCount })}
+                  </p>
+                  <p className={`mt-0.5 text-xs ${isDark ? 'text-amber-300/80' : 'text-amber-800/80'}`}>{t('listingsPage.deadStockBannerText')}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  {statusFilter !== 'DEAD_STOCK' && (
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilter('DEAD_STOCK')}
+                      className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
+                    >
+                      {t('listingsPage.showDeadStock')}
+                    </button>
+                  )}
+                  {deadStockEmailSent ? (
+                    <span className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium ${isDark ? 'bg-emerald-500/15 text-emerald-300' : 'bg-emerald-100 text-emerald-700'}`}>
+                      <Check size={12} /> {t('listingsPage.emailSent')}
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSendDeadStockEmail}
+                      disabled={sendingDeadStockEmail}
+                      className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${isDark ? 'border-amber-700 text-amber-300 hover:bg-amber-900/40' : 'border-amber-300 text-amber-800 hover:bg-amber-100'}`}
+                    >
+                      {sendingDeadStockEmail ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
+                      {sendingDeadStockEmail ? t('listingsPage.sending') : t('listingsPage.sendEmail')}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setDeadStockBannerDismissed(true)}
+                    title={t('listingsPage.dismiss')}
+                    aria-label={t('listingsPage.dismiss')}
+                    className={`rounded-lg p-1.5 ${isDark ? 'text-amber-400 hover:bg-amber-900/40' : 'text-amber-600 hover:bg-amber-100'}`}
+                  >
+                    <X size={14} />
                   </button>
                 </div>
               </div>
-            </div>
-          )}
-        </>
-      ) : (
-        <>
-          {/* ── Stats ── */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('listingsPage.showing')}</p>
-              <p className={`text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{filteredItems.length}</p>
-            </div>
-            <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('listingsPage.activeLabel')}</p>
-              <p className={`text-2xl font-bold ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>{activeCount}</p>
-            </div>
-            <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'}`}>
-              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('listingsPage.completed')}</p>
-              <p className={`text-2xl font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{completedCount}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => { setStatusFilter('DEAD_STOCK'); setDeadStockBannerDismissed(false); }}
-              className={`rounded-xl border p-4 text-left transition-colors ${
-                deadStockCount > 0
-                  ? isDark ? 'bg-amber-900/20 border-amber-700/60 hover:bg-amber-900/30' : 'bg-amber-50 border-amber-200 hover:bg-amber-100'
-                  : isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'
-              }`}
-            >
-              <p className={`text-xs flex items-center gap-1 ${deadStockCount > 0 ? (isDark ? 'text-amber-400' : 'text-amber-600') : (isDark ? 'text-slate-400' : 'text-slate-500')}`}>
-                {deadStockCount > 0 && <AlertTriangle size={11} />}
-                Donmuş Stok
-              </p>
-              <p className={`text-2xl font-bold ${deadStockCount > 0 ? (isDark ? 'text-amber-300' : 'text-amber-700') : (isDark ? 'text-slate-200' : 'text-slate-700')}`}>
-                {deadStockCount}
-              </p>
-            </button>
-          </div>
+            )}
 
-          {/* ── Dead stock banner ── */}
-          {deadStockCount > 0 && !deadStockBannerDismissed && (
-            <div className={`mb-4 rounded-xl border p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 ${isDark ? 'bg-amber-900/20 border-amber-700/50' : 'bg-amber-50 border-amber-200'}`}>
-              <AlertTriangle size={18} className={`${isDark ? 'text-amber-400' : 'text-amber-600'} shrink-0`} />
-              <div className="flex-1 min-w-0">
-                <p className={`font-semibold text-sm ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>{deadStockCount} listinqiniz 30+ gündür satılmayıb</p>
-                <p className={`text-xs mt-0.5 ${isDark ? 'text-amber-400/80' : 'text-amber-700'}`}>Bu listinqlər üçün qiymət azaltmağı və ya silməyi nəzərə alın.</p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {deadStockEmailSent ? (
-                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${isDark ? 'bg-emerald-900/40 text-emerald-300' : 'bg-emerald-100 text-emerald-700'}`}>Email göndərildi ✓</span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleSendDeadStockEmail}
-                    disabled={sendingDeadStockEmail}
-                    className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${isDark ? 'border-amber-700 text-amber-300 hover:bg-amber-800/40 disabled:opacity-50' : 'border-amber-300 text-amber-700 hover:bg-amber-100 disabled:opacity-50'}`}
-                  >
-                    {sendingDeadStockEmail ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
-                    {sendingDeadStockEmail ? 'Göndərilir...' : 'Email göndər'}
-                  </button>
-                )}
-                <button type="button" onClick={() => setDeadStockBannerDismissed(true)} className={`p-1 rounded ${isDark ? 'text-amber-500 hover:text-amber-300' : 'text-amber-500 hover:text-amber-700'}`} title="Bağla">
-                  <X size={14} />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ── Filters ── */}
-          <div className={`mb-4 rounded-xl border p-3 ${isDark ? 'bg-slate-900/40 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <label className="relative md:col-span-2">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={t('listingsPage.searchPlaceholder')}
-                  className={`w-full rounded-lg pl-9 pr-3 py-2 text-sm border ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                />
-              </label>
-              <label className="relative">
-                <SlidersHorizontal size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className={`w-full rounded-lg pl-9 pr-3 py-2 text-sm border ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                >
-                  <option value="ALL">{t('listingsPage.allStatus')}</option>
-                  <option value="ACTIVE">{t('listingsPage.statusActive')}</option>
-                  <option value="COMPLETED">{t('listingsPage.statusCompleted')}</option>
-                  <option value="DEAD_STOCK">⚠ Donmuş Stok (30+ gün)</option>
-                </select>
-              </label>
-            </div>
-          </div>
-
-          {/* ── Table ── */}
-          <div className={`p-0 overflow-hidden rounded-xl border ${isDark ? 'bg-slate-900/60 border-slate-700' : 'glass-card'}`}>
-            <div className="overflow-x-auto">
-              <table className={`min-w-full ${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
-                <thead className={isDark ? 'bg-slate-800/70' : 'bg-slate-50'}>
-                  <tr>
-                    {['image', 'title', 'listingId', 'price', 'stockCount', 'sold', 'watchCount', 'adRate', 'status', ''].map((col, i) => (
-                      <th
-                        key={i}
-                        className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}
-                      >
-                        {col === 'image' && t('listingsPage.image')}
-                        {col === 'title' && sortLabel('title', t('listingsPage.title'))}
-                        {col === 'listingId' && sortLabel('listingId', t('listingsPage.listingId'))}
-                        {col === 'price' && sortLabel('price', t('listingsPage.price'))}
-                        {col === 'stockCount' && sortLabel('quantity', t('listingsPage.stockCount'))}
-                        {col === 'sold' && sortLabel('sold', t('listingsPage.sold'))}
-                        {col === 'watchCount' && sortLabel('watchCount', t('listingsPage.watchCount'))}
-                        {col === 'adRate' && t('listingsPage.adRate')}
-                        {col === 'status' && sortLabel('status', t('listingsPage.status'))}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className={isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}>
-                  {pagedItems.map((offer, idx) => {
-                    const key = offer._id;
-                    const status = offer?._status || '-';
-                    const ebayCandidateId = String(offer?.listingId || offer?.listing?.listingId || offer?.listing?.legacyItemId || '').trim() || null;
-                    const ebayListingId = ebayCandidateId && /^\d{9,15}$/.test(ebayCandidateId) ? ebayCandidateId : null;
-                    const internalSku = String(offer?.sku || offer?.listing?.sku || '').trim() || null;
-                    const offerId = String(offer?.offerId || '').trim() || null;
-                    const listingId = ebayListingId || internalSku || offerId || ebayCandidateId || '-';
-                    const deleteKey = ebayListingId || internalSku || offerId || '';
-
-                    const isEditing = inlineEditId === key;
-                    const autoStockRule = ebayListingId ? autoStockMap[ebayListingId] : undefined;
-                    const isAutoStockLoading = ebayListingId ? !!autoStockLoading[ebayListingId] : false;
-                    const isAssignOpen = autoStockAssignId === ebayListingId;
-
-                    const adRate = ebayListingId ? adRateMap[ebayListingId] : undefined;
-                    const isAdRateLoading = ebayListingId ? !!adRateLoading[ebayListingId] : false;
-                    const isAdRateEditOpen = adRateEditId === ebayListingId;
-
+            {/* ── Listings card ── */}
+            <div className={`${card} overflow-hidden`}>
+              {/* Status tabs */}
+              <div className={`flex flex-wrap items-center justify-between gap-3 border-b px-4 pt-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <div className="-mb-px flex gap-1 overflow-x-auto" role="tablist">
+                  {statusTabs.map((tab) => {
+                    const active = statusFilter === tab.key;
                     return (
-                      <React.Fragment key={`${key}-${idx}`}>
-                        <tr className={`${
-                          isEditing
-                            ? isDark ? 'bg-blue-950/30' : 'bg-blue-50/70'
-                            : offer._isDeadStock
-                              ? isDark ? 'bg-amber-950/20' : 'bg-amber-50/60'
-                              : isDark ? 'bg-slate-900 hover:bg-slate-800/50' : 'bg-white hover:bg-slate-50/80'
-                        } transition-colors`}>
+                      <button
+                        key={tab.key}
+                        type="button"
+                        role="tab"
+                        aria-selected={active}
+                        onClick={() => setStatusFilter(tab.key)}
+                        className={`inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-3 pb-2.5 pt-1 text-sm font-medium transition ${
+                          active
+                            ? tab.warn
+                              ? 'border-amber-500 text-amber-600'
+                              : isDark ? 'border-indigo-400 text-slate-100' : 'border-indigo-600 text-slate-900'
+                            : `border-transparent ${muted} ${isDark ? 'hover:text-slate-200' : 'hover:text-slate-800'}`
+                        }`}
+                      >
+                        {tab.warn && tab.count > 0 && <AlertTriangle size={13} className="text-amber-500" />}
+                        {tab.label}
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${
+                            tab.warn && tab.count > 0
+                              ? isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-700'
+                              : isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {tab.count == null ? <Loader2 size={10} className="inline animate-spin" /> : tab.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
 
-                          {/* Image */}
+                {/* Relist reminder frequency (per active store) */}
+                <label
+                  className={`mb-2 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs ${isDark ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600'}`}
+                  title={t('listingsPage.relistFrequencyHint')}
+                >
+                  <BellRing size={13} className={faint} />
+                  <span className="font-medium">{t('listingsPage.relistReminder')}:</span>
+                  {t('listingsPage.relistFrequencyEvery')}
+                  <input
+                    type="number"
+                    min="1"
+                    value={relistFrequencyInput}
+                    onChange={(e) => setRelistFrequencyInput(e.target.value)}
+                    onBlur={handleSaveRelistFrequency}
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                    placeholder="-"
+                    className={inputCls('w-12 px-1 py-0.5 text-center text-xs')}
+                  />
+                  {t('listingsPage.relistFrequencyDaysSuffix')}
+                  {savingRelistFrequency ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : relistFrequencySaved ? (
+                    <Check size={12} className="text-emerald-500" />
+                  ) : null}
+                </label>
+              </div>
+
+              {/* Search */}
+              <div className={`border-b px-4 py-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <label className="relative block">
+                  <Search size={15} className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${faint}`} />
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={t('listingsPage.searchPlaceholder')}
+                    className={inputCls('w-full py-2 pl-9 pr-9')}
+                  />
+                  {query && (
+                    <button
+                      type="button"
+                      onClick={() => setQuery('')}
+                      aria-label={t('listingsPage.cancel')}
+                      className={`absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 ${faint} hover:opacity-80`}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </label>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className={`text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'bg-slate-900 text-slate-500' : 'bg-slate-50/80 text-slate-500'}`}>
+                      <th className="px-4 py-3 text-left">{sortLabel('title', t('listingsPage.colListing'))}</th>
+                      <th className="px-4 py-3 text-right">{sortLabel('price', t('listingsPage.price'), 'right')}</th>
+                      <th className="px-4 py-3 text-left">{sortLabel('quantity', t('listingsPage.stockCount'))}</th>
+                      <th className="px-4 py-3 text-right">{sortLabel('sold', t('listingsPage.sold'), 'right')}</th>
+                      <th className="px-4 py-3 text-right">{sortLabel('watchCount', t('listingsPage.watchCount'), 'right')}</th>
+                      <th className="px-4 py-3 text-left">{t('listingsPage.adRate')}</th>
+                      <th className="px-4 py-3 text-left">{sortLabel('status', t('listingsPage.status'))}</th>
+                      <th className="px-4 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody className={isDark ? 'divide-y divide-slate-800' : 'divide-y divide-slate-100'}>
+                    {pagedItems.map((offer, idx) => {
+                      const key = offer._id;
+                      const status = offer?._status || '-';
+                      const ebayCandidateId = String(offer?.listingId || offer?.listing?.listingId || offer?.listing?.legacyItemId || '').trim() || null;
+                      const ebayListingId = ebayCandidateId && /^\d{9,15}$/.test(ebayCandidateId) ? ebayCandidateId : null;
+                      const internalSku = String(offer?.sku || offer?.listing?.sku || '').trim() || null;
+                      const offerId = String(offer?.offerId || '').trim() || null;
+                      const listingId = ebayListingId || internalSku || offerId || ebayCandidateId || '-';
+                      const deleteKey = ebayListingId || internalSku || offerId || '';
+
+                      const isEditing = inlineEditId === key;
+                      const autoStockRule = ebayListingId ? autoStockMap[ebayListingId] : undefined;
+                      const isAutoStockLoading = ebayListingId ? !!autoStockLoading[ebayListingId] : false;
+                      const isAssignOpen = autoStockAssignId === ebayListingId;
+
+                      const adRate = ebayListingId ? adRateMap[ebayListingId] : undefined;
+                      const isAdRateLoading = ebayListingId ? !!adRateLoading[ebayListingId] : false;
+                      const isAdRateEditOpen = adRateEditId === ebayListingId;
+                      const openDetails = () => navigate(`/listings/${encodeURIComponent(String(listingId))}`, { state: { listing: offer } });
+
+                      return (
+                        <tr
+                          key={`${key}-${idx}`}
+                          className={`group align-middle transition-colors ${
+                            isEditing
+                              ? isDark ? 'bg-indigo-950/30' : 'bg-indigo-50/60'
+                              : isDark ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50/70'
+                          }`}
+                        >
+                          {/* Listing: image + title + id */}
                           <td className="px-4 py-3">
-                            <div className={`w-12 h-12 rounded-md overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
-                              {offer._thumb && <img src={offer._thumb} alt="" className="w-full h-full object-cover" />}
+                            <div className="flex min-w-[300px] max-w-[460px] items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={openDetails}
+                                className={`h-14 w-14 shrink-0 overflow-hidden rounded-lg border ${isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}
+                              >
+                                {offer._thumb ? (
+                                  <img src={offer._thumb} alt="" loading="lazy" className="h-full w-full object-cover" />
+                                ) : (
+                                  <span className={`flex h-full w-full items-center justify-center ${faint}`}><ImageOff size={16} /></span>
+                                )}
+                              </button>
+                              <div className="min-w-0 flex-1">
+                                {isEditing ? (
+                                  <input
+                                    value={inlineValues.title ?? offer._title}
+                                    onChange={(e) => setInlineValues((v) => ({ ...v, title: e.target.value }))}
+                                    maxLength={80}
+                                    className={inputCls('w-full')}
+                                    autoFocus
+                                  />
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={openDetails}
+                                    title={offer._title}
+                                    className={`line-clamp-2 text-left font-medium leading-snug hover:underline ${strong}`}
+                                  >
+                                    {offer._title}
+                                  </button>
+                                )}
+                                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                                  {ebayListingId ? (
+                                    <a
+                                      href={`https://www.ebay.com/itm/${ebayListingId}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      title={t('listingsPage.openOnEbay')}
+                                      className={`inline-flex items-center gap-1 font-mono ${isDark ? 'text-indigo-300 hover:text-indigo-200' : 'text-indigo-600 hover:text-indigo-800'}`}
+                                    >
+                                      {listingId}
+                                      <ExternalLink size={11} />
+                                    </a>
+                                  ) : (
+                                    <span className={`font-mono ${faint}`}>{listingId}</span>
+                                  )}
+                                  {offer._isDeadStock && (
+                                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-50 text-amber-700'}`}>
+                                      <Clock size={10} />
+                                      {t('listingsPage.deadStockDays', { days: offer._daysSinceListed })}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           </td>
 
-                          {/* Title */}
-                          <td className={`px-4 py-3 text-sm max-w-[280px] ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                            {isEditing ? (
-                              <input
-                                value={inlineValues.title ?? offer._title}
-                                onChange={(e) => setInlineValues((v) => ({ ...v, title: e.target.value }))}
-                                maxLength={80}
-                                className={inputCls('w-full')}
-                                autoFocus
-                              />
-                            ) : (
-                              <div className="flex flex-col gap-1">
-                                <span className="leading-tight">{offer._title}</span>
-                                {offer._isDeadStock && (
-                                  <span className={`inline-flex items-center gap-1 w-fit text-xs font-medium px-2 py-0.5 rounded-full ${isDark ? 'bg-amber-900/40 text-amber-300 border border-amber-700/60' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-                                    <AlertTriangle size={10} />
-                                    Donmuş Stok · {offer._daysSinceListed} gün
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </td>
-
-                          {/* Listing ID */}
-                          <td className={`px-4 py-3 text-sm font-mono ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                            {ebayListingId ? (
-                              <a
-                                href={`https://www.ebay.com/itm/${ebayListingId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={`hover:underline ${isDark ? 'text-blue-400' : 'text-blue-600'}`}
-                              >
-                                {listingId}
-                              </a>
-                            ) : listingId}
-                          </td>
-
                           {/* Price */}
-                          <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                          <td className={`whitespace-nowrap px-4 py-3 text-right ${body}`}>
                             {isEditing ? (
                               <input
                                 type="number"
-                                min="0.01" step="0.01"
+                                min="0.01"
+                                step="0.01"
                                 value={inlineValues.price ?? offer._priceValue ?? ''}
                                 onChange={(e) => setInlineValues((v) => ({ ...v, price: e.target.value }))}
-                                className={inputCls('w-24')}
+                                className={inputCls('w-24 text-right')}
                               />
                             ) : (
-                              <span className="font-semibold tabular-nums">{offer._priceText}</span>
+                              <span className={`font-semibold tabular-nums ${strong}`}>{offer._priceText}</span>
                             )}
                           </td>
 
-                          {/* Stock + Auto Stock */}
-                          <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                            {/* Current stock (editable) */}
-                            {isEditing ? (
-                              <input
-                                type="number"
-                                min="1" step="1"
-                                value={inlineValues.quantity ?? (offer._stock ?? '')}
-                                onChange={(e) => setInlineValues((v) => ({ ...v, quantity: e.target.value }))}
-                                className={inputCls('w-20')}
-                              />
-                            ) : (
-                              <span className="font-semibold">{offer._stock ?? '-'}</span>
-                            )}
-
-                            {/* Auto stock section */}
-                            {ebayListingId && (
-                              <div className={`mt-2 pt-2 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                                {isAutoStockLoading ? (
-                                  <Loader2 size={12} className={`animate-spin ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
-                                ) : autoStockRule ? (
-                                  /* ── Assigned ── */
-                                  <div className="flex flex-col gap-1">
-                                    <div className="flex items-center gap-1.5">
-                                      <span className={`text-[10px] font-semibold uppercase tracking-wide ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Auto stok</span>
-                                      {isAssignOpen ? (
-                                        /* Edit auto stock value */
-                                        <div className="flex items-center gap-1">
-                                          <input
-                                            type="number"
-                                            min="1" step="1"
-                                            value={autoStockAssignValue}
-                                            onChange={(e) => setAutoStockAssignValue(e.target.value)}
-                                            className={`w-16 rounded border px-1.5 py-0.5 text-xs outline-none focus:ring-2 focus:ring-emerald-500/40 ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                                            autoFocus
-                                          />
-                                          <button
-                                            type="button"
-                                            onClick={() => handleAssignAutoStock(ebayListingId)}
-                                            disabled={savingAutoStock}
-                                            className="h-5 w-5 rounded bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 disabled:opacity-50"
-                                          >
-                                            {savingAutoStock ? <Loader2 size={9} className="animate-spin" /> : <Check size={9} />}
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={() => setAutoStockAssignId(null)}
-                                            className={`h-5 w-5 rounded flex items-center justify-center ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
-                                          >
-                                            <X size={9} />
-                                          </button>
-                                        </div>
-                                      ) : (
-                                        <button
-                                          type="button"
-                                          onClick={() => { setAutoStockAssignId(ebayListingId); setAutoStockAssignValue(String(autoStockRule.assignedQuantity || '')); }}
-                                          className={`text-xs font-bold hover:underline ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}
-                                        >
-                                          {autoStockRule.assignedQuantity}
-                                        </button>
-                                      )}
-                                    </div>
-                                    {!isAssignOpen && (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleRemoveAutoStock(ebayListingId)}
-                                        disabled={removingAutoStock === ebayListingId}
-                                        className={`inline-flex items-center gap-0.5 text-[10px] font-medium transition ${isDark ? 'text-rose-400 hover:text-rose-300' : 'text-rose-500 hover:text-rose-700'} disabled:opacity-50`}
-                                      >
-                                        {removingAutoStock === ebayListingId ? <Loader2 size={9} className="animate-spin" /> : <X size={9} />}
-                                        Auto stoku sil
-                                      </button>
-                                    )}
-                                  </div>
+                          {/* Stock + auto stock */}
+                          <td className={`px-4 py-3 ${body}`}>
+                            <div className="flex flex-col items-start gap-1.5">
+                              {isEditing ? (
+                                <input
+                                  type="number"
+                                  min="1"
+                                  step="1"
+                                  value={inlineValues.quantity ?? (offer._stock ?? '')}
+                                  onChange={(e) => setInlineValues((v) => ({ ...v, quantity: e.target.value }))}
+                                  className={inputCls('w-20')}
+                                />
+                              ) : (
+                                <span
+                                  className={`font-semibold tabular-nums ${
+                                    offer._stock === 0 ? 'text-rose-500' : strong
+                                  }`}
+                                >
+                                  {offer._stock ?? '—'}
+                                </span>
+                              )}
+                              {ebayListingId && !offer._isEnded && (
+                                isAutoStockLoading ? (
+                                  <Loader2 size={12} className={`animate-spin ${faint}`} />
+                                ) : isAssignOpen ? (
+                                  renderInlineEditor({
+                                    value: autoStockAssignValue,
+                                    onChange: setAutoStockAssignValue,
+                                    onSave: () => handleAssignAutoStock(ebayListingId),
+                                    onCancel: () => setAutoStockAssignId(null),
+                                    saving: savingAutoStock,
+                                    min: 1,
+                                    step: 1,
+                                    placeholder: t('listingsPage.quantity'),
+                                    tone: 'emerald',
+                                  })
                                 ) : (
-                                  /* ── Not assigned ── */
-                                  <div className="flex flex-col gap-1">
-                                    {!isAssignOpen ? (
-                                      <>
-                                        <span className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Təyin edilməyib</span>
-                                        <button
-                                          type="button"
-                                          onClick={() => { setAutoStockAssignId(ebayListingId); setAutoStockAssignValue(''); }}
-                                          className={`inline-flex items-center gap-0.5 text-[10px] font-medium transition ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
-                                        >
-                                          + Auto stok təyin et
-                                        </button>
-                                      </>
-                                    ) : (
-                                      <div className="flex items-center gap-1">
-                                        <input
-                                          type="number"
-                                          min="1" step="1"
-                                          value={autoStockAssignValue}
-                                          onChange={(e) => setAutoStockAssignValue(e.target.value)}
-                                          placeholder="Miqdar"
-                                          className={`w-20 rounded border px-1.5 py-0.5 text-xs outline-none focus:ring-2 focus:ring-blue-500/40 ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500' : 'bg-white border-slate-300 text-slate-900'}`}
-                                          autoFocus
-                                        />
-                                        <button
-                                          type="button"
-                                          onClick={() => handleAssignAutoStock(ebayListingId)}
-                                          disabled={savingAutoStock}
-                                          className="h-6 rounded bg-blue-600 text-white text-[10px] font-semibold px-2 hover:bg-blue-700 disabled:opacity-50 flex items-center gap-0.5"
-                                        >
-                                          {savingAutoStock ? <Loader2 size={9} className="animate-spin" /> : <Check size={9} />}
-                                          Saxla
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => setAutoStockAssignId(null)}
-                                          className={`h-6 w-6 rounded flex items-center justify-center ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
-                                        >
-                                          <X size={10} />
-                                        </button>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                                  renderSettingChip({
+                                    active: !!autoStockRule,
+                                    label: autoStockRule ? `${t('listingsPage.autoStock')}: ${autoStockRule.assignedQuantity}` : '',
+                                    onEdit: () => { setAutoStockAssignId(ebayListingId); setAutoStockAssignValue(String(autoStockRule?.assignedQuantity || '')); },
+                                    onRemove: () => handleRemoveAutoStock(ebayListingId),
+                                    removing: removingAutoStock === ebayListingId,
+                                    removeTitle: t('listingsPage.autoStockRemove'),
+                                    addLabel: t('listingsPage.autoStockAdd'),
+                                    onAdd: () => { setAutoStockAssignId(ebayListingId); setAutoStockAssignValue(''); },
+                                  })
+                                )
+                              )}
+                            </div>
                           </td>
 
                           {/* Sold */}
-                          <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{offer._sold}</td>
+                          <td className={`px-4 py-3 text-right tabular-nums ${offer._sold > 0 ? strong : faint}`}>
+                            <span className={offer._sold > 0 ? 'font-semibold' : ''}>{offer._sold}</span>
+                          </td>
 
-                          {/* Watch count */}
-                          <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{offer._watchCount}</td>
+                          {/* Watchers */}
+                          <td className={`px-4 py-3 text-right tabular-nums ${offer._watchCount > 0 ? body : faint}`}>
+                            <span className="inline-flex items-center gap-1">
+                              {offer._watchCount > 0 && <Eye size={12} className={faint} />}
+                              {offer._watchCount}
+                            </span>
+                          </td>
 
-                          {/* Promoted listings ad rate */}
-                          <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                            {ebayListingId && (
+                          {/* Ad rate */}
+                          <td className="px-4 py-3">
+                            {ebayListingId && !offer._isEnded && (
                               isAdRateLoading ? (
-                                <Loader2 size={12} className={isDark ? 'text-slate-400 animate-spin' : 'text-slate-400 animate-spin'} />
-                              ) : adRate?.bidPercentage != null ? (
-                                /* ── Promoted ── */
-                                <div className="flex flex-col gap-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className={`text-[10px] font-semibold uppercase tracking-wide ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{t('listingsPage.promoted')}</span>
-                                    {isAdRateEditOpen ? (
-                                      <div className="flex items-center gap-1">
-                                        <input
-                                          type="number"
-                                          min="2" max="100" step="0.1"
-                                          value={adRateEditValue}
-                                          onChange={(e) => setAdRateEditValue(e.target.value)}
-                                          className={`w-16 rounded border px-1.5 py-0.5 text-xs outline-none focus:ring-2 focus:ring-emerald-500/40 ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                                          autoFocus
-                                        />
-                                        <button
-                                          type="button"
-                                          onClick={() => handleSaveAdRate(ebayListingId)}
-                                          disabled={savingAdRate}
-                                          className="h-5 w-5 rounded bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 disabled:opacity-50"
-                                        >
-                                          {savingAdRate ? <Loader2 size={9} className="animate-spin" /> : <Check size={9} />}
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => setAdRateEditId(null)}
-                                          className={`h-5 w-5 rounded flex items-center justify-center ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
-                                        >
-                                          <X size={9} />
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        onClick={() => { setAdRateEditId(ebayListingId); setAdRateEditValue(String(adRate.bidPercentage)); }}
-                                        className={`text-xs font-bold hover:underline ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}
-                                      >
-                                        {adRate.bidPercentage}%
-                                      </button>
-                                    )}
-                                  </div>
-                                  {!isAdRateEditOpen && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveAdRate(ebayListingId)}
-                                      disabled={removingAdRate === ebayListingId}
-                                      className={`inline-flex items-center gap-0.5 text-[10px] font-medium transition ${isDark ? 'text-rose-400 hover:text-rose-300' : 'text-rose-500 hover:text-rose-700'} disabled:opacity-50`}
-                                    >
-                                      {removingAdRate === ebayListingId ? <Loader2 size={9} className="animate-spin" /> : <X size={9} />}
-                                      {t('listingsPage.removeAdRate')}
-                                    </button>
-                                  )}
-                                </div>
+                                <Loader2 size={12} className={`animate-spin ${faint}`} />
+                              ) : isAdRateEditOpen ? (
+                                renderInlineEditor({
+                                  value: adRateEditValue,
+                                  onChange: setAdRateEditValue,
+                                  onSave: () => handleSaveAdRate(ebayListingId),
+                                  onCancel: () => setAdRateEditId(null),
+                                  saving: savingAdRate,
+                                  min: 2,
+                                  max: 100,
+                                  step: 0.1,
+                                  placeholder: '%',
+                                  tone: 'emerald',
+                                })
                               ) : (
-                                /* ── Not promoted ── */
-                                <div className="flex flex-col gap-1">
-                                  {!isAdRateEditOpen ? (
-                                    <>
-                                      <span className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('listingsPage.notPromoted')}</span>
-                                      <button
-                                        type="button"
-                                        onClick={() => { setAdRateEditId(ebayListingId); setAdRateEditValue(''); }}
-                                        className={`inline-flex items-center gap-0.5 text-[10px] font-medium transition ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
-                                      >
-                                        + {t('listingsPage.setAdRate')}
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <div className="flex items-center gap-1">
-                                      <input
-                                        type="number"
-                                        min="2" max="100" step="0.1"
-                                        value={adRateEditValue}
-                                        onChange={(e) => setAdRateEditValue(e.target.value)}
-                                        placeholder="%"
-                                        className={`w-16 rounded border px-1.5 py-0.5 text-xs outline-none focus:ring-2 focus:ring-blue-500/40 ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500' : 'bg-white border-slate-300 text-slate-900'}`}
-                                        autoFocus
-                                      />
-                                      <button
-                                        type="button"
-                                        onClick={() => handleSaveAdRate(ebayListingId)}
-                                        disabled={savingAdRate}
-                                        className="h-6 rounded bg-blue-600 text-white text-[10px] font-semibold px-2 hover:bg-blue-700 disabled:opacity-50 flex items-center gap-0.5"
-                                      >
-                                        {savingAdRate ? <Loader2 size={9} className="animate-spin" /> : <Check size={9} />}
-                                        {t('listingsPage.saveAdRate')}
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => setAdRateEditId(null)}
-                                        className={`h-6 w-6 rounded flex items-center justify-center ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
-                                      >
-                                        <X size={10} />
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
+                                renderSettingChip({
+                                  active: adRate?.bidPercentage != null,
+                                  label: adRate?.bidPercentage != null ? (
+                                    <span className="inline-flex items-center gap-1"><Megaphone size={11} />{adRate.bidPercentage}%</span>
+                                  ) : '',
+                                  onEdit: () => { setAdRateEditId(ebayListingId); setAdRateEditValue(String(adRate.bidPercentage)); },
+                                  onRemove: () => handleRemoveAdRate(ebayListingId),
+                                  removing: removingAdRate === ebayListingId,
+                                  removeTitle: t('listingsPage.removeAdRate'),
+                                  addLabel: t('listingsPage.promote'),
+                                  onAdd: () => { setAdRateEditId(ebayListingId); setAdRateEditValue(''); },
+                                })
                               )
                             )}
                           </td>
 
                           {/* Status */}
-                          <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                            <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs border ${getStatusPill(status)}`}>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${getStatusPill(status)}`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${statusDot(status)}`} />
                               {status}
                             </span>
                           </td>
 
                           {/* Actions */}
                           <td className="px-4 py-3">
-                            <div className="flex items-center justify-end gap-1.5">
+                            <div className="flex items-center justify-end gap-1">
                               {isEditing ? (
                                 <>
                                   <button
                                     type="button"
                                     onClick={() => handleInlineSave(offer, ebayListingId)}
                                     disabled={savingInline}
-                                    title="Save"
-                                    className="h-8 w-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 transition disabled:opacity-50"
+                                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
                                   >
                                     {savingInline ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                                    {t('listingsPage.save')}
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => { setInlineEditId(null); setInlineValues({}); }}
-                                    title="Cancel"
-                                    className={`h-8 w-8 rounded-lg border flex items-center justify-center transition ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                    title={t('listingsPage.cancel')}
+                                    aria-label={t('listingsPage.cancel')}
+                                    className={iconBtn}
                                   >
-                                    <X size={13} />
+                                    <X size={15} />
                                   </button>
                                 </>
                               ) : (
                                 <>
                                   {offer._isEnded && ebayListingId && (
                                     offer.relistedItemId ? (
-                                      <span className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                      <span className={`inline-flex items-center gap-1 whitespace-nowrap px-2 text-xs ${muted}`}>
                                         <Check size={12} />
                                         {t('listingsPage.alreadyRelisted')}
                                       </span>
@@ -1161,10 +1179,10 @@ export default function ListingsPage() {
                                       <button
                                         type="button"
                                         onClick={() => navigate(`/listings/${encodeURIComponent(String(listingId))}`, { state: { listing: offer, openRelist: true } })}
-                                        className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-indigo-700"
+                                        className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg bg-indigo-600 px-3 text-xs font-semibold text-white transition hover:bg-indigo-700"
                                         title={t('listingsPage.relistHint')}
                                       >
-                                        <RotateCcw size={12} />
+                                        <RotateCcw size={13} />
                                         {t('listingsPage.relist')}
                                       </button>
                                     ) : null
@@ -1180,78 +1198,109 @@ export default function ListingsPage() {
                                           quantity: offer._stock ?? '',
                                         });
                                       }}
-                                      title="Edit"
-                                      className={`h-8 w-8 rounded-lg border flex items-center justify-center transition ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                      title={t('listingsPage.edit')}
+                                      aria-label={t('listingsPage.edit')}
+                                      className={iconBtn}
                                     >
-                                      <Pencil size={13} />
+                                      <Pencil size={15} />
                                     </button>
                                   )}
-                                  <button
-                                    type="button"
-                                    onClick={() => navigate(`/listings/${encodeURIComponent(String(listingId))}`, { state: { listing: offer } })}
-                                    className={`inline-flex items-center gap-1 text-sm ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`}
-                                  >
-                                    {t('listingsPage.details')}
-                                  </button>
                                   {ebayListingId && (
                                     <button
                                       type="button"
                                       onClick={() => setFeedbackListing({ offer, ebayListingId })}
-                                      className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors ${isDark ? 'border-blue-800/60 text-blue-300 hover:bg-blue-950/40' : 'border-blue-200 text-blue-700 hover:bg-blue-50'}`}
-                                      title="View feedback"
+                                      title={t('listingsPage.feedback')}
+                                      aria-label={t('listingsPage.feedback')}
+                                      className={iconBtn}
                                     >
-                                      <MessageSquare size={12} />
-                                      Feedback
+                                      <MessageSquare size={15} />
                                     </button>
                                   )}
-                                  {!offer._isEnded && <button
+                                  {!offer._isEnded && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteListing({ ebayListingId, internalSku, offerId })}
+                                      disabled={deleteKey && deletingListingId === deleteKey}
+                                      title={t('listingsPage.deleteListing')}
+                                      aria-label={t('listingsPage.deleteListing')}
+                                      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition disabled:opacity-50 ${isDark ? 'text-slate-400 hover:bg-rose-500/10 hover:text-rose-300' : 'text-slate-500 hover:bg-rose-50 hover:text-rose-600'}`}
+                                    >
+                                      {deleteKey && deletingListingId === deleteKey ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                                    </button>
+                                  )}
+                                  <button
                                     type="button"
-                                    onClick={() => handleDeleteListing({ ebayListingId, internalSku, offerId })}
-                                    disabled={deleteKey && deletingListingId === deleteKey}
-                                    className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors ${isDark ? 'border-red-900/50 text-red-300 hover:bg-red-950/40' : 'border-red-200 text-red-700 hover:bg-red-50'}`}
-                                    title={t('listingsPage.deleteListing')}
+                                    onClick={openDetails}
+                                    className={`ml-1 inline-flex h-8 items-center gap-1 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold transition ${
+                                      isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                                    }`}
                                   >
-                                    <Trash2 size={14} />
-                                    {deleteKey && deletingListingId === deleteKey ? t('listingsPage.deleting') : t('listingsPage.delete')}
-                                  </button>}
+                                    {t('listingsPage.details')}
+                                    <ChevronRight size={13} />
+                                  </button>
                                 </>
                               )}
                             </div>
                           </td>
                         </tr>
-                      </React.Fragment>
-                    );
-                  })}
-                  {pagedItems.length === 0 && (
-                    <tr>
-                      <td colSpan={8} className={`px-4 py-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {endedLoading && statusFilter === 'COMPLETED' ? (
-                          <span className="inline-flex items-center gap-2"><Loader2 size={14} className="animate-spin" />{t('listingsPage.loadingEnded')}</span>
-                        ) : t('listingsPage.noListings')}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                      );
+                    })}
+                    {pagedItems.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-16 text-center">
+                          {endedLoading && statusFilter === 'COMPLETED' ? (
+                            <span className={`inline-flex items-center gap-2 text-sm ${muted}`}>
+                              <Loader2 size={14} className="animate-spin" />
+                              {t('listingsPage.loadingEnded')}
+                            </span>
+                          ) : (
+                            <div className="flex flex-col items-center">
+                              <span className={`mb-3 flex h-12 w-12 items-center justify-center rounded-full ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-400'}`}>
+                                <Boxes size={20} />
+                              </span>
+                              <p className={`text-sm ${muted}`}>{t('listingsPage.noListings')}</p>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
-            {/* Pagination */}
-            <div className={`flex items-center justify-between px-4 py-3 border-t ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}>
-              <div className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                {t('listingsPage.page')} {page + 1}
-              </div>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={() => canPrev && setPage((p) => Math.max(0, p - 1))} disabled={!canPrev || fetchingPage} className="btn-secondary">
-                  {t('listingsPage.previous')}
-                </button>
-                <button type="button" onClick={() => canNext && setPage((p) => p + 1)} disabled={!canNext || fetchingPage} className="btn-secondary">
-                  {t('listingsPage.next')}
-                </button>
+              {/* Pagination */}
+              <div className={`flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <span className={`text-sm tabular-nums ${muted}`}>
+                  {t('listingsPage.rangeOf', { from: rangeFrom, to: rangeTo, total: filteredItems.length })}
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs ${faint}`}>
+                    {t('listingsPage.page')} {page + 1} / {pageCount}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => canPrev && setPage((p) => Math.max(0, p - 1))}
+                    disabled={!canPrev || fetchingPage}
+                    aria-label={t('listingsPage.previous')}
+                    className={`inline-flex h-8 items-center gap-1 rounded-lg border px-2.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+                  >
+                    <ChevronLeft size={14} /> {t('listingsPage.previous')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => canNext && setPage((p) => p + 1)}
+                    disabled={!canNext || fetchingPage}
+                    aria-label={t('listingsPage.next')}
+                    className={`inline-flex h-8 items-center gap-1 rounded-lg border px-2.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+                  >
+                    {t('listingsPage.next')} <ChevronRight size={14} />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
 
       {feedbackListing && (
         <FeedbackSidebar
