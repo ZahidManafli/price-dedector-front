@@ -636,7 +636,7 @@ export default function ProfitTablePage() {
 
   return (
     <div className="page-shell">
-      <div className="mx-auto max-w-[1520px] space-y-5">
+      <div className="w-full space-y-5">
         {/* ── Header ── */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">

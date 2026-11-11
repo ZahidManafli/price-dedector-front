@@ -1003,7 +1003,7 @@ export default function AdminPanelPage() {
 
   return (
     <div className="page-shell">
-      <div className="mx-auto max-w-[1520px]">
+      <div className="w-full">
         <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
             <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${isDark ? 'bg-blue-500/15 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
