@@ -882,7 +882,7 @@ export default function OrdersPage() {
     };
     const dots = { good: 'bg-emerald-500', warn: 'bg-amber-500', bad: 'bg-rose-500', info: 'bg-indigo-500', neutral: 'bg-slate-400' };
     const tone =
-      v === 'PAID' || v === 'FULFILLED'
+      v === 'PAID' || v === 'FULFILLED' || v === 'DELIVERED'
         ? 'good'
         : v === 'NOT_STARTED' || v === 'PENDING'
         ? 'warn'
@@ -1310,7 +1310,12 @@ export default function OrdersPage() {
                           {/* Status: shipment + payment */}
                           <td className="px-4 py-3">
                             <div className="flex flex-col items-start gap-1">
-                              {statusChip(shipmentStatus)}
+                              {/* eBay only knows "shipped"; the Tracking record knows when it was delivered. */}
+                              {statusChip(
+                                shipmentStatus !== 'ORDER_CANCELLED' && trackingByOrderId[String(id)]?.fulfillmentStatus === 'delivered'
+                                  ? 'DELIVERED'
+                                  : shipmentStatus
+                              )}
                               {statusChip(payment)}
                             </div>
                           </td>

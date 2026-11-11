@@ -936,7 +936,8 @@
       "NOT_STARTED": "Gönderilmedi",
       "IN_PROGRESS": "Hazırlanıyor",
       "FULFILLED": "Gönderildi",
-      "ORDER_CANCELLED": "İptal edildi"
+      "ORDER_CANCELLED": "İptal edildi",
+      "DELIVERED": "Teslim edildi"
     },
     "paymentAll": "Tüm ödemeler",
     "colOrder": "Sipariş",
@@ -953,9 +954,9 @@
       "number": "Takip numarası",
       "carrier": "Kargo firması",
       "carrierAuto": "Numaradan otomatik belirlenir",
-      "carrierHint": "USPS, UPS ve FedEx numaraları desteklenir.",
+      "carrierHint": "Aquiline, USPS, UPS ve FedEx numaraları desteklenir.",
       "tbaHint": "Amazon TBA kodları doğrudan eBay'e gönderilemez. Tracking sayfasından ekleyin.",
-      "unknownHint": "Bu numaradan kargo firması bulunamadı. Numarayı kontrol edin (USPS, UPS veya FedEx).",
+      "unknownHint": "Bu numaradan kargo firması bulunamadı. Numarayı kontrol edin (Aquiline, USPS, UPS veya FedEx).",
       "whatHappens": "Onaylayınca numara eBay siparişine yüklenir, sipariş gönderildi olarak işaretlenir ve alıcıya gönderim mesajı gider.",
       "submit": "eBay'e yükle",
       "submitting": "Yükleniyor…",

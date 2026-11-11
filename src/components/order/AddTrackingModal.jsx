@@ -102,7 +102,7 @@ export default function AddTrackingModal({ order, isDark, onClose, onSaved }) {
               ref={inputRef}
               value={value}
               onChange={(e) => { setValue(e.target.value); setError(''); }}
-              placeholder="1Z… / 9400… / 7712…"
+              placeholder="AQUA… / 1Z… / 9400… / 7712…"
               autoComplete="off"
               spellCheck={false}
               className={`${field} font-mono focus:border-indigo-500 focus:ring-2 ${isDark ? 'focus:ring-indigo-500/30' : 'focus:ring-indigo-100'}`}

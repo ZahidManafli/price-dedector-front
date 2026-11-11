@@ -1321,7 +1321,8 @@
       "NOT_STARTED": "Not shipped",
       "IN_PROGRESS": "In progress",
       "FULFILLED": "Shipped",
-      "ORDER_CANCELLED": "Cancelled"
+      "ORDER_CANCELLED": "Cancelled",
+      "DELIVERED": "Delivered"
     },
     "paymentAll": "All payments",
     "colOrder": "Order",
@@ -1338,9 +1339,9 @@
       "number": "Tracking number",
       "carrier": "Carrier",
       "carrierAuto": "Detected automatically from the number",
-      "carrierHint": "USPS, UPS and FedEx numbers are supported.",
+      "carrierHint": "Aquiline, USPS, UPS and FedEx numbers are supported.",
       "tbaHint": "Amazon TBA codes cannot be posted to eBay directly. Add them from the Tracking page.",
-      "unknownHint": "No carrier matches this number. Check it (USPS, UPS or FedEx).",
+      "unknownHint": "No carrier matches this number. Check it (Aquiline, USPS, UPS or FedEx).",
       "whatHappens": "On confirm the number is uploaded to the eBay order, the order is marked shipped and the buyer gets the shipped message.",
       "submit": "Upload to eBay",
       "submitting": "Uploading…",

@@ -1091,7 +1091,8 @@
       "NOT_STARTED": "Göndərilməyib",
       "IN_PROGRESS": "Hazırlanır",
       "FULFILLED": "Göndərilib",
-      "ORDER_CANCELLED": "Ləğv edilib"
+      "ORDER_CANCELLED": "Ləğv edilib",
+      "DELIVERED": "Çatdırılıb"
     },
     "paymentAll": "Bütün ödənişlər",
     "colOrder": "Sifariş",
@@ -1108,9 +1109,9 @@
       "number": "Tracking nömrəsi",
       "carrier": "Carrier",
       "carrierAuto": "Nömrəyə görə avtomatik təyin olunur",
-      "carrierHint": "USPS, UPS və FedEx nömrələri dəstəklənir.",
+      "carrierHint": "Aquiline, USPS, UPS və FedEx nömrələri dəstəklənir.",
       "tbaHint": "Amazon TBA kodları birbaşa eBay-ə göndərilmir. Onları Tracking səhifəsindən əlavə edin.",
-      "unknownHint": "Bu nömrədən carrier tapılmadı. Nömrəni yoxlayın (USPS, UPS və ya FedEx).",
+      "unknownHint": "Bu nömrədən carrier tapılmadı. Nömrəni yoxlayın (Aquiline, USPS, UPS və ya FedEx).",
       "whatHappens": "Təsdiqlədikdə nömrə eBay sifarişinə yüklənəcək, sifariş \"Göndərilib\" olacaq və alıcıya göndəriş mesajı gedəcək.",
       "submit": "eBay-ə yüklə",
       "submitting": "Yüklənir…",

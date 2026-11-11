@@ -944,7 +944,8 @@
       "NOT_STARTED": "Не отправлен",
       "IN_PROGRESS": "В обработке",
       "FULFILLED": "Отправлен",
-      "ORDER_CANCELLED": "Отменён"
+      "ORDER_CANCELLED": "Отменён",
+      "DELIVERED": "Доставлен"
     },
     "paymentAll": "Все оплаты",
     "colOrder": "Заказ",
@@ -961,9 +962,9 @@
       "number": "Трек-номер",
       "carrier": "Перевозчик",
       "carrierAuto": "Определяется автоматически по номеру",
-      "carrierHint": "Поддерживаются номера USPS, UPS и FedEx.",
+      "carrierHint": "Поддерживаются номера Aquiline, USPS, UPS и FedEx.",
       "tbaHint": "Коды Amazon TBA нельзя отправить в eBay напрямую. Добавьте их на странице Tracking.",
-      "unknownHint": "Перевозчик по этому номеру не найден. Проверьте номер (USPS, UPS или FedEx).",
+      "unknownHint": "Перевозчик по этому номеру не найден. Проверьте номер (Aquiline, USPS, UPS или FedEx).",
       "whatHappens": "После подтверждения номер загрузится в заказ eBay, заказ станет «Отправлен», покупателю уйдёт сообщение об отправке.",
       "submit": "Загрузить в eBay",
       "submitting": "Загрузка…",
