@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X, Trash2, Search, Copy, Pencil, Smartphone, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Truck, Loader2, ExternalLink, AlertTriangle, MessageSquare, X, Trash2, Search, Copy, Pencil, Smartphone, ChevronLeft, ChevronRight,
+  Check, ImageOff, MoreHorizontal, RefreshCcw, UploadCloud, Zap, Coins, Info, Store, PackageOpen, CalendarDays,
+} from 'lucide-react';
 import Swal from 'sweetalert2';
 import { ebayAPI, settingsAPI, API_BASE_URL } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
@@ -733,249 +736,189 @@ function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerU
     }
   };
 
+  const [copied, setCopied] = useState('');
+  const copyValue = async (value) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(value);
+      setTimeout(() => setCopied((cur) => (cur === value ? '' : cur)), 1500);
+    } catch {
+      // clipboard unavailable
+    }
+  };
+
+  const muted = isDark ? 'text-slate-400' : 'text-slate-500';
+  const faint = isDark ? 'text-slate-500' : 'text-slate-400';
+  const strong = isDark ? 'text-slate-100' : 'text-slate-900';
+  const secondaryBtn = `inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold transition disabled:opacity-50 ${
+    isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+  }`;
+  const primaryBtn = 'inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg bg-indigo-600 px-3 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50';
+
+  // Which actions apply to this row — the same conditions as before, only grouped.
+  const canGetTracking = Boolean(row.amazonOrderId) && row.fulfillmentStatus === 'ordered';
+  const hasCode = Boolean(row.aquilineTrackingNumber || row.vdtrackNumber || (row.trackingNumber && row.trackingNumber !== row.amazonOrderId));
+  const canSendToEbay = hasCode && !row.ebayFulfillmentId;
+  const canUpdateLabels = Boolean(row.aquilineTrackingNumber) && !row.skipAmazonTrackingCheck;
+  const canConvert = row.fulfillmentStatus !== 'delivered';
+  const realCarrierNumber = !row.aquilineTrackingNumber && row.trackingNumber && row.trackingNumber !== row.amazonOrderId ? row.trackingNumber : null;
+
+  const menuItems = [
+    canGetTracking && { key: 'manual', label: gettingManualTracking ? 'Getting…' : 'Get Manual Tracking', icon: Zap, onClick: handleGetManualTracking, disabled: gettingManualTracking },
+    canConvert && { key: 'convert', label: 'Convert tracking code', icon: RefreshCcw, onClick: () => setShowConvertModal(true) },
+    row.amazonOrderId && { key: 'amazon', label: row.manualAmazonTrackingUrl ? 'Edit Amazon tracking link' : 'Set Amazon tracking link', icon: Pencil, onClick: () => setShowAmazonLinkModal(true) },
+    { key: 'orders', label: 'Open Orders page', icon: ExternalLink, to: '/orders' },
+    { key: 'delete', label: deleting ? 'Deleting…' : 'Delete tracking', icon: Trash2, onClick: handleDeleteTracking, danger: true, disabled: deleting },
+  ].filter(Boolean);
+
+  const codeLink = (code, tone = 'indigo', titleText) => (
+    <span className="inline-flex items-center gap-1">
+      <a
+        href={`https://aquiline-tracking.com/app/track/${encodeURIComponent(code)}`}
+        target="_blank"
+        rel="noreferrer"
+        title={titleText || 'Open on Aquiline'}
+        className={`font-mono text-xs hover:underline ${
+          tone === 'emerald'
+            ? isDark ? 'text-emerald-300' : 'text-emerald-600'
+            : isDark ? 'text-indigo-300' : 'text-indigo-600'
+        }`}
+      >
+        {code}
+      </a>
+      <button type="button" onClick={() => copyValue(code)} title={copied === code ? 'Copied' : 'Copy'} className={`rounded p-0.5 ${faint} hover:opacity-80`}>
+        {copied === code ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
+      </button>
+    </span>
+  );
+
   return (
-    <tr className={isDark ? 'bg-slate-900' : 'bg-white'}>
-      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-        <div className="flex items-center gap-3">
-          <div
-            className={`h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border ${
-              isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'
-            }`}
-          >
+    <tr className={`group align-middle transition-colors ${isDark ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50/70'}`}>
+      {/* eBay order */}
+      <td className="px-4 py-3">
+        <div className="flex min-w-[240px] max-w-[340px] items-center gap-3">
+          <div className={`h-12 w-12 shrink-0 overflow-hidden rounded-lg border ${isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
             {imageUrl ? (
-              <img src={imageUrl} alt={title || row.ebayOrderId} className="h-full w-full object-cover" />
+              <img src={imageUrl} alt="" loading="lazy" className="h-full w-full object-cover" />
             ) : (
-              <div className={`flex h-full w-full items-center justify-center text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                No image
-              </div>
+              <span className={`flex h-full w-full items-center justify-center ${faint}`}><ImageOff size={16} /></span>
             )}
           </div>
           <div className="min-w-0">
-            <div className="font-medium truncate">{row.ebayOrderId}</div>
-            {title && (
-              <div className={`text-[10px] truncate max-w-[160px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                {title}
-              </div>
-            )}
+            {title && <p className={`line-clamp-2 text-sm font-medium leading-snug ${strong}`} title={title}>{title}</p>}
+            <p className={`mt-0.5 font-mono text-xs ${title ? muted : strong}`}>{row.ebayOrderId}</p>
           </div>
         </div>
       </td>
-      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-        {/* Delivery address's actual name/surname (bold) vs. the eBay buyer's
-            username (small, below) — these commonly differ, and both matter:
-            the address name is who it's really going to, the username is the
-            buyer's account identity. */}
-        {shipToFullName ? (
-          <>
-            <div className="font-medium truncate max-w-[160px]">{shipToFullName}</div>
-            {buyerUsername && (
-              <div className={`text-[10px] truncate max-w-[160px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                {buyerUsername}
-              </div>
-            )}
-          </>
-        ) : (
-          buyerUsername || <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>—</span>
-        )}
-      </td>
-      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-        {row.amazonOrderId ? (
-          <a
-            href={row.manualAmazonTrackingUrl || buildAmazonTrackingUrl(row.amazonOrderId)}
-            target="_blank"
-            rel="noreferrer"
-            className={`underline ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-500'}`}
-          >
-            {row.amazonOrderId}
-          </a>
-        ) : (
-          row.amazonTrackingNumber || <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>—</span>
-        )}
-      </td>
+
+      {/* Customer: delivery name (who it goes to) + eBay username (account) */}
       <td className="px-4 py-3">
-        <FulfillmentStepper status={row.fulfillmentStatus} isDark={isDark} />
-        {/* Amazon's tracking page reported a delivery problem (delay / failed
-            attempt / undeliverable / returning — backend utils/deliveryIssue.js). */}
-        {row.deliveryIssue && row.fulfillmentStatus !== 'delivered' && (
-          <div
-            title={row.deliveryIssue.message || ''}
-            className={`mt-1.5 inline-flex max-w-[240px] items-start gap-1.5 rounded-lg border px-2 py-1 text-[11px] font-semibold leading-snug ${
-              row.deliveryIssue.type === 'delay'
-                ? isDark ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' : 'border-amber-200 bg-amber-50 text-amber-700'
-                : isDark ? 'border-rose-500/40 bg-rose-500/10 text-rose-300' : 'border-rose-200 bg-rose-50 text-rose-700'
-            }`}
-          >
-            <AlertTriangle size={12} className="mt-px shrink-0" />
-            <span>
-              {t(`trackingDeliveryIssue.${row.deliveryIssue.type}`, { defaultValue: t('trackingDeliveryIssue.delay') })}
-              {row.deliveryIssue.estimatedDate ? ` · ${t('trackingDeliveryIssue.newDate', { date: row.deliveryIssue.estimatedDate })}` : ''}
-            </span>
-          </div>
-        )}
-        {/* Aquiline number takes priority when both exist; otherwise show the real
-            carrier tracking number "Get Tracking" captured directly (it only ever
-            differs from the Amazon order id once that's actually happened). The
-            Aquiline code links out to Aquiline's tracking page. If "Convert tracking
-            code" was used on an order that already had a code, that's a SEPARATE
-            Aquiline order (manualAquilineTrackingNumber — see convertTrackingCodeToAquiline)
-            shown stacked underneath the original rather than replacing it. */}
-        {row.aquilineTrackingNumber ? (
-          <a
-            href={`https://aquiline-tracking.com/app/track/${encodeURIComponent(row.aquilineTrackingNumber)}`}
-            target="_blank"
-            rel="noreferrer"
-            className={`block text-xs mt-1 underline ${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-500'}`}
-          >
-            {row.aquilineTrackingNumber}
-          </a>
-        ) : (
-          row.trackingNumber && row.trackingNumber !== row.amazonOrderId && (
-            <div className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              {row.trackingNumber}
-            </div>
-          )
-        )}
-        {row.manualAquilineTrackingNumber && (
-          <a
-            href={`https://aquiline-tracking.com/app/track/${encodeURIComponent(row.manualAquilineTrackingNumber)}`}
-            target="_blank"
-            rel="noreferrer"
-            title="Manually converted tracking code"
-            className={`block text-xs mt-1 underline ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}
-          >
-            {row.manualAquilineTrackingNumber}
-          </a>
-        )}
+        <div className="min-w-[130px] max-w-[200px]">
+          <p className={`truncate text-sm font-medium ${strong}`}>{shipToFullName || buyerUsername || '—'}</p>
+          {shipToFullName && buyerUsername && <p className={`truncate text-xs ${muted}`}>@{buyerUsername}</p>}
+        </div>
       </td>
-      <td className={`px-4 py-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-        {row.ebayFulfillmentId ? 'Uploaded' : '—'}
-      </td>
-      <td className={`px-4 py-3 text-sm whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-        {fmtDate(row.updatedAt)}
-      </td>
-      <td className="px-4 py-3 text-right">
-        <div className="flex items-center justify-end gap-2 flex-wrap">
-          {/* Once a tracking code has been obtained (fulfillmentStatus moves past
-              "ordered") this must not show again — re-running "Get Tracking" is what
-              caused a second, stale-slug row to get created for an order that already
-              shipped. aquilineTrackingNumber alone isn't enough to gate on: a real
-              carrier (USPS/UPS/...) captured directly off Amazon's delivery card never
-              gets one. */}
-          {row.amazonOrderId && row.fulfillmentStatus === 'ordered' && (
-            <button
-              type="button"
-              onClick={handleGetTracking}
-              disabled={!!getTrackingModal}
-              className="btn-primary text-xs px-3 py-1.5"
+
+      {/* Amazon order */}
+      <td className="px-4 py-3">
+        {row.amazonOrderId ? (
+          <div className="flex flex-col items-start gap-0.5">
+            <a
+              href={row.manualAmazonTrackingUrl || buildAmazonTrackingUrl(row.amazonOrderId)}
+              target="_blank"
+              rel="noreferrer"
+              title="Open Amazon tracking page"
+              className={`inline-flex items-center gap-1 whitespace-nowrap font-mono text-xs hover:underline ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}
             >
+              {row.amazonOrderId}
+              <ExternalLink size={11} />
+            </a>
+            {row.manualAmazonTrackingUrl && <span className={`text-[11px] ${faint}`}>Custom link</span>}
+          </div>
+        ) : (
+          <span className={`text-xs ${faint}`}>{row.amazonTrackingNumber || '—'}</span>
+        )}
+      </td>
+
+      {/* Tracking: stage + code(s) + delivery problem */}
+      <td className="px-4 py-3">
+        <div className="flex min-w-[190px] flex-col items-start gap-1">
+          <FulfillmentStepper status={row.fulfillmentStatus} isDark={isDark} />
+          {row.aquilineTrackingNumber
+            ? codeLink(row.aquilineTrackingNumber)
+            : realCarrierNumber && (
+                <span className="inline-flex items-center gap-1">
+                  {row.slug && (
+                    <span className={`rounded px-1 py-px text-[10px] font-bold uppercase ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>{row.slug}</span>
+                  )}
+                  <span className={`font-mono text-xs ${muted}`}>{realCarrierNumber}</span>
+                  <button type="button" onClick={() => copyValue(realCarrierNumber)} title={copied === realCarrierNumber ? 'Copied' : 'Copy'} className={`rounded p-0.5 ${faint} hover:opacity-80`}>
+                    {copied === realCarrierNumber ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
+                  </button>
+                </span>
+              )}
+          {/* "Convert tracking code" on an order that already had a code makes a
+              separate Aquiline order — shown under the original, not replacing it. */}
+          {row.manualAquilineTrackingNumber && codeLink(row.manualAquilineTrackingNumber, 'emerald', 'Manually converted tracking code')}
+          {/* Amazon's tracking page reported a delivery problem (backend utils/deliveryIssue.js). */}
+          {row.deliveryIssue && row.fulfillmentStatus !== 'delivered' && (
+            <span
+              title={row.deliveryIssue.message || ''}
+              className={`mt-0.5 inline-flex max-w-[240px] items-start gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold leading-snug ${
+                row.deliveryIssue.type === 'delay'
+                  ? isDark ? 'bg-amber-500/10 text-amber-300' : 'bg-amber-50 text-amber-700'
+                  : isDark ? 'bg-rose-500/10 text-rose-300' : 'bg-rose-50 text-rose-700'
+              }`}
+            >
+              <AlertTriangle size={12} className="mt-px shrink-0" />
+              <span>
+                {t(`trackingDeliveryIssue.${row.deliveryIssue.type}`, { defaultValue: t('trackingDeliveryIssue.delay') })}
+                {row.deliveryIssue.estimatedDate ? ` · ${t('trackingDeliveryIssue.newDate', { date: row.deliveryIssue.estimatedDate })}` : ''}
+              </span>
+            </span>
+          )}
+        </div>
+      </td>
+
+      {/* eBay upload */}
+      <td className="px-4 py-3">
+        {row.ebayFulfillmentId ? (
+          <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${isDark ? 'bg-emerald-500/10 text-emerald-300' : 'bg-emerald-50 text-emerald-700'}`}>
+            <Check size={12} /> On eBay
+          </span>
+        ) : canSendToEbay ? (
+          <button type="button" onClick={handleSendToEbay} disabled={sendingToEbay} className={`${secondaryBtn} ${isDark ? '!border-indigo-500/40 !text-indigo-300' : '!border-indigo-200 !text-indigo-700'}`}>
+            {sendingToEbay ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />}
+            {sendingToEbay ? 'Sending…' : 'Send to eBay'}
+          </button>
+        ) : (
+          <span className={`text-xs ${faint}`}>Not yet</span>
+        )}
+      </td>
+
+      {/* Updated */}
+      <td className={`whitespace-nowrap px-4 py-3 text-xs ${muted}`} title={fmtDate(row.updatedAt)}>
+        {fmtRelative(row.updatedAt)}
+      </td>
+
+      {/* Actions: one primary step + overflow menu */}
+      <td className="px-4 py-3">
+        <div className="flex items-center justify-end gap-1.5">
+          {canGetTracking && (
+            <button type="button" onClick={handleGetTracking} disabled={!!getTrackingModal} className={primaryBtn}>
+              {getTrackingModal ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
               {getTrackingModal ? 'Getting…' : 'Get Tracking'}
             </button>
           )}
-          {/* Manual override — skips the "is it actually shipped yet" check against
-              Amazon's live page entirely and just force-assigns an Aquiline code right
-              now. Once any tracking number has already been assigned (Aquiline, USPS,
-              or otherwise — i.e. fulfillmentStatus moved past "ordered") there's
-              nothing left for this to do, same as "Get Tracking". */}
-          {row.amazonOrderId && row.fulfillmentStatus === 'ordered' && (
-            <button
-              type="button"
-              onClick={handleGetManualTracking}
-              disabled={gettingManualTracking}
-              className="btn-secondary text-xs px-3 py-1.5"
-            >
-              {gettingManualTracking ? 'Getting…' : 'Get Manual Tracking'}
-            </button>
-          )}
-          {/* A real carrier (USPS/UPS/...) captured directly off Amazon's delivery
-              card never gets an Aquiline number — it's usable for eBay on its own,
-              so this can't gate on aquilineTrackingNumber alone. trackingNumber
-              starts out as a placeholder equal to the Amazon order id right after
-              matching (before any real tracking exists), so only count it once
-              "Get Tracking" has actually replaced it with a real carrier number. */}
-          {(row.aquilineTrackingNumber ||
-            row.vdtrackNumber ||
-            (row.trackingNumber && row.trackingNumber !== row.amazonOrderId)) &&
-            !row.ebayFulfillmentId && (
-            <button
-              type="button"
-              onClick={handleSendToEbay}
-              disabled={sendingToEbay}
-              className="btn-secondary text-xs px-3 py-1.5"
-            >
-              {sendingToEbay ? 'Sending…' : 'Send to eBay'}
-            </button>
-          )}
-          {/* Aquiline-only — "Update Labels" refreshes an order's HTML on Aquiline's
-              side, which only makes sense once the order actually exists there. Never
-              show it for a real-carrier-direct shipment (no Aquiline order to refresh)
-              to avoid ever calling this with a placeholder tracking number and
-              clobbering the real carrier number already on the row. Stays visible
-              (and sendable) even after delivery. Never shown for a "Convert tracking
-              code" row either — skipAmazonTrackingCheck means there's no Amazon page
-              for this to (re-)scrape; the backend also rejects it defensively. */}
-          {row.aquilineTrackingNumber && !row.skipAmazonTrackingCheck && (
-            <button
-              type="button"
-              onClick={handleUpdateLabels}
-              disabled={!!updateLabelsModal}
-              className="btn-secondary text-xs px-3 py-1.5"
-            >
+          {canUpdateLabels && (
+            <button type="button" onClick={handleUpdateLabels} disabled={!!updateLabelsModal} className={secondaryBtn}>
+              <RefreshCcw size={13} />
               Update Labels
             </button>
           )}
-          {/* Manual escape hatch: the seller already has a real carrier tracking number
-              (FedEx/UPS/USPS) in hand — from the retailer directly, or because Amazon's
-              tracking page just won't scrape — and wants an Aquiline code for it without
-              any Amazon involvement at all. Available for as long as the order hasn't
-              been marked delivered — including after it's already been pushed to eBay
-              once, so the seller can still correct/replace a wrong tracking code. */}
-          {row.fulfillmentStatus !== 'delivered' && (
-            <button
-              type="button"
-              onClick={() => setShowConvertModal(true)}
-              className="btn-secondary text-xs px-3 py-1.5"
-            >
-              Convert tracking code
-            </button>
-          )}
-          {/* Pins the exact Amazon tracking URL for this order — every future
-              navigation to Amazon for it (the order-number link, Update Labels, Get
-              Tracking, the automatic checks) uses it verbatim instead of the
-              auto-built tracking-page URL. */}
-          {row.amazonOrderId && (
-            <button
-              type="button"
-              onClick={() => setShowAmazonLinkModal(true)}
-              title="Set a custom Amazon tracking link for this order"
-              className="btn-secondary text-xs px-3 py-1.5 inline-flex items-center gap-1"
-            >
-              Amazon <Pencil size={11} />
-            </button>
-          )}
-          {/* Delete — available at every status (ordered/shipped/delivered). */}
-          <button
-            type="button"
-            onClick={handleDeleteTracking}
-            disabled={deleting}
-            title="Delete tracking"
-            className={`inline-flex items-center gap-1 rounded-md p-1.5 transition-colors ${
-              isDark ? 'text-rose-400 hover:bg-rose-950/40' : 'text-rose-600 hover:bg-rose-50'
-            }`}
-          >
-            <Trash2 size={13} />
-          </button>
-          {/* OrderDetailPage only renders with the full eBay order passed via router
-              state (see OrdersPage's navigate(..., { state: { order } })) — this list
-              only has the tracking row, not the full order, so send users to the Orders
-              list to open the order rather than a dead-end deep link. */}
-          <Link
-            to="/orders"
-            className="inline-flex items-center gap-1 text-xs font-medium text-indigo-500 hover:text-indigo-400"
-          >
-            <ExternalLink size={12} />
-          </Link>
+          <RowMenu items={menuItems} isDark={isDark} />
         </div>
-        {error && <p className="text-xs text-rose-500 mt-1">{error}</p>}
+        {error && <p className="mt-1 max-w-[260px] text-right text-xs text-rose-500">{error}</p>}
       </td>
       {getTrackingModal && (
         <JobStatusModal phase={getTrackingModal.phase} message={getTrackingModal.message} isDark={isDark} />
@@ -999,6 +942,115 @@ function TrackedRow({ row, isDark, onUpdated, onDeleted, imageUrl, title, buyerU
         />
       )}
     </tr>
+  );
+}
+
+// "3h ago" style time for the Updated column (full date stays in the tooltip).
+function fmtRelative(iso) {
+  if (!iso) return '—';
+  const diffMin = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const hours = Math.round(diffMin / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(iso));
+}
+
+// "⋯" row menu. Rendered in a portal with fixed positioning so the table's
+// horizontal scroll container never clips it.
+function RowMenu({ items, isDark }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const buttonRef = React.useRef(null);
+
+  const toggle = () => {
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const width = 220;
+      const estimatedHeight = items.length * 36 + 12;
+      const top = rect.bottom + estimatedHeight > window.innerHeight ? rect.top - estimatedHeight - 4 : rect.bottom + 4;
+      setPos({ top: Math.max(8, top), left: Math.max(8, rect.right - width) });
+    }
+    setOpen((v) => !v);
+  };
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = () => setOpen(false);
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={toggle}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title="More actions"
+        className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition ${
+          open
+            ? isDark ? 'bg-slate-800 text-slate-100' : 'bg-slate-100 text-slate-900'
+            : isDark ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-100' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+        }`}
+      >
+        <MoreHorizontal size={16} />
+      </button>
+      {open &&
+        createPortal(
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+            <div
+              role="menu"
+              style={{ top: pos.top, left: pos.left, width: 220 }}
+              className={`fixed z-50 overflow-hidden rounded-xl border py-1 shadow-xl ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}
+            >
+              {items.map((item) => {
+                const Icon = item.icon;
+                const cls = `flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition disabled:opacity-50 ${
+                  item.danger
+                    ? isDark ? 'text-rose-300 hover:bg-rose-500/10' : 'text-rose-600 hover:bg-rose-50'
+                    : isDark ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-50'
+                }`;
+                const content = (
+                  <>
+                    <Icon size={15} className="shrink-0 opacity-80" />
+                    {item.label}
+                  </>
+                );
+                return item.to ? (
+                  <Link key={item.key} to={item.to} role="menuitem" className={cls} onClick={() => setOpen(false)}>
+                    {content}
+                  </Link>
+                ) : (
+                  <button
+                    key={item.key}
+                    type="button"
+                    role="menuitem"
+                    disabled={item.disabled}
+                    className={cls}
+                    onClick={() => { setOpen(false); item.onClick(); }}
+                  >
+                    {content}
+                  </button>
+                );
+              })}
+            </div>
+          </>,
+          document.body
+        )}
+    </>
   );
 }
 
@@ -1670,314 +1722,366 @@ export default function TrackingPage() {
     }
   };
 
+  const muted = isDark ? 'text-slate-400' : 'text-slate-500';
+  const faint = isDark ? 'text-slate-500' : 'text-slate-400';
+  const strong = isDark ? 'text-slate-100' : 'text-slate-900';
+  const card = `rounded-2xl border ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`;
+  const fieldCls = `rounded-lg border text-sm outline-none transition focus:ring-2 ${
+    isDark
+      ? 'bg-slate-950 border-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500/30'
+      : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-indigo-100'
+  }`;
+  const headerBtn = `inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition ${
+    isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+  }`;
+
+  // Status tabs count within the selected store (and loaded 2-week window).
+  const statusCounts = storeFilteredRows.reduce(
+    (acc, r) => {
+      const s = r.fulfillmentStatus || 'ordered';
+      if (acc[s] !== undefined) acc[s] += 1;
+      return acc;
+    },
+    { ordered: 0, shipped: 0, delivered: 0 }
+  );
+  const issueCount = storeFilteredRows.filter((r) => r.deliveryIssue && r.fulfillmentStatus !== 'delivered').length;
+  const tabs = [
+    { key: 'ALL', label: 'All', count: storeFilteredRows.length },
+    { key: 'ordered', label: 'Ordered', count: statusCounts.ordered, dot: 'bg-blue-500' },
+    { key: 'shipped', label: 'Shipped', count: statusCounts.shipped, dot: 'bg-indigo-500' },
+    { key: 'delivered', label: 'Delivered', count: statusCounts.delivered, dot: 'bg-emerald-500' },
+  ];
+
+  const creditsTone = !trackingCredits
+    ? ''
+    : trackingCredits.limit === null
+    ? isDark ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600'
+    : trackingCredits.remaining <= 0
+    ? isDark ? 'border-rose-700 bg-rose-900/30 text-rose-300' : 'border-rose-300 bg-rose-50 text-rose-700'
+    : trackingCredits.remaining <= 5
+    ? isDark ? 'border-amber-700 bg-amber-900/30 text-amber-300' : 'border-amber-300 bg-amber-50 text-amber-700'
+    : isDark ? 'border-slate-700 text-slate-300' : 'border-slate-200 bg-white text-slate-600';
+
+  const tabBtn = (active, warn) =>
+    `-mb-px inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-3 pb-2.5 pt-1 text-sm font-medium transition ${
+      active
+        ? warn
+          ? 'border-amber-500 text-amber-600'
+          : isDark ? 'border-indigo-400 text-slate-100' : 'border-indigo-600 text-slate-900'
+        : `border-transparent ${muted} ${isDark ? 'hover:text-slate-200' : 'hover:text-slate-800'}`
+    }`;
+  const countPill = (warn) =>
+    `rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${
+      warn ? (isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-700') : isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'
+    }`;
+
   return (
     <div className="page-shell">
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h1 className="page-title flex items-center gap-2">
-          <Truck size={18} />
-          Tracking
-        </h1>
-        <div className="flex items-center gap-2 flex-wrap">
-          <TutorialVideoButton />
-          <label
-            title={t('trackingTbaOnly.hint')}
-            className={`inline-flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-              tbaOnly
-                ? isDark ? 'border-indigo-500/50 bg-indigo-500/10 text-indigo-200' : 'border-indigo-300 bg-indigo-50 text-indigo-700'
-                : isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-300 text-slate-600 hover:bg-slate-50'
-            } ${tbaOnlySaving ? 'opacity-60' : ''}`}
-          >
-            <input
-              type="checkbox"
-              className="peer sr-only"
-              checked={tbaOnly}
-              disabled={tbaOnlySaving}
-              onChange={(e) => handleTbaOnlyChange(e.target.checked)}
-            />
-            <span
-              aria-hidden="true"
-              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-500 ${
-                tbaOnly ? 'bg-indigo-600' : isDark ? 'bg-slate-600' : 'bg-slate-300'
-              }`}
-            >
-              <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition ${tbaOnly ? 'translate-x-4' : 'translate-x-0.5'}`} />
+      <div className="w-full space-y-5">
+        {/* ── Header ── */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${isDark ? 'bg-indigo-500/15 text-indigo-300' : 'bg-indigo-50 text-indigo-600'}`}>
+              <Truck size={22} />
             </span>
-            {t('trackingTbaOnly.label')}
-          </label>
-          <button
-            type="button"
-            onClick={() => setShowMobileTracker(true)}
-            title={t('trackingMobileTracker.buttonTitle')}
-            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-              isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-300 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            <Smartphone size={14} /> {t('trackingMobileTracker.buttonLabel')}
-          </button>
-          <div className="relative">
-            <Search size={14} className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by buyer, order id, tracking #…"
-              className={`rounded-lg border pl-8 pr-3 py-2 text-sm w-64 ${isDark ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'}`}
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+            <div>
+              <h1 className={`text-2xl font-semibold tracking-tight ${strong}`}>Tracking</h1>
+              <p className={`text-sm ${muted}`}>Amazon shipments, tracking codes and eBay uploads for every order</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {trackingCredits && (
+              <span
+                className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium ${creditsTone}`}
+                title="Spent 3 credits each time a fresh Aquiline tracking code is obtained."
               >
-                <X size={13} />
-              </button>
-            )}
-          </div>
-          {trackingCredits && (
-            <span
-              className={`text-xs font-medium px-2.5 py-1.5 rounded-full border ${
-                trackingCredits.limit === null
-                  ? isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-600'
-                  : trackingCredits.remaining <= 0
-                    ? isDark ? 'bg-rose-900/40 border-rose-700 text-rose-300' : 'bg-rose-50 border-rose-300 text-rose-700'
-                    : trackingCredits.remaining <= 5
-                      ? isDark ? 'bg-amber-900/40 border-amber-700 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700'
-                      : isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-600'
-              }`}
-              title="Spent 3 credits each time a fresh Aquiline tracking code is obtained."
-            >
-              {trackingCredits.limit === null ? 'Tracking credits: Unlimited' : `Tracking credits: ${trackingCredits.remaining} left`}
-            </span>
-          )}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className={`rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-800 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-          >
-            <option value="ALL">All statuses</option>
-            <option value="ordered">Ordered</option>
-            <option value="shipped">Shipped</option>
-            <option value="delivered">Delivered</option>
-          </select>
-          {accountFilterOptions.length > 0 && (
-            <select
-              value={ebayFilter}
-              onChange={(e) => handleEbayFilterChange(e.target.value)}
-              className={`rounded-lg border px-3 py-2 text-sm ${isDark ? 'bg-slate-800 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-            >
-              <option value="ALL">All eBay stores</option>
-              {accountFilterOptions.map((opt) => (
-                <option key={opt.id} value={opt.id}>{opt.label}</option>
-              ))}
-            </select>
-          )}
-          <button
-            type="button"
-            onClick={() => setMessageSidebarOpen(true)}
-            className="btn-secondary text-sm flex items-center gap-1.5"
-          >
-            <MessageSquare size={15} />
-            Message
-          </button>
-        </div>
-      </div>
-
-      {messageSidebarOpen && (
-        <MessageTemplatesSidebar
-          isDark={isDark}
-          onClose={() => setMessageSidebarOpen(false)}
-          ebayAccountId={ebayFilter !== 'ALL' ? ebayFilter : null}
-          accountLabel={
-            ebayFilter !== 'ALL'
-              ? accountFilterOptions.find((o) => o.id === ebayFilter)?.label || null
-              : null
-          }
-        />
-      )}
-
-      <div className={`mb-6 rounded-xl p-1 border inline-flex gap-1 ${isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
-        <button
-          type="button"
-          onClick={() => setActiveTab('tracked')}
-          className={`px-3 py-2 text-sm rounded-lg transition ${activeTab === 'tracked' ? 'bg-indigo-600 text-white shadow-sm' : isDark ? 'text-slate-300 hover:text-slate-100' : 'text-slate-600 hover:text-slate-900'}`}
-        >
-          Tracked Orders
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('unmatched')}
-          className={`px-3 py-2 text-sm rounded-lg transition inline-flex items-center gap-1.5 ${activeTab === 'unmatched' ? 'bg-indigo-600 text-white shadow-sm' : isDark ? 'text-slate-300 hover:text-slate-100' : 'text-slate-600 hover:text-slate-900'}`}
-        >
-          {unmatched.length > 0 && <AlertTriangle size={13} />}
-          Needs Review{unmatched.length > 0 ? ` (${unmatched.length})` : ''}
-        </button>
-      </div>
-
-      {error && (
-        <div className={`mb-4 rounded-lg border px-4 py-3 text-sm ${isDark ? 'bg-rose-900/30 border-rose-700 text-rose-300' : 'bg-rose-50 border-rose-300 text-rose-700'}`}>
-          {error}
-        </div>
-      )}
-
-      {activeTab === 'tracked' && (
-        <div className={`rounded-xl border overflow-hidden ${isDark ? 'bg-slate-900/30 border-slate-800' : 'bg-white border-slate-200'}`}>
-          <div className="overflow-x-auto">
-            <table className={`min-w-full ${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
-              <thead className={isDark ? 'bg-slate-800/70' : 'bg-slate-50'}>
-                <tr>
-                  {['eBay Order', 'Customer', 'Amazon Order ID', 'Status', 'Uploaded to eBay', 'Updated', ''].map((h, i) => (
-                    <th
-                      key={i}
-                      className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className={isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}>
-                {loading ? (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center">
-                      <Loader2 className="animate-spin mx-auto text-indigo-500" size={24} />
-                    </td>
-                  </tr>
-                ) : visibleRows.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className={`px-4 py-8 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {rows.length === 0
-                        ? period === 0
-                          ? periodInfo.hasOlder
-                            ? 'No tracked orders in the last 2 weeks. Use "Older" below to see earlier ones.'
-                            : 'No tracked orders yet.'
-                          : 'No tracked orders in this period.'
-                        : searchTerm
-                          ? 'No tracked orders match your search.'
-                          : 'No tracked orders for this eBay store.'}
-                    </td>
-                  </tr>
-                ) : (
-                  visibleRows.map((row) => {
-                    const meta = orderMetaByEbayOrderId[row.ebayOrderId];
-                    return (
-                      <TrackedRow
-                        key={row.id}
-                        row={row}
-                        isDark={isDark}
-                        onUpdated={handleRowUpdated}
-                        onDeleted={handleRowDeleted}
-                        imageUrl={meta?.imageUrl}
-                        title={meta?.title}
-                        buyerUsername={meta?.buyerUsername}
-                        shipToFullName={meta?.shipToFullName}
-                      />
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-          {(period > 0 || periodInfo.hasOlder) && (
-            <div
-              className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t text-sm ${
-                isDark ? 'border-slate-800 text-slate-300' : 'border-slate-200 text-slate-600'
-              }`}
-            >
-              <span>
-                <span className="font-medium">{periodLabel}</span>
-                {!loading && (
-                  <span className={isDark ? 'text-slate-500' : 'text-slate-400'}> · {rows.length} tracked</span>
-                )}
+                <Coins size={14} />
+                {trackingCredits.limit === null ? 'Unlimited credits' : `${trackingCredits.remaining} credits left`}
               </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => goToPeriod(period - 1)}
-                  disabled={loading || period === 0}
-                  className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed ${
-                    isDark ? 'border-slate-700 hover:bg-slate-800' : 'border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  <ChevronLeft size={14} />
-                  Newer
-                </button>
-                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Page {period + 1}</span>
-                <button
-                  type="button"
-                  onClick={() => goToPeriod(period + 1)}
-                  disabled={loading || !periodInfo.hasOlder}
-                  className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed ${
-                    isDark ? 'border-slate-700 hover:bg-slate-800' : 'border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  Older
-                  <ChevronRight size={14} />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'unmatched' && (
-        <div className={`rounded-xl border overflow-hidden ${isDark ? 'bg-slate-900/30 border-slate-800' : 'bg-white border-slate-200'}`}>
-          {unmatched.length > 0 && (
-            <div className={`flex justify-end px-4 py-2.5 border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-              <button
-                type="button"
-                onClick={handleDeleteAllUnmatched}
-                disabled={deletingAllUnmatched}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-rose-500 hover:text-rose-400 disabled:opacity-60"
-              >
-                <Trash2 size={14} />
-                {deletingAllUnmatched ? 'Deleting…' : 'Delete all'}
-              </button>
-            </div>
-          )}
-          <div className="overflow-x-auto">
-            <table className={`min-w-full ${isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}`}>
-              <thead className={isDark ? 'bg-slate-800/70' : 'bg-slate-50'}>
-                <tr>
-                  {['Amazon Order ID', 'Ship-to', 'Observed', 'Link to eBay order'].map((h, i) => (
-                    <th
-                      key={i}
-                      className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className={isDark ? 'divide-y divide-slate-700' : 'divide-y divide-slate-200'}>
-                {unmatchedLoading ? (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-10 text-center">
-                      <Loader2 className="animate-spin mx-auto text-indigo-500" size={24} />
-                    </td>
-                  </tr>
-                ) : unmatched.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className={`px-4 py-8 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      Nothing needs review — every observed Amazon order has been matched.
-                    </td>
-                  </tr>
-                ) : (
-                  unmatched.map((item) => (
-                    <UnmatchedRow
-                      key={item.id}
-                      item={item}
-                      isDark={isDark}
-                      onResolved={handleResolved}
-                      onDeleted={handleUnmatchedDeleted}
-                      orderMetaByEbayOrderId={orderMetaByEbayOrderId}
-                    />
-                  ))
-                )}
-              </tbody>
-            </table>
+            )}
+            <TutorialVideoButton />
+            <button type="button" onClick={() => setShowMobileTracker(true)} title={t('trackingMobileTracker.buttonTitle')} className={headerBtn}>
+              <Smartphone size={15} /> {t('trackingMobileTracker.buttonLabel')}
+            </button>
+            <button type="button" onClick={() => setMessageSidebarOpen(true)} className={headerBtn}>
+              <MessageSquare size={15} /> Buyer messages
+            </button>
           </div>
         </div>
-      )}
+
+        {messageSidebarOpen && (
+          <MessageTemplatesSidebar
+            isDark={isDark}
+            onClose={() => setMessageSidebarOpen(false)}
+            ebayAccountId={ebayFilter !== 'ALL' ? ebayFilter : null}
+            accountLabel={ebayFilter !== 'ALL' ? accountFilterOptions.find((o) => o.id === ebayFilter)?.label || null : null}
+          />
+        )}
+
+        {error && (
+          <div className={`flex items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm ${isDark ? 'border-rose-700 bg-rose-900/30 text-rose-300' : 'border-rose-200 bg-rose-50 text-rose-700'}`}>
+            <span>{error}</span>
+            <button type="button" onClick={() => setError('')} aria-label="Dismiss" className="shrink-0 opacity-70 hover:opacity-100">
+              <X size={15} />
+            </button>
+          </div>
+        )}
+
+        <div className={`${card} overflow-hidden`}>
+          {/* Tabs + "Change only TBA" */}
+          <div className={`flex flex-wrap items-center justify-between gap-3 border-b px-4 pt-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+            <div className="flex gap-1 overflow-x-auto" role="tablist">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'tracked' && statusFilter === tab.key}
+                  onClick={() => { setActiveTab('tracked'); setStatusFilter(tab.key); }}
+                  className={tabBtn(activeTab === 'tracked' && statusFilter === tab.key)}
+                >
+                  {tab.dot && <span className={`h-1.5 w-1.5 rounded-full ${tab.dot}`} />}
+                  {tab.label}
+                  <span className={countPill(false)}>{loading ? '…' : tab.count}</span>
+                </button>
+              ))}
+              <span className={`mx-1 my-2 w-px ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'unmatched'}
+                onClick={() => setActiveTab('unmatched')}
+                className={tabBtn(activeTab === 'unmatched', unmatched.length > 0)}
+              >
+                {unmatched.length > 0 && <AlertTriangle size={13} className="text-amber-500" />}
+                Needs review
+                <span className={countPill(unmatched.length > 0)}>{unmatchedLoading ? '…' : unmatched.length}</span>
+              </button>
+            </div>
+
+            <label
+              title={t('trackingTbaOnly.hint')}
+              className={`mb-2 inline-flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                tbaOnly
+                  ? isDark ? 'border-indigo-500/50 bg-indigo-500/10 text-indigo-200' : 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                  : isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+              } ${tbaOnlySaving ? 'opacity-60' : ''}`}
+            >
+              <input
+                type="checkbox"
+                className="peer sr-only"
+                checked={tbaOnly}
+                disabled={tbaOnlySaving}
+                onChange={(e) => handleTbaOnlyChange(e.target.checked)}
+              />
+              <span
+                aria-hidden="true"
+                className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-500 ${
+                  tbaOnly ? 'bg-indigo-600' : isDark ? 'bg-slate-600' : 'bg-slate-300'
+                }`}
+              >
+                <span className={`inline-block h-3 w-3 rounded-full bg-white shadow transition ${tbaOnly ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+              </span>
+              {t('trackingTbaOnly.label')}
+              <Info size={12} className="opacity-60" />
+            </label>
+          </div>
+
+          {activeTab === 'tracked' && (
+            <>
+              {/* Toolbar */}
+              <div className={`flex flex-wrap items-center gap-3 border-b px-4 py-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <label className="relative min-w-[220px] flex-1">
+                  <Search size={15} className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${faint}`} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by buyer, order id or tracking number…"
+                    className={`${fieldCls} w-full py-2 pl-9 pr-9`}
+                  />
+                  {searchQuery && (
+                    <button type="button" onClick={() => setSearchQuery('')} aria-label="Clear search" className={`absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 ${faint} hover:opacity-80`}>
+                      <X size={14} />
+                    </button>
+                  )}
+                </label>
+                {accountFilterOptions.length > 0 && (
+                  <label className="relative">
+                    <Store size={14} className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${faint}`} />
+                    <select value={ebayFilter} onChange={(e) => handleEbayFilterChange(e.target.value)} className={`${fieldCls} py-2 pl-8 pr-8`}>
+                      <option value="ALL">All eBay stores</option>
+                      {accountFilterOptions.map((opt) => (
+                        <option key={opt.id} value={opt.id}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {issueCount > 0 && (
+                  <span className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium ${isDark ? 'bg-amber-500/10 text-amber-300' : 'bg-amber-50 text-amber-700'}`}>
+                    <AlertTriangle size={13} />
+                    {issueCount} with delivery issues
+                  </span>
+                )}
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className={`text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'bg-slate-900 text-slate-500' : 'bg-slate-50/80 text-slate-500'}`}>
+                      {['eBay order', 'Customer', 'Amazon order', 'Tracking', 'eBay', 'Updated', ''].map((h, i) => (
+                        <th key={i} className="px-4 py-3 text-left">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className={isDark ? 'divide-y divide-slate-800' : 'divide-y divide-slate-100'}>
+                    {loading ? (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-16 text-center">
+                          <Loader2 className="mx-auto animate-spin text-indigo-500" size={24} />
+                        </td>
+                      </tr>
+                    ) : visibleRows.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-16 text-center">
+                          <div className="flex flex-col items-center">
+                            <span className={`mb-3 flex h-12 w-12 items-center justify-center rounded-full ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-400'}`}>
+                              {searchTerm ? <Search size={20} /> : <PackageOpen size={20} />}
+                            </span>
+                            <p className={`text-sm ${muted}`}>
+                              {rows.length === 0
+                                ? period === 0
+                                  ? periodInfo.hasOlder
+                                    ? 'No tracked orders in the last 2 weeks. Use "Older" below to see earlier ones.'
+                                    : 'No tracked orders yet.'
+                                  : 'No tracked orders in this period.'
+                                : searchTerm
+                                  ? 'No tracked orders match your search.'
+                                  : statusFilter !== 'ALL'
+                                    ? 'No orders with this status.'
+                                    : 'No tracked orders for this eBay store.'}
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      visibleRows.map((row) => {
+                        const meta = orderMetaByEbayOrderId[row.ebayOrderId];
+                        return (
+                          <TrackedRow
+                            key={row.id}
+                            row={row}
+                            isDark={isDark}
+                            onUpdated={handleRowUpdated}
+                            onDeleted={handleRowDeleted}
+                            imageUrl={meta?.imageUrl}
+                            title={meta?.title}
+                            buyerUsername={meta?.buyerUsername}
+                            shipToFullName={meta?.shipToFullName}
+                          />
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* 2-week windows */}
+              <div className={`flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <span className={`inline-flex items-center gap-1.5 text-sm ${muted}`}>
+                  <CalendarDays size={14} className={faint} />
+                  <span className="font-medium">{periodLabel}</span>
+                  {!loading && <span className={faint}>· {rows.length} tracked</span>}
+                </span>
+                {(period > 0 || periodInfo.hasOlder) && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => goToPeriod(period - 1)}
+                      disabled={loading || period === 0}
+                      className={`inline-flex h-8 items-center gap-1 rounded-lg border px-2.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+                    >
+                      <ChevronLeft size={14} /> Newer
+                    </button>
+                    <span className={`text-xs ${faint}`}>Page {period + 1}</span>
+                    <button
+                      type="button"
+                      onClick={() => goToPeriod(period + 1)}
+                      disabled={loading || !periodInfo.hasOlder}
+                      className={`inline-flex h-8 items-center gap-1 rounded-lg border px-2.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+                    >
+                      Older <ChevronRight size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {activeTab === 'unmatched' && (
+            <>
+              <div className={`flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <p className={`text-sm ${muted}`}>
+                  Amazon orders the extension saw but couldn't match to exactly one eBay order. Link each one to its eBay order.
+                </p>
+                {unmatched.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteAllUnmatched}
+                    disabled={deletingAllUnmatched}
+                    className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition disabled:opacity-60 ${isDark ? 'text-rose-300 hover:bg-rose-500/10' : 'text-rose-600 hover:bg-rose-50'}`}
+                  >
+                    <Trash2 size={14} />
+                    {deletingAllUnmatched ? 'Deleting…' : 'Delete all'}
+                  </button>
+                )}
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className={`text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'bg-slate-900 text-slate-500' : 'bg-slate-50/80 text-slate-500'}`}>
+                      {['Amazon order', 'Ship-to', 'Observed', 'Link to eBay order'].map((h, i) => (
+                        <th key={i} className="px-4 py-3 text-left">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className={isDark ? 'divide-y divide-slate-800' : 'divide-y divide-slate-100'}>
+                    {unmatchedLoading ? (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-16 text-center">
+                          <Loader2 className="mx-auto animate-spin text-indigo-500" size={24} />
+                        </td>
+                      </tr>
+                    ) : unmatched.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-16 text-center">
+                          <div className="flex flex-col items-center">
+                            <span className={`mb-3 flex h-12 w-12 items-center justify-center rounded-full ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
+                              <Check size={20} />
+                            </span>
+                            <p className={`text-sm ${muted}`}>Nothing needs review — every observed Amazon order has been matched.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      unmatched.map((item) => (
+                        <UnmatchedRow
+                          key={item.id}
+                          item={item}
+                          isDark={isDark}
+                          onResolved={handleResolved}
+                          onDeleted={handleUnmatchedDeleted}
+                          orderMetaByEbayOrderId={orderMetaByEbayOrderId}
+                        />
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
 
       {showMobileTracker && <MobileTrackerModal isDark={isDark} onClose={() => setShowMobileTracker(false)} />}
     </div>
