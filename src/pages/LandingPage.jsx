@@ -36,6 +36,7 @@ import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import PartnersSection from '../components/PartnersSection';
 import { applySeo } from '../utils/seo';
 import { pathFor, SUPPORTED_LANGS, SEO_PAGES, imageFor } from '../data/seoPages';
+import MilliNetBadge from '../components/marketing/MilliNetBadge';
 
 const CHROME_EXTENSION_URL =
   'https://chromewebstore.google.com/detail/checkila-extension/mokpdmidbgchibehajdblfkjcgcibcbb';
@@ -1566,6 +1567,7 @@ export default function LandingPage() {
                   </span>
                 </li>
               </ul>
+              <MilliNetBadge className="mt-6" />
             </div>
           </div>
 

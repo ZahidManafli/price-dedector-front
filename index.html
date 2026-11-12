@@ -115,6 +115,11 @@
       />
     </noscript>
     <script type="module" src="/src/main.jsx"></script>
-    <!--MilliNet --> <script type="text/javascript" src="https://millinet.az/banner.js?id=780"></script>
+    <!--
+      MilliNet participant banner. The script document.write()s its link + image
+      into this hidden holder; the landing page footer moves it under Contact
+      (src/components/marketing/MilliNetBadge.jsx), so it shows only there.
+    -->
+    <div id="millinet-banner" hidden><!--MilliNet --> <script type="text/javascript" src="https://millinet.az/banner.js?id=780"></script></div>
   </body>
 </html>
