@@ -202,7 +202,7 @@ export default function AdminGamificationTab({ isDark }) {
             </div>
           </div>
           <p className={`mt-2 text-xs ${muted}`}>
-            Satış: Checkila-nın aşkar etdiyi yeni eBay sifarişi. Tam gün: həmin günün bütün gündəlik tapşırıqları bitirilib.
+            Satış: həftə ərzində yaranan eBay sifarişi (bütün mağazalar üzrə; ləğv edilən və tam geri qaytarılanlar sayılmır). Tam gün: həmin günün bütün gündəlik tapşırıqları bitirilib.
           </p>
 
           <div className="mb-2 mt-6 flex items-center justify-between">
