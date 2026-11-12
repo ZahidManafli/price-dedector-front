@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, Gift, Loader2, PackageCheck, TrendingUp, AlertTriangle, ShoppingBag, ShoppingCart } from 'lucide-react';
+import { Bell, CheckCheck, Gift, Trophy, Loader2, PackageCheck, TrendingUp, AlertTriangle, ShoppingBag, ShoppingCart } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { notificationsAPI } from '../services/api';
 import Alert from '../components/Alert';
@@ -13,6 +13,7 @@ const PAGE_SIZE = 30;
 // never looks broken here.
 function iconForType(type) {
   if (type === 'gift') return Gift;
+  if (type === 'gamification') return Trophy;
   if (type === 'ebay_new_order') return ShoppingCart;
   if (type === 'product_price_alert') return TrendingUp;
   if (type === 'product_auto_stock') return PackageCheck;

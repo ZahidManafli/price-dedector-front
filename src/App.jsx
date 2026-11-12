@@ -56,6 +56,7 @@ const BuyersPage = React.lazy(() => import('./pages/BuyersPage'));
 const ReferralDashboardPage = React.lazy(() => import('./pages/ReferralDashboardPage'));
 const LearningVideosPage = React.lazy(() => import('./pages/LearningVideosPage'));
 const ProfitTablePage = React.lazy(() => import('./pages/ProfitTablePage'));
+const GamificationPage = React.lazy(() => import('./pages/GamificationPage'));
 const TrackingPage = React.lazy(() => import('./pages/TrackingPage'));
 const CasesPage = React.lazy(() => import('./pages/CasesPage'));
 const SupportPage = React.lazy(() => import('./pages/SupportPage'));
@@ -411,6 +412,14 @@ function AppContent() {
                 <ProtectedRoute requiredTab={TAB_KEYS.PROFIT_TABLE}>
                   <ProfitTablePage />
                 </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/gamification"
+              element={
+                <AdminProtectedRoute>
+                  <GamificationPage />
+                </AdminProtectedRoute>
               }
             />
             <Route

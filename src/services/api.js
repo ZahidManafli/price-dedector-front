@@ -540,6 +540,11 @@ export const adminAPI = {
   createGift: (data) => api.post('/admin/gifts', data),
   listGiftRecipients: (id) => api.get(`/admin/gifts/${encodeURIComponent(id)}/recipients`),
   retryGift: (id) => api.post(`/admin/gifts/${encodeURIComponent(id)}/retry`),
+  // gamification (Admin panel -> Gamification)
+  getGamificationSettings: () => api.get('/admin/gamification/settings'),
+  saveGamificationSettings: (data) => api.put('/admin/gamification/settings', data),
+  listGamificationWeeks: () => api.get('/admin/gamification/weeks'),
+  finalizeGamificationWeek: () => api.post('/admin/gamification/finalize'),
   listMaintenanceWindows: () => api.get('/admin/maintenance'),
   createMaintenanceWindow: (data) => api.post('/admin/maintenance', data),
   updateMaintenanceFlag: (data) => api.patch('/admin/maintenance/flag', data),
@@ -688,6 +693,12 @@ export const dailyTasksAPI = {
 };
 
 // "What's new" panel (backend routes/whatsNew.js).
+// Gamification: weekly leaderboard (admin-only while locked) and the user's own certificates.
+export const gamificationAPI = {
+  leaderboard: () => api.get('/gamification/leaderboard'),
+  certificates: () => api.get('/gamification/certificates'),
+};
+
 export const whatsNewAPI = {
   list: () => api.get('/whats-new'),
   unseenCount: () => api.get('/whats-new/unseen-count'),

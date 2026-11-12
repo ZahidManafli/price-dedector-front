@@ -7,7 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import PartnersManagement from '../components/PartnersManagement';
 import ZikAccounts from '../components/ZikAccounts';
 import ReferralManagementTab from '../components/ReferralManagementTab';
-import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle, CalendarClock, Clock3, ShieldAlert, Plus, X, Eye, Star, Check, Shield, ChevronDown, Zap, Globe, LifeBuoy, Inbox, Layers, Share2, Handshake, Bell, Sparkles, Gift, ShoppingCart, PlayCircle, Bot, KeyRound, Webhook, Wrench } from 'lucide-react';
+import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle, CalendarClock, Clock3, ShieldAlert, Plus, X, Eye, Star, Check, Shield, ChevronDown, Zap, Globe, LifeBuoy, Inbox, Layers, Share2, Handshake, Bell, Sparkles, Gift, ShoppingCart, PlayCircle, Bot, KeyRound, Webhook, Wrench, Trophy } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { TAB_KEYS, USER_DEFAULT_ALLOWED_TABS } from '../utils/planAccess';
 import * as XLSX from 'xlsx';
@@ -18,6 +18,7 @@ import AdminAiSellersTab from '../components/AdminAiSellersTab';
 import AdminOrderNotificationsTab from '../components/AdminOrderNotificationsTab';
 import AdminWhatsNewTab from '../components/AdminWhatsNewTab';
 import AdminGiftsTab from '../components/AdminGiftsTab';
+import AdminGamificationTab from '../components/AdminGamificationTab';
 import AdminAnalytics from '../components/AdminAnalytics';
 import DateRangePicker from '../components/DateRangePicker';
 import TutorialVideoButton from '../components/TutorialVideoButton';
@@ -134,6 +135,7 @@ const ADMIN_NAV_GROUPS = [
       { key: 'notifications', labelKey: 'adminPanelPage.notificationsTab', icon: Bell, description: 'Bütün istifadəçilərə email və Telegram bildirişi' },
       { key: 'whats-new', label: 'Yeniliklər', icon: Sparkles, description: 'İstifadəçilərin "Yeniliklər" panelində gördüyü elanlar' },
       { key: 'gifts', label: 'Hədiyyə', icon: Gift, description: 'İstifadəçilərə Market Analysis və Tracking krediti hədiyyə et' },
+      { key: 'gamification', label: 'Gamification', icon: Trophy, description: 'Xal qaydaları, checkpoint-lər, həftənin mükafatları və nəticələr' },
       { key: 'order-notifications', label: 'Sifariş bildirişləri', icon: ShoppingCart, description: 'eBay sifariş bildirişlərinin vəziyyəti və diaqnostikası' },
     ],
   },
@@ -2099,6 +2101,8 @@ export default function AdminPanelPage() {
         {!loading && activeTab === 'whats-new' && <AdminWhatsNewTab isDark={isDark} />}
 
         {!loading && activeTab === 'gifts' && <AdminGiftsTab isDark={isDark} />}
+
+        {!loading && activeTab === 'gamification' && <AdminGamificationTab isDark={isDark} />}
 
         {!loading && activeTab === 'stripe-webhooks' && (
           <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 lg:gap-6">
