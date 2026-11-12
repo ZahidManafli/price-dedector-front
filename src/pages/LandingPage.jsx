@@ -36,7 +36,7 @@ import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import PartnersSection from '../components/PartnersSection';
 import { applySeo } from '../utils/seo';
 import { pathFor, SUPPORTED_LANGS, SEO_PAGES, imageFor } from '../data/seoPages';
-import MilliNetBadge from '../components/marketing/MilliNetBadge';
+import MilliNetBadge, { TRUST_BADGE_CARD } from '../components/marketing/MilliNetBadge';
 
 const CHROME_EXTENSION_URL =
   'https://chromewebstore.google.com/detail/checkila-extension/mokpdmidbgchibehajdblfkjcgcibcbb';
@@ -1570,17 +1570,19 @@ export default function LandingPage() {
               {/* Trust badges: MilliNet participant + Epoint merchant widget */}
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <MilliNetBadge />
-                <iframe
-                  src="https://epoint.az/az/widget?id=14131&type=users"
-                  title="Epoint"
-                  width="180"
-                  height="90"
-                  frameBorder="0"
-                  scrolling="no"
-                  allowTransparency="true"
-                  loading="lazy"
-                  className="block shrink-0 rounded-xl"
-                />
+                <div className={TRUST_BADGE_CARD}>
+                  <iframe
+                    src="https://epoint.az/az/widget?id=14131&type=users"
+                    title="Epoint"
+                    width="180"
+                    height="90"
+                    frameBorder="0"
+                    scrolling="no"
+                    allowTransparency="true"
+                    loading="lazy"
+                    className="block"
+                  />
+                </div>
               </div>
             </div>
           </div>

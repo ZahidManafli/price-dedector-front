@@ -7,6 +7,10 @@ import React, { useEffect, useRef, useState } from 'react';
 const MILLINET_URL = 'https://millinet.az';
 const MILLINET_IMAGE = 'https://millinet.az/images/participant.png?v=2';
 
+// Same frame as the Epoint widget next to it (180×90 inside a card).
+export const TRUST_BADGE_CARD =
+  'inline-flex h-[92px] w-[182px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md dark:border-white/10';
+
 export default function MilliNetBadge({ className = '' }) {
   const slotRef = useRef(null);
   const [moved, setMoved] = useState(false);
@@ -27,7 +31,7 @@ export default function MilliNetBadge({ className = '' }) {
   return (
     <div
       ref={slotRef}
-      className={`inline-flex overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md dark:border-white/10 [&_a]:block [&_img]:block [&_img]:h-14 [&_img]:w-auto ${className}`}
+      className={`${TRUST_BADGE_CARD} [&_a]:block [&_img]:block [&_img]:h-[90px] [&_img]:w-[180px] [&_img]:object-contain ${className}`}
     >
       {!moved && (
         <a href={MILLINET_URL} target="_blank" rel="noopener noreferrer" aria-label="MilliNet 2026 iştirakçısı">
