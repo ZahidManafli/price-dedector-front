@@ -65,7 +65,7 @@ export default function AdminGamificationTab({ isDark }) {
       const ok = await Swal.fire({
         icon: 'question',
         title: 'Həftəlik mükafatlandırma aktiv edilsin?',
-        text: 'Hər bazar ertəsi keçən həftənin ilk 3 yeri avtomatik müəyyən olunacaq, mükafatlar verilib sertifikatlar yaradılacaq.',
+        text: 'Hər bazar günü saat 23:00-da (cron) həftənin ilk 3 yeri müəyyən olunacaq, mükafatlar verilib sertifikatlar yaradılacaq. İlk yekun bu həftənin sonunda olacaq.',
         showCancelButton: true,
         confirmButtonText: 'Aktiv et',
         cancelButtonText: 'Ləğv et',
@@ -79,8 +79,8 @@ export default function AdminGamificationTab({ isDark }) {
   const finalizeNow = async () => {
     const ok = await Swal.fire({
       icon: 'warning',
-      title: 'Keçən həftə indi yekunlaşdırılsın?',
-      text: 'Keçən həftənin ilk 3 yerinə mükafatlar və sertifikatlar dərhal veriləcək. Hər həftə yalnız bir dəfə yekunlaşdırılır və bu geri qaytarılmır.',
+      title: 'Həftə indi yekunlaşdırılsın?',
+      text: 'Bazar günü cari həftə, digər günlər keçən həftə yekunlaşdırılır. İlk 3 yerə mükafat və sertifikat dərhal veriləcək. Hər həftə yalnız bir dəfə yekunlaşdırılır və bu geri qaytarılmır.',
       showCancelButton: true,
       confirmButtonText: 'Yekunlaşdır',
       cancelButtonText: 'Ləğv et',
@@ -134,7 +134,7 @@ export default function AdminGamificationTab({ isDark }) {
             </p>
             <p className={`text-xs ${muted}`}>
               {settings.enabled
-                ? 'Hər bazar ertəsi (Bakı vaxtı) keçən həftənin ilk 3 yeri avtomatik mükafatlandırılır.'
+                ? 'Hər bazar günü saat 23:00-da (Bakı, cron) həftənin ilk 3 yeri mükafatlandırılır.'
                 : 'Reytinq canlı hesablanır, amma mükafat və sertifikat verilmir. Sidebar-da bölmə hələ yalnız adminə açıqdır.'}
             </p>
           </div>
@@ -145,7 +145,7 @@ export default function AdminGamificationTab({ isDark }) {
           </Link>
           <button type="button" onClick={finalizeNow} disabled={finalizing} className="btn-secondary inline-flex items-center gap-1.5 text-sm disabled:opacity-60">
             {finalizing ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-            Keçən həftəni yekunlaşdır
+            Həftəni yekunlaşdır
           </button>
           <button
             type="button"
