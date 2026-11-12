@@ -1567,7 +1567,21 @@ export default function LandingPage() {
                   </span>
                 </li>
               </ul>
-              <MilliNetBadge className="mt-6" />
+              {/* Trust badges: MilliNet participant + Epoint merchant widget */}
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <MilliNetBadge />
+                <iframe
+                  src="https://epoint.az/az/widget?id=14131&type=users"
+                  title="Epoint"
+                  width="180"
+                  height="90"
+                  frameBorder="0"
+                  scrolling="no"
+                  allowTransparency="true"
+                  loading="lazy"
+                  className="block shrink-0 rounded-xl"
+                />
+              </div>
             </div>
           </div>
 
