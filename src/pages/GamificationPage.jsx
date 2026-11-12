@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Trophy, Crown, Medal, Flame, ShoppingBag, CheckSquare, Target, Gift, Timer, RefreshCw, Loader2, Lock, Sparkles, Flag, CalendarCheck,
+  Trophy, Crown, Medal, Flame, ShoppingBag, CheckSquare, Target, Gift, Timer, RefreshCw, Loader2, Sparkles, Flag, CalendarCheck,
 } from 'lucide-react';
 import { gamificationAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { TIER_STYLES, formatAzDate } from '../components/gamification/Certificate';
 
 // Gamification — weekly Monday–Sunday (Baku) points race. Backend: services/gamification.js.
-// Locked for now: only admins reach this page (route + API are admin-only).
+// Open to every signed-in user; the admin-only notes below show only to admins.
 
 const PODIUM_ORDER = [2, 1, 3];
 const PODIUM_HEIGHT = { 1: 'h-40 sm:h-48', 2: 'h-28 sm:h-36', 3: 'h-20 sm:h-28' };
@@ -86,6 +87,8 @@ function PodiumColumn({ place, entry, prize, isDark }) {
 
 export default function GamificationPage() {
   const { isDark } = useTheme();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -146,9 +149,6 @@ export default function GamificationPage() {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className={`text-2xl font-semibold tracking-tight ${strong}`}>Gamification</h1>
-                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                  <Lock size={11} /> Yalnız admin
-                </span>
               </div>
               <p className={`text-sm ${muted}`}>Satış edin, gündəlik tapşırıqları bitirin, xal toplayın — həftənin ilk 3 yeri mükafat qazanır</p>
             </div>
@@ -165,7 +165,7 @@ export default function GamificationPage() {
 
         {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300">{error}</div>}
 
-        {data && !data.enabled && (
+        {data && !data.enabled && isAdmin && (
           <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm ${isDark ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-200' : 'border-indigo-200 bg-indigo-50 text-indigo-800'}`}>
             <Sparkles size={16} className="mt-0.5 shrink-0" />
             <span>

@@ -139,8 +139,8 @@ export default function Sidebar() {
     { label: t('nav.designStudio'), path: '/studio', icon: Palette, tab: TAB_KEYS.DESIGN_STUDIO },
     { label: t('nav.learning'), path: '/learning', icon: BookOpen, tab: TAB_KEYS.LEARNING },
     { label: t('nav.profitTable'), path: '/profit-table', icon: TrendingUp, tab: TAB_KEYS.PROFIT_TABLE },
-    // Gamification is still being built: visible to everyone, open only to admins.
-    { label: 'Gamification', path: '/gamification', icon: Trophy, adminOnly: true },
+    // Gamification is open to every signed-in user (not tied to a plan tab).
+    { label: 'Gamification', path: '/gamification', icon: Trophy, open: true },
     ...(user?.role === 'admin' || user?.permissions?.referralAdmin
       ? [{ label: 'Referrals', path: '/referals', icon: Link2, tab: TAB_KEYS.REFERRALS }]
       : []),
@@ -249,7 +249,7 @@ export default function Sidebar() {
         >
           <div className="space-y-1">
             {links.map((link) => {
-              const canAccess = link.adminOnly ? user?.role === 'admin' : hasTabAccess(link.tab);
+              const canAccess = link.open ? true : link.adminOnly ? user?.role === 'admin' : hasTabAccess(link.tab);
               if (!canAccess) {
                 return (
                   <div

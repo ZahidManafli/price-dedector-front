@@ -135,7 +135,7 @@ export default function AdminGamificationTab({ isDark }) {
             <p className={`text-xs ${muted}`}>
               {settings.enabled
                 ? 'Hər bazar günü saat 23:00-da (Bakı, cron) həftənin ilk 3 yeri mükafatlandırılır.'
-                : 'Reytinq canlı hesablanır, amma mükafat və sertifikat verilmir. Sidebar-da bölmə hələ yalnız adminə açıqdır.'}
+                : 'Reytinq canlı hesablanır və hamıya görünür, amma mükafat və sertifikat verilmir.'}
             </p>
           </div>
         </div>

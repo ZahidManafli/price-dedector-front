@@ -417,9 +417,9 @@ function AppContent() {
             <Route
               path="/gamification"
               element={
-                <AdminProtectedRoute>
+                <ProtectedRoute>
                   <GamificationPage />
-                </AdminProtectedRoute>
+                </ProtectedRoute>
               }
             />
             <Route
