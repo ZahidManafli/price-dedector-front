@@ -6,7 +6,7 @@ import Certificate, { TIER_STYLES, downloadCertificatePng, formatAzDate } from '
 // Settings (profile) -> Sertifikatlar: the weekly Gamification certificates this
 // user has won, with a full-size view and PNG download.
 
-function CertificateViewer({ certificate, isDark, onClose }) {
+export function CertificateViewer({ certificate, isDark, onClose, sample = false }) {
   const svgRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
 
@@ -19,7 +19,7 @@ function CertificateViewer({ certificate, isDark, onClose }) {
   const download = async () => {
     setDownloading(true);
     try {
-      await downloadCertificatePng(svgRef.current, `checkila-sertifikat-${certificate.weekStart}-${certificate.tier}.png`);
+      await downloadCertificatePng(svgRef.current, sample ? `checkila-numune-sertifikat-${certificate.tier}.png` : `checkila-sertifikat-${certificate.weekStart}-${certificate.tier}.png`);
     } finally {
       setDownloading(false);
     }
@@ -30,7 +30,7 @@ function CertificateViewer({ certificate, isDark, onClose }) {
       <div onMouseDown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" className={`w-full max-w-5xl overflow-hidden rounded-2xl shadow-2xl ${isDark ? 'bg-slate-900 ring-1 ring-slate-800' : 'bg-white'}`}>
         <div className={`flex items-center justify-between border-b px-5 py-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
           <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-            {TIER_STYLES[certificate.tier]?.name} sertifikat · {formatAzDate(certificate.weekStart)} həftəsi
+            {TIER_STYLES[certificate.tier]?.name} sertifikat · {sample ? 'nümunə' : `${formatAzDate(certificate.weekStart)} həftəsi`}
           </p>
           <div className="flex items-center gap-2">
             <button type="button" onClick={download} disabled={downloading} className="btn-primary inline-flex items-center gap-1.5 text-sm">

@@ -1,9 +1,29 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { Link } from 'react-router-dom';
-import { Flag, Gift, Loader2, Plus, Save, Trash2, Trophy, Award, ExternalLink, Play } from 'lucide-react';
+import { Flag, Gift, Loader2, Plus, Save, Trash2, Trophy, Award, ExternalLink, Play, Eye } from 'lucide-react';
 import { adminAPI } from '../services/api';
 import { TIER_STYLES, formatAzDate } from './gamification/Certificate';
+import { CertificateViewer } from './gamification/CertificatesSection';
+
+// Sample certificate for the admin preview: this week's dates, placeholder name.
+function sampleCertificate(place, prizeTitle) {
+  const today = new Date();
+  const monday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - ((today.getUTCDay() + 6) % 7)));
+  const sunday = new Date(monday.getTime() + 6 * 86400000);
+  const day = (d) => d.toISOString().slice(0, 10);
+  return {
+    id: `sample-${place}`,
+    tier: TIER_BY_PLACE[place],
+    place,
+    displayName: 'Nümunə İstifadəçi',
+    points: { 1: 1250, 2: 980, 3: 640 }[place],
+    weekStart: day(monday),
+    weekEnd: day(sunday),
+    prizeTitle,
+    serial: `CHK-NUMUNE-${place}`,
+  };
+}
 
 // Admin panel -> Gamification: scoring rules, weekly checkpoints, the prize for
 // each place, the on/off switch for weekly awards and past results
@@ -17,6 +37,7 @@ export default function AdminGamificationTab({ isDark }) {
   const [saving, setSaving] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [error, setError] = useState('');
+  const [previewPlace, setPreviewPlace] = useState(null);
 
   const load = useCallback(async () => {
     setError('');
@@ -233,6 +254,13 @@ export default function AdminGamificationTab({ isDark }) {
                       {place}
                     </span>
                     <span className={`text-sm font-semibold ${strong}`}>{place}-ci yer · {tier.name} sertifikat</span>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewPlace(place)}
+                      className={`ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold transition ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'}`}
+                    >
+                      <Eye size={13} /> Nümunə sertifikat
+                    </button>
                   </div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <div className="sm:col-span-3">
@@ -297,6 +325,15 @@ export default function AdminGamificationTab({ isDark }) {
           </ul>
         )}
       </div>
+
+      {previewPlace && (
+        <CertificateViewer
+          certificate={sampleCertificate(previewPlace, settings.prizes[previewPlace]?.title)}
+          isDark={isDark}
+          sample
+          onClose={() => setPreviewPlace(null)}
+        />
+      )}
     </div>
   );
 }
