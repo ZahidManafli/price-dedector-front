@@ -1574,6 +1574,14 @@ export default function AmazonLookupPage() {
                                       <span className={`col-span-2 text-xs truncate flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} title={name}>
                                         {name}
                                         {taxonomyAspect?.required && <span className="text-red-500">*</span>}
+                                        {(activeModalState.prepared?.itemSpecificsFromAmazon || []).includes(name) && (
+                                          <span
+                                            title="Amazon məhsul məlumatından avtomatik dolduruldu — yoxlayın"
+                                            className={`shrink-0 rounded px-1 text-[9px] font-semibold uppercase ${isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-50 text-amber-700'}`}
+                                          >
+                                            Amazon
+                                          </span>
+                                        )}
                                       </span>
                                       {ITEM_ORIGIN_SPEC_ALIASES.has(name.trim().toLowerCase()) ? (
                                         <select
