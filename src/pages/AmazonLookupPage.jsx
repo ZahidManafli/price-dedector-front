@@ -7,6 +7,7 @@ import AutoListProgressStepper from '../components/AutoListProgressStepper';
 import WalletTopupModal from '../components/WalletTopupModal';
 import WalletHistoryModal from '../components/WalletHistoryModal';
 import TutorialVideoButton from '../components/TutorialVideoButton';
+import EbayAspectsModal from '../components/EbayAspectsModal';
 import {
   buildAmazonProductUrl,
   extractAmazonAsin,
@@ -174,6 +175,7 @@ export default function AmazonLookupPage() {
   const [singleListingState, setSingleListingState] = useState(null); // { status, message, itemId, listingUrl, prepared }
   const [editableListing, setEditableListing] = useState(null); // user-editable copy of prepared.listingInput while awaiting confirmation
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [aspectsModalOpen, setAspectsModalOpen] = useState(false); // eBay item specifics browser (Without AI preview)
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageFileInputRef = useRef(null);
   const [bulkEditingIndex, setBulkEditingIndex] = useState(null); // set when the shared preview modal is editing a bulk row instead of the single lookup
@@ -1562,9 +1564,31 @@ export default function AmazonLookupPage() {
 
                           {specEntries.length > 0 && (
                             <div>
-                              <p className={`text-xs font-semibold uppercase tracking-wide mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                                {t('amazonLookupPage.previewSpecificsTitle')}
-                              </p>
+                              <div className="mb-1.5 flex items-center justify-between gap-2">
+                                <p className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                  {t('amazonLookupPage.previewSpecificsTitle')}
+                                </p>
+                                {(activeModalState.prepared?.taxonomyAspects || []).length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setAspectsModalOpen(true)}
+                                    className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-semibold transition ${isDark ? 'border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/10' : 'border-indigo-200 text-indigo-600 hover:bg-indigo-50'}`}
+                                  >
+                                    eBay aspect-ləri ({activeModalState.prepared.taxonomyAspects.length})
+                                  </button>
+                                )}
+                              </div>
+                              {aspectsModalOpen && (
+                                <EbayAspectsModal
+                                  aspects={activeModalState.prepared?.taxonomyAspects || []}
+                                  values={li.itemSpecifics || {}}
+                                  fromAmazon={activeModalState.prepared?.itemSpecificsFromAmazon || []}
+                                  categoryId={li.categoryId}
+                                  isDark={isDark}
+                                  onPick={updateSpec}
+                                  onClose={() => setAspectsModalOpen(false)}
+                                />
+                              )}
                               <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
                                 {specEntries.map(([name, value]) => {
                                   const taxonomyAspect = taxonomyAspectsByName[name];
