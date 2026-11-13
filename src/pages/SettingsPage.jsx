@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Award, Medal, Bell, Cake, CheckCircle2, ClipboardList, CreditCard, Link2, Mail, Package, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { Award, Medal, Sparkles, Bell, Cake, CheckCircle2, ClipboardList, CreditCard, Link2, Mail, Package, ShieldCheck, Trash2, Users } from 'lucide-react';
 import CertificatesSection from '../components/gamification/CertificatesSection';
 import RankSection from '../components/gamification/RankSection';
+import AchievementsSection from '../components/gamification/AchievementsSection';
 import { amazonOAuthAPI, aquilineAPI, authAPI, ebayAPI, paymentsAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
@@ -767,6 +768,7 @@ export default function SettingsPage() {
     { id: 'amazon', label: t('settingsPage.amazon'), icon: Link2 },
     { id: 'notifications', label: t('settingsPage.notifications'), icon: Bell },
     { id: 'rank', label: 'Rütbə', icon: Medal },
+    { id: 'achievements', label: 'Nailiyyətlər', icon: Sparkles },
     { id: 'certificates', label: 'Sertifikatlar', icon: Award },
   ];
 
@@ -782,6 +784,7 @@ export default function SettingsPage() {
     ebay: { icon: Link2, title: t('settingsPage.ebaySectionTipTitle'), body: t('settingsPage.ebaySectionTipBody') },
     amazon: { icon: Link2, title: t('settingsPage.amazonSectionTipTitle'), body: t('settingsPage.amazonSectionTipBody') },
     notifications: { icon: Mail, title: t('settingsPage.notificationChannel'), body: t('settingsPage.notificationChannelDescription') },
+    achievements: { icon: Sparkles, title: 'Nişanlar necə qazanılır?', body: 'Satış hədəflərinə çatın, gündəlik tapşırıqları ardıcıl bitirərək seriya qurun, göndərişləri vaxtında edin və həftəlik yarışda kürsüyə çıxın. Hər nişan bir dəfə qazanılır və profilinizdə qalır.' },
     rank: { icon: Medal, title: 'Rütbə necə yüksəlir?', body: 'Satış və gündəlik tapşırıqlardan qazandığınız xallar toplanır. Hər yeni səviyyədə Market Analysis və Tracking krediti hədiyyə alırsınız, səviyyə yüksəldikcə hədiyyə də artır.' },
     certificates: { icon: Award, title: 'Necə qazanılır?', body: 'Satış edin və gündəlik tapşırıqları bitirin. Həftəni ilk 3 yerdə bitirənlər qızıl, gümüş və ya bürünc sertifikat və mükafat qazanır.' },
   }[settingsTab] || null;
@@ -885,6 +888,7 @@ export default function SettingsPage() {
           <div className={`min-w-0 flex-1 ${tabTip ? 'xl:grid xl:grid-cols-[1fr_320px] xl:items-start xl:gap-6' : ''}`}>
           <div className="min-w-0 space-y-6">
             {settingsTab === 'rank' && <RankSection isDark={isDark} />}
+            {settingsTab === 'achievements' && <AchievementsSection isDark={isDark} />}
             {settingsTab === 'certificates' && <CertificatesSection isDark={isDark} />}
 
             {settingsTab === 'security' && (

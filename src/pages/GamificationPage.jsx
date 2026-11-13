@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Trophy, Crown, Medal, Flame, ShoppingBag, CheckSquare, Target, Gift, Timer, RefreshCw, Loader2, Sparkles, Flag, CalendarCheck, Info, X,
+  Trophy, Crown, Medal, Flame, ShoppingBag, CheckSquare, Target, Gift, Timer, RefreshCw, Loader2, Sparkles, Flag, CalendarCheck, Info, X, ArrowUp, ArrowDown, Minus,
 } from 'lucide-react';
 import { gamificationAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { TIER_STYLES, formatAzDate } from '../components/gamification/Certificate';
 import RankBadge, { rankMeta } from '../components/gamification/RankBadge';
+import LeagueBadge, { LEAGUE_META, LEAGUE_ORDER } from '../components/gamification/LeagueBadge';
 
 // Gamification — weekly Monday–Sunday (Baku) points race. Backend: services/gamification.js.
 // Open to every signed-in user; the admin-only notes below show only to admins.
@@ -220,22 +221,30 @@ export default function GamificationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const load = useCallback(async () => {
+  const [viewLeague, setViewLeague] = useState(null); // null = my league
+  const [streak, setStreak] = useState(null);
+
+  const load = useCallback(async (league = viewLeague) => {
     setLoading(true);
     setError('');
     try {
-      const res = await gamificationAPI.leaderboard();
+      const res = await gamificationAPI.leaderboard(league);
       setData(res?.data || null);
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Reytinqi yükləmək alınmadı');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [viewLeague]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Perfect-day streak for "Sizin nəticəniz" (not critical — ignore failures).
+  useEffect(() => {
+    gamificationAPI.achievements().then((res) => setStreak(res?.data?.streak || null)).catch(() => {});
+  }, []);
 
   const countdown = useCountdown(data?.week?.endsAt);
   const board = data?.leaderboard || [];
@@ -244,6 +253,8 @@ export default function GamificationPage() {
   const [breakdownEntry, setBreakdownEntry] = useState(null);
   const me = data?.me;
   const rules = data?.rules;
+  const leagueInfo = data?.league;
+  const shownLeague = leagueInfo?.viewing || 'bronze';
 
   const card = `rounded-2xl border ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-white'}`;
   const muted = isDark ? 'text-slate-400' : 'text-slate-500';
@@ -283,7 +294,7 @@ export default function GamificationPage() {
           </div>
           <button
             type="button"
-            onClick={load}
+            onClick={() => load()}
             disabled={loading}
             className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition disabled:opacity-50 ${isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
           >
@@ -304,6 +315,66 @@ export default function GamificationPage() {
 
         {data && (
           <>
+            {/* ── Leagues ── */}
+            {leagueInfo && (
+              <div className={`${card} flex flex-wrap items-center justify-between gap-4 p-4`}>
+                <div className="flex flex-wrap gap-2" role="tablist" aria-label="Liqalar">
+                  {LEAGUE_ORDER.map((l) => {
+                    const meta = LEAGUE_META[l];
+                    const active = shownLeague === l;
+                    const mine = leagueInfo.mine === l;
+                    return (
+                      <button
+                        key={l}
+                        type="button"
+                        role="tab"
+                        aria-selected={active}
+                        onClick={() => setViewLeague(l)}
+                        className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                          active ? 'shadow-sm' : isDark ? 'border-slate-800 text-slate-400 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                        style={active ? { borderColor: meta.mid, background: meta.soft, color: meta.to } : undefined}
+                      >
+                        <LeagueBadge league={l} size="xs" />
+                        {meta.label}
+                        <span className={`rounded-full px-1.5 text-[11px] tabular-nums ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-white/80 text-slate-600'}`}>
+                          {leagueInfo.counts?.[l] ?? 0}
+                        </span>
+                        {mine && <span className="rounded-full bg-indigo-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">Siz</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {leagueInfo.standing && (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <LeagueBadge league={leagueInfo.mine} size="md" />
+                    <div>
+                      <p className={`text-sm font-semibold ${strong}`}>
+                        {LEAGUE_META[leagueInfo.mine]?.label} liqası · bu ay {leagueInfo.standing.points.toLocaleString()} xal
+                      </p>
+                      <p className={`text-xs ${muted}`}>
+                        Liqada {leagueInfo.standing.rank}/{leagueInfo.standing.members} · ay sonu {formatAzDate(new Date(new Date(leagueInfo.standing.monthEndsAt).getTime() - 1).toISOString())}
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        leagueInfo.standing.zone === 'up'
+                          ? isDark ? 'bg-emerald-500/15 text-emerald-300' : 'bg-emerald-50 text-emerald-700'
+                          : leagueInfo.standing.zone === 'down'
+                          ? isDark ? 'bg-rose-500/15 text-rose-300' : 'bg-rose-50 text-rose-700'
+                          : isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'
+                      }`}
+                      title={`Ay sonunda hər liqanın ilk ${leagueInfo.promotePercent}%-i yüksəlir, son ${leagueInfo.promotePercent}%-i enir`}
+                    >
+                      {leagueInfo.standing.zone === 'up' ? <ArrowUp size={12} /> : leagueInfo.standing.zone === 'down' ? <ArrowDown size={12} /> : <Minus size={12} />}
+                      {leagueInfo.standing.zone === 'up' ? 'Yüksəlmə zonası' : leagueInfo.standing.zone === 'down' ? 'Enmə zonası' : 'Təhlükəsiz zona'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ── Top row: week + my standing ── */}
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               <div className={`${card} p-5`}>
@@ -342,6 +413,11 @@ export default function GamificationPage() {
                     <div className="mt-2 flex items-baseline gap-3">
                       <span className={`text-4xl font-bold tabular-nums ${strong}`}>{(me?.points || 0).toLocaleString()}</span>
                       <span className={`text-sm ${muted}`}>xal</span>
+                      {streak?.current > 0 && (
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${isDark ? 'bg-orange-500/15 text-orange-300' : 'bg-orange-50 text-orange-700'}`} title="Bütün tapşırıqları bitirdiyiniz ardıcıl günlər">
+                          <Flame size={12} /> {streak.current} gün seriya
+                        </span>
+                      )}
                     </div>
                     {me?.levelProgress && (
                       <div className="mt-3 flex items-center gap-2.5">
@@ -410,6 +486,9 @@ export default function GamificationPage() {
                 <div className={`${card} overflow-hidden p-5`}>
                   <h2 className={`mb-6 flex items-center gap-2 text-base font-semibold ${strong}`}>
                     <Trophy size={18} className="text-amber-500" /> Həftənin liderləri
+                    <span className="ml-1 inline-flex items-center gap-1.5 text-sm font-medium" style={{ color: LEAGUE_META[shownLeague]?.to }}>
+                      · <LeagueBadge league={shownLeague} size="xs" /> {LEAGUE_META[shownLeague]?.label} liqası
+                    </span>
                   </h2>
                   <div className="mx-auto flex max-w-2xl items-end gap-2 sm:gap-4">
                     {PODIUM_ORDER.map((place) => (
@@ -510,6 +589,9 @@ export default function GamificationPage() {
                 <div className={`${card} p-5`}>
                   <h3 className={`mb-3 flex items-center gap-2 text-sm font-semibold ${strong}`}>
                     <Gift size={16} className="text-rose-500" /> Həftənin mükafatları
+                    <span className={`ml-auto text-xs font-medium ${faint}`}>
+                      {LEAGUE_META[shownLeague]?.label} · ×{leagueInfo?.multipliers?.[shownLeague] ?? 1}
+                    </span>
                   </h3>
                   <div className="space-y-2">
                     {[1, 2, 3].map((place) => {

@@ -695,7 +695,8 @@ export const dailyTasksAPI = {
 // "What's new" panel (backend routes/whatsNew.js).
 // Gamification: weekly leaderboard (admin-only while locked) and the user's own certificates.
 export const gamificationAPI = {
-  leaderboard: () => api.get('/gamification/leaderboard'),
+  leaderboard: (league) => api.get('/gamification/leaderboard', { params: league ? { league } : {} }),
+  achievements: () => api.get('/gamification/achievements'),
   certificates: () => api.get('/gamification/certificates'),
   level: () => api.get('/gamification/level'),
 };

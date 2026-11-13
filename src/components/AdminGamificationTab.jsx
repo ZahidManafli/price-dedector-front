@@ -5,6 +5,7 @@ import { Flag, Gift, Loader2, Plus, Save, Trash2, Trophy, Award, ExternalLink, P
 import { adminAPI } from '../services/api';
 import { TIER_STYLES, formatAzDate } from './gamification/Certificate';
 import { CertificateViewer } from './gamification/CertificatesSection';
+import LeagueBadge, { LEAGUE_META, LEAGUE_ORDER } from './gamification/LeagueBadge';
 
 // Sample certificate for the admin preview: this week's dates, placeholder name.
 function sampleCertificate(place, prizeTitle) {
@@ -288,6 +289,78 @@ export default function AdminGamificationTab({ isDark }) {
         </div>
       </div>
 
+      {/* Leagues */}
+      <div className={card}>
+        <h2 className={`mb-1 flex items-center gap-2 text-base font-semibold ${strong}`}>
+          <LeagueBadge league="gold" size="sm" /> Liqalar
+        </h2>
+        <p className={`mb-4 text-xs ${muted}`}>
+          Hər liqanın öz həftəlik kürsüsü var. Mükafat = yerin mükafatı × liqa əmsalı. Ayın son həftəsi yekunlaşanda hər liqanın ilk faizi yüksəlir, son faizi (və xal toplamayanlar) enir.
+        </p>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <div>
+            <p className={`mb-2 text-xs font-semibold uppercase tracking-wider ${muted}`}>İlk yerləşdirmə (son 30 gün satış)</p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <LeagueBadge league="bronze" size="xs" /> <span className={`w-16 ${strong}`}>Bronze</span>
+                <span className={muted}>0 – {Math.max(0, Number(settings.leagueThresholds?.silver || 31) - 1)}</span>
+              </div>
+              {['silver', 'gold'].map((l) => (
+                <div key={l} className="flex items-center gap-2 text-sm">
+                  <LeagueBadge league={l} size="xs" /> <span className={`w-16 ${strong}`}>{LEAGUE_META[l].label}</span>
+                  <span className={muted}>≥</span>
+                  <input
+                    type="number"
+                    min="1"
+                    className={`${input} w-24 py-1.5`}
+                    value={settings.leagueThresholds?.[l] ?? ''}
+                    onChange={(e) => setField('leagueThresholds', { ...settings.leagueThresholds, [l]: e.target.value })}
+                    aria-label={`${LEAGUE_META[l].label} üçün minimum satış`}
+                  />
+                  <span className={`text-xs ${muted}`}>satış</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className={`mb-2 text-xs font-semibold uppercase tracking-wider ${muted}`}>Mükafat əmsalı</p>
+            <div className="space-y-2">
+              {LEAGUE_ORDER.map((l) => (
+                <div key={l} className="flex items-center gap-2 text-sm">
+                  <LeagueBadge league={l} size="xs" /> <span className={`w-16 ${strong}`}>{LEAGUE_META[l].label}</span>
+                  <span className={muted}>×</span>
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    className={`${input} w-24 py-1.5`}
+                    value={settings.leagueMultipliers?.[l] ?? ''}
+                    onChange={(e) => setField('leagueMultipliers', { ...settings.leagueMultipliers, [l]: e.target.value })}
+                    aria-label={`${LEAGUE_META[l].label} mükafat əmsalı`}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className={`mb-2 text-xs font-semibold uppercase tracking-wider ${muted}`}>Aylıq yüksəlmə / enmə</p>
+            <div className="flex items-center gap-2 text-sm">
+              <input
+                type="number"
+                min="1"
+                max="50"
+                className={`${input} w-24 py-1.5`}
+                value={settings.promotePercent ?? ''}
+                onChange={(e) => setField('promotePercent', e.target.value)}
+                aria-label="Yüksələn və enən faiz"
+              />
+              <span className={muted}>%</span>
+            </div>
+            <p className={`mt-2 text-xs ${muted}`}>Hər liqanın ilk {settings.promotePercent || 20}%-i yüksəlir, son {settings.promotePercent || 20}%-i enir.</p>
+          </div>
+        </div>
+      </div>
+
       <div className="flex justify-end">
         <button type="button" onClick={() => save()} disabled={saving} className="btn-primary inline-flex items-center gap-2 px-5 disabled:opacity-60">
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
@@ -307,15 +380,20 @@ export default function AdminGamificationTab({ isDark }) {
             {weeks.map((w) => (
               <li key={w.weekStart} className="flex flex-wrap items-center gap-x-6 gap-y-2 py-3">
                 <span className={`w-40 text-sm font-medium ${strong}`}>{formatAzDate(w.weekStart)} həftəsi</span>
-                <div className="flex flex-1 flex-wrap gap-3">
+                <div className="flex flex-1 flex-col gap-2">
                   {(w.results?.winners || []).length === 0 ? (
                     <span className={`text-sm ${muted}`}>Qalib yoxdur (heç kim xal toplamayıb)</span>
                   ) : (
-                    w.results.winners.map((winner) => (
-                      <span key={winner.place} className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${isDark ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
-                        <span className="h-2 w-2 rounded-full" style={{ background: TIER_STYLES[winner.tier]?.main }} />
-                        {winner.place}. {winner.displayName} · {winner.points} xal
-                      </span>
+                    (w.results.leagues ? LEAGUE_ORDER.filter((l) => w.results.leagues[l]?.winners?.length) : [null]).map((league) => (
+                      <div key={league || 'all'} className="flex flex-wrap items-center gap-2">
+                        {league && <LeagueBadge league={league} size="xs" />}
+                        {(league ? w.results.leagues[league].winners : w.results.winners).map((winner) => (
+                          <span key={`${league}-${winner.place}`} className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${isDark ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
+                            <span className="h-2 w-2 rounded-full" style={{ background: TIER_STYLES[winner.tier]?.main }} />
+                            {winner.place}. {winner.displayName} · {winner.points} xal
+                          </span>
+                        ))}
+                      </div>
                     ))
                   )}
                 </div>

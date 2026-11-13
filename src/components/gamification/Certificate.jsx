@@ -10,6 +10,7 @@ export const TIER_STYLES = {
 };
 
 const PLACE_TEXT = { 1: '1-ci yer', 2: '2-ci yer', 3: '3-cü yer' };
+const LEAGUE_NAMES = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold' };
 const AZ_MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avqust', 'sentyabr', 'oktyabr', 'noyabr', 'dekabr'];
 
 export function formatAzDate(dateStr) {
@@ -71,7 +72,7 @@ const Certificate = forwardRef(function Certificate({ certificate, className = '
         SERTİFİKAT
       </text>
       <text x="600" y="246" textAnchor="middle" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontSize="20" letterSpacing="4" fill="#64748b">
-        HƏFTƏNİN LİDERİ · {tier.label}
+        HƏFTƏNİN LİDERİ · {certificate?.league ? `${String(certificate.league).toUpperCase()} LİQASI` : tier.label}
       </text>
 
       {/* Medal */}
@@ -96,7 +97,7 @@ const Certificate = forwardRef(function Certificate({ certificate, className = '
         {period} həftəsində {certificate?.points ?? 0} xal toplayaraq
       </text>
       <text x="600" y="640" textAnchor="middle" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontSize="21" fill="#334155">
-        Checkila reytinqində <tspan fontWeight="700" fill={tier.dark}>{place}</tspan> tutduğu üçün təltif olunur.
+        Checkila {certificate?.league ? `${LEAGUE_NAMES[certificate.league] || ''} liqasında` : 'reytinqində'} <tspan fontWeight="700" fill={tier.dark}>{place}</tspan> tutduğu üçün təltif olunur.
       </text>
 
       {/* Footer */}
