@@ -8,7 +8,7 @@ import { CertificateViewer } from './gamification/CertificatesSection';
 import LeagueBadge, { LEAGUE_META, LEAGUE_ORDER } from './gamification/LeagueBadge';
 
 // Sample certificate for the admin preview: this week's dates, placeholder name.
-function sampleCertificate(place, prizeTitle) {
+function sampleCertificate(place, prizeTitle, league = null) {
   const today = new Date();
   const monday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - ((today.getUTCDay() + 6) % 7)));
   const sunday = new Date(monday.getTime() + 6 * 86400000);
@@ -23,6 +23,7 @@ function sampleCertificate(place, prizeTitle) {
     weekEnd: day(sunday),
     prizeTitle,
     serial: `CHK-NUMUNE-${place}`,
+    league,
   };
 }
 
@@ -39,6 +40,7 @@ export default function AdminGamificationTab({ isDark }) {
   const [finalizing, setFinalizing] = useState(false);
   const [error, setError] = useState('');
   const [previewPlace, setPreviewPlace] = useState(null);
+  const [prizeLeague, setPrizeLeague] = useState('bronze');
 
   const load = useCallback(async () => {
     setError('');
@@ -56,8 +58,15 @@ export default function AdminGamificationTab({ isDark }) {
   }, [load]);
 
   const setField = (field, value) => setSettings((prev) => ({ ...prev, [field]: value }));
+  // Prizes are per league + place (settings.leaguePrizes[league][place]).
   const setPrize = (place, field, value) =>
-    setSettings((prev) => ({ ...prev, prizes: { ...prev.prizes, [place]: { ...prev.prizes[place], [field]: value } } }));
+    setSettings((prev) => ({
+      ...prev,
+      leaguePrizes: {
+        ...prev.leaguePrizes,
+        [prizeLeague]: { ...prev.leaguePrizes[prizeLeague], [place]: { ...prev.leaguePrizes[prizeLeague][place], [field]: value } },
+      },
+    }));
   const setCheckpoint = (index, field, value) =>
     setSettings((prev) => ({ ...prev, checkpoints: prev.checkpoints.map((c, i) => (i === index ? { ...c, [field]: value } : c)) }));
   const addCheckpoint = () =>
@@ -244,17 +253,36 @@ export default function AdminGamificationTab({ isDark }) {
           <h2 className={`mb-4 flex items-center gap-2 text-base font-semibold ${strong}`}>
             <Gift size={18} className="text-rose-500" /> Mükafatlar
           </h2>
+          <div className={`mb-4 inline-flex w-full rounded-xl p-1 ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`} role="tablist" aria-label="Liqa">
+            {LEAGUE_ORDER.map((l) => {
+              const active = prizeLeague === l;
+              return (
+                <button
+                  key={l}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setPrizeLeague(l)}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                    active ? (isDark ? 'bg-slate-800 text-white shadow-sm' : 'bg-white text-slate-900 shadow-sm') : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <LeagueBadge league={l} size="xs" /> {LEAGUE_META[l].label}
+                </button>
+              );
+            })}
+          </div>
           <div className="space-y-4">
             {[1, 2, 3].map((place) => {
               const tier = TIER_STYLES[TIER_BY_PLACE[place]];
-              const prize = settings.prizes[place];
+              const prize = settings.leaguePrizes?.[prizeLeague]?.[place] || { title: '', marketAnalysisCredits: 0, trackingCredits: 0 };
               return (
                 <div key={place} className={`rounded-xl border p-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`} style={{ borderLeft: `4px solid ${tier.main}` }}>
                   <div className="mb-3 flex items-center gap-2">
                     <span className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: `linear-gradient(135deg, ${tier.light}, ${tier.main} 55%, ${tier.dark})` }}>
                       {place}
                     </span>
-                    <span className={`text-sm font-semibold ${strong}`}>{place}-ci yer · {tier.name} sertifikat</span>
+                    <span className={`text-sm font-semibold ${strong}`}>{LEAGUE_META[prizeLeague].label} · {place}-ci yer</span>
                     <button
                       type="button"
                       onClick={() => setPreviewPlace(place)}
@@ -284,7 +312,7 @@ export default function AdminGamificationTab({ isDark }) {
             })}
           </div>
           <p className={`mt-3 text-xs ${muted}`}>
-            Kreditlər qalibin hesabına avtomatik əlavə olunur. Kreditsiz mükafat (məs. fiziki hədiyyə) üçün kreditləri 0 qoyun — qalib bildiriş və sertifikat alır, mükafatı siz təqdim edirsiniz.
+            Hər liqanın ilk 3 yeri üçün mükafatı ayrıca təyin edin. Kreditlər qalibin hesabına avtomatik əlavə olunur. Kreditsiz mükafat (məs. fiziki hədiyyə) üçün kreditləri 0 qoyun — qalib bildiriş və sertifikat alır, mükafatı siz təqdim edirsiniz.
           </p>
         </div>
       </div>
@@ -295,9 +323,9 @@ export default function AdminGamificationTab({ isDark }) {
           <LeagueBadge league="gold" size="sm" /> Liqalar
         </h2>
         <p className={`mb-4 text-xs ${muted}`}>
-          Hər liqanın öz həftəlik kürsüsü var. Mükafat = yerin mükafatı × liqa əmsalı. Ayın son həftəsi yekunlaşanda hər liqanın ilk faizi yüksəlir, son faizi (və xal toplamayanlar) enir.
+          Hər liqanın öz həftəlik kürsüsü və öz mükafatları var (yuxarıdakı Mükafatlar bölməsində). Ayın son həftəsi yekunlaşanda hər liqanın ilk faizi yüksəlir, son faizi (və xal toplamayanlar) enir.
         </p>
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <div>
             <p className={`mb-2 text-xs font-semibold uppercase tracking-wider ${muted}`}>İlk yerləşdirmə (son 30 gün satış)</p>
             <div className="space-y-2">
@@ -318,26 +346,6 @@ export default function AdminGamificationTab({ isDark }) {
                     aria-label={`${LEAGUE_META[l].label} üçün minimum satış`}
                   />
                   <span className={`text-xs ${muted}`}>satış</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <p className={`mb-2 text-xs font-semibold uppercase tracking-wider ${muted}`}>Mükafat əmsalı</p>
-            <div className="space-y-2">
-              {LEAGUE_ORDER.map((l) => (
-                <div key={l} className="flex items-center gap-2 text-sm">
-                  <LeagueBadge league={l} size="xs" /> <span className={`w-16 ${strong}`}>{LEAGUE_META[l].label}</span>
-                  <span className={muted}>×</span>
-                  <input
-                    type="number"
-                    min="0.1"
-                    step="0.1"
-                    className={`${input} w-24 py-1.5`}
-                    value={settings.leagueMultipliers?.[l] ?? ''}
-                    onChange={(e) => setField('leagueMultipliers', { ...settings.leagueMultipliers, [l]: e.target.value })}
-                    aria-label={`${LEAGUE_META[l].label} mükafat əmsalı`}
-                  />
                 </div>
               ))}
             </div>
@@ -406,7 +414,7 @@ export default function AdminGamificationTab({ isDark }) {
 
       {previewPlace && (
         <CertificateViewer
-          certificate={sampleCertificate(previewPlace, settings.prizes[previewPlace]?.title)}
+          certificate={sampleCertificate(previewPlace, settings.leaguePrizes?.[prizeLeague]?.[previewPlace]?.title, prizeLeague)}
           isDark={isDark}
           sample
           onClose={() => setPreviewPlace(null)}

@@ -589,8 +589,8 @@ export default function GamificationPage() {
                 <div className={`${card} p-5`}>
                   <h3 className={`mb-3 flex items-center gap-2 text-sm font-semibold ${strong}`}>
                     <Gift size={16} className="text-rose-500" /> Həftənin mükafatları
-                    <span className={`ml-auto text-xs font-medium ${faint}`}>
-                      {LEAGUE_META[shownLeague]?.label} · ×{leagueInfo?.multipliers?.[shownLeague] ?? 1}
+                    <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium" style={{ color: LEAGUE_META[shownLeague]?.to }}>
+                      <LeagueBadge league={shownLeague} size="xs" /> {LEAGUE_META[shownLeague]?.label}
                     </span>
                   </h3>
                   <div className="space-y-2">
