@@ -652,6 +652,31 @@ export default function SettingsPage() {
     }
   };
 
+  // "Yenidən qoş": runs eBay's consent screen again for this account so its token
+  // gets every permission Checkila currently asks for. Same account id, so
+  // products, auto stock, tracking and the rest stay exactly where they are.
+  const handleReconnectEbay = async (acc) => {
+    const label = acc.connectionName || acc.username || acc.profileUserId || 'eBay';
+    const ok = window.confirm(
+      `"${label}" hesabı yenidən qoşulacaq.
+
+eBay səhifəsində MÜTLƏQ eyni hesabla (${acc.username || acc.profileUserId || label}) daxil olun. Məhsullar, auto stok, tracking və digər məlumatlar bu hesabda olduğu kimi qalır.
+
+Davam edilsin?`
+    );
+    if (!ok) return;
+    try {
+      setEbayLoading(true);
+      const response = await ebayAPI.getConnectUrl(acc.id);
+      const authUrl = response?.data?.authUrl;
+      if (!authUrl) throw new Error(t('settingsPage.missingEbayAuthUrl') || 'Missing eBay auth URL');
+      window.location.href = authUrl;
+    } catch (error) {
+      setAlert({ type: 'error', message: error.response?.data?.error || t('settingsPage.failedToStartEbay') });
+      setEbayLoading(false);
+    }
+  };
+
   const handleRefreshConnection = async (ebayAccountId) => {
     try {
       setEbayLoading(true);
@@ -1511,6 +1536,19 @@ export default function SettingsPage() {
                               title="Refresh token and permissions"
                             >
                               Refresh Connection
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleReconnectEbay(acc)}
+                              disabled={ebayLoading}
+                              className={`inline-flex items-center gap-1 text-xs font-semibold rounded-md px-2 py-1 border ${
+                                isDark
+                                  ? 'border-indigo-700 text-indigo-200 hover:bg-indigo-900/30 disabled:opacity-40'
+                                  : 'border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:opacity-40'
+                              }`}
+                              title="eBay icazələrini yeniləmək üçün hesabı yenidən qoşun — məlumatlar bu hesabda qalır"
+                            >
+                              <Link2 size={12} /> Yenidən qoş
                             </button>
                             <button
                               type="button"

@@ -236,7 +236,8 @@ export const aiAnalysisAPI = {
 export const ebayAPI = {
   get: (...args) => api.get(...args),
   post: (...args) => api.post(...args),
-  getConnectUrl: () => api.get('/ebay/connect'),
+  // reconnectAccountId: re-consent an existing account (new scopes) — it keeps its id and data.
+  getConnectUrl: (reconnectAccountId) => api.get('/ebay/connect', { params: reconnectAccountId ? { reconnectAccountId } : {} }),
   completeCallback: (code, state) => api.post('/ebay/callback', { code, state }),
   getStatus: () => api.get('/ebay/status'),
   setActiveAccount: (ebayAccountId) => api.patch('/ebay/active-account', { ebayAccountId }),
