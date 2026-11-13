@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { TIER_STYLES, formatAzDate } from '../components/gamification/Certificate';
 import RankBadge, { rankMeta } from '../components/gamification/RankBadge';
 import LeagueBadge, { LEAGUE_META, LEAGUE_ORDER } from '../components/gamification/LeagueBadge';
+import UserProfileModal from '../components/gamification/UserProfileModal';
 
 // Gamification — weekly Monday–Sunday (Baku) points race. Backend: services/gamification.js.
 // Open to every signed-in user; the admin-only notes below show only to admins.
@@ -166,20 +167,32 @@ function ScoreBreakdownModal({ entry, rules, isDark, onClose }) {
   );
 }
 
-function PodiumColumn({ place, entry, prize, isDark, onInfo }) {
+function PodiumColumn({ place, entry, prize, isDark, onInfo, onProfile }) {
   const tier = TIER_STYLES[TIER_BY_PLACE[place]];
   const Icon = place === 1 ? Crown : Medal;
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center">
       <div className={`mb-3 flex flex-col items-center text-center ${entry ? '' : 'opacity-50'}`}>
         <Icon size={place === 1 ? 26 : 20} style={{ color: tier.main }} className="mb-1.5" fill={place === 1 ? tier.light : 'none'} />
-        <Avatar name={entry?.displayName || '—'} tier={entry ? TIER_BY_PLACE[place] : null} size={place === 1 ? 'h-16 w-16 text-xl sm:h-20 sm:w-20 sm:text-2xl' : 'h-12 w-12 text-base sm:h-16 sm:w-16 sm:text-lg'} isDark={isDark} />
+        <button
+          type="button"
+          disabled={!entry}
+          onClick={() => entry && onProfile(entry)}
+          title={entry ? `${entry.displayName} — nailiyyətlərə bax` : undefined}
+          className="rounded-full transition hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-default disabled:hover:scale-100"
+        >
+          <Avatar name={entry?.displayName || '—'} tier={entry ? TIER_BY_PLACE[place] : null} size={place === 1 ? 'h-16 w-16 text-xl sm:h-20 sm:w-20 sm:text-2xl' : 'h-12 w-12 text-base sm:h-16 sm:w-16 sm:text-lg'} isDark={isDark} />
+        </button>
         <div className="mt-2 flex max-w-[180px] items-center gap-1">
           {entry && <RankBadge level={entry.level} />}
-          <p className={`truncate text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-            {entry?.displayName || 'Boş yer'}
-            {entry?.isMe && <span className="ml-1 text-xs font-medium text-indigo-500">(siz)</span>}
-          </p>
+          {entry ? (
+            <button type="button" onClick={() => onProfile(entry)} className={`truncate text-sm font-semibold hover:underline ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+              {entry.displayName}
+              {entry.isMe && <span className="ml-1 text-xs font-medium text-indigo-500">(siz)</span>}
+            </button>
+          ) : (
+            <p className={`truncate text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Boş yer</p>
+          )}
           {entry && <InfoButton onClick={() => onInfo(entry)} isDark={isDark} label={entry.displayName} />}
         </div>
         <p className="text-sm font-bold tabular-nums" style={{ color: tier.dark }}>
@@ -251,6 +264,7 @@ export default function GamificationPage() {
   const top = useMemo(() => Object.fromEntries(board.slice(0, 3).map((e) => [e.rank, e])), [board]);
   const rest = board.slice(3);
   const [breakdownEntry, setBreakdownEntry] = useState(null);
+  const [profileEntry, setProfileEntry] = useState(null);
   const me = data?.me;
   const rules = data?.rules;
   const leagueInfo = data?.league;
@@ -492,7 +506,7 @@ export default function GamificationPage() {
                   </h2>
                   <div className="mx-auto flex max-w-2xl items-end gap-2 sm:gap-4">
                     {PODIUM_ORDER.map((place) => (
-                      <PodiumColumn key={place} place={place} entry={top[place]} prize={data.prizes?.[place]} isDark={isDark} onInfo={setBreakdownEntry} />
+                      <PodiumColumn key={place} place={place} entry={top[place]} prize={data.prizes?.[place]} isDark={isDark} onInfo={setBreakdownEntry} onProfile={setProfileEntry} />
                     ))}
                   </div>
                   <div className={`-mx-5 -mb-5 h-3 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
@@ -526,12 +540,19 @@ export default function GamificationPage() {
                               <td className={`px-4 py-3 font-semibold tabular-nums ${muted}`}>{e.rank}</td>
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
-                                  <Avatar name={e.displayName} size="h-8 w-8 text-xs" isDark={isDark} />
-                                  <RankBadge level={e.level} />
-                                  <span className={`font-medium ${strong}`}>
-                                    {e.displayName}
-                                    {e.isMe && <span className="ml-1.5 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">Siz</span>}
-                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setProfileEntry(e)}
+                                    title={`${e.displayName} — nailiyyətlərə bax`}
+                                    className="group/profile flex items-center gap-3 text-left"
+                                  >
+                                    <Avatar name={e.displayName} size="h-8 w-8 text-xs" isDark={isDark} />
+                                    <RankBadge level={e.level} />
+                                    <span className={`font-medium group-hover/profile:underline ${strong}`}>
+                                      {e.displayName}
+                                      {e.isMe && <span className="ml-1.5 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">Siz</span>}
+                                    </span>
+                                  </button>
                                   <InfoButton onClick={() => setBreakdownEntry(e)} isDark={isDark} label={e.displayName} />
                                 </div>
                               </td>
@@ -644,6 +665,15 @@ export default function GamificationPage() {
 
       {breakdownEntry && (
         <ScoreBreakdownModal entry={breakdownEntry} rules={data?.rules} isDark={isDark} onClose={() => setBreakdownEntry(null)} />
+      )}
+
+      {profileEntry?.publicId && (
+        <UserProfileModal
+          publicId={profileEntry.publicId}
+          fallbackName={profileEntry.displayName}
+          isDark={isDark}
+          onClose={() => setProfileEntry(null)}
+        />
       )}
     </div>
   );

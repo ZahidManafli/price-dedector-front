@@ -5,7 +5,7 @@ import { gamificationAPI } from '../../services/api';
 // Settings -> Nailiyyətlər: one-time badges with progress, plus the
 // perfect-day streak (backend services/gamificationAchievements.js).
 
-const BADGE_STYLE = {
+export const BADGE_STYLE = {
   first_sale: { icon: ShoppingBag, from: '#34d399', to: '#059669' },
   sales_100: { icon: ShoppingBag, from: '#60a5fa', to: '#2563eb' },
   sales_500: { icon: ShoppingBag, from: '#a78bfa', to: '#7c3aed' },
