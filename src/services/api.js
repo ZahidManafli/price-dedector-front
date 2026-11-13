@@ -697,6 +697,7 @@ export const dailyTasksAPI = {
 export const gamificationAPI = {
   leaderboard: () => api.get('/gamification/leaderboard'),
   certificates: () => api.get('/gamification/certificates'),
+  level: () => api.get('/gamification/level'),
 };
 
 export const whatsNewAPI = {

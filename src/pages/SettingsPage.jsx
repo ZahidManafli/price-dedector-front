@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Award, Bell, Cake, CheckCircle2, ClipboardList, CreditCard, Link2, Mail, Package, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { Award, Medal, Bell, Cake, CheckCircle2, ClipboardList, CreditCard, Link2, Mail, Package, ShieldCheck, Trash2, Users } from 'lucide-react';
 import CertificatesSection from '../components/gamification/CertificatesSection';
+import RankSection from '../components/gamification/RankSection';
 import { amazonOAuthAPI, aquilineAPI, authAPI, ebayAPI, paymentsAPI, settingsAPI } from '../services/api';
 import Alert from '../components/Alert';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
@@ -765,6 +766,7 @@ export default function SettingsPage() {
     { id: 'ebay', label: t('settingsPage.ebay'), icon: Link2 },
     { id: 'amazon', label: t('settingsPage.amazon'), icon: Link2 },
     { id: 'notifications', label: t('settingsPage.notifications'), icon: Bell },
+    { id: 'rank', label: 'Rütbə', icon: Medal },
     { id: 'certificates', label: 'Sertifikatlar', icon: Award },
   ];
 
@@ -780,6 +782,7 @@ export default function SettingsPage() {
     ebay: { icon: Link2, title: t('settingsPage.ebaySectionTipTitle'), body: t('settingsPage.ebaySectionTipBody') },
     amazon: { icon: Link2, title: t('settingsPage.amazonSectionTipTitle'), body: t('settingsPage.amazonSectionTipBody') },
     notifications: { icon: Mail, title: t('settingsPage.notificationChannel'), body: t('settingsPage.notificationChannelDescription') },
+    rank: { icon: Medal, title: 'Rütbə necə yüksəlir?', body: 'Satış və gündəlik tapşırıqlardan qazandığınız xallar toplanır. Hər yeni səviyyədə Market Analysis və Tracking krediti hədiyyə alırsınız, səviyyə yüksəldikcə hədiyyə də artır.' },
     certificates: { icon: Award, title: 'Necə qazanılır?', body: 'Satış edin və gündəlik tapşırıqları bitirin. Həftəni ilk 3 yerdə bitirənlər qızıl, gümüş və ya bürünc sertifikat və mükafat qazanır.' },
   }[settingsTab] || null;
 
@@ -881,6 +884,7 @@ export default function SettingsPage() {
               contextual to say (tabTip null) just get a wider single column. */}
           <div className={`min-w-0 flex-1 ${tabTip ? 'xl:grid xl:grid-cols-[1fr_320px] xl:items-start xl:gap-6' : ''}`}>
           <div className="min-w-0 space-y-6">
+            {settingsTab === 'rank' && <RankSection isDark={isDark} />}
             {settingsTab === 'certificates' && <CertificatesSection isDark={isDark} />}
 
             {settingsTab === 'security' && (

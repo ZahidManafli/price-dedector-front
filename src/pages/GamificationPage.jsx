@@ -6,6 +6,7 @@ import { gamificationAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { TIER_STYLES, formatAzDate } from '../components/gamification/Certificate';
+import RankBadge, { rankMeta } from '../components/gamification/RankBadge';
 
 // Gamification — weekly Monday–Sunday (Baku) points race. Backend: services/gamification.js.
 // Open to every signed-in user; the admin-only notes below show only to admins.
@@ -100,6 +101,7 @@ function ScoreBreakdownModal({ entry, rules, isDark, onClose }) {
       >
         <div className={`flex items-center gap-3 border-b px-5 py-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
           <Avatar name={entry.displayName} tier={TIER_BY_PLACE[entry.rank] || null} size="h-10 w-10 text-sm" isDark={isDark} />
+          {entry.level && <RankBadge level={entry.level} size="sm" />}
           <div className="min-w-0 flex-1">
             <h2 id="score-breakdown-title" className={`truncate text-base font-semibold ${strong}`}>
               {entry.displayName || 'Siz'}
@@ -171,7 +173,8 @@ function PodiumColumn({ place, entry, prize, isDark, onInfo }) {
       <div className={`mb-3 flex flex-col items-center text-center ${entry ? '' : 'opacity-50'}`}>
         <Icon size={place === 1 ? 26 : 20} style={{ color: tier.main }} className="mb-1.5" fill={place === 1 ? tier.light : 'none'} />
         <Avatar name={entry?.displayName || '—'} tier={entry ? TIER_BY_PLACE[place] : null} size={place === 1 ? 'h-16 w-16 text-xl sm:h-20 sm:w-20 sm:text-2xl' : 'h-12 w-12 text-base sm:h-16 sm:w-16 sm:text-lg'} isDark={isDark} />
-        <div className="mt-2 flex max-w-[160px] items-center gap-1">
+        <div className="mt-2 flex max-w-[180px] items-center gap-1">
+          {entry && <RankBadge level={entry.level} />}
           <p className={`truncate text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
             {entry?.displayName || 'Boş yer'}
             {entry?.isMe && <span className="ml-1 text-xs font-medium text-indigo-500">(siz)</span>}
@@ -340,6 +343,26 @@ export default function GamificationPage() {
                       <span className={`text-4xl font-bold tabular-nums ${strong}`}>{(me?.points || 0).toLocaleString()}</span>
                       <span className={`text-sm ${muted}`}>xal</span>
                     </div>
+                    {me?.levelProgress && (
+                      <div className="mt-3 flex items-center gap-2.5">
+                        <RankBadge level={me.levelProgress.level} size="md" />
+                        <div className="min-w-[180px]">
+                          <p className={`text-sm font-semibold ${strong}`}>
+                            {rankMeta(me.levelProgress.level).name}
+                            <span className={`ml-1.5 text-xs font-medium ${muted}`}>Səviyyə {me.levelProgress.level}</span>
+                          </p>
+                          <div className={`mt-1 h-1.5 w-full overflow-hidden rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                            <div
+                              className="h-full rounded-full"
+                              style={{ width: `${me.levelProgress.progress}%`, background: `linear-gradient(90deg, ${rankMeta(me.levelProgress.level).from}, ${rankMeta(me.levelProgress.level + 1).to})` }}
+                            />
+                          </div>
+                          <p className={`mt-1 text-[11px] tabular-nums ${faint}`}>
+                            Növbəti rütbəyə {me.levelProgress.toNext.toLocaleString()} xal · ümumi {me.levelProgress.points.toLocaleString()} xal
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className={`rounded-xl px-4 py-2 text-center ${isDark ? 'bg-slate-800/70' : 'bg-slate-50'}`}>
                     <p className={`text-[11px] uppercase tracking-wide ${faint}`}>Sıranız</p>
@@ -425,6 +448,7 @@ export default function GamificationPage() {
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
                                   <Avatar name={e.displayName} size="h-8 w-8 text-xs" isDark={isDark} />
+                                  <RankBadge level={e.level} />
                                   <span className={`font-medium ${strong}`}>
                                     {e.displayName}
                                     {e.isMe && <span className="ml-1.5 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">Siz</span>}
