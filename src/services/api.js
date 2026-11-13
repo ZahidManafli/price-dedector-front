@@ -512,6 +512,7 @@ export const adminAPI = {
   listWebhookDeliveries: (params = {}) => api.get('/admin/ebay-order-notifications/inbox', { params }),
   getWebhookDeliveryRaw: (id) => api.get(`/admin/ebay-order-notifications/inbox/${id}/raw`),
   diagnoseOrderNotifications: (body) => api.post('/admin/ebay-order-notifications/diagnose', body),
+  resubscribeOrderNotifications: (body) => api.post('/admin/ebay-order-notifications/resubscribe', body),
   listUsers: () => api.get('/admin/users'),
   blockUser: (userId, reason) => api.post(`/admin/users/${userId}/block`, { block: true, reason }),
   unblockUser: (userId) => api.post(`/admin/users/${userId}/block`, { block: false }),

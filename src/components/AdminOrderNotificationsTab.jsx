@@ -287,6 +287,24 @@ function DiagnosticsPanel({ subscription, onClose }) {
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [resubscribing, setResubscribing] = useState(false);
+  const [resubscribeMsg, setResubscribeMsg] = useState('');
+
+  // Renews this account's subscription with its current token — the fix for
+  // INVALID_AUTH_TOKEN_STATUS ("Token does not exist") after a reconnect.
+  const resubscribe = async () => {
+    setResubscribing(true);
+    setResubscribeMsg('');
+    setError('');
+    try {
+      await adminAPI.resubscribeOrderNotifications({ userId: subscription.userId, ebayAccountId: subscription.ebayAccountId });
+      setResubscribeMsg('Abunəlik yeni tokenlə yeniləndi. Növbəti sifarişdən etibarən bildirişlər çatmalıdır.');
+    } catch (err) {
+      setError(errorMessage(err, 'Yenidən abunə alınmadı'));
+    } finally {
+      setResubscribing(false);
+    }
+  };
 
   const run = async (e) => {
     e?.preventDefault();
@@ -360,7 +378,19 @@ function DiagnosticsPanel({ subscription, onClose }) {
           {running && <Loader2 className="h-4 w-4 animate-spin" />}
           Yoxla
         </button>
+        <button
+          type="button"
+          onClick={resubscribe}
+          disabled={resubscribing}
+          title="Bu hesabın bildiriş abunəliyini hazırkı tokenlə yenidən qurur (INVALID_AUTH_TOKEN_STATUS xətasını düzəldir)"
+          className="inline-flex items-center gap-2 rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-60 dark:border-blue-500/40 dark:bg-transparent dark:text-blue-300"
+        >
+          {resubscribing && <Loader2 className="h-4 w-4 animate-spin" />}
+          Yenidən abunə et
+        </button>
       </form>
+
+      {resubscribeMsg && <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">{resubscribeMsg}</p>}
 
       {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">{error}</p>}
 
