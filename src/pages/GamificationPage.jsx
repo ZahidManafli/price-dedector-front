@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Trophy, Crown, Medal, Flame, ShoppingBag, CheckSquare, Target, Gift, Timer, RefreshCw, Loader2, Sparkles, Flag, CalendarCheck,
+  Trophy, Crown, Medal, Flame, ShoppingBag, CheckSquare, Target, Gift, Timer, RefreshCw, Loader2, Sparkles, Flag, CalendarCheck, Info, X,
 } from 'lucide-react';
 import { gamificationAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
@@ -54,7 +54,116 @@ function Avatar({ name, tier, size = 'h-14 w-14 text-lg', isDark }) {
   );
 }
 
-function PodiumColumn({ place, entry, prize, isDark }) {
+function InfoButton({ onClick, isDark, label }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="Xal necə hesablanıb?"
+      aria-label={`${label}: xal necə hesablanıb`}
+      className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition ${
+        isDark ? 'text-slate-500 hover:bg-slate-800 hover:text-indigo-300' : 'text-slate-400 hover:bg-indigo-50 hover:text-indigo-600'
+      }`}
+    >
+      <Info size={14} />
+    </button>
+  );
+}
+
+// "How were these points calculated?" — one line per source, then the total.
+function ScoreBreakdownModal({ entry, rules, isDark, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const muted = isDark ? 'text-slate-400' : 'text-slate-500';
+  const strong = isDark ? 'text-slate-100' : 'text-slate-900';
+  const b = entry.breakdown || {};
+  const reached = (rules?.checkpoints || []).filter((c) => (entry.sales || 0) >= c.sales);
+  const rows = [
+    { icon: ShoppingBag, tone: 'text-indigo-500', label: 'Satış', formula: `${entry.sales || 0} × ${rules?.pointsPerSale ?? 0} xal`, points: b.sales || 0 },
+    { icon: CheckSquare, tone: 'text-emerald-500', label: 'Gündəlik tapşırıq', formula: `${entry.tasksDone || 0} × ${rules?.pointsPerTask ?? 0} xal`, points: b.tasks || 0 },
+    { icon: Flame, tone: 'text-orange-500', label: 'Tam gün bonusu', formula: `${entry.perfectDays || 0} gün × ${rules?.perfectDayBonus ?? 0} xal`, points: b.perfectDays || 0 },
+  ];
+  const tier = TIER_BY_PLACE[entry.rank] ? TIER_STYLES[TIER_BY_PLACE[entry.rank]] : null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 backdrop-blur-sm sm:items-center sm:p-4" onMouseDown={onClose}>
+      <div
+        onMouseDown={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="score-breakdown-title"
+        className={`w-full max-w-md overflow-hidden rounded-t-2xl shadow-2xl sm:rounded-2xl ${isDark ? 'bg-slate-900 ring-1 ring-slate-800' : 'bg-white'}`}
+      >
+        <div className={`flex items-center gap-3 border-b px-5 py-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+          <Avatar name={entry.displayName} tier={TIER_BY_PLACE[entry.rank] || null} size="h-10 w-10 text-sm" isDark={isDark} />
+          <div className="min-w-0 flex-1">
+            <h2 id="score-breakdown-title" className={`truncate text-base font-semibold ${strong}`}>
+              {entry.displayName || 'Siz'}
+              {entry.isMe && entry.displayName && <span className="ml-1.5 text-xs font-medium text-indigo-500">(siz)</span>}
+            </h2>
+            <p className={`text-xs ${muted}`}>
+              {entry.rank ? PLACE_TEXT[entry.rank] || `${entry.rank}-ci yer` : 'Hələ sırada deyil'} · bu həftənin xalları
+            </p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Bağla" className={`rounded-lg p-1.5 ${isDark ? 'text-slate-400 hover:bg-slate-800' : 'text-slate-500 hover:bg-slate-100'}`}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="space-y-2 px-5 py-4">
+          {rows.map((r) => (
+            <div key={r.label} className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 ${isDark ? 'bg-slate-800/60' : 'bg-slate-50'}`}>
+              <div className="flex min-w-0 items-center gap-2.5">
+                <r.icon size={16} className={`shrink-0 ${r.tone}`} />
+                <div className="min-w-0">
+                  <p className={`text-sm font-medium ${strong}`}>{r.label}</p>
+                  <p className={`text-xs tabular-nums ${muted}`}>{r.formula}</p>
+                </div>
+              </div>
+              <span className={`shrink-0 text-sm font-semibold tabular-nums ${strong}`}>+{r.points.toLocaleString()}</span>
+            </div>
+          ))}
+
+          <div className={`rounded-xl px-3 py-2.5 ${isDark ? 'bg-slate-800/60' : 'bg-slate-50'}`}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <Flag size={16} className="shrink-0 text-amber-500" />
+                <div>
+                  <p className={`text-sm font-medium ${strong}`}>Checkpoint bonusları</p>
+                  <p className={`text-xs ${muted}`}>{reached.length ? `${reached.length} checkpoint keçilib` : 'Hələ checkpoint keçilməyib'}</p>
+                </div>
+              </div>
+              <span className={`shrink-0 text-sm font-semibold tabular-nums ${strong}`}>+{(b.checkpoints || 0).toLocaleString()}</span>
+            </div>
+            {reached.length > 0 && (
+              <ul className={`mt-2 space-y-1 border-t pt-2 text-xs ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                {reached.map((c) => (
+                  <li key={c.sales} className={`flex justify-between tabular-nums ${muted}`}>
+                    <span>{c.sales} satışa çatıb</span>
+                    <span>+{c.bonus}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <div className={`flex items-center justify-between border-t px-5 py-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+          <span className={`text-sm font-semibold ${strong}`}>Cəmi</span>
+          <span className={`text-2xl font-bold tabular-nums ${tier ? '' : strong}`} style={tier ? { color: tier.main } : undefined}>
+            {(entry.points || 0).toLocaleString()} <span className="text-sm font-semibold">xal</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PodiumColumn({ place, entry, prize, isDark, onInfo }) {
   const tier = TIER_STYLES[TIER_BY_PLACE[place]];
   const Icon = place === 1 ? Crown : Medal;
   return (
@@ -62,18 +171,33 @@ function PodiumColumn({ place, entry, prize, isDark }) {
       <div className={`mb-3 flex flex-col items-center text-center ${entry ? '' : 'opacity-50'}`}>
         <Icon size={place === 1 ? 26 : 20} style={{ color: tier.main }} className="mb-1.5" fill={place === 1 ? tier.light : 'none'} />
         <Avatar name={entry?.displayName || '—'} tier={entry ? TIER_BY_PLACE[place] : null} size={place === 1 ? 'h-16 w-16 text-xl sm:h-20 sm:w-20 sm:text-2xl' : 'h-12 w-12 text-base sm:h-16 sm:w-16 sm:text-lg'} isDark={isDark} />
-        <p className={`mt-2 max-w-[140px] truncate text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-          {entry?.displayName || 'Boş yer'}
-          {entry?.isMe && <span className="ml-1 text-xs font-medium text-indigo-500">(siz)</span>}
-        </p>
+        <div className="mt-2 flex max-w-[160px] items-center gap-1">
+          <p className={`truncate text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+            {entry?.displayName || 'Boş yer'}
+            {entry?.isMe && <span className="ml-1 text-xs font-medium text-indigo-500">(siz)</span>}
+          </p>
+          {entry && <InfoButton onClick={() => onInfo(entry)} isDark={isDark} label={entry.displayName} />}
+        </div>
         <p className="text-sm font-bold tabular-nums" style={{ color: tier.dark }}>
           {entry ? `${entry.points.toLocaleString()} xal` : '—'}
         </p>
       </div>
       <div
-        className={`relative flex w-full items-start justify-center rounded-t-xl pt-3 shadow-inner ${PODIUM_HEIGHT[place]}`}
+        className={`group relative flex w-full items-start justify-center rounded-t-xl pt-3 shadow-inner transition hover:brightness-105 ${entry ? 'cursor-pointer' : ''} ${PODIUM_HEIGHT[place]}`}
         style={{ background: `linear-gradient(180deg, ${tier.light}, ${tier.main} 60%, ${tier.dark})` }}
+        onClick={entry ? () => onInfo(entry) : undefined}
+        title={entry ? `${entry.points.toLocaleString()} xal` : undefined}
       >
+        {/* Hover: points */}
+        {entry && (
+          <span
+            role="tooltip"
+            className="pointer-events-none absolute -top-11 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white opacity-0 shadow-lg transition group-hover:opacity-100"
+          >
+            {entry.points.toLocaleString()} xal
+            <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+          </span>
+        )}
         <span className="font-serif text-4xl font-bold text-white/95 drop-shadow sm:text-5xl">{place}</span>
         {prize?.title && (
           <span className="absolute bottom-2 left-1/2 hidden max-w-[90%] -translate-x-1/2 truncate rounded-full bg-black/20 px-2 py-0.5 text-[11px] font-medium text-white sm:block" title={prize.title}>
@@ -114,6 +238,7 @@ export default function GamificationPage() {
   const board = data?.leaderboard || [];
   const top = useMemo(() => Object.fromEntries(board.slice(0, 3).map((e) => [e.rank, e])), [board]);
   const rest = board.slice(3);
+  const [breakdownEntry, setBreakdownEntry] = useState(null);
   const me = data?.me;
   const rules = data?.rules;
 
@@ -207,7 +332,10 @@ export default function GamificationPage() {
               <div className={`${card} p-5 lg:col-span-2`}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className={`text-xs font-semibold uppercase tracking-wider ${faint}`}>Sizin nəticəniz</p>
+                    <p className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wider ${faint}`}>
+                      Sizin nəticəniz
+                      {me && <InfoButton onClick={() => setBreakdownEntry({ ...me, isMe: true })} isDark={isDark} label="Sizin nəticəniz" />}
+                    </p>
                     <div className="mt-2 flex items-baseline gap-3">
                       <span className={`text-4xl font-bold tabular-nums ${strong}`}>{(me?.points || 0).toLocaleString()}</span>
                       <span className={`text-sm ${muted}`}>xal</span>
@@ -262,7 +390,7 @@ export default function GamificationPage() {
                   </h2>
                   <div className="mx-auto flex max-w-2xl items-end gap-2 sm:gap-4">
                     {PODIUM_ORDER.map((place) => (
-                      <PodiumColumn key={place} place={place} entry={top[place]} prize={data.prizes?.[place]} isDark={isDark} />
+                      <PodiumColumn key={place} place={place} entry={top[place]} prize={data.prizes?.[place]} isDark={isDark} onInfo={setBreakdownEntry} />
                     ))}
                   </div>
                   <div className={`-mx-5 -mb-5 h-3 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
@@ -301,6 +429,7 @@ export default function GamificationPage() {
                                     {e.displayName}
                                     {e.isMe && <span className="ml-1.5 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">Siz</span>}
                                   </span>
+                                  <InfoButton onClick={() => setBreakdownEntry(e)} isDark={isDark} label={e.displayName} />
                                 </div>
                               </td>
                               <td className={`px-4 py-3 text-right tabular-nums ${muted}`}>{e.sales}</td>
@@ -406,6 +535,10 @@ export default function GamificationPage() {
           </>
         )}
       </div>
+
+      {breakdownEntry && (
+        <ScoreBreakdownModal entry={breakdownEntry} rules={data?.rules} isDark={isDark} onClose={() => setBreakdownEntry(null)} />
+      )}
     </div>
   );
 }
