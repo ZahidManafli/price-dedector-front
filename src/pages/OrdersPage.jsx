@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { ebayAPI, productAPI } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { TAB_KEYS } from '../utils/planAccess';
 import { useTranslation } from 'react-i18next';
 import Alert from '../components/Alert';
 import {
@@ -518,6 +520,15 @@ function SendToProfitCell({ order, matchedProduct, listingImageUrl, buyer, isDar
 
 export default function OrdersPage() {
   const navigate = useNavigate();
+  // A custom plan may include Orders without Products / Listings. Calling those
+  // APIs then returns 403 PLAN_TAB_ACCESS_DENIED, which the api.js interceptor
+  // answers by redirecting to /dashboard — so the Orders page would never open.
+  // Only load them when the plan allows it (same rule as the backend: tracking
+  // plans may read products without the Products tab).
+  const { user, hasTabAccess } = useAuth();
+  const canLoadProducts =
+    hasTabAccess(TAB_KEYS.PRODUCTS) || String(user?.planCategory || '').trim().toLowerCase() === 'tracking_plans';
+  const canLoadListings = hasTabAccess(TAB_KEYS.LISTINGS);
   const { isDark } = useTheme();
   const { t } = useTranslation();
 
@@ -684,7 +695,7 @@ export default function OrdersPage() {
           return;
         }
 
-        ebayAPI
+        if (canLoadListings) ebayAPI
           .getListings(0, 200)
           .then((res) => {
             const data = res?.data || {};
@@ -715,7 +726,7 @@ export default function OrdersPage() {
         await loadPage(0);
 
         // Fetch products to auto-fill ASINs from ebayItemId matches
-        productAPI.getAll().then((res) => {
+        if (canLoadProducts) productAPI.getAll().then((res) => {
           const products = Array.isArray(res?.data) ? res.data : [];
           const asinMap = new Map();
           const productMap = new Map();
