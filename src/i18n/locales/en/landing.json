@@ -227,12 +227,40 @@
     "tracking": {
       "title": "Checkila Tracking",
       "description": "Amazon tracking numbers are converted into eBay-recognized codes, uploaded to the order automatically, and buyers get notified on every update.",
-      "cta": "See Checkila Tracking"
+      "cta": "See Checkila Tracking",
+      "heading": "Tracking codes upload by themselves",
+      "headingAccents": [
+        "by themselves"
+      ]
     },
     "marketAnalysis": {
       "title": "Market Analysis",
       "description": "Sell-through rate, market share by seller, sales trends and listing comparisons — all in one view before you list.",
-      "cta": "See Market Analysis"
+      "cta": "See Market Analysis",
+      "heading": "Know the market before you list",
+      "headingAccents": [
+        "before you list"
+      ]
+    },
+    "mock": {
+      "customer": "Customer",
+      "order": "Order",
+      "tracking": "Tracking",
+      "status": "Status",
+      "delivered": "Delivered",
+      "inTransit": "In transit",
+      "shipped": "Shipped",
+      "converted": "Tracking converted",
+      "carrier": "Carrier",
+      "notified": "Buyer notified",
+      "sellThrough": "Sell-through",
+      "sellers": "Sellers",
+      "avgPrice": "Avg. price",
+      "salesTrend": "Sales trend",
+      "marketShare": "Market share",
+      "topSeller": "Top seller",
+      "last30": "Last 30 days",
+      "soldUnits": "units sold"
     }
   },
   "companion": {
@@ -280,7 +308,7 @@
     "rights": "All rights reserved."
   },
   "faq": {
-    "eyebrow": "SEO questions",
+    "eyebrow": "FAQ",
     "title": "Common questions about Checkila",
     "description": "Clear answers for sellers looking for a dropshipping tool, product research workflow, or eBay seller intelligence.",
     "items": [

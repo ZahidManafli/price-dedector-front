@@ -39,6 +39,7 @@ import { applySeo } from '../utils/seo';
 import { pathFor, SUPPORTED_LANGS, SEO_PAGES, imageFor } from '../data/seoPages';
 import MilliNetBadge, { TRUST_BADGE_CARD } from '../components/marketing/MilliNetBadge';
 import { renderAccentedTitle } from '../utils/accentedTitle';
+import { TrackingMock, MarketAnalysisMock } from '../components/marketing/ShowcaseMocks';
 
 const CHROME_EXTENSION_URL =
   'https://chromewebstore.google.com/detail/checkila-extension/mokpdmidbgchibehajdblfkjcgcibcbb';
@@ -699,6 +700,8 @@ export default function LandingPage() {
       title: t('landing:showcase.tracking.title'),
       description: t('landing:showcase.tracking.description'),
       cta: t('landing:showcase.tracking.cta'),
+      heading: t('landing:showcase.tracking.heading'),
+      headingAccents: t('landing:showcase.tracking.headingAccents', { returnObjects: true }),
     },
     {
       key: 'marketAnalysis',
@@ -706,6 +709,8 @@ export default function LandingPage() {
       title: t('landing:showcase.marketAnalysis.title'),
       description: t('landing:showcase.marketAnalysis.description'),
       cta: t('landing:showcase.marketAnalysis.cta'),
+      heading: t('landing:showcase.marketAnalysis.heading'),
+      headingAccents: t('landing:showcase.marketAnalysis.headingAccents', { returnObjects: true }),
     },
   ];
 
@@ -1157,66 +1162,44 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="faq" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
-          <SectionHeader
-            eyebrow={t('landing:faq.eyebrow')}
-            title={t('landing:faq.title')}
-            description={t('landing:faq.description')}
-            align="center"
-          />
+        {/* ── Showcase: alternating illustration + text rows ── */}
+        <section id="showcase" className="relative px-6 pb-20 md:pb-28">
+          <div className="pointer-events-none absolute left-1/2 top-40 h-[360px] w-[760px] -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400/12 via-blue-500/10 to-transparent blur-3xl" aria-hidden="true" />
+          <div className="relative mx-auto max-w-7xl">
+            <div className="mx-auto max-w-2xl text-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-white/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 shadow-sm backdrop-blur dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200">
+                <Sparkles size={14} />
+                {t('landing:showcase.eyebrow')}
+              </span>
+            </div>
 
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {faqItems.map((item) => (
-              <article
-                key={item.question}
-                className="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60 backdrop-blur dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none"
-              >
-                <h3 className="text-base font-semibold text-slate-900 dark:text-white">{item.question}</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.answer}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section id="showcase" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
-          <SectionHeader
-            eyebrow={t('landing:showcase.eyebrow')}
-            title={t('landing:showcase.title')}
-            description={t('landing:showcase.description')}
-            align="center"
-          />
-
-          <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            {showcaseCards.map((card) => (
-              <article
-                key={card.key}
-                className="group flex flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-lg shadow-slate-200/60 backdrop-blur transition hover:-translate-y-1 hover:border-cyan-300/60 dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none dark:hover:border-cyan-300/30"
-              >
-                {card.image && (
-                  <div className="overflow-hidden border-b border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-slate-950/60">
-                    <img
-                      src={card.image.src}
-                      alt={card.title}
-                      width={card.image.width}
-                      height={card.image.height}
-                      loading="lazy"
-                      className="h-auto w-full transition duration-300 group-hover:scale-[1.02]"
-                    />
+            <div className="mt-12 space-y-20 md:space-y-28">
+              {showcaseCards.map((card, idx) => {
+                const Mock = card.key === 'trackingConverter' ? TrackingMock : MarketAnalysisMock;
+                const reversed = idx % 2 === 1;
+                return (
+                  <div key={card.key} className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
+                    <div className={reversed ? 'lg:order-2' : ''}>
+                      <Mock />
+                    </div>
+                    <div className={reversed ? 'lg:order-1' : ''}>
+                      <p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-300">{card.title}</p>
+                      <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 dark:text-white md:text-[2.75rem] md:leading-[1.15]" style={{ textWrap: 'balance' }}>
+                        {renderAccentedTitle(card.heading, card.headingAccents)}
+                      </h2>
+                      <p className="mt-5 text-base leading-7 text-slate-600 dark:text-slate-300 md:text-lg">{card.description}</p>
+                      <Link
+                        to={pathFor(card.key, activeLang)}
+                        className="group mt-7 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-cyan-500/30"
+                      >
+                        {card.cta}
+                        <ArrowRight size={15} className="transition group-hover:translate-x-0.5" />
+                      </Link>
+                    </div>
                   </div>
-                )}
-                <div className="flex flex-1 flex-col p-6">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{card.title}</h3>
-                  <p className="mt-2 flex-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{card.description}</p>
-                  <Link
-                    to={pathFor(card.key, activeLang)}
-                    className="mt-4 inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-cyan-700 transition hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
-                  >
-                    {card.cta}
-                    <ArrowRight size={13} />
-                  </Link>
-                </div>
-              </article>
-            ))}
+                );
+              })}
+            </div>
           </div>
         </section>
 
@@ -1600,6 +1583,27 @@ export default function LandingPage() {
                 </div>
               </div>
             )}
+          </div>
+        </section>
+
+        <section id="faq" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
+          <SectionHeader
+            eyebrow={t('landing:faq.eyebrow')}
+            title={t('landing:faq.title')}
+            description={t('landing:faq.description')}
+            align="center"
+          />
+
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {faqItems.map((item) => (
+              <article
+                key={item.question}
+                className="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60 backdrop-blur dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none"
+              >
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">{item.question}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.answer}</p>
+              </article>
+            ))}
           </div>
         </section>
 

@@ -227,12 +227,40 @@
     "tracking": {
       "title": "Checkila Tracking",
       "description": "Amazon tracking nömrələri eBay-in tanıdığı koda çevrilir, sifarişə aftomatik yüklənir və müştəri hər yeniləmədə bildiriş alır.",
-      "cta": "Checkila Tracking-ə bax"
+      "cta": "Checkila Tracking-ə bax",
+      "heading": "Tracking kodları öz‑özünə yüklənir",
+      "headingAccents": [
+        "öz‑özünə"
+      ]
     },
     "marketAnalysis": {
       "title": "Bazar Analizi",
       "description": "Satış nisbəti, satıcı üzrə bazar payı, satış trendləri və elan müqayisəsi — elan yerləşdirməzdən əvvəl hamısı tək ekranda.",
-      "cta": "Bazar Analizinə bax"
+      "cta": "Bazar Analizinə bax",
+      "heading": "Elan yerləşdirməzdən əvvəl bazarı tanıyın",
+      "headingAccents": [
+        "bazarı tanıyın"
+      ]
+    },
+    "mock": {
+      "customer": "Müştəri",
+      "order": "Sifariş",
+      "tracking": "Tracking",
+      "status": "Status",
+      "delivered": "Çatdırılıb",
+      "inTransit": "Yoldadır",
+      "shipped": "Göndərilib",
+      "converted": "Tracking çevrildi",
+      "carrier": "Daşıyıcı",
+      "notified": "Müştəriyə bildiriş getdi",
+      "sellThrough": "Satış nisbəti",
+      "sellers": "Satıcılar",
+      "avgPrice": "Orta qiymət",
+      "salesTrend": "Satış trendi",
+      "marketShare": "Bazar payı",
+      "topSeller": "Top satıcı",
+      "last30": "Son 30 gün",
+      "soldUnits": "satılan say"
     }
   },
   "companion": {
@@ -280,7 +308,7 @@
     "rights": "Bütün hüquqlar qorunur."
   },
   "faq": {
-    "eyebrow": "SEO sualları",
+    "eyebrow": "FAQ",
     "title": "Checkila haqqında tez-tez verilən suallar",
     "description": "Dropshipping aləti, məhsul araşdırma axını və ya eBay satıcı analitikası axtaranlar üçün aydın cavablar.",
     "items": [
