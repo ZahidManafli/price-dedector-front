@@ -89,11 +89,17 @@
     "marketCreditsSub": "via Checkila Analysis",
     "aiActions": "AI assists delivered",
     "aiActionsSub": "Checkila Smart & Dewiso",
-    "managedListings": "Total Managed Listings",
+    "managedListings": "Managed listings",
     "managedListingsSub": "Across connected eBay accounts",
-    "managedOrders": "Total Managed Orders",
+    "managedOrders": "Managed orders",
     "managedOrdersSub": "Across connected eBay accounts",
-    "mysteryBoxText": "The truth is hidden in the numbers"
+    "mysteryBoxText": "The truth is hidden in the numbers",
+    "titleAccents": [
+      "numbers"
+    ],
+    "reviews": "User reviews",
+    "reviewsSummary": "{{positive}} positive · {{negative}} negative",
+    "seeReviews": "See reviews"
   },
   "workflow": {
     "discover": {

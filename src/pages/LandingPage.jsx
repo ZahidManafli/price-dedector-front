@@ -43,6 +43,50 @@ const CHROME_EXTENSION_URL =
   'https://chromewebstore.google.com/detail/checkila-extension/mokpdmidbgchibehajdblfkjcgcibcbb';
 const TELEGRAM_BOT_URL = 'https://t.me/Checkila_bot';
 
+// Soft glow colour behind each platform-number card.
+const STAT_GLOW = {
+  productsTracked: '#f97316',
+  trackingCodes: '#3b82f6',
+  marketCredits: '#8b5cf6',
+  aiActions: '#ec4899',
+  managedListings: '#6366f1',
+  managedOrders: '#f43f5e',
+};
+
+// Counts up from 0 the first time it scrolls into view (instant with reduced motion).
+function AnimatedNumber({ value, duration = 1400 }) {
+  const target = Number(value);
+  const ref = React.useRef(null);
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    if (!Number.isFinite(target)) return undefined;
+    const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || typeof IntersectionObserver === 'undefined') {
+      setShown(target);
+      return undefined;
+    }
+    let frame;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      observer.disconnect();
+      const start = performance.now();
+      const tick = (now) => {
+        const p = Math.min(1, (now - start) / duration);
+        setShown(Math.round(target * (1 - Math.pow(1 - p, 3))));
+        if (p < 1) frame = requestAnimationFrame(tick);
+      };
+      frame = requestAnimationFrame(tick);
+    }, { threshold: 0.3 });
+    if (ref.current) observer.observe(ref.current);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [target, duration]);
+  if (!Number.isFinite(target)) return <span>—</span>;
+  return <span ref={ref}>{shown.toLocaleString('en-US')}</span>;
+}
+
 // Hero title with the language's accent phrases (landing:hero.titleAccents)
 // painted in the brand gradient, e.g. "<eBay Dropshipping> Aləti və E-ticarət
 // <Avtomatlaşdırma> Platforması". Phrases not found in the title are ignored.
@@ -983,73 +1027,94 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-6 pb-16 md:pb-20">
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60 backdrop-blur dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none md:p-8">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white md:text-2xl">
-                  {t('landing:platformStats.title', 'Platforma rəqəmləri')}
-                </h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  {t('landing:platformStats.subtitle', 'Hamısı bazadan, canlı')}
-                </p>
-              </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:border-emerald-300/20 dark:text-emerald-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        {/* ── Platform numbers ── */}
+        <section className="relative px-6 pb-20 pt-6 md:pb-28">
+          <div className="pointer-events-none absolute left-1/2 top-24 h-[360px] w-[760px] -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400/15 via-blue-500/10 to-violet-500/10 blur-3xl dark:from-cyan-400/10" aria-hidden="true" />
+
+          <div className="relative mx-auto max-w-6xl">
+            <div className="mx-auto max-w-2xl text-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-white/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700 shadow-sm backdrop-blur dark:border-emerald-300/25 dark:bg-white/5 dark:text-emerald-300">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                </span>
                 {t('landing:platformStats.live', 'Canlı məlumat')}
               </span>
+              <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 dark:text-white md:text-5xl" style={{ textWrap: 'balance' }}>
+                {renderAccentedTitle(t('landing:platformStats.title', 'Platforma rəqəmləri'), t('landing:platformStats.titleAccents', { returnObjects: true }))}
+              </h2>
+              <p className="mt-3 text-base text-slate-600 dark:text-slate-300 md:text-lg">{t('landing:platformStats.subtitle', 'Hamısı bazadan, canlı')}</p>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {platformStatCards.map((stat) => (
-                <article
-                  key={stat.key}
-                  className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.03]"
-                >
-                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${stat.iconBg}`}>
-                    <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
-                  </span>
-                  <p className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                    {platformStats ? formatStatNumber(stat.value) : '—'}
-                  </p>
-                  <p className="mt-1 text-sm font-medium text-slate-700 dark:text-slate-200">{stat.label}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{stat.sublabel}</p>
-                </article>
-              ))}
+            <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {platformStatCards.map((stat) => {
+                const glow = STAT_GLOW[stat.key] || '#06b6d4';
+                return (
+                  <article
+                    key={stat.key}
+                    className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 p-5 shadow-sm backdrop-blur transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/[0.06] dark:border-white/10 dark:bg-white/[0.04] dark:hover:shadow-black/30"
+                  >
+                    <div
+                      className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-[0.14] blur-2xl transition duration-300 group-hover:opacity-30"
+                      style={{ background: glow }}
+                      aria-hidden="true"
+                    />
+                    <span className={`relative inline-flex h-11 w-11 items-center justify-center rounded-xl ${stat.iconBg}`}>
+                      <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
+                    </span>
+                    <p className="relative mt-4 text-3xl font-bold tracking-tight text-slate-900 tabular-nums dark:text-white">
+                      {platformStats ? <AnimatedNumber value={stat.value} /> : '—'}
+                    </p>
+                    <p className="relative mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{stat.label}</p>
+                    <p className="relative mt-0.5 text-xs text-slate-500 dark:text-slate-400">{stat.sublabel}</p>
+                  </article>
+                );
+              })}
 
-              {/* Reviews — distinct tile: average rating + positive/negative
-                  split, with a link that opens the full reviews list in a
-                  modal instead of just displaying a static number. */}
-              <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.03]">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-400/10">
-                  <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
-                </span>
-                <p className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  {platformStats ? `${Number(platformStats.reviewsAvgRating || 0).toFixed(1)} ★` : '—'}
+              {/* Reviews: average rating with stars + positive / negative split */}
+              <article className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 p-5 shadow-sm backdrop-blur transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/[0.06] dark:border-white/10 dark:bg-white/[0.04] dark:hover:shadow-black/30">
+                <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-amber-400 opacity-[0.16] blur-2xl transition duration-300 group-hover:opacity-30" aria-hidden="true" />
+                <div className="relative flex items-center gap-0.5">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Star
+                      key={n}
+                      className={`h-5 w-5 ${
+                        Number(platformStats?.reviewsAvgRating || 0) >= n - 0.25
+                          ? 'fill-amber-400 text-amber-400'
+                          : 'fill-slate-200 text-slate-200 dark:fill-slate-700 dark:text-slate-700'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="relative mt-4 text-3xl font-bold tracking-tight text-slate-900 tabular-nums dark:text-white">
+                  {platformStats ? Number(platformStats.reviewsAvgRating || 0).toFixed(1) : '—'}
+                  <span className="ml-1 text-base font-semibold text-slate-400">/ 5</span>
                 </p>
-                <p className="mt-1 text-sm font-medium text-slate-700 dark:text-slate-200">Rəylər</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="relative mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{t('landing:platformStats.reviews', 'İstifadəçi rəyləri')}</p>
+                <p className="relative mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                   {platformStats
-                    ? `${formatStatNumber(platformStats.reviewsPositiveCount)} pozitiv · ${formatStatNumber(platformStats.reviewsNegativeCount)} neqativ`
+                    ? t('landing:platformStats.reviewsSummary', {
+                        positive: formatStatNumber(platformStats.reviewsPositiveCount),
+                        negative: formatStatNumber(platformStats.reviewsNegativeCount),
+                        defaultValue: '{{positive}} pozitiv · {{negative}} neqativ',
+                      })
                     : ''}
                 </p>
                 <button
                   type="button"
                   onClick={() => setReviewsModalOpen(true)}
-                  className="mt-2 text-xs font-semibold text-cyan-600 hover:underline dark:text-cyan-300"
+                  className="relative mt-3 inline-flex items-center gap-1 text-xs font-semibold text-cyan-600 transition hover:gap-1.5 dark:text-cyan-300"
                 >
-                  Rəylərə bax →
+                  {t('landing:platformStats.seeReviews', 'Rəylərə bax')} <ArrowRight size={12} />
                 </button>
               </article>
 
-              {/* Deliberately not a real number — the seller-count tile this
-                  replaced is not shown on the public landing page. A quiet,
-                  on-brand placeholder instead of just leaving a gap. */}
-              <article className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center dark:border-white/10 dark:bg-white/[0.03]">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-400/20 bg-slate-400/10">
-                  <EyeOff className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+              {/* Teaser tile (the seller count is intentionally not public) */}
+              <article className="relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-gradient-to-br from-slate-50 to-white p-5 text-center dark:border-white/15 dark:from-white/[0.03] dark:to-transparent">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-500 ring-1 ring-slate-200 dark:bg-white/5 dark:text-slate-400 dark:ring-white/10">
+                  <EyeOff className="h-5 w-5" />
                 </span>
-                <p className="mt-3 text-sm font-medium italic leading-5 text-slate-600 dark:text-slate-300">
+                <p className="mt-3 max-w-[12rem] text-sm font-medium italic leading-5 text-slate-600 dark:text-slate-300">
                   {t('landing:platformStats.mysteryBoxText', 'Həqiqət rəqəmlərdə gizlidir')}
                 </p>
               </article>

@@ -89,11 +89,17 @@
     "marketCreditsSub": "через Checkila Analysis",
     "aiActions": "Оказано содействий ИИ",
     "aiActionsSub": "Checkila Smart и Dewiso",
-    "managedListings": "Total Managed Listings",
+    "managedListings": "Управляемые объявления",
     "managedListingsSub": "На подключённых аккаунтах eBay",
-    "managedOrders": "Total Managed Orders",
+    "managedOrders": "Управляемые заказы",
     "managedOrdersSub": "На подключённых аккаунтах eBay",
-    "mysteryBoxText": "Истина скрыта в цифрах"
+    "mysteryBoxText": "Истина скрыта в цифрах",
+    "titleAccents": [
+      "Цифры"
+    ],
+    "reviews": "Отзывы пользователей",
+    "reviewsSummary": "{{positive}} положительных · {{negative}} отрицательных",
+    "seeReviews": "Смотреть отзывы"
   },
   "workflow": {
     "discover": {

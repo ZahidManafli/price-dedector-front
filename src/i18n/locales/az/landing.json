@@ -89,11 +89,17 @@
     "marketCreditsSub": "Checkila Analysis vasitəsilə",
     "aiActions": "Alınmış Süni İntellekt dəstəyi",
     "aiActionsSub": "Checkila Smart və Dewiso",
-    "managedListings": "Total Managed Listings",
+    "managedListings": "İdarə olunan listinqlər",
     "managedListingsSub": "Qoşulmuş eBay hesablarında",
-    "managedOrders": "Total Managed Orders",
+    "managedOrders": "İdarə olunan sifarişlər",
     "managedOrdersSub": "Qoşulmuş eBay hesablarında",
-    "mysteryBoxText": "Həqiqət rəqəmlərdə gizlidir"
+    "mysteryBoxText": "Həqiqət rəqəmlərdə gizlidir",
+    "titleAccents": [
+      "rəqəmləri"
+    ],
+    "reviews": "İstifadəçi rəyləri",
+    "reviewsSummary": "{{positive}} pozitiv · {{negative}} neqativ",
+    "seeReviews": "Rəylərə bax"
   },
   "workflow": {
     "discover": {
