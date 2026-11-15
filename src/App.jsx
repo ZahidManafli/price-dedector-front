@@ -148,6 +148,43 @@ function AppContent() {
   const location = useLocation();
   const hideSidebar = location.pathname.startsWith('/studio/');
 
+  // Pages scroll inside <main>, not the window, so the browser never resets the
+  // position on navigation. Start every new page at the top; links with a hash
+  // (e.g. /#plans) scroll to that section once it has rendered instead.
+  const mainRef = React.useRef(null);
+  React.useEffect(() => {
+    const main = mainRef.current;
+    if (!main) return undefined;
+    const id = decodeURIComponent((location.hash || '').slice(1));
+    if (!id) {
+      main.scrollTop = 0;
+      return undefined;
+    }
+    // Sections above the anchor (partners, stats, plans) load async and push it
+    // down, so keep re-aligning briefly until the layout settles.
+    let tries = 0;
+    let aligned = 0;
+    let timer = 0;
+    const toAnchor = () => {
+      const target = document.getElementById(id);
+      if (target) {
+        target.scrollIntoView({ block: 'start' });
+        if (aligned++ < 6) timer = window.setTimeout(toAnchor, 250);
+      } else if (tries++ < 20) timer = window.setTimeout(toAnchor, 100);
+      else main.scrollTop = 0;
+    };
+    toAnchor();
+    // Stop re-aligning as soon as the user scrolls on their own.
+    const stop = () => window.clearTimeout(timer);
+    main.addEventListener('wheel', stop, { passive: true });
+    main.addEventListener('touchstart', stop, { passive: true });
+    return () => {
+      stop();
+      main.removeEventListener('wheel', stop);
+      main.removeEventListener('touchstart', stop);
+    };
+  }, [location.pathname, location.hash, loading]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -161,7 +198,7 @@ function AppContent() {
       <ActivityTracker />
       {isAuthenticated && hasToken && !hideSidebar && <Sidebar />}
       {isAuthenticated && hasToken && user && !user.dateOfBirth && <BirthdayModal />}
-      <main className={`flex-1 overflow-auto transition-all duration-300 ${isAuthenticated && hasToken && !hideSidebar ? '' : 'w-full'}`}>
+      <main ref={mainRef} className={`flex-1 overflow-auto transition-all duration-300 ${isAuthenticated && hasToken && !hideSidebar ? '' : 'w-full'}`}>
         <div className="min-h-screen">
           <React.Suspense fallback={<RouteFallback />}>
           <Routes>
