@@ -41,6 +41,7 @@ import MilliNetBadge, { TRUST_BADGE_CARD } from '../components/marketing/MilliNe
 import { renderAccentedTitle } from '../utils/accentedTitle';
 import { TrackingMock, MarketAnalysisMock } from '../components/marketing/ShowcaseMocks';
 import AppsSection from '../components/marketing/AppsSection';
+import CtaCarouselSection from '../components/marketing/CtaCarouselSection';
 
 const CHROME_EXTENSION_URL =
   'https://chromewebstore.google.com/detail/checkila-extension/mokpdmidbgchibehajdblfkjcgcibcbb';
@@ -1402,63 +1403,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── Final CTA banner ── */}
-        <section id="contact" className="relative px-4 pb-16 sm:px-6 md:pb-24">
-          <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-[#062a3c] to-[#0b1e4d] px-6 py-14 text-center shadow-2xl shadow-slate-900/20 ring-1 ring-white/10 sm:px-10 md:rounded-[2.5rem] md:py-20">
-            <div className="pointer-events-none absolute -left-24 -top-24 h-[380px] w-[380px] rounded-full bg-cyan-400/25 blur-3xl" aria-hidden="true" />
-            <div className="pointer-events-none absolute -bottom-32 -right-16 h-[420px] w-[460px] rounded-full bg-blue-600/30 blur-3xl" aria-hidden="true" />
-            <div
-              className="pointer-events-none absolute inset-0 opacity-[0.08]"
-              style={{
-                backgroundImage: 'linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px)',
-                backgroundSize: '48px 48px',
-                maskImage: 'radial-gradient(ellipse at center, black 10%, transparent 70%)',
-                WebkitMaskImage: 'radial-gradient(ellipse at center, black 10%, transparent 70%)',
-              }}
-              aria-hidden="true"
-            />
-            {/* Floating accent chips (desktop only) */}
-            <div className="landing-float pointer-events-none absolute left-10 top-12 hidden items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-3.5 py-2.5 text-sm font-medium text-white backdrop-blur lg:flex" aria-hidden="true">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-400/20 text-emerald-300"><CheckCircle2 className="h-4 w-4" /></span>
-              {t('landing:hero.floatOrderTitle')}
-            </div>
-            <div className="landing-float landing-float-delay pointer-events-none absolute bottom-12 right-10 hidden items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-3.5 py-2.5 text-sm font-medium text-white backdrop-blur lg:flex" aria-hidden="true">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-400/20 text-cyan-300"><Truck className="h-4 w-4" /></span>
-              {t('landing:hero.floatTrackingTitle')}
-            </div>
-
-            <div className="relative mx-auto max-w-3xl">
-              <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-white/5 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200 backdrop-blur">
-                <Sparkles size={14} />
-                {t('landing:cta.needHelp')}
-              </span>
-              <h2 className="mt-6 text-3xl font-bold tracking-tight text-white md:text-5xl md:leading-[1.12]" style={{ textWrap: 'balance' }}>
-                {renderAccentedTitle(
-                  t('landing:cta.startWithPlan'),
-                  t('landing:cta.titleAccents', { returnObjects: true }),
-                  'from-cyan-300 via-sky-300 to-blue-400'
-                )}
-              </h2>
-              <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-slate-300 md:text-lg">{t('landing:cta.readyDescription')}</p>
-
-              <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link
-                  to="/login"
-                  className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 hover:bg-cyan-50 sm:w-auto"
-                >
-                  {t('landing:cta.ctaButton')}
-                  <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
-                </Link>
-                <a
-                  href="#plans"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:-translate-y-0.5 hover:border-white/40 hover:bg-white/10 sm:w-auto"
-                >
-                  {t('landing:cta.reviewPlans')}
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
+        <CtaCarouselSection />
 
       </main>
 
