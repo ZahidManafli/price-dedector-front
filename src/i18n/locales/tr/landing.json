@@ -351,7 +351,13 @@
         "question": "Checkila Amazon takip numaralarını eBay için dönüştürüyor mu?",
         "answer": "Evet. Checkila Tracking, TBA önekli kodlar dahil Amazon takip numaralarını eBay'in tanıdığı kargo formatına otomatik olarak dönüştürür, dönüştürülen numarayı ilgili eBay siparişine yükler ve etiket her güncellendiğinde alıcıya otomatik mesaj gönderir."
       }
-    ]
+    ],
+    "titleAccents": [
+      "sık sorulan sorular"
+    ],
+    "stillQuestions": "Hâlâ sorunuz mu var?",
+    "stillQuestionsText": "Aradığınız cevabı bulamadınız mı? Bize yazın, ekibimiz kısa sürede dönüş yapsın.",
+    "contactUs": "Bize ulaşın"
   },
   "apps": {
     "title": "Checkila her zaman yanınızda",

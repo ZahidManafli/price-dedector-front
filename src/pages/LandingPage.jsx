@@ -461,6 +461,7 @@ export default function LandingPage() {
   const activeLang = SUPPORTED_LANGS.includes(activeLangCode) ? activeLangCode : 'en';
   const { changeLanguage } = useLanguage();
   const { isDark } = useTheme();
+  const [openFaq, setOpenFaq] = useState(0);
   const [activeTab, setActiveTab] = useState('subscription');
   const [plans, setPlans] = useState([]);
   const [platformStats, setPlatformStats] = useState(null);
@@ -1325,24 +1326,79 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="faq" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
-          <SectionHeader
-            eyebrow={t('landing:faq.eyebrow')}
-            title={t('landing:faq.title')}
-            description={t('landing:faq.description')}
-            align="center"
-          />
+        {/* ── FAQ: sticky intro + accordion (answers stay in the DOM for SEO) ── */}
+        <section id="faq" className="relative px-6 pb-20 md:pb-28">
+          <div className="pointer-events-none absolute left-0 top-20 h-[320px] w-[520px] rounded-full bg-gradient-to-r from-cyan-400/12 via-blue-500/10 to-transparent blur-3xl" aria-hidden="true" />
+          <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+            <div className="lg:sticky lg:top-28 lg:self-start">
+              <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-white/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 shadow-sm backdrop-blur dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200">
+                <Sparkles size={14} />
+                {t('landing:faq.eyebrow')}
+              </span>
+              <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 dark:text-white md:text-5xl md:leading-[1.1]" style={{ textWrap: 'balance' }}>
+                {renderAccentedTitle(t('landing:faq.title'), t('landing:faq.titleAccents', { returnObjects: true }))}
+              </h2>
+              <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-300 md:text-lg">{t('landing:faq.description')}</p>
 
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {faqItems.map((item) => (
-              <article
-                key={item.question}
-                className="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60 backdrop-blur dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none"
-              >
-                <h3 className="text-base font-semibold text-slate-900 dark:text-white">{item.question}</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.answer}</p>
-              </article>
-            ))}
+              <div className="relative mt-8 overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-[#062a3c] to-[#0b1e4d] p-6 text-white shadow-xl shadow-slate-900/20 ring-1 ring-white/10">
+                <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-cyan-400/25 blur-3xl" aria-hidden="true" />
+                <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/30">
+                  <Mail className="h-5 w-5" />
+                </span>
+                <p className="relative mt-4 text-lg font-semibold">{t('landing:faq.stillQuestions')}</p>
+                <p className="relative mt-1 text-sm leading-6 text-slate-300">{t('landing:faq.stillQuestionsText')}</p>
+                <a
+                  href="#contact"
+                  className="group relative mt-5 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-50"
+                >
+                  {t('landing:faq.contactUs')}
+                  <ArrowRight size={14} className="transition group-hover:translate-x-0.5" />
+                </a>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {faqItems.map((item, idx) => {
+                const isOpen = openFaq === idx;
+                return (
+                  <div
+                    key={item.question}
+                    className={`rounded-2xl border transition duration-300 ${
+                      isOpen
+                        ? 'border-cyan-500/30 bg-white shadow-lg shadow-cyan-900/[0.06] dark:border-cyan-300/25 dark:bg-white/[0.06]'
+                        : 'border-slate-200/80 bg-white/70 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20'
+                    }`}
+                  >
+                    <h3>
+                      <button
+                        type="button"
+                        onClick={() => setOpenFaq(isOpen ? -1 : idx)}
+                        aria-expanded={isOpen}
+                        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left md:px-6 md:py-5"
+                      >
+                        <span className={`text-base font-semibold md:text-[17px] ${isOpen ? 'text-slate-900 dark:text-white' : 'text-slate-800 dark:text-slate-100'}`}>
+                          {item.question}
+                        </span>
+                        <span
+                          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition duration-300 ${
+                            isOpen
+                              ? 'rotate-180 bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/30'
+                              : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-300'
+                          }`}
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </span>
+                      </button>
+                    </h3>
+                    <div className={`grid transition-all duration-300 ease-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                      <div className="overflow-hidden">
+                        <p className="px-5 pb-5 text-sm leading-7 text-slate-600 dark:text-slate-300 md:px-6 md:text-[15px]">{item.answer}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </section>
 

@@ -351,7 +351,13 @@
         "question": "Does Checkila convert Amazon tracking numbers for eBay?",
         "answer": "Yes. Checkila Tracking automatically converts Amazon tracking numbers, including TBA-prefixed codes, into a carrier format eBay recognizes, uploads the converted number to the matching eBay order, and messages the buyer automatically every time the tracking label updates."
       }
-    ]
+    ],
+    "titleAccents": [
+      "Common questions"
+    ],
+    "stillQuestions": "Still have questions?",
+    "stillQuestionsText": "Can't find the answer you're looking for? Write to us and our team will get back to you soon.",
+    "contactUs": "Contact us"
   },
   "apps": {
     "title": "Checkila is always with you",

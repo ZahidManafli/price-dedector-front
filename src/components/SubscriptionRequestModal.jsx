@@ -381,7 +381,7 @@ export default function SubscriptionRequestModal({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-[1.75rem] border border-slate-200/80 bg-white shadow-2xl shadow-slate-950/30 dark:border-white/10 dark:bg-slate-900">
+      <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto overflow-x-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-2xl shadow-slate-950/30 dark:border-white/10 dark:bg-slate-900">
         <div className="pointer-events-none absolute -left-20 -top-24 h-56 w-56 rounded-full bg-cyan-400/20 blur-3xl" aria-hidden="true" />
         <div className="pointer-events-none absolute -right-24 -top-16 h-48 w-48 rounded-full bg-blue-500/15 blur-3xl" aria-hidden="true" />
 
