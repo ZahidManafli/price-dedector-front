@@ -20,7 +20,18 @@
     "tagline": "Отслеживайте цены Amazon. Публикуйте на eBay. Повторяйте.",
     "subtitle": "Исследуйте товары, отслеживайте цены Amazon, анализируйте возможности и управляйте работой на eBay — всё в одной платформе.",
     "cta": "Начать",
-    "viewPlans": "Посмотреть тарифы"
+    "viewPlans": "Посмотреть тарифы",
+    "titleAccents": [
+      "eBay-дропшиппинга",
+      "автоматизации"
+    ],
+    "integrations": "Интеграции",
+    "floatOrderTitle": "Новый заказ",
+    "floatOrderText": "Заказ на Amazon оформлен автоматически",
+    "floatTrackingTitle": "Трекинг загружен",
+    "floatTrackingText": "Заказ eBay отмечен как отправленный",
+    "floatProfitTitle": "Прибыль за месяц",
+    "menu": "Меню"
   },
   "featuresSection": {
     "eyebrow": "Что внутри",

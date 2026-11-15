@@ -20,7 +20,18 @@
     "tagline": "Amazon fiyatlarını takip edin. eBay'de listeleyin. Tekrarlayın.",
     "subtitle": "Ürünleri araştırın, Amazon fiyatlarını takip edin, fırsatları analiz edin ve eBay iş akışınızı yönetin — hepsi tek bir platformda.",
     "cta": "Başla",
-    "viewPlans": "Planları görüntüle"
+    "viewPlans": "Planları görüntüle",
+    "titleAccents": [
+      "eBay Dropshipping",
+      "Otomasyon"
+    ],
+    "integrations": "Entegrasyonlar",
+    "floatOrderTitle": "Yeni sipariş",
+    "floatOrderText": "Amazon'da otomatik sipariş verildi",
+    "floatTrackingTitle": "Takip yüklendi",
+    "floatTrackingText": "eBay siparişi gönderildi olarak işaretlendi",
+    "floatProfitTitle": "Bu ayki kâr",
+    "menu": "Menü"
   },
   "featuresSection": {
     "eyebrow": "Platformda Neler Var",

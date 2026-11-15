@@ -27,6 +27,7 @@ import {
   Star,
   X,
   Loader2,
+  Menu,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { partnerAPI, settingsAPI, API_BASE_URL } from '../services/api';
@@ -41,6 +42,26 @@ import MilliNetBadge, { TRUST_BADGE_CARD } from '../components/marketing/MilliNe
 const CHROME_EXTENSION_URL =
   'https://chromewebstore.google.com/detail/checkila-extension/mokpdmidbgchibehajdblfkjcgcibcbb';
 const TELEGRAM_BOT_URL = 'https://t.me/Checkila_bot';
+
+// Hero title with the language's accent phrases (landing:hero.titleAccents)
+// painted in the brand gradient, e.g. "<eBay Dropshipping> Aləti və E-ticarət
+// <Avtomatlaşdırma> Platforması". Phrases not found in the title are ignored.
+function renderAccentedTitle(title, accents) {
+  const text = String(title || '');
+  const list = (Array.isArray(accents) ? accents : []).map(String).filter((a) => a && text.includes(a));
+  if (!list.length) return text;
+  const escaped = list.map((a) => a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const parts = text.split(new RegExp(`(${escaped.join('|')})`, 'g'));
+  return parts.map((part, i) =>
+    list.includes(part) ? (
+      <span key={i} className="bg-gradient-to-r from-cyan-500 via-sky-500 to-blue-600 bg-clip-text text-transparent">
+        {part}
+      </span>
+    ) : (
+      <React.Fragment key={i}>{part}</React.Fragment>
+    )
+  );
+}
 const MOBILE_APK_URL = `${API_BASE_URL}/uploads/checkila.apk`;
 const MOBILE_FEATURE_ICONS = [BarChart3, Radar, Truck, ShieldCheck, Sparkles, Puzzle];
 
@@ -381,6 +402,7 @@ export default function LandingPage() {
   const [plans, setPlans] = useState([]);
   const [platformStats, setPlatformStats] = useState(null);
   const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [presetIncludeTracking, setPresetIncludeTracking] = useState(false);
@@ -683,7 +705,9 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-white text-slate-700 dark:bg-slate-950 dark:text-slate-100">
+    <div className="relative min-h-screen overflow-x-clip bg-white text-slate-700 dark:bg-slate-950 dark:text-slate-100">
+      {/* Gentle float for the hero preview cards (respects reduced motion). */}
+      <style>{`@keyframes landingFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}.landing-float{animation:landingFloat 6s ease-in-out infinite}.landing-float-delay{animation-delay:-3s}@media (prefers-reduced-motion: reduce){.landing-float{animation:none}}`}</style>
       <div className={`pointer-events-none absolute inset-0 transition-opacity duration-300 ${isDark ? 'opacity-70' : 'opacity-40'}`}>
         <div className="absolute -top-24 left-[-8rem] h-96 w-96 rounded-full bg-cyan-500/18 blur-3xl" />
         <div className="absolute top-28 right-[-7rem] h-96 w-96 rounded-full bg-blue-500/16 blur-3xl" />
@@ -700,45 +724,43 @@ export default function LandingPage() {
       </div>
 
       <main className="relative z-10">
-        <section className="mx-auto max-w-7xl px-6 pb-18 pt-8 md:pb-24 md:pt-10">
-          <header className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <img
-                src="/logo-2.png"
-                alt="Checkila"
-                className="h-12 w-12 rounded-xl object-cover ring-1 ring-slate-200 dark:ring-white/20"
-              />
-              <span className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">Checkila</span>
-            </div>
-            <nav className="hidden items-center gap-6 text-sm text-slate-600 dark:text-slate-300 md:flex">
-              <a href="#features" className="transition hover:text-slate-900 dark:hover:text-white">
-                {t('landing:navigation.features')}
-              </a>
-              <a href="#plans" className="transition hover:text-slate-900 dark:hover:text-white">
-                {t('landing:navigation.plans')}
-              </a>
-              <a href="/ebay-calculator" className="transition hover:text-slate-900 dark:hover:text-white">
-                {t('common:nav.ebayCalculator')}
-              </a>
-              <Link
-                to={pathFor('ebayFeeCalculator', activeLang)}
-                className="transition hover:text-slate-900 dark:hover:text-white"
-              >
-                {t('seoPages:ebayFeeCalculator.hero.eyebrow')}
-              </Link>
-              <a href="#contact" className="transition hover:text-slate-900 dark:hover:text-white">
-                {t('landing:navigation.contact')}
-              </a>
+        {/* ── Floating, sticky navbar ── */}
+        <div className="sticky top-3 z-40 px-4 pt-4 md:px-6">
+          <header className="mx-auto flex max-w-7xl items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/80 px-3 py-2.5 shadow-lg shadow-slate-900/[0.04] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/75 dark:shadow-black/30 md:px-4">
+            <a href="#top" className="flex shrink-0 items-center gap-2.5">
+              <img src="/logo-2.png" alt="Checkila" className="h-10 w-10 rounded-xl object-cover ring-1 ring-slate-200 dark:ring-white/20" />
+              <span className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">Checkila</span>
+            </a>
+
+            <nav className="hidden items-center gap-0.5 text-sm font-medium text-slate-600 dark:text-slate-300 xl:flex">
+              {[
+                { href: '#features', label: t('landing:navigation.features') },
+                { href: '#plans', label: t('landing:navigation.plans') },
+                { href: '/ebay-calculator', label: t('common:nav.ebayCalculator') },
+                { to: pathFor('ebayFeeCalculator', activeLang), label: t('seoPages:ebayFeeCalculator.hero.eyebrow') },
+                { href: '#contact', label: t('landing:navigation.contact') },
+              ].map((item) =>
+                item.to ? (
+                  <Link key={item.label} to={item.to} className="whitespace-nowrap rounded-full px-2.5 py-2 transition hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-white/10 dark:hover:text-white">
+                    {item.label}
+                  </Link>
+                ) : (
+                  <a key={item.label} href={item.href} className="whitespace-nowrap rounded-full px-2.5 py-2 transition hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-white/10 dark:hover:text-white">
+                    {item.label}
+                  </a>
+                )
+              )}
             </nav>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
+
+            <div className="flex items-center gap-2">
+              <div className="hidden items-center gap-1 md:flex">
                 <a
                   href={CHROME_EXTENSION_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   title={t('landing:navigation.chromeExtension')}
                   aria-label={t('landing:navigation.chromeExtension')}
-                  className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-100 p-2.5 text-slate-600 transition hover:border-slate-300 hover:bg-slate-200 hover:text-slate-900 dark:border-white/15 dark:bg-white/10 dark:text-slate-300 dark:hover:border-white/25 dark:hover:bg-white/15 dark:hover:text-white"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
                 >
                   <Puzzle size={16} />
                 </a>
@@ -748,78 +770,214 @@ export default function LandingPage() {
                   rel="noopener noreferrer"
                   title={t('landing:navigation.telegramBot')}
                   aria-label={t('landing:navigation.telegramBot')}
-                  className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-100 p-2.5 text-slate-600 transition hover:border-slate-300 hover:bg-slate-200 hover:text-slate-900 dark:border-white/15 dark:bg-white/10 dark:text-slate-300 dark:hover:border-white/25 dark:hover:bg-white/15 dark:hover:text-white"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
                 >
                   <Send size={16} />
                 </a>
               </div>
-              <div className="hidden h-6 w-px bg-slate-200 dark:bg-white/15 sm:block" />
               <LanguageSelector />
               <Link
                 to="/login"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-200 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:border-white/25 dark:hover:bg-white/15"
+                className="hidden items-center whitespace-nowrap rounded-full border border-cyan-500/60 px-4 py-2 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-50 dark:border-cyan-400/50 dark:text-cyan-200 dark:hover:bg-cyan-400/10 sm:inline-flex"
               >
                 {t('common:auth.login')}
+              </Link>
+              <Link
+                to="/login"
+                className="hidden items-center gap-1.5 whitespace-nowrap rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-cyan-500/25 transition hover:shadow-lg hover:shadow-cyan-500/30 md:inline-flex"
+              >
+                {t('landing:hero.cta')}
                 <ArrowRight size={14} />
               </Link>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((v) => !v)}
+                aria-expanded={mobileMenuOpen}
+                aria-label={t('landing:hero.menu', 'Menyu')}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10 xl:hidden"
+              >
+                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
             </div>
           </header>
 
-          <div className="mt-14 grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 dark:border-cyan-300/25 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-100">
-                <Sparkles size={14} />
-                {t('landing:hero.eyebrow')}
-              </div>
-              <h1 className="mt-5 text-4xl font-semibold leading-tight tracking-tight text-slate-900 dark:text-white md:text-6xl xl:text-7xl">
-                {t('landing:hero.title')}
-              </h1>
-              <p className="mt-4 max-w-xl text-lg font-medium text-cyan-700 dark:text-cyan-200 md:text-xl">
-                {t('landing:hero.tagline')}
-              </p>
-              <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300 md:text-lg">
-                {t('landing:hero.subtitle')}
-              </p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Link
-                  to="/login"
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:scale-[1.01] hover:from-cyan-300 hover:to-blue-400"
-                >
-                  {t('landing:hero.cta')}
-                  <ArrowRight size={14} />
+          {mobileMenuOpen && (
+            <div className="mx-auto mt-2 max-w-7xl rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/95 xl:hidden">
+              <nav className="flex flex-col text-sm font-medium text-slate-700 dark:text-slate-200">
+                {[
+                  { href: '#features', label: t('landing:navigation.features') },
+                  { href: '#plans', label: t('landing:navigation.plans') },
+                  { href: '/ebay-calculator', label: t('common:nav.ebayCalculator') },
+                  { to: pathFor('ebayFeeCalculator', activeLang), label: t('seoPages:ebayFeeCalculator.hero.eyebrow') },
+                  { href: '#contact', label: t('landing:navigation.contact') },
+                ].map((item) =>
+                  item.to ? (
+                    <Link key={item.label} to={item.to} onClick={() => setMobileMenuOpen(false)} className="rounded-xl px-3 py-2.5 hover:bg-slate-100 dark:hover:bg-white/10">
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <a key={item.label} href={item.href} onClick={() => setMobileMenuOpen(false)} className="rounded-xl px-3 py-2.5 hover:bg-slate-100 dark:hover:bg-white/10">
+                      {item.label}
+                    </a>
+                  )
+                )}
+              </nav>
+              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 dark:border-white/10">
+                <Link to="/login" className="inline-flex items-center justify-center rounded-full border border-cyan-500/60 px-4 py-2.5 text-sm font-semibold text-cyan-700 dark:text-cyan-200">
+                  {t('common:auth.login')}
                 </Link>
-                <a
-                  href="#plans"
-                  className="inline-flex items-center rounded-xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 dark:border-white/15 dark:text-white dark:hover:border-white/25 dark:hover:bg-white/10"
-                >
-                  {t('landing:hero.viewPlans')}
-                </a>
-              </div>
-
-              <div className="mt-10 grid grid-cols-2 gap-4">
-                {heroStats.map((stat) => (
-                  <article
-                    key={stat.label}
-                    className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none"
-                  >
-                    <stat.icon className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
-                    <p className="mt-3 text-sm font-medium text-slate-900 dark:text-white">{stat.value}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{stat.label}</p>
-                  </article>
-                ))}
+                <Link to="/login" className="inline-flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white">
+                  {t('landing:hero.cta')} <ArrowRight size={14} />
+                </Link>
               </div>
             </div>
+          )}
+        </div>
 
-            <div className="relative">
-              <div className="absolute -inset-6 rounded-[2rem] bg-gradient-to-br from-cyan-400/10 via-blue-500/5 to-transparent blur-2xl" />
-              <div className="relative rounded-[2rem] border border-slate-200 bg-white/80 p-4 shadow-2xl shadow-slate-300/40 backdrop-blur-xl md:p-5 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-black/40">
-                <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-slate-950/60">
-                  <img
-                    src="/analytic-1.png"
-                    alt="Checkila Analysis preview"
-                    className="h-full min-h-[28rem] w-full object-cover"
-                  />
+        {/* ── Hero ── */}
+        <section id="top" className="relative overflow-hidden px-6 pb-16 pt-14 md:pb-24 md:pt-20">
+          {/* Soft flowing lines */}
+          <svg
+            className="pointer-events-none absolute inset-x-0 top-0 h-[520px] w-full text-cyan-500/[0.12] dark:text-cyan-300/[0.08]"
+            viewBox="0 0 1440 520"
+            preserveAspectRatio="none"
+            fill="none"
+            aria-hidden="true"
+          >
+            {Array.from({ length: 14 }).map((_, i) => (
+              <path
+                key={i}
+                d={`M-40 ${70 + i * 22} C 360 ${10 + i * 26}, 720 ${200 + i * 14}, 1480 ${40 + i * 24}`}
+                stroke="currentColor"
+                strokeWidth="1.2"
+              />
+            ))}
+          </svg>
+          <div className="pointer-events-none absolute left-1/2 top-40 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400/20 via-blue-500/15 to-indigo-500/10 blur-3xl dark:from-cyan-400/15 dark:via-blue-500/10" aria-hidden="true" />
+
+          <div className="relative mx-auto max-w-4xl text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-white/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 shadow-sm backdrop-blur dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200">
+              <Sparkles size={14} />
+              {t('landing:hero.eyebrow')}
+            </div>
+
+            <h1 className="mt-6 text-4xl font-bold leading-[1.1] tracking-tight text-slate-900 dark:text-white sm:text-5xl md:text-6xl" style={{ textWrap: "balance" }}>
+              {renderAccentedTitle(t('landing:hero.title'), t('landing:hero.titleAccents', { returnObjects: true }))}
+            </h1>
+
+            <p className="mx-auto mt-5 max-w-2xl text-lg font-semibold text-slate-800 dark:text-slate-100 md:text-xl">
+              {t('landing:hero.tagline')}
+            </p>
+            <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300 md:text-lg">
+              {t('landing:hero.subtitle')}
+            </p>
+
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                to="/login"
+                className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-cyan-500/30 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-cyan-500/35"
+              >
+                {t('landing:hero.cta')}
+                <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
+              </Link>
+              <a
+                href="#plans"
+                className="inline-flex items-center rounded-full border border-slate-300 bg-white/70 px-7 py-3.5 text-base font-semibold text-slate-800 backdrop-blur transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-white dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+              >
+                {t('landing:hero.viewPlans')}
+              </a>
+            </div>
+
+            {/* Key capabilities */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-2.5">
+              {heroStats.map((stat) => (
+                <span
+                  key={stat.label}
+                  title={stat.label}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3.5 py-1.5 text-sm font-medium text-slate-700 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+                >
+                  <stat.icon className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
+                  {stat.value}
+                </span>
+              ))}
+            </div>
+
+            {/* Integrations */}
+            <div className="mt-10">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{t('landing:hero.integrations', 'İnteqrasiyalar')}</p>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 opacity-80 grayscale transition hover:opacity-100 hover:grayscale-0">
+                <span className="text-3xl font-bold tracking-tight" aria-label="eBay">
+                  <span className="text-[#E53238]">e</span>
+                  <span className="text-[#0064D2]">b</span>
+                  <span className="text-[#F5AF02]">a</span>
+                  <span className="text-[#86B817]">y</span>
+                </span>
+                <span className="text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100">amazon</span>
+                <span className="inline-flex items-center gap-1.5 text-lg font-semibold text-[#229ED9]">
+                  <Send size={18} /> Telegram
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-lg font-semibold text-slate-700 dark:text-slate-200">
+                  <Puzzle size={18} className="text-[#4285F4]" /> Chrome
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Product preview */}
+          <div className="relative mx-auto mt-14 max-w-6xl md:mt-16">
+            <div className="absolute -inset-x-6 -bottom-6 top-10 rounded-[2.5rem] bg-gradient-to-b from-cyan-400/25 via-blue-500/15 to-transparent blur-2xl dark:from-cyan-400/15" aria-hidden="true" />
+            <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 dark:border-white/10 dark:bg-slate-900 dark:shadow-black/50 md:rounded-3xl">
+              <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/80 px-4 py-2.5 dark:border-white/10 dark:bg-slate-800/60">
+                <span className="h-3 w-3 rounded-full bg-rose-400" />
+                <span className="h-3 w-3 rounded-full bg-amber-400" />
+                <span className="h-3 w-3 rounded-full bg-emerald-400" />
+                <span className="mx-auto hidden rounded-md bg-white px-3 py-0.5 text-xs text-slate-400 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-white/10 sm:block">checkila.com</span>
+              </div>
+              <img
+                src="/landing/hero-dashboard.png"
+                onError={(e) => {
+                  if (!e.currentTarget.dataset.fallback) {
+                    e.currentTarget.dataset.fallback = '1';
+                    e.currentTarget.src = '/analytic-1.png';
+                  }
+                }}
+                alt="Checkila dashboard"
+                className="block w-full"
+              />
+            </div>
+
+            {/* Floating cards */}
+            <div className="landing-float absolute -left-4 top-16 hidden w-64 rounded-2xl border border-slate-200 bg-white/95 p-3.5 text-left shadow-xl backdrop-blur dark:border-white/10 dark:bg-slate-900/95 md:block xl:-left-14">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300">
+                  <ShoppingCart size={18} />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{t('landing:hero.floatOrderTitle', 'Yeni sifariş')}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{t('landing:hero.floatOrderText')}</p>
                 </div>
+              </div>
+            </div>
+            <div className="landing-float landing-float-delay absolute -right-4 top-1/3 hidden w-64 rounded-2xl border border-slate-200 bg-white/95 p-3.5 text-left shadow-xl backdrop-blur dark:border-white/10 dark:bg-slate-900/95 md:block xl:-right-14">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
+                  <Truck size={18} />
+                </span>
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1 text-sm font-semibold text-slate-900 dark:text-white">
+                    {t('landing:hero.floatTrackingTitle', 'Tracking yükləndi')} <CheckCircle2 size={14} className="text-emerald-500" />
+                  </p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{t('landing:hero.floatTrackingText')}</p>
+                </div>
+              </div>
+            </div>
+            <div className="landing-float absolute -bottom-6 left-1/2 hidden -translate-x-1/2 items-center gap-3 rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur dark:border-white/10 dark:bg-slate-900/95 sm:flex">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-100 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-300">
+                <BarChart3 size={18} />
+              </span>
+              <div className="text-left">
+                <p className="text-xs text-slate-500 dark:text-slate-400">{t('landing:hero.floatProfitTitle', 'Bu ay mənfəət')}</p>
+                <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">+$2,480.50</p>
               </div>
             </div>
           </div>

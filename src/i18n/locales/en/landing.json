@@ -20,7 +20,18 @@
     "tagline": "Monitor Amazon pricing. List to eBay. Repeat.",
     "subtitle": "Research products, track Amazon prices, analyze opportunities, and manage your eBay workflow — all in one platform.",
     "cta": "Get Started",
-    "viewPlans": "View plans"
+    "viewPlans": "View plans",
+    "titleAccents": [
+      "eBay Dropshipping",
+      "Automation"
+    ],
+    "integrations": "Integrations",
+    "floatOrderTitle": "New order",
+    "floatOrderText": "Ordered on Amazon automatically",
+    "floatTrackingTitle": "Tracking uploaded",
+    "floatTrackingText": "eBay order marked as shipped",
+    "floatProfitTitle": "Profit this month",
+    "menu": "Menu"
   },
   "featuresSection": {
     "eyebrow": "What's inside",
@@ -28,10 +39,10 @@
     "description": "Everything you need to research, price, and manage eBay listings sourced from Amazon.",
     "learnMore": "Learn more"
   },
-  "partners":{
-    "eyebrow":"Our Partners",
-    "title":"Trusted by Leading Platforms",
-    "description":"We partner with industry-leading companies to bring you the best solutions and services",
+  "partners": {
+    "eyebrow": "Our Partners",
+    "title": "Trusted by Leading Platforms",
+    "description": "We partner with industry-leading companies to bring you the best solutions and services",
     "error": "Failed to load partners"
   },
   "features": {

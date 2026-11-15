@@ -20,7 +20,18 @@
     "tagline": "Amazon qiymətlərini izləyin. eBay-də yerləşdirin. Təkrarlayın.",
     "subtitle": "Məhsulları araşdırın, Amazon qiymətlərini izləyin, imkanları analiz edin və eBay iş axınınızı idarə edin — hamısı tək platformada.",
     "cta": "Başla",
-    "viewPlans": "Planlara bax"
+    "viewPlans": "Planlara bax",
+    "titleAccents": [
+      "eBay Dropshipping",
+      "Avtomatlaşdırma"
+    ],
+    "integrations": "İnteqrasiyalar",
+    "floatOrderTitle": "Yeni sifariş",
+    "floatOrderText": "Amazon-da avtomatik sifariş verildi",
+    "floatTrackingTitle": "Tracking yükləndi",
+    "floatTrackingText": "eBay sifarişi göndərilib kimi qeyd olundu",
+    "floatProfitTitle": "Bu ay mənfəət",
+    "menu": "Menyu"
   },
   "featuresSection": {
     "eyebrow": "Daxildə nə var",
