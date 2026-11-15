@@ -7,6 +7,7 @@
     "hero": {
       "eyebrow": "eBay Dropshipping Tool",
       "h1": "eBay Dropshipping Tool for Smarter Product Research & Automation",
+      "h1Accents": ["eBay Dropshipping Tool"],
       "subhead": "Research products, track Amazon prices, evaluate profit, and manage your eBay workflow — all from one dashboard built for dropshippers."
     },
     "problems": [
@@ -45,6 +46,7 @@
     "hero": {
       "eyebrow": "eBay Product Research Tool",
       "h1": "eBay Product Research Tool",
+      "h1Accents": ["Product Research"],
       "subhead": "Evaluate any product before you list it — demand, competition and pricing, side by side."
     },
     "problems": [
@@ -83,6 +85,7 @@
     "hero": {
       "eyebrow": "Amazon Price Tracking",
       "h1": "Amazon Price Tracking for eBay Dropshipping",
+      "h1Accents": ["Amazon Price Tracking"],
       "subhead": "Track Amazon price changes and stock movement without relying on constant manual checks."
     },
     "problems": [
@@ -122,6 +125,7 @@
     "hero": {
       "eyebrow": "eBay Profit Calculator",
       "h1": "eBay Profit Calculator for Dropshipping Sellers",
+      "h1Accents": ["eBay Profit Calculator"],
       "subhead": "Know your real margin before you list — item cost, eBay fees, shipping and promotion spend, all in one number."
     },
     "problems": [
@@ -160,6 +164,7 @@
     "hero": {
       "eyebrow": "eBay Market Analysis",
       "h1": "eBay Marketplace, Product & Seller Analysis",
+      "h1Accents": ["eBay Marketplace"],
       "subhead": "Analyze eBay marketplace demand, competing products and the sellers behind them before you commit inventory or time.",
       "imageAlt": "Checkila Market Analysis dashboard showing eBay sell-through rate, sales earnings, market share by seller, sales trend chart and a product listing comparison table"
     },
@@ -201,6 +206,7 @@
     "hero": {
       "eyebrow": "Inventory & Order Tracking",
       "h1": "eBay Inventory & Order Tracking, Without the Spreadsheets",
+      "h1Accents": ["Without the Spreadsheets"],
       "subhead": "Keep supplier stock and buyer orders in sync so nothing slips through the cracks."
     },
     "problems": [
@@ -239,6 +245,7 @@
     "hero": {
       "eyebrow": "Chrome Extension",
       "h1": "Checkila Chrome Extension for eBay & Amazon Sellers",
+      "h1Accents": ["Checkila Chrome Extension"],
       "subhead": "Research products and pricing without leaving the Amazon or eBay page you're already on."
     },
     "problems": [
@@ -277,6 +284,7 @@
     "hero": {
       "eyebrow": "Telegram Bot",
       "h1": "Checkila Telegram Bot for eBay & Amazon Alerts",
+      "h1Accents": ["Checkila Telegram Bot"],
       "subhead": "Get price changes, stock alerts and new orders sent straight to Telegram, so you don't have to keep the dashboard open."
     },
     "problems": [
@@ -315,6 +323,7 @@
     "hero": {
       "eyebrow": "Checkila Tracking",
       "h1": "Amazon to eBay Tracking Number Converter, Fully Automated",
+      "h1Accents": ["Fully Automated"],
       "subhead": "Checkila Tracking converts Amazon tracking numbers into eBay-recognized carrier codes, uploads them to your eBay orders automatically, and messages your buyer every time the label updates.",
       "imageAlt": "Checkila Tracking dashboard showing eBay orders with Amazon order IDs, converted tracking codes, upload status and automatic buyer update controls"
     },
@@ -356,6 +365,7 @@
     "hero": {
       "eyebrow": "eBay Fees, Explained",
       "h1": "eBay Fee Calculator & Complete 2026 Fee Guide",
+      "h1Accents": ["eBay Fee Calculator"],
       "subhead": "How much does eBay take in fees? Here's the current rate structure, the formula behind it, and answers to the questions sellers ask most."
     },
     "intro": "Every eBay sale involves more than one fee: a final value fee on the sale, a small per-order fee, insertion fees if you're outside your free listing allowance, and optional costs like promoted listings or payment processing. This page breaks down exactly how those fees are calculated in 2026, by category and Store subscription level, so you can price with confidence. To calculate your exact numbers for a specific listing, use the calculator inside your Checkila dashboard.",

@@ -7,6 +7,7 @@
     "hero": {
       "eyebrow": "eBay Dropshipping Aracı",
       "h1": "Daha Akıllı Ürün Araştırması ve Otomasyon için eBay Dropshipping Aracı",
+      "h1Accents": ["eBay Dropshipping Aracı"],
       "subhead": "Ürünleri araştırın, Amazon fiyatlarını takip edin, kârı değerlendirin ve eBay iş akışınızı yönetin — hepsi dropshipper'lar için tasarlanmış tek bir panelden."
     },
     "problems": [
@@ -45,6 +46,7 @@
     "hero": {
       "eyebrow": "eBay Ürün Araştırma Aracı",
       "h1": "eBay Ürün Araştırma Aracı",
+      "h1Accents": ["Ürün Araştırma"],
       "subhead": "Listelemeden önce herhangi bir ürünü değerlendirin — talep, rekabet ve fiyatlandırma yan yana."
     },
     "problems": [
@@ -83,6 +85,7 @@
     "hero": {
       "eyebrow": "Amazon Fiyat Takibi",
       "h1": "eBay Dropshipping için Amazon Fiyat Takibi",
+      "h1Accents": ["Amazon Fiyat Takibi"],
       "subhead": "Sürekli manuel kontrole gerek kalmadan Amazon fiyat değişikliklerini ve stok hareketlerini takip edin."
     },
     "problems": [
@@ -122,6 +125,7 @@
     "hero": {
       "eyebrow": "eBay Kâr Hesaplama Aracı",
       "h1": "Dropshipping Satıcıları için eBay Kâr Hesaplama Aracı",
+      "h1Accents": ["eBay Kâr Hesaplama Aracı"],
       "subhead": "Listelemeden önce gerçek marjınızı bilin — ürün maliyeti, eBay komisyonları, kargo ve promosyon harcaması tek bir rakamda."
     },
     "problems": [
@@ -160,6 +164,7 @@
     "hero": {
       "eyebrow": "eBay Pazar Analizi",
       "h1": "eBay Pazar Yeri, Ürün ve Satıcı Analizi",
+      "h1Accents": ["eBay Pazar Yeri"],
       "subhead": "Envanter veya zaman ayırmadan önce eBay pazar yerindeki talebi, rakip ürünleri ve arkalarındaki satıcıları analiz edin.",
       "imageAlt": "Satış oranı, satış geliri, satıcıya göre pazar payı, satış trendi grafiği ve ürün karşılaştırma tablosunu gösteren Checkila Pazar Analizi paneli"
     },
@@ -201,6 +206,7 @@
     "hero": {
       "eyebrow": "Envanter ve Sipariş Takibi",
       "h1": "Excel Tablosu Olmadan eBay Envanter ve Sipariş Takibi",
+      "h1Accents": ["Excel Tablosu Olmadan"],
       "subhead": "Hiçbir şeyin gözden kaçmaması için tedarikçi stokunu ve alıcı siparişlerini senkronize tutun."
     },
     "problems": [
@@ -239,6 +245,7 @@
     "hero": {
       "eyebrow": "Chrome Uzantısı",
       "h1": "eBay ve Amazon Satıcıları için Checkila Chrome Uzantısı",
+      "h1Accents": ["Checkila Chrome Uzantısı"],
       "subhead": "Zaten bulunduğunuz Amazon veya eBay sayfasından ayrılmadan ürünleri ve fiyatlandırmayı araştırın."
     },
     "problems": [
@@ -277,6 +284,7 @@
     "hero": {
       "eyebrow": "Telegram Botu",
       "h1": "eBay ve Amazon Uyarıları için Checkila Telegram Botu",
+      "h1Accents": ["Checkila Telegram Botu"],
       "subhead": "Paneli açık tutmak zorunda kalmadan fiyat değişikliklerini, stok uyarılarını ve yeni siparişleri doğrudan Telegram'a gönderin."
     },
     "problems": [
@@ -315,6 +323,7 @@
     "hero": {
       "eyebrow": "Checkila Tracking",
       "h1": "Amazon Takip Numarasını eBay İçin Otomatik Dönüştüren Sistem",
+      "h1Accents": ["Otomatik Dönüştüren"],
       "subhead": "Checkila Tracking, Amazon takip numaralarını eBay'in tanıdığı kargo koduna dönüştürür, otomatik olarak eBay siparişinize yükler ve etiket her güncellendiğinde alıcıyla otomatik iletişime geçer.",
       "imageAlt": "Amazon sipariş numaraları, dönüştürülmüş takip kodları, yükleme durumu ve otomatik alıcı bildirimlerini gösteren Checkila Tracking paneli"
     },
@@ -356,6 +365,7 @@
     "hero": {
       "eyebrow": "eBay Komisyonları, Açıklandı",
       "h1": "eBay Komisyon Hesaplayıcı ve Eksiksiz 2026 Ücret Rehberi",
+      "h1Accents": ["eBay Komisyon Hesaplayıcı"],
       "subhead": "eBay komisyon olarak ne kadar alıyor? İşte güncel oran yapısı, arkasındaki formül ve satıcıların en çok sorduğu soruların yanıtları."
     },
     "intro": "Her eBay satışında birden fazla ücret devreye girer: satıştan alınan bir nihai değer ücreti, küçük bir sipariş başına ücret, ücretsiz ilan hakkınızın dışına çıktığınızda listeleme ücretleri ve promosyonlu ilanlar veya ödeme işleme gibi isteğe bağlı maliyetler. Bu sayfa, 2026 yılında bu ücretlerin kategoriye ve Store abonelik seviyesine göre tam olarak nasıl hesaplandığını anlatır; böylece güvenle fiyatlandırma yapabilirsiniz. Belirli bir ilan için tam rakamlarınızı hesaplamak üzere Checkila panelinizin içindeki hesaplayıcıyı kullanın.",

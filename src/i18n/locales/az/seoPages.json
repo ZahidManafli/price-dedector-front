@@ -7,6 +7,7 @@
     "hero": {
       "eyebrow": "eBay Dropshipping Aləti",
       "h1": "eBay Dropshipping Aləti: Ağıllı Məhsul Araşdırması və Avtomatlaşdırma",
+      "h1Accents": ["eBay Dropshipping Aləti"],
       "subhead": "Məhsul araşdırın, Amazon qiymətlərini izləyin, mənfəəti qiymətləndirin və eBay iş axınınızı — hamısını dropshipperlar üçün hazırlanmış tək paneldən idarə edin."
     },
     "problems": [
@@ -45,6 +46,7 @@
     "hero": {
       "eyebrow": "eBay Məhsul Araşdırma Aləti",
       "h1": "eBay Məhsul Araşdırma Aləti",
+      "h1Accents": ["Məhsul Araşdırma"],
       "subhead": "Elan yerləşdirməzdən əvvəl istənilən məhsulu qiymətləndirin — tələb, rəqabət və qiymət yan-yana."
     },
     "problems": [
@@ -83,6 +85,7 @@
     "hero": {
       "eyebrow": "Amazon Qiymət İzləməsi",
       "h1": "eBay Dropshipping üçün Amazon Qiymət İzləməsi",
+      "h1Accents": ["Amazon Qiymət İzləməsi"],
       "subhead": "Daimi əl ilə yoxlamaya güvənmədən Amazon qiymət dəyişikliklərini və stok hərəkətini izləyin."
     },
     "problems": [
@@ -122,6 +125,7 @@
     "hero": {
       "eyebrow": "eBay Mənfəət Kalkulyatoru",
       "h1": "Dropshipperlar üçün eBay Mənfəət Kalkulyatoru",
+      "h1Accents": ["eBay Mənfəət Kalkulyatoru"],
       "subhead": "Elan yerləşdirməzdən əvvəl real marjınızı bilin — məhsul dəyəri, eBay komissiyaları, çatdırılma və təşviqat xərci, hamısı tək rəqəmdə."
     },
     "problems": [
@@ -160,6 +164,7 @@
     "hero": {
       "eyebrow": "eBay Bazar Analizi",
       "h1": "eBay Bazarı, Məhsul və Satıcı Analizi",
+      "h1Accents": ["eBay Bazarı"],
       "subhead": "Anbar və ya vaxt sərf etməzdən əvvəl eBay bazarındakı tələbi, rəqib məhsulları və onların arxasındakı satıcıları analiz edin.",
       "imageAlt": "Satış nisbəti, satış gəliri, satıcılar üzrə bazar payı, satış trendi qrafiki və məhsul müqayisə cədvəlini göstərən Checkila Bazar Analizi paneli"
     },
@@ -201,6 +206,7 @@
     "hero": {
       "eyebrow": "Anbar və Sifariş İzləməsi",
       "h1": "Cədvəlsiz eBay Anbar və Sifariş İzləməsi",
+      "h1Accents": ["Cədvəlsiz"],
       "subhead": "Heç nəyin gözdən qaçmaması üçün təchizatçı stokunu və alıcı sifarişlərini sinxron saxlayın."
     },
     "problems": [
@@ -239,6 +245,7 @@
     "hero": {
       "eyebrow": "Chrome Uzantısı",
       "h1": "eBay və Amazon Satıcıları üçün Checkila Chrome Uzantısı",
+      "h1Accents": ["Checkila Chrome Uzantısı"],
       "subhead": "Artıq açıq olduğunuz Amazon və ya eBay səhifəsindən çıxmadan məhsul və qiymət araşdırın."
     },
     "problems": [
@@ -277,6 +284,7 @@
     "hero": {
       "eyebrow": "Telegram Botu",
       "h1": "eBay və Amazon Bildirişləri üçün Checkila Telegram Botu",
+      "h1Accents": ["Checkila Telegram Botu"],
       "subhead": "Paneli açıq saxlamadan qiymət dəyişikliklərini, stok bildirişlərini və yeni sifarişləri birbaşa Telegrama alın."
     },
     "problems": [
@@ -315,6 +323,7 @@
     "hero": {
       "eyebrow": "Checkila Tracking",
       "h1": "Amazon Tracking Nömrəsini eBay üçün Aftomatik Çevirən Sistem",
+      "h1Accents": ["Aftomatik Çevirən"],
       "subhead": "Checkila Tracking Amazon tracking nömrələrini eBay-in tanıdığı daşıyıcı koduna çevirir, aftomatik eBay sifarişinizə yükləyir və hər label yeniləndikdə müştəri ilə aftomatik əlaqə saxlayır.",
       "imageAlt": "Amazon sifariş nömrələri, çevrilmiş tracking kodları, yükləmə statusu və aftomatik müştəri bildirişlərini göstərən Checkila Tracking paneli"
     },
@@ -356,6 +365,7 @@
     "hero": {
       "eyebrow": "eBay Komissiyaları İzah Edilir",
       "h1": "eBay Komissiya Kalkulyatoru və Tam 2026 Komissiya Bələdçisi",
+      "h1Accents": ["eBay Komissiya Kalkulyatoru"],
       "subhead": "eBay komissiyalarda nə qədər götürür? Budur hazırkı dərəcə strukturu, onun arxasındakı düstur və satıcıların ən çox verdiyi sualların cavabları."
     },
     "intro": "Hər eBay satışında birdən çox komissiya iştirak edir: satışdan son dəyər komissiyası, kiçik sifariş başına komissiya, pulsuz elan limitindən kənara çıxdıqda yerləşdirmə komissiyası və təşviqatlı elanlar və ya ödəniş emalı kimi könüllü xərclər. Bu səhifə 2026-cı ildə bu komissiyaların kateqoriya və Store abunəlik səviyyəsi üzrə necə hesablandığını dəqiq izah edir ki, əminliklə qiymət qoya biləsiniz. Konkret elanınız üçün dəqiq rəqəmləri hesablamaq üçün Checkila panelinizdəki kalkulyatordan istifadə edin.",
