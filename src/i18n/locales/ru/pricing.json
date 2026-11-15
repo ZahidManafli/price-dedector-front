@@ -9,8 +9,7 @@
     "features": "Функции",
     "save": "Экономь {{percent}}%",
     "specialOffer": "специальное предложение",
-    "includeTracking": "Добавить пакет трекинга",
-    "trackingAddonInfo": "+{{price}} · {{credits}} кредитов трекинга"
+    "includeTracking": "Добавить пакет трекинга"
   },
   "subscription": {
     "trackProducts": "Отслеживайте до {{count}} товаров Amazon",

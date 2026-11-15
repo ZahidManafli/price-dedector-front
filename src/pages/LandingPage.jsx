@@ -253,6 +253,9 @@ const TRACKING_FEATURE_RE = /(tracking|izl[əe]m[əe]|izleme|takip|отслеж|
 const CREDIT_WORD_RE = /(credit|kredit|кредит)/i;
 const isTrackingCreditFeature = (text) => TRACKING_FEATURE_RE.test(text) && CREDIT_WORD_RE.test(text);
 
+// Markup on the tracking add-on inside the struck-through "was" price.
+const TRACKING_ADDON_LIST_MARKUP = 0.2;
+
 function PlanCard({ plan, onSubscribe }) {
   const { formatPrice } = useLanguage();
   const { t } = useTranslation('pricing');
@@ -266,15 +269,6 @@ function PlanCard({ plan, onSubscribe }) {
     Number.isFinite(Number(plan.actualPrice)) &&
     Number.isFinite(Number(plan.discountedPrice)) &&
     Number(plan.actualPrice) > Number(plan.discountedPrice);
-
-  const discountPercent = hasDiscount
-    ? Math.round(((Number(plan.actualPrice) - Number(plan.discountedPrice)) / Number(plan.actualPrice)) * 100)
-    : 0;
-
-  // Convert price from AZN to target currency
-  const displayPrice = plan.actualPrice
-    ? formatPrice(plan.actualPrice)
-    : formatPrice(plan.price?.match(/[\d.]+/)?.[0] || 0);
 
   // A Subscription-category plan can carry its own individually-priced tracking
   // add-on (trackingAddonPrice + trackingCreditsLimit set directly on the plan by
@@ -298,7 +292,16 @@ function PlanCard({ plan, onSubscribe }) {
       ? Number(plan.actualPrice)
       : Number(plan.price?.match(/[\d.]+/)?.[0] || 0);
   const addonAzn = addonOn ? ownTrackingAddon.price : 0;
-  const totalDisplay = formatPrice(baseAzn + addonAzn);
+  const totalAzn = baseAzn + addonAzn;
+  const totalDisplay = formatPrice(totalAzn);
+
+  // Struck-through "was" price: the admin's full plan price, plus — when the tracking
+  // add-on is ticked — the add-on price marked up by 20% (e.g. 11.99 + 8.99 × 1.2).
+  const listAzn =
+    (plan.actualPrice != null && Number.isFinite(Number(plan.actualPrice)) ? Number(plan.actualPrice) : baseAzn) +
+    (addonOn ? ownTrackingAddon.price * (1 + TRACKING_ADDON_LIST_MARKUP) : 0);
+  const discountPercent = listAzn > totalAzn ? Math.round(((listAzn - totalAzn) / listAzn) * 100) : 0;
+  const showListPrice = discountPercent > 0;
 
   const muted = featured ? 'text-cyan-50/80' : 'text-slate-500 dark:text-slate-400';
 
@@ -328,9 +331,9 @@ function PlanCard({ plan, onSubscribe }) {
         {plan.summary && <p className={`mt-1 line-clamp-2 min-h-[2.5rem] text-sm leading-5 ${muted}`}>{plan.summary}</p>}
 
         <div className="mt-5 flex min-h-[1.5rem] flex-wrap items-center gap-2">
-          {hasDiscount && (
+          {showListPrice && (
             <>
-              <span className={`text-sm line-through ${featured ? 'text-cyan-50/70' : 'text-slate-400'}`}>{displayPrice}</span>
+              <span className={`text-sm line-through ${featured ? 'text-cyan-50/70' : 'text-slate-400'}`}>{formatPrice(listAzn)}</span>
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
                   featured ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/15 dark:bg-emerald-400/10 dark:text-emerald-300'
@@ -360,12 +363,7 @@ function PlanCard({ plan, onSubscribe }) {
               onChange={(e) => setIncludeTracking(e.target.checked)}
               className={`mt-0.5 h-4 w-4 shrink-0 rounded ${featured ? 'accent-white' : 'accent-cyan-600'}`}
             />
-            <span className="leading-5">
-              <span className="block font-semibold">{t('pricing:planCard.includeTracking')}</span>
-              <span className={`block text-xs ${featured ? 'text-cyan-50/80' : 'text-slate-500 dark:text-slate-400'}`}>
-                {t('pricing:planCard.trackingAddonInfo', { price: formatPrice(ownTrackingAddon.price), credits: ownTrackingAddon.credits })}
-              </span>
-            </span>
+            <span className="font-semibold leading-5">{t('pricing:planCard.includeTracking')}</span>
           </label>
         )}
 

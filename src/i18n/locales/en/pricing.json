@@ -9,8 +9,7 @@
     "features": "Features",
     "save": "Save {{percent}}%",
     "specialOffer": "special offer",
-    "includeTracking": "Include tracking add-on",
-    "trackingAddonInfo": "+{{price}} · {{credits}} tracking credits"
+    "includeTracking": "Include tracking add-on"
   },
   "subscription": {
     "trackProducts": "Track up to {{count}} Amazon products",

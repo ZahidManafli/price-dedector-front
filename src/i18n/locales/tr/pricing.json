@@ -9,8 +9,7 @@
     "features": "Özellikler",
     "save": "%{{percent}} Kazan",
     "specialOffer": "özel teklif",
-    "includeTracking": "Takip eklentisini dahil et",
-    "trackingAddonInfo": "+{{price}} · {{credits}} takip kredisi"
+    "includeTracking": "Takip eklentisini dahil et"
   },
   "subscription": {
     "trackProducts": "{{count}}'e kadar Amazon ürünü izleyin",
