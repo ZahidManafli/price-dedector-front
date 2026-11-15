@@ -111,13 +111,13 @@ export default function AppsSection({ apkUrl, chromeUrl, telegramUrl }) {
   return (
     <section id="mobile-app" className="relative px-4 pb-20 sm:px-6 md:pb-28">
       <span id="companion" className="absolute -top-24" aria-hidden="true" />
-      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-cyan-50/60 shadow-xl shadow-slate-900/[0.04] dark:border-white/10 dark:from-white/[0.04] dark:via-white/[0.02] dark:to-cyan-400/[0.04] dark:shadow-none md:rounded-[2.5rem]">
+      <div data-reveal="zoom" className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-cyan-50/60 shadow-xl shadow-slate-900/[0.04] dark:border-white/10 dark:from-white/[0.04] dark:via-white/[0.02] dark:to-cyan-400/[0.04] dark:shadow-none md:rounded-[2.5rem]">
         <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-cyan-400/15 blur-3xl" aria-hidden="true" />
         <div className="absolute inset-x-10 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-500/60 to-transparent" aria-hidden="true" />
 
         <div className="relative grid items-center gap-12 px-6 py-12 sm:px-10 md:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8 lg:px-14">
           {/* Copy */}
-          <div>
+          <div data-reveal="left" data-reveal-delay="150">
             <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-white/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 shadow-sm backdrop-blur dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200">
               <Smartphone size={14} />
               {t('landing:mobileApp.eyebrow')}
@@ -198,7 +198,7 @@ export default function AppsSection({ apkUrl, chromeUrl, telegramUrl }) {
           </div>
 
           {/* Visual */}
-          <div className="relative mx-auto w-full max-w-[520px] py-6">
+          <div data-reveal="right" data-reveal-delay="250" className="relative mx-auto w-full max-w-[520px] py-6">
             <div className="absolute inset-x-6 top-0 bottom-24 overflow-hidden rounded-[2rem] bg-gradient-to-br from-cyan-500 via-sky-500 to-blue-600 sm:inset-x-10" aria-hidden="true">
               <div
                 className="absolute inset-0 opacity-20"

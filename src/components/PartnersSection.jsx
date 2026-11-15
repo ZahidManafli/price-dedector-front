@@ -79,7 +79,7 @@ function PartnersSection() {
       <div className="pointer-events-none absolute left-1/2 top-24 h-[300px] w-[680px] -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400/12 via-blue-500/10 to-transparent blur-3xl" aria-hidden="true" />
 
       <div className="relative mx-auto max-w-6xl">
-        <div className="mx-auto max-w-2xl text-center">
+        <div data-reveal className="mx-auto max-w-2xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-white/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 shadow-sm backdrop-blur dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200">
             <Handshake size={14} />
             {t('landing:partners.eyebrow')}
@@ -91,6 +91,8 @@ function PartnersSection() {
         </div>
 
         <div
+          data-reveal="fade"
+          data-reveal-delay="150"
           className="partners-marquee relative mt-12 overflow-hidden"
           style={{
             maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)',

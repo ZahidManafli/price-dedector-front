@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -39,6 +39,7 @@ import { applySeo } from '../utils/seo';
 import { pathFor, SUPPORTED_LANGS, SEO_PAGES, imageFor } from '../data/seoPages';
 import MilliNetBadge, { TRUST_BADGE_CARD } from '../components/marketing/MilliNetBadge';
 import { renderAccentedTitle } from '../utils/accentedTitle';
+import { useScrollReveal, SCROLL_REVEAL_CSS } from '../utils/scrollReveal';
 import { TrackingMock, MarketAnalysisMock } from '../components/marketing/ShowcaseMocks';
 import AppsSection from '../components/marketing/AppsSection';
 import CtaCarouselSection from '../components/marketing/CtaCarouselSection';
@@ -315,7 +316,6 @@ function PlanCard({ plan, onSubscribe }) {
           ? 'bg-gradient-to-br from-cyan-500 via-sky-500 to-blue-600 shadow-2xl shadow-cyan-500/25 ring-1 ring-cyan-400/40'
           : 'border border-slate-200/80 bg-slate-50/90 shadow-sm hover:shadow-xl hover:shadow-slate-900/[0.06] dark:border-white/10 dark:bg-white/[0.04] dark:hover:shadow-black/30'
       }`}
-      style={{ animation: 'fadeIn 0.4s ease both' }}
     >
       {featured && (
         <>
@@ -463,6 +463,9 @@ export default function LandingPage() {
   const { changeLanguage } = useLanguage();
   const { isDark } = useTheme();
   const [openFaq, setOpenFaq] = useState(0);
+  // Scroll-triggered entrance animations for everything tagged data-reveal(-stagger).
+  const revealRootRef = useRef(null);
+  useScrollReveal(revealRootRef);
   const [activeTab, setActiveTab] = useState('subscription');
   const [plans, setPlans] = useState([]);
   const [platformStats, setPlatformStats] = useState(null);
@@ -761,9 +764,9 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="relative min-h-screen overflow-x-clip bg-white text-slate-700 dark:bg-slate-950 dark:text-slate-100">
+    <div ref={revealRootRef} className="relative min-h-screen overflow-x-clip bg-white text-slate-700 dark:bg-slate-950 dark:text-slate-100">
       {/* Gentle float for the hero preview cards (respects reduced motion). */}
-      <style>{`@keyframes landingFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}.landing-float{animation:landingFloat 6s ease-in-out infinite}.landing-float-delay{animation-delay:-3s}@media (prefers-reduced-motion: reduce){.landing-float{animation:none}}`}</style>
+      <style>{`@keyframes landingFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}.landing-float{animation:landingFloat 6s ease-in-out infinite}.landing-float-delay{animation-delay:-3s}@media (prefers-reduced-motion: reduce){.landing-float{animation:none}}${SCROLL_REVEAL_CSS}`}</style>
       <div className={`pointer-events-none absolute inset-0 transition-opacity duration-300 ${isDark ? 'opacity-70' : 'opacity-40'}`}>
         <div className="absolute -top-24 left-[-8rem] h-96 w-96 rounded-full bg-cyan-500/18 blur-3xl" />
         <div className="absolute top-28 right-[-7rem] h-96 w-96 rounded-full bg-blue-500/16 blur-3xl" />
@@ -912,23 +915,23 @@ export default function LandingPage() {
           <div className="pointer-events-none absolute left-1/2 top-40 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400/20 via-blue-500/15 to-indigo-500/10 blur-3xl dark:from-cyan-400/15 dark:via-blue-500/10" aria-hidden="true" />
 
           <div className="relative mx-auto max-w-4xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-white/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 shadow-sm backdrop-blur dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200">
+            <div data-reveal className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-white/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 shadow-sm backdrop-blur dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200">
               <Sparkles size={14} />
               {t('landing:hero.eyebrow')}
             </div>
 
-            <h1 className="mt-6 text-4xl font-bold leading-[1.1] tracking-tight text-slate-900 dark:text-white sm:text-5xl md:text-6xl" style={{ textWrap: "balance" }}>
+            <h1 data-reveal data-reveal-delay="100" className="mt-6 text-4xl font-bold leading-[1.1] tracking-tight text-slate-900 dark:text-white sm:text-5xl md:text-6xl" style={{ textWrap: "balance" }}>
               {renderAccentedTitle(t('landing:hero.title'), t('landing:hero.titleAccents', { returnObjects: true }))}
             </h1>
 
-            <p className="mx-auto mt-5 max-w-2xl text-lg font-semibold text-slate-800 dark:text-slate-100 md:text-xl">
+            <p data-reveal data-reveal-delay="200" className="mx-auto mt-5 max-w-2xl text-lg font-semibold text-slate-800 dark:text-slate-100 md:text-xl">
               {t('landing:hero.tagline')}
             </p>
-            <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300 md:text-lg">
+            <p data-reveal data-reveal-delay="260" className="mx-auto mt-3 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300 md:text-lg">
               {t('landing:hero.subtitle')}
             </p>
 
-            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+            <div data-reveal data-reveal-delay="340" className="mt-9 flex flex-wrap items-center justify-center gap-3">
               <Link
                 to="/login"
                 className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-cyan-500/30 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-cyan-500/35"
@@ -945,7 +948,7 @@ export default function LandingPage() {
             </div>
 
             {/* Key capabilities */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-2.5">
+            <div data-reveal-stagger="zoom" className="mt-8 flex flex-wrap items-center justify-center gap-2.5">
               {heroStats.map((stat) => (
                 <span
                   key={stat.label}
@@ -959,7 +962,7 @@ export default function LandingPage() {
             </div>
 
             {/* Integrations */}
-            <div className="mt-10">
+            <div data-reveal="fade" data-reveal-delay="500" className="mt-10">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{t('landing:hero.integrations', 'İnteqrasiyalar')}</p>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 opacity-80 grayscale transition hover:opacity-100 hover:grayscale-0">
                 <span className="text-3xl font-bold tracking-tight" aria-label="eBay">
@@ -980,7 +983,7 @@ export default function LandingPage() {
           </div>
 
           {/* Product preview */}
-          <div className="relative mx-auto mt-14 max-w-6xl md:mt-16">
+          <div data-reveal="zoom" data-reveal-delay="250" className="relative mx-auto mt-14 max-w-6xl md:mt-16">
             <div className="absolute -inset-x-6 -bottom-6 top-10 rounded-[2.5rem] bg-gradient-to-b from-cyan-400/25 via-blue-500/15 to-transparent blur-2xl dark:from-cyan-400/15" aria-hidden="true" />
             <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 dark:border-white/10 dark:bg-slate-900 dark:shadow-black/50 md:rounded-3xl">
               <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/80 px-4 py-2.5 dark:border-white/10 dark:bg-slate-800/60">
@@ -1044,7 +1047,7 @@ export default function LandingPage() {
           <div className="pointer-events-none absolute left-1/2 top-24 h-[360px] w-[760px] -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400/15 via-blue-500/10 to-violet-500/10 blur-3xl dark:from-cyan-400/10" aria-hidden="true" />
 
           <div className="relative mx-auto max-w-6xl">
-            <div className="mx-auto max-w-2xl text-center">
+            <div data-reveal className="mx-auto max-w-2xl text-center">
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-white/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700 shadow-sm backdrop-blur dark:border-emerald-300/25 dark:bg-white/5 dark:text-emerald-300">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
@@ -1058,7 +1061,7 @@ export default function LandingPage() {
               <p className="mt-3 text-base text-slate-600 dark:text-slate-300 md:text-lg">{t('landing:platformStats.subtitle', 'Hamısı bazadan, canlı')}</p>
             </div>
 
-            <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div data-reveal-stagger className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {platformStatCards.map((stat) => {
                 const glow = STAT_GLOW[stat.key] || '#06b6d4';
                 return (
@@ -1138,7 +1141,7 @@ export default function LandingPage() {
 
         {/* ── Features bento ── */}
         <section id="features" className="relative px-4 pb-20 sm:px-6 md:pb-28">
-          <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-[#062a3c] to-[#0b1e4d] px-5 py-12 shadow-2xl shadow-slate-900/20 ring-1 ring-white/10 sm:px-8 md:rounded-[2.5rem] md:px-12 md:py-16">
+          <div data-reveal="zoom" className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-[#062a3c] to-[#0b1e4d] px-5 py-12 shadow-2xl shadow-slate-900/20 ring-1 ring-white/10 sm:px-8 md:rounded-[2.5rem] md:px-12 md:py-16">
             <div className="pointer-events-none absolute -left-32 -top-32 h-[420px] w-[420px] rounded-full bg-cyan-400/20 blur-3xl" aria-hidden="true" />
             <div className="pointer-events-none absolute -bottom-40 right-0 h-[460px] w-[520px] rounded-full bg-blue-600/25 blur-3xl" aria-hidden="true" />
             <div
@@ -1152,7 +1155,7 @@ export default function LandingPage() {
               aria-hidden="true"
             />
 
-            <div className="relative grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+            <div data-reveal data-reveal-delay="150" className="relative grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
               <div>
                 <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-white/5 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200 backdrop-blur">
                   <Sparkles size={14} />
@@ -1168,7 +1171,7 @@ export default function LandingPage() {
               <p className="text-base leading-7 text-slate-300 md:text-lg lg:pb-1">{t('landing:featuresSection.bentoDescription')}</p>
             </div>
 
-            <div className="relative mt-10 grid grid-cols-1 gap-4 md:mt-12 lg:grid-cols-12 lg:gap-5">
+            <div data-reveal-stagger className="relative mt-10 grid grid-cols-1 gap-4 md:mt-12 lg:grid-cols-12 lg:gap-5">
               {featureBento.map((card) => (
                 <article
                   key={card.key}
@@ -1212,7 +1215,7 @@ export default function LandingPage() {
         <section id="showcase" className="relative px-6 pb-20 md:pb-28">
           <div className="pointer-events-none absolute left-1/2 top-40 h-[360px] w-[760px] -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400/12 via-blue-500/10 to-transparent blur-3xl" aria-hidden="true" />
           <div className="relative mx-auto max-w-7xl">
-            <div className="mx-auto max-w-2xl text-center">
+            <div data-reveal className="mx-auto max-w-2xl text-center">
               <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-white/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 shadow-sm backdrop-blur dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200">
                 <Sparkles size={14} />
                 {t('landing:showcase.eyebrow')}
@@ -1225,10 +1228,10 @@ export default function LandingPage() {
                 const reversed = idx % 2 === 1;
                 return (
                   <div key={card.key} className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
-                    <div className={reversed ? 'lg:order-2' : ''}>
+                    <div data-reveal={reversed ? 'right' : 'left'} className={reversed ? 'lg:order-2' : ''}>
                       <Mock />
                     </div>
-                    <div className={reversed ? 'lg:order-1' : ''}>
+                    <div data-reveal={reversed ? 'left' : 'right'} data-reveal-delay="120" className={reversed ? 'lg:order-1' : ''}>
                       <p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-300">{card.title}</p>
                       <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 dark:text-white md:text-[2.75rem] md:leading-[1.15]" style={{ textWrap: 'balance' }}>
                         {renderAccentedTitle(card.heading, card.headingAccents)}
@@ -1255,7 +1258,7 @@ export default function LandingPage() {
         <section id="plans" className="relative px-6 pb-20 md:pb-28">
           <div className="pointer-events-none absolute left-1/2 top-24 h-[360px] w-[760px] -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400/15 via-blue-500/10 to-transparent blur-3xl" aria-hidden="true" />
           <div className="relative mx-auto max-w-7xl">
-            <div className="mx-auto max-w-2xl text-center">
+            <div data-reveal className="mx-auto max-w-2xl text-center">
               <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-white/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 shadow-sm backdrop-blur dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200">
                 <BadgeCheck size={14} />
                 {t('landing:pricing.eyebrow')}
@@ -1267,7 +1270,7 @@ export default function LandingPage() {
             </div>
 
             {/* Tabs: scroll sideways on small screens instead of wrapping */}
-            <div className="mt-10 flex justify-center">
+            <div data-reveal data-reveal-delay="100" className="mt-10 flex justify-center">
               <div className="max-w-full overflow-x-auto rounded-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/80 p-1.5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/[0.05]">
                   {planTabs.map((tab) => (
@@ -1306,7 +1309,7 @@ export default function LandingPage() {
                     )}
                   </div>
 
-                  <div className={`mt-8 grid gap-5 ${tab.key === 'analytics' ? 'md:grid-cols-2' : 'md:grid-cols-2 xl:grid-cols-4'}`}>
+                  <div data-reveal-stagger className={`mt-8 grid gap-5 ${tab.key === 'analytics' ? 'md:grid-cols-2' : 'md:grid-cols-2 xl:grid-cols-4'}`}>
                     {tab.plans.length === 0 ? (
                       <div className="col-span-full rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-8 text-center text-sm text-slate-600 dark:border-white/15 dark:bg-white/[0.03] dark:text-slate-300">
                         <p>{t('landing:pricing.noPlans')}</p>
@@ -1331,7 +1334,7 @@ export default function LandingPage() {
         <section id="faq" className="relative px-6 pb-20 md:pb-28">
           <div className="pointer-events-none absolute left-0 top-20 h-[320px] w-[520px] rounded-full bg-gradient-to-r from-cyan-400/12 via-blue-500/10 to-transparent blur-3xl" aria-hidden="true" />
           <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
-            <div className="lg:sticky lg:top-28 lg:self-start">
+            <div data-reveal="left" className="lg:sticky lg:top-28 lg:self-start">
               <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-white/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 shadow-sm backdrop-blur dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200">
                 <Sparkles size={14} />
                 {t('landing:faq.eyebrow')}
@@ -1358,7 +1361,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div data-reveal-stagger className="space-y-3">
               {faqItems.map((item, idx) => {
                 const isOpen = openFaq === idx;
                 return (

@@ -73,12 +73,12 @@ export default function CtaCarouselSection({ contactHref = 'mailto:checkilanotif
   return (
     <section id="contact" className="relative px-4 pb-16 sm:px-6 md:pb-24">
       <style>{`@keyframes ctaDown{from{transform:translateY(-50%)}to{transform:translateY(0)}}.cta-track{animation:ctaDown linear infinite}.cta-marquee:hover .cta-track{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.cta-track{animation:none}}`}</style>
-      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] border border-cyan-500/20 bg-gradient-to-br from-cyan-50 via-white to-blue-100/70 shadow-xl shadow-cyan-900/[0.06] dark:border-white/10 dark:from-[#062a3c] dark:via-slate-950 dark:to-[#0b1e4d] dark:shadow-black/30 md:rounded-[2.5rem]">
+      <div data-reveal="zoom" className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] border border-cyan-500/20 bg-gradient-to-br from-cyan-50 via-white to-blue-100/70 shadow-xl shadow-cyan-900/[0.06] dark:border-white/10 dark:from-[#062a3c] dark:via-slate-950 dark:to-[#0b1e4d] dark:shadow-black/30 md:rounded-[2.5rem]">
         <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-cyan-300/30 blur-3xl dark:bg-cyan-400/15" aria-hidden="true" />
         <div className="pointer-events-none absolute -bottom-32 left-1/3 h-80 w-[28rem] rounded-full bg-blue-300/25 blur-3xl dark:bg-blue-600/20" aria-hidden="true" />
 
         <div className="relative grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="px-6 pt-12 sm:px-10 lg:py-16 lg:pl-14 lg:pr-0">
+          <div data-reveal="left" data-reveal-delay="150" className="px-6 pt-12 sm:px-10 lg:py-16 lg:pl-14 lg:pr-0">
             <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-white/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 shadow-sm backdrop-blur dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200">
               {t('landing:cta.needHelp')}
             </span>
@@ -106,6 +106,8 @@ export default function CtaCarouselSection({ contactHref = 'mailto:checkilanotif
 
           {/* Endless vertical carousel of features */}
           <div
+            data-reveal="right"
+            data-reveal-delay="250"
             className="cta-marquee relative grid h-[380px] grid-cols-1 gap-3 px-6 sm:grid-cols-2 sm:px-10 lg:h-[460px] lg:pl-0 lg:pr-10"
             style={{
               maskImage: 'linear-gradient(to bottom, transparent, black 18%, black 82%, transparent)',
