@@ -823,7 +823,8 @@
     "submitting": "Submitting...",
     "sendCreditRequest": "Send Credit Request",
     "sendResetRequest": "Send Reset Request",
-    "sendRequest": "Send Request"
+    "sendRequest": "Send Request",
+    "trackingIncluded": "Tracking add-on included"
   },
   "currency": {
     "AZN": "AZN",

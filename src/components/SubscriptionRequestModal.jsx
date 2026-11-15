@@ -3,6 +3,41 @@ import { settingsAPI } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 import PaymentMethodPicker from './PaymentMethodPicker';
+import {
+  ArrowRight,
+  BarChart3,
+  CheckCircle2,
+  ChevronDown,
+  Coins,
+  Layers,
+  Loader2,
+  Mail,
+  MailCheck,
+  Package,
+  Phone,
+  RotateCcw,
+  Send,
+  SlidersHorizontal,
+  Sparkles,
+  Store,
+  Truck,
+  User,
+  X,
+} from 'lucide-react';
+
+// Shared input look (landing hero style: soft slate fields, cyan focus ring).
+const INPUT =
+  'w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-500/15 disabled:opacity-60 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-400 dark:focus:bg-slate-950';
+const INPUT_WITH_ICON = INPUT + ' pl-10';
+
+function Field({ icon: Icon, children }) {
+  return (
+    <div className="relative">
+      <Icon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      {children}
+    </div>
+  );
+}
 
 function toHumanText(value = '') {
   const raw = String(value || '').trim();
@@ -334,276 +369,251 @@ export default function SubscriptionRequestModal({
     }
   };
 
+  const isCustomPlan = form.planId === 'custom';
+  const headerIcon = isCreditTopUpRequest ? Coins : isResetRequest ? RotateCcw : isCustomPlan ? Sparkles : Send;
+  const HeaderIcon = headerIcon;
+  // Plan chosen on a plan card (lockPlan): the tracking add-on was already decided
+  // there, so it's only summarised here — the checkbox is shown only when the user
+  // picks the plan inside this modal (e.g. on the login page).
+  const showTrackingToggle =
+    !lockPlan && canOfferTrackingAddon && (ownPlanTrackingAddon || trackingAddOnPlans.length > 0) && !verificationStep;
+  const trackingIncludedFromCard = lockPlan && canOfferTrackingAddon && form.includeTracking && (ownPlanTrackingAddon || selectedTrackingAddon);
+
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-slate-900 p-5 shadow-2xl">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-xl font-semibold text-white">
-              {title || (isCreditTopUpRequest ? t('subscriptionRequestModal.requestCreditTopUp') : isResetRequest ? t('subscriptionRequestModal.requestSubscriptionReset') : t('subscriptionRequestModal.requestAccess'))}
-            </h3>
-            <p className="mt-1 text-sm text-slate-300">
-              {description || (isCreditTopUpRequest
-                ? t('subscriptionRequestModal.askAddMoreCredits')
-                : isResetRequest
-                  ? t('subscriptionRequestModal.askRefreshSubscription')
-                  : t('subscriptionRequestModal.sendRequestDescription'))}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/10"
-          >
-            {t('common.close')}
-          </button>
-        </div>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
+      <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-[1.75rem] border border-slate-200/80 bg-white shadow-2xl shadow-slate-950/30 dark:border-white/10 dark:bg-slate-900">
+        <div className="pointer-events-none absolute -left-20 -top-24 h-56 w-56 rounded-full bg-cyan-400/20 blur-3xl" aria-hidden="true" />
+        <div className="pointer-events-none absolute -right-24 -top-16 h-48 w-48 rounded-full bg-blue-500/15 blur-3xl" aria-hidden="true" />
 
-        <form onSubmit={submit} className="space-y-3">
-          {paymentStep ? (
-            <PaymentMethodPicker
-              requestId={verificationRequestId}
-              onGooglePaySuccess={() => {
-                onSuccess?.();
-                onClose?.();
-              }}
-            />
-          ) : isSubscriptionRequest ? (
-            <>
-              {verificationStep ? (
-                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
-                  <p className="font-semibold">Verification code sent</p>
-                  <p className="mt-1 text-emerald-50/90">
-                    Enter the 6-digit code sent to <span className="font-semibold">{form.email || 'your email'}</span> to send your subscription request to the admin team.
-                  </p>
-                  {verificationExpiresAt ? (
-                    <p className="mt-1 text-xs text-emerald-100/75">Code expires at {verificationExpiresAt}.</p>
-                  ) : null}
-                </div>
-              ) : null}
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {!hasPrefilledName ? (
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                    placeholder={t('subscriptionRequestModal.name')}
-                    className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-                    disabled={verificationStep}
-                  />
-                ) : null}
-                {!hasPrefilledSurname ? (
-                  <input
-                    type="text"
-                    value={form.surname}
-                    onChange={(e) => setForm((p) => ({ ...p, surname: e.target.value }))}
-                    placeholder={t('subscriptionRequestModal.surname')}
-                    className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-                    disabled={verificationStep}
-                  />
-                ) : null}
-              </div>
-
-              {!hasPrefilledEmail ? (
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                  placeholder={t('subscriptionRequestModal.email')}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-                  disabled={verificationStep}
-                />
-              ) : null}
-
-              {!hasPrefilledPhone ? (
-                <input
-                  type="tel"
-                  value={form.phoneNumber}
-                  onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))}
-                  placeholder={t('subscriptionRequestModal.phoneNumber')}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-                  disabled={verificationStep}
-                />
-              ) : null}
-
-              <select
-                value={form.planId}
-                onChange={(e) => setForm((p) => ({ ...p, planId: e.target.value }))}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-                disabled={lockPlan || verificationStep}
-              >
-                <option value="">{t('subscriptionRequestModal.selectPlan')}</option>
-                {availablePlans.map((plan) => (
-                  <option key={plan.id} value={plan.id}>
-                    {formatPlanName(plan.name, t)} ({formatPlanCategory(plan.category, t)})
-                  </option>
-                ))}
-                <option value="custom">{t('subscriptionRequestModal.customPlanRequest')}</option>
-              </select>
-
-              {selectedPlan ? (
-                <p className="text-xs text-slate-300">
-                  {t('subscriptionRequestModal.selectedCategory')} <span className="font-semibold">{formatPlanCategory(selectedPlan.category, t)}</span>
+        <div className="relative p-6 sm:p-7">
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30">
+                <HeaderIcon className="h-5 w-5" />
+              </span>
+              <div>
+                <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                  {title || (isCreditTopUpRequest ? t('subscriptionRequestModal.requestCreditTopUp') : isResetRequest ? t('subscriptionRequestModal.requestSubscriptionReset') : t('subscriptionRequestModal.requestAccess'))}
+                </h3>
+                <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                  {description || (isCreditTopUpRequest
+                    ? t('subscriptionRequestModal.askAddMoreCredits')
+                    : isResetRequest
+                      ? t('subscriptionRequestModal.askRefreshSubscription')
+                      : t('subscriptionRequestModal.sendRequestDescription'))}
                 </p>
-              ) : null}
-
-              {canOfferTrackingAddon && (ownPlanTrackingAddon || trackingAddOnPlans.length > 0) && !verificationStep ? (
-                <div className="space-y-2 rounded-xl border border-teal-500/30 bg-teal-500/5 p-3">
-                  <label className="flex items-center gap-2 text-sm font-medium text-teal-100">
-                    <input
-                      type="checkbox"
-                      checked={form.includeTracking}
-                      onChange={(e) => setForm((p) => ({
-                        ...p,
-                        includeTracking: e.target.checked,
-                        trackingPlanId: ownPlanTrackingAddon
-                          ? ownPlanTrackingAddon.id
-                          : p.trackingPlanId || trackingAddOnPlans[0]?.id || '',
-                      }))}
-                      className="h-4 w-4 rounded border-slate-600 bg-slate-950 accent-teal-400"
-                    />
-                    {t('subscriptionRequestModal.includeTrackingAddon')}
-                  </label>
-                  {form.includeTracking ? (
-                    ownPlanTrackingAddon ? (
-                      <p className="text-xs text-teal-200/90">
-                        {t('subscriptionRequestModal.trackingAddonSummary', {
-                          amount: formatPrice(ownPlanTrackingAddon.price),
-                          credits: ownPlanTrackingAddon.credits,
-                        })}
-                      </p>
-                    ) : (
-                      <>
-                        {trackingAddOnPlans.length > 1 ? (
-                          <select
-                            value={form.trackingPlanId || trackingAddOnPlans[0]?.id || ''}
-                            onChange={(e) => setForm((p) => ({ ...p, trackingPlanId: e.target.value }))}
-                            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-400"
-                          >
-                            {trackingAddOnPlans.map((plan) => (
-                              <option key={plan.id} value={plan.id}>
-                                {plan.name} — {formatTrackingAddonAmount(plan, formatPrice)}
-                              </option>
-                            ))}
-                          </select>
-                        ) : null}
-                        {selectedTrackingAddon ? (
-                          <p className="text-xs text-teal-200/90">
-                            {t('subscriptionRequestModal.trackingAddonSummary', {
-                              amount: formatTrackingAddonAmount(selectedTrackingAddon, formatPrice),
-                              credits: selectedTrackingAddon.trackingCreditsLimit ?? 0,
-                            })}
-                          </p>
-                        ) : null}
-                      </>
-                    )
-                  ) : null}
-                </div>
-              ) : null}
-
-              {form.planId === 'custom' ? (
-                <div className="space-y-3 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">{t('subscriptionRequestModal.customPlanRequirements')}</p>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <input
-                      type="number"
-                      min="0"
-                      value={form.trackingCreditsLimit}
-                      onChange={(e) => setForm((p) => ({ ...p, trackingCreditsLimit: e.target.value }))}
-                      placeholder={t('subscriptionRequestModal.trackingCreditsLimit')}
-                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      value={form.productsLimit}
-                      onChange={(e) => setForm((p) => ({ ...p, productsLimit: e.target.value }))}
-                      placeholder={t('subscriptionRequestModal.productsLimit')}
-                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      value={form.marketAnalysisCreditsLimit}
-                      onChange={(e) => setForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))}
-                      placeholder={t('subscriptionRequestModal.checkilaAnalysisCredits')}
-                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      value={form.ebayAccountsLimit}
-                      onChange={(e) => setForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))}
-                      placeholder={t('subscriptionRequestModal.ebayAccounts')}
-                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-                    />
-                  </div>
-                  <textarea
-                    value={form.customNote}
-                    onChange={(e) => setForm((p) => ({ ...p, customNote: e.target.value }))}
-                    placeholder={t('subscriptionRequestModal.optionalNoteDetailed')}
-                    className="min-h-[84px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-                    disabled={verificationStep}
-                  />
-                </div>
-              ) : null}
-
-              {verificationStep ? (
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="Enter verification code"
-                  className="w-full rounded-lg border border-emerald-500/30 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-emerald-400"
-                />
-              ) : null}
-            </>
-          ) : isCreditTopUpRequest ? (
-            <>
-              <input
-                type="number"
-                min="1"
-                value={form.requestedCredits}
-                onChange={(e) => setForm((p) => ({ ...p, requestedCredits: e.target.value }))}
-                placeholder={t('subscriptionRequestModal.requestedCredits')}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-              />
-              <textarea
-                value={form.customNote}
-                onChange={(e) => setForm((p) => ({ ...p, customNote: e.target.value }))}
-                placeholder={t('subscriptionRequestModal.optionalNoteForAdmin')}
-                className="min-h-[84px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-              />
-            </>
-          ) : (
-            <textarea
-              value={form.customNote}
-              onChange={(e) => setForm((p) => ({ ...p, customNote: e.target.value }))}
-              placeholder={t('subscriptionRequestModal.optionalNoteForAdmin')}
-              className="min-h-[112px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-            />
-          )}
-
-          {!paymentStep && infoMessage ? <p className="text-sm text-emerald-300">{infoMessage}</p> : null}
-          {!paymentStep && error ? <p className="text-sm text-red-300">{error}</p> : null}
-
-          {!paymentStep ? (
+              </div>
+            </div>
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
+              type="button"
+              onClick={onClose}
+              aria-label={t('common.close')}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
             >
-              {loading
-                ? t('subscriptionRequestModal.submitting')
-                : verificationStep
-                  ? 'Verify code'
-                  : submitLabel || (isCreditTopUpRequest ? t('subscriptionRequestModal.sendCreditRequest') : isResetRequest ? t('subscriptionRequestModal.sendResetRequest') : t('subscriptionRequestModal.sendRequest'))}
+              <X className="h-4 w-4" />
             </button>
-          ) : null}
-        </form>
+          </div>
+
+          <form onSubmit={submit} className="space-y-3">
+            {paymentStep ? (
+              <PaymentMethodPicker
+                requestId={verificationRequestId}
+                onGooglePaySuccess={() => {
+                  onSuccess?.();
+                  onClose?.();
+                }}
+              />
+            ) : isSubscriptionRequest ? (
+              <>
+                {verificationStep ? (
+                  <div className="flex gap-3 rounded-2xl border border-emerald-500/25 bg-emerald-50 p-4 text-sm text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-100">
+                    <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" />
+                    <div>
+                      <p className="font-semibold">Verification code sent</p>
+                      <p className="mt-1 opacity-90">
+                        Enter the 6-digit code sent to <span className="font-semibold">{form.email || 'your email'}</span> to send your subscription request to the admin team.
+                      </p>
+                      {verificationExpiresAt ? <p className="mt-1 text-xs opacity-75">Code expires at {verificationExpiresAt}.</p> : null}
+                    </div>
+                  </div>
+                ) : null}
+
+                {(!hasPrefilledName || !hasPrefilledSurname) && (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {!hasPrefilledName ? (
+                      <Field icon={User}>
+                        <input type="text" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder={t('subscriptionRequestModal.name')} className={INPUT_WITH_ICON} disabled={verificationStep} />
+                      </Field>
+                    ) : null}
+                    {!hasPrefilledSurname ? (
+                      <Field icon={User}>
+                        <input type="text" value={form.surname} onChange={(e) => setForm((p) => ({ ...p, surname: e.target.value }))} placeholder={t('subscriptionRequestModal.surname')} className={INPUT_WITH_ICON} disabled={verificationStep} />
+                      </Field>
+                    ) : null}
+                  </div>
+                )}
+
+                {!hasPrefilledEmail ? (
+                  <Field icon={Mail}>
+                    <input type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} placeholder={t('subscriptionRequestModal.email')} className={INPUT_WITH_ICON} disabled={verificationStep} />
+                  </Field>
+                ) : null}
+
+                {!hasPrefilledPhone ? (
+                  <Field icon={Phone}>
+                    <input type="tel" value={form.phoneNumber} onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))} placeholder={t('subscriptionRequestModal.phoneNumber')} className={INPUT_WITH_ICON} disabled={verificationStep} />
+                  </Field>
+                ) : null}
+
+                {lockPlan ? (
+                  // Plan already chosen on a card: show it as a summary instead of a dropdown.
+                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-cyan-500/25 bg-gradient-to-r from-cyan-50 to-blue-50 px-4 py-3 dark:border-cyan-300/20 dark:from-cyan-400/10 dark:to-blue-500/10">
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-300">
+                        {isCustomPlan ? t('subscriptionRequestModal.planFallback') : formatPlanCategory(selectedPlan?.category, t)}
+                      </p>
+                      <p className="mt-0.5 truncate text-base font-semibold text-slate-900 dark:text-white">
+                        {isCustomPlan ? t('subscriptionRequestModal.customPlanRequest') : formatPlanName(selectedPlan?.name, t)}
+                      </p>
+                    </div>
+                    {trackingIncludedFromCard ? (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-cyan-700 ring-1 ring-cyan-500/20 dark:bg-white/10 dark:text-cyan-200">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        {t('subscriptionRequestModal.trackingIncluded')}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : (
+                  <>
+                    <Field icon={Layers}>
+                      <select value={form.planId} onChange={(e) => setForm((p) => ({ ...p, planId: e.target.value }))} className={`${INPUT_WITH_ICON} appearance-none pr-9`} disabled={verificationStep}>
+                        <option value="">{t('subscriptionRequestModal.selectPlan')}</option>
+                        {availablePlans.map((plan) => (
+                          <option key={plan.id} value={plan.id}>
+                            {formatPlanName(plan.name, t)} ({formatPlanCategory(plan.category, t)})
+                          </option>
+                        ))}
+                        <option value="custom">{t('subscriptionRequestModal.customPlanRequest')}</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    </Field>
+                    {selectedPlan ? (
+                      <p className="px-1 text-xs text-slate-500 dark:text-slate-400">
+                        {t('subscriptionRequestModal.selectedCategory')} <span className="font-semibold text-slate-700 dark:text-slate-200">{formatPlanCategory(selectedPlan.category, t)}</span>
+                      </p>
+                    ) : null}
+                  </>
+                )}
+
+                {showTrackingToggle ? (
+                  <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-white/10 dark:bg-white/[0.04]">
+                    <label className="flex cursor-pointer items-center gap-2.5 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                      <input
+                        type="checkbox"
+                        checked={form.includeTracking}
+                        onChange={(e) => setForm((p) => ({
+                          ...p,
+                          includeTracking: e.target.checked,
+                          trackingPlanId: ownPlanTrackingAddon ? ownPlanTrackingAddon.id : p.trackingPlanId || trackingAddOnPlans[0]?.id || '',
+                        }))}
+                        className="h-4 w-4 rounded accent-cyan-600"
+                      />
+                      {t('subscriptionRequestModal.includeTrackingAddon')}
+                    </label>
+                    {form.includeTracking ? (
+                      ownPlanTrackingAddon ? (
+                        <p className="pl-6 text-xs text-slate-500 dark:text-slate-400">
+                          {t('subscriptionRequestModal.trackingAddonSummary', { amount: formatPrice(ownPlanTrackingAddon.price), credits: ownPlanTrackingAddon.credits })}
+                        </p>
+                      ) : (
+                        <>
+                          {trackingAddOnPlans.length > 1 ? (
+                            <select value={form.trackingPlanId || trackingAddOnPlans[0]?.id || ''} onChange={(e) => setForm((p) => ({ ...p, trackingPlanId: e.target.value }))} className={INPUT}>
+                              {trackingAddOnPlans.map((plan) => (
+                                <option key={plan.id} value={plan.id}>
+                                  {plan.name} — {formatTrackingAddonAmount(plan, formatPrice)}
+                                </option>
+                              ))}
+                            </select>
+                          ) : null}
+                          {selectedTrackingAddon ? (
+                            <p className="pl-6 text-xs text-slate-500 dark:text-slate-400">
+                              {t('subscriptionRequestModal.trackingAddonSummary', { amount: formatTrackingAddonAmount(selectedTrackingAddon, formatPrice), credits: selectedTrackingAddon.trackingCreditsLimit ?? 0 })}
+                            </p>
+                          ) : null}
+                        </>
+                      )
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {isCustomPlan ? (
+                  <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                    <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-300">
+                      <SlidersHorizontal className="h-3.5 w-3.5" />
+                      {t('subscriptionRequestModal.customPlanRequirements')}
+                    </p>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <Field icon={Truck}>
+                        <input type="number" min="0" value={form.trackingCreditsLimit} onChange={(e) => setForm((p) => ({ ...p, trackingCreditsLimit: e.target.value }))} placeholder={t('subscriptionRequestModal.trackingCreditsLimit')} className={INPUT_WITH_ICON} disabled={verificationStep} />
+                      </Field>
+                      <Field icon={Package}>
+                        <input type="number" min="0" value={form.productsLimit} onChange={(e) => setForm((p) => ({ ...p, productsLimit: e.target.value }))} placeholder={t('subscriptionRequestModal.productsLimit')} className={INPUT_WITH_ICON} disabled={verificationStep} />
+                      </Field>
+                      <Field icon={BarChart3}>
+                        <input type="number" min="0" value={form.marketAnalysisCreditsLimit} onChange={(e) => setForm((p) => ({ ...p, marketAnalysisCreditsLimit: e.target.value }))} placeholder={t('subscriptionRequestModal.checkilaAnalysisCredits')} className={INPUT_WITH_ICON} disabled={verificationStep} />
+                      </Field>
+                      <Field icon={Store}>
+                        <input type="number" min="0" value={form.ebayAccountsLimit} onChange={(e) => setForm((p) => ({ ...p, ebayAccountsLimit: e.target.value }))} placeholder={t('subscriptionRequestModal.ebayAccounts')} className={INPUT_WITH_ICON} disabled={verificationStep} />
+                      </Field>
+                    </div>
+                    <textarea value={form.customNote} onChange={(e) => setForm((p) => ({ ...p, customNote: e.target.value }))} placeholder={t('subscriptionRequestModal.optionalNoteDetailed')} className={`${INPUT} min-h-[88px] resize-y`} disabled={verificationStep} />
+                  </div>
+                ) : null}
+
+                {verificationStep ? (
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="••••••"
+                    className={`${INPUT} text-center font-mono text-lg tracking-[0.5em]`}
+                  />
+                ) : null}
+              </>
+            ) : isCreditTopUpRequest ? (
+              <>
+                <Field icon={Coins}>
+                  <input type="number" min="1" value={form.requestedCredits} onChange={(e) => setForm((p) => ({ ...p, requestedCredits: e.target.value }))} placeholder={t('subscriptionRequestModal.requestedCredits')} className={INPUT_WITH_ICON} />
+                </Field>
+                <textarea value={form.customNote} onChange={(e) => setForm((p) => ({ ...p, customNote: e.target.value }))} placeholder={t('subscriptionRequestModal.optionalNoteForAdmin')} className={`${INPUT} min-h-[88px] resize-y`} />
+              </>
+            ) : (
+              <textarea value={form.customNote} onChange={(e) => setForm((p) => ({ ...p, customNote: e.target.value }))} placeholder={t('subscriptionRequestModal.optionalNoteForAdmin')} className={`${INPUT} min-h-[112px] resize-y`} />
+            )}
+
+            {!paymentStep && infoMessage ? <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300">{infoMessage}</p> : null}
+            {!paymentStep && error ? <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-400/10 dark:text-rose-300">{error}</p> : null}
+
+            {!paymentStep ? (
+              <button
+                type="submit"
+                disabled={loading}
+                className="group mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-cyan-500/30 disabled:translate-y-0 disabled:opacity-60"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {loading
+                  ? t('subscriptionRequestModal.submitting')
+                  : verificationStep
+                    ? 'Verify code'
+                    : submitLabel || (isCreditTopUpRequest ? t('subscriptionRequestModal.sendCreditRequest') : isResetRequest ? t('subscriptionRequestModal.sendResetRequest') : t('subscriptionRequestModal.sendRequest'))}
+                {!loading ? <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" /> : null}
+              </button>
+            ) : null}
+          </form>
+        </div>
       </div>
     </div>
   );

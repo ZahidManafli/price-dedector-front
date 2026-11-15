@@ -281,7 +281,9 @@ function PlanCard({ plan, onSubscribe }) {
     if (!Number.isFinite(credits) || credits <= 0) return null;
     return { price: Number(price), credits };
   })();
-  const addonOn = includeTracking && !!ownTrackingAddon;
+  // Trial plans always come with their tracking add-on — no checkbox, never unticked.
+  const isTrialPlan = /trial/i.test(String(plan.name || ''));
+  const addonOn = (includeTracking || isTrialPlan) && !!ownTrackingAddon;
 
   // Combine in AZN first, then convert once — never convert the plan price and the
   // add-on price separately and add the converted numbers, which would compound
@@ -349,7 +351,7 @@ function PlanCard({ plan, onSubscribe }) {
           {plan.duration && <span className={`text-sm ${muted}`}>/ {plan.duration.toLowerCase()}</span>}
         </p>
 
-        {ownTrackingAddon && (
+        {ownTrackingAddon && !isTrialPlan && (
           <label
             className={`mt-4 flex cursor-pointer items-start gap-2.5 rounded-xl px-3 py-2.5 text-sm transition ${
               featured
@@ -388,7 +390,7 @@ function PlanCard({ plan, onSubscribe }) {
           }`}
         >
           {plan.features.map((feature) => {
-            const struck = !!ownTrackingAddon && !includeTracking && isTrackingCreditFeature(feature);
+            const struck = !!ownTrackingAddon && !addonOn && isTrackingCreditFeature(feature);
             return (
               <li key={feature} className={`flex items-start gap-2.5 transition ${struck ? 'opacity-60' : ''}`}>
                 {struck ? (
