@@ -37,7 +37,34 @@
     "eyebrow": "What's inside",
     "title": "Four tools, one dropshipping workflow",
     "description": "Everything you need to research, price, and manage eBay listings sourced from Amazon.",
-    "learnMore": "Learn more"
+    "learnMore": "Learn more",
+    "bentoTitle": "We make everything easier for you",
+    "bentoTitleAccents": [
+      "for you"
+    ],
+    "bentoDescription": "From finding products to delivering orders — every tool you need for Amazon-to-eBay dropshipping, in one platform.",
+    "cards": {
+      "amazonToEbay": {
+        "title": "Amazon to eBay listing",
+        "description": "List an Amazon product on eBay in a few clicks — title, images, item specifics and price are prepared automatically."
+      },
+      "aiFeedback": {
+        "title": "AI feedback replies",
+        "description": "An AI agent writes professional, personal replies to buyer feedback in seconds."
+      },
+      "trackingListings": {
+        "title": "Tracking codes & listings",
+        "description": "Upload tracking codes and manage your listings comfortably from desktop or phone."
+      },
+      "allInOne": {
+        "title": "All in one platform",
+        "description": "Product research, price and stock tracking, orders and delivery — the whole workflow in one place."
+      },
+      "priceTracking": {
+        "title": "Price & stock tracking",
+        "description": "Track Amazon price, stock and profit in real time. When something changes, your eBay price updates automatically."
+      }
+    }
   },
   "partners": {
     "eyebrow": "Our Partners",

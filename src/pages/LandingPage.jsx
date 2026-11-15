@@ -608,27 +608,19 @@ export default function LandingPage() {
     });
   };
 
-  // Build dynamic feature cards from translations
-  const featureCards = [
-    {
-      icon: BarChart3,
-      title: t('landing:features.tracking.title'),
-      description: t('landing:features.tracking.description'),
-      href: pathFor('amazonTracking', activeLang),
-    },
-    {
-      icon: Radar,
-      title: t('landing:features.analysis.title'),
-      description: t('landing:features.analysis.description'),
-      href: pathFor('productResearch', activeLang),
-    },
-    {
-      icon: ShieldCheck,
-      title: t('landing:features.listing.title'),
-      description: t('landing:features.listing.description'),
-      href: pathFor('inventoryTracking', activeLang),
-    },
-  ];
+  // Features bento ("Hər şeyi sizin üçün asanlaşdırırıq"): image cards on a dark brand panel.
+  // span = width on the 12-col lg grid; horizontal = full-width card with text left, image right.
+  const featureBento = [
+    { key: 'amazonToEbay', image: '/landing/features/amazon-to-ebay.webp', span: 'lg:col-span-7', href: pathFor('inventoryTracking', activeLang) },
+    { key: 'aiFeedback', image: '/landing/features/ai-feedback.webp', span: 'lg:col-span-5' },
+    { key: 'trackingListings', image: '/landing/features/tracking-listings.webp', span: 'lg:col-span-5' },
+    { key: 'allInOne', image: '/landing/features/all-in-one.webp', span: 'lg:col-span-7', href: pathFor('productResearch', activeLang) },
+    { key: 'priceTracking', image: '/landing/features/product-detail.webp', span: 'lg:col-span-12', horizontal: true, href: pathFor('amazonTracking', activeLang) },
+  ].map((card) => ({
+    ...card,
+    title: t(`landing:featuresSection.cards.${card.key}.title`),
+    description: t(`landing:featuresSection.cards.${card.key}.description`),
+  }));
 
   const heroStats = [
     { label: t('landing:stats.tracking'), value: t('landing:stats.trackingValue'), icon: Globe2 },
@@ -713,21 +705,6 @@ export default function LandingPage() {
       title: t('landing:showcase.marketAnalysis.title'),
       description: t('landing:showcase.marketAnalysis.description'),
       cta: t('landing:showcase.marketAnalysis.cta'),
-    },
-  ];
-
-  const workflowSteps = [
-    {
-      title: t('landing:workflow.discover.title'),
-      description: t('landing:workflow.discover.description'),
-    },
-    {
-      title: t('landing:workflow.decide.title'),
-      description: t('landing:workflow.decide.description'),
-    },
-    {
-      title: t('landing:workflow.publish.title'),
-      description: t('landing:workflow.publish.description'),
     },
   ];
 
@@ -1107,37 +1084,81 @@ export default function LandingPage() {
 
         <PartnersSection />
 
-        <section id="dropshipping" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
-          <SectionHeader
-            eyebrow={t('landing:dropshippingSection.eyebrow')}
-            title={t('landing:dropshippingSection.title')}
-            description={t('landing:dropshippingSection.description')}
-            align="center"
-          />
+        {/* ── Features bento ── */}
+        <section id="features" className="relative px-4 pb-20 sm:px-6 md:pb-28">
+          <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-[#062a3c] to-[#0b1e4d] px-5 py-12 shadow-2xl shadow-slate-900/20 ring-1 ring-white/10 sm:px-8 md:rounded-[2.5rem] md:px-12 md:py-16">
+            <div className="pointer-events-none absolute -left-32 -top-32 h-[420px] w-[420px] rounded-full bg-cyan-400/20 blur-3xl" aria-hidden="true" />
+            <div className="pointer-events-none absolute -bottom-40 right-0 h-[460px] w-[520px] rounded-full bg-blue-600/25 blur-3xl" aria-hidden="true" />
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.07]"
+              style={{
+                backgroundImage: 'linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px)',
+                backgroundSize: '48px 48px',
+                maskImage: 'radial-gradient(ellipse at top left, black 20%, transparent 70%)',
+                WebkitMaskImage: 'radial-gradient(ellipse at top left, black 20%, transparent 70%)',
+              }}
+              aria-hidden="true"
+            />
 
-          <div className="mt-10 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-            <article className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60 backdrop-blur dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none">
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-white">{t('landing:dropshippingSection.cardTitle')}</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('landing:dropshippingSection.cardDescription')}</p>
-              <ul className="mt-5 space-y-3 text-sm text-slate-700 dark:text-slate-200">
-                {t('landing:dropshippingSection.bullets', { returnObjects: true }).map((bullet) => (
-                  <li key={bullet} className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-300" />
-                    <span>{bullet}</span>
-                  </li>
-                ))}
-              </ul>
-            </article>
-
-            <article className="rounded-[2rem] border border-cyan-500/20 dark:border-cyan-300/20 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 p-6 shadow-lg shadow-slate-200/60 backdrop-blur dark:shadow-none">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-100">{t('landing:dropshippingSection.sideEyebrow')}</p>
-              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">{t('landing:dropshippingSection.sideTitle')}</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('landing:dropshippingSection.sideDescription')}</p>
-              <div className="mt-5 rounded-2xl border border-slate-200 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/50">
-                <p className="text-sm font-medium text-slate-900 dark:text-white">{t('landing:dropshippingSection.sideHighlightTitle')}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('landing:dropshippingSection.sideHighlightDescription')}</p>
+            <div className="relative grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+              <div>
+                <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-white/5 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200 backdrop-blur">
+                  <Sparkles size={14} />
+                  {t('landing:featuresSection.eyebrow')}
+                </span>
+                <h2 className="mt-5 text-3xl font-bold tracking-tight text-white md:text-5xl" style={{ textWrap: 'balance' }}>
+                  {renderAccentedTitle(
+                    t('landing:featuresSection.bentoTitle'),
+                    t('landing:featuresSection.bentoTitleAccents', { returnObjects: true })
+                  )}
+                </h2>
               </div>
-            </article>
+              <p className="text-base leading-7 text-slate-300 md:text-lg lg:pb-1">{t('landing:featuresSection.bentoDescription')}</p>
+            </div>
+
+            <div className="relative mt-10 grid grid-cols-1 gap-4 md:mt-12 lg:grid-cols-12 lg:gap-5">
+              {featureBento.map((card) => (
+                <article
+                  key={card.key}
+                  className={`group flex flex-col rounded-3xl border border-white/10 bg-white/[0.05] p-2.5 backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-cyan-300/30 hover:bg-white/[0.08] hover:shadow-2xl hover:shadow-cyan-950/40 ${card.span} ${
+                    card.horizontal ? 'lg:flex-row lg:items-stretch' : ''
+                  }`}
+                >
+                  <div
+                    className={`relative overflow-hidden rounded-[1.25rem] bg-white ${
+                      card.horizontal ? 'aspect-[5/2] lg:order-2 lg:aspect-auto lg:w-[62%] lg:min-h-[300px]' : 'aspect-[16/9] lg:aspect-auto lg:h-[280px]'
+                    }`}
+                  >
+                    {!card.horizontal && (
+                      // Same image, blurred, fills the side gaps left by object-contain on wide cards
+                      <img src={card.image} alt="" aria-hidden="true" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-70 blur-2xl" />
+                    )}
+                    <img
+                      src={card.image}
+                      alt={card.title}
+                      loading="lazy"
+                      decoding="async"
+                      className={`absolute inset-0 h-full w-full transition duration-500 group-hover:scale-[1.03] ${
+                        card.horizontal ? 'object-cover object-left-top' : 'object-contain'
+                      }`}
+                    />
+                  </div>
+                  <div className={`flex flex-1 flex-col px-3 pb-3 pt-4 ${card.horizontal ? 'lg:justify-center lg:px-7 lg:py-6' : ''}`}>
+                    <h3 className={`font-semibold tracking-tight text-white ${card.horizontal ? 'text-xl md:text-2xl' : 'text-lg md:text-xl'}`}>{card.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-300 md:text-[15px]">{card.description}</p>
+                    {card.href && (
+                      <Link
+                        to={card.href}
+                        className="mt-4 inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-cyan-300 transition hover:gap-2 hover:text-cyan-200"
+                      >
+                        {t('landing:featuresSection.learnMore')}
+                        <ArrowRight size={14} />
+                      </Link>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -1159,78 +1180,6 @@ export default function LandingPage() {
                 <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.answer}</p>
               </article>
             ))}
-          </div>
-        </section>
-
-        <section id="features" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
-          <SectionHeader
-            eyebrow={t('landing:featuresSection.eyebrow')}
-            title={t('landing:featuresSection.title')}
-            description={t('landing:featuresSection.description')}
-            align="center"
-          />
-
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {featureCards.map((feature, idx) => (
-              <article
-                key={feature.title}
-                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60 backdrop-blur dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none"
-                style={{ animation: `fadeIn 0.35s ease ${idx * 0.08}s both` }}
-              >
-                <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/20 dark:border-cyan-300/20 bg-cyan-400/10">
-                  <feature.icon className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
-                </div>
-                <h2 className="mt-4 text-lg font-semibold text-slate-900 dark:text-white">{feature.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{feature.description}</p>
-                <Link
-                  to={feature.href}
-                  className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-cyan-700 transition hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
-                >
-                  {t('landing:featuresSection.learnMore')}
-                  <ArrowRight size={13} />
-                </Link>
-              </article>
-            ))}
-          </div>
-
-          <div className="mt-6 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/60 backdrop-blur dark:border-white/10 dark:bg-slate-900/75 dark:shadow-black/25">
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">{t('landing:workflowSection.eyebrow')}</p>
-              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white md:text-3xl">
-                {t('landing:workflowSection.title')}
-              </h3>
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
-                {workflowSteps.map((step, index) => (
-                  <div key={step.title} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-cyan-700 dark:text-cyan-100">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-400/15 text-xs text-cyan-700 dark:text-cyan-100">
-                        0{index + 1}
-                      </span>
-                      {step.title}
-                    </div>
-                    <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{step.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-[2rem] border border-cyan-500/20 dark:border-white/10 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 p-6 shadow-xl shadow-slate-200/60 backdrop-blur dark:shadow-black/20">
-              <p className="text-xs uppercase tracking-[0.24em] text-cyan-700 dark:text-cyan-100">{t('landing:workflowSection.operationalClarity')}</p>
-              <ul className="mt-5 space-y-4 text-sm text-slate-700 dark:text-slate-200">
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-300" />
-                  <span>{t('landing:workflowSection.clarity1')}</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-300" />
-                  <span>{t('landing:workflowSection.clarity2')}</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-300" />
-                  <span>{t('landing:workflowSection.clarity3')}</span>
-                </li>
-              </ul>
-            </div>
           </div>
         </section>
 

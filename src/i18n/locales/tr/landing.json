@@ -37,7 +37,34 @@
     "eyebrow": "Platformda Neler Var",
     "title": "Dört araç, tek bir dropshipping iş akışı",
     "description": "Amazon'dan tedarik ettiğiniz ürünleri araştırmak, fiyatlandırmak ve eBay ilanlarınızı yönetmek için ihtiyacınız olan her şey.",
-    "learnMore": "Daha fazla bilgi"
+    "learnMore": "Daha fazla bilgi",
+    "bentoTitle": "Her şeyi sizin için kolaylaştırıyoruz",
+    "bentoTitleAccents": [
+      "sizin için"
+    ],
+    "bentoDescription": "Ürün bulmaktan siparişin teslimine kadar — Amazon’dan eBay’e dropshipping için gereken tüm araçlar tek platformda.",
+    "cards": {
+      "amazonToEbay": {
+        "title": "Amazon’dan eBay’e listeleme",
+        "description": "Amazon ürününü birkaç tıkla eBay’de satışa çıkarın — başlık, görseller, item specifics ve fiyat otomatik hazırlanır."
+      },
+      "aiFeedback": {
+        "title": "AI ile yorum yanıtları",
+        "description": "AI ajanı alıcı yorumlarına saniyeler içinde profesyonel ve kişisel yanıtlar yazar."
+      },
+      "trackingListings": {
+        "title": "Takip kodları ve ilanlar",
+        "description": "Takip kodlarını yükleyin, ilanlarınızı bilgisayardan ve telefondan rahatça yönetin."
+      },
+      "allInOne": {
+        "title": "Hepsi tek platformda",
+        "description": "Ürün analizi, fiyat ve stok takibi, siparişler ve teslimat — tüm iş akışı tek yerde."
+      },
+      "priceTracking": {
+        "title": "Fiyat ve stok takibi",
+        "description": "Amazon fiyatını, stoğu ve kârı gerçek zamanlı izleyin. Değişiklik olduğunda eBay fiyatı otomatik güncellenir."
+      }
+    }
   },
   "partners": {
     "eyebrow": "Ortaklarımız",
