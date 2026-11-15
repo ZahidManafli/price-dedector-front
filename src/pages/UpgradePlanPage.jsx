@@ -1,18 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, ArrowLeft, Loader2, ShieldCheck } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { ArrowLeft, BadgeCheck, CreditCard, Loader2, RefreshCw, ShieldCheck, Sparkles, Wallet } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { settingsAPI } from '../services/api';
+import { paymentsAPI, settingsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { useLanguage } from '../context/LanguageContext';
 import PaymentMethodPicker from '../components/PaymentMethodPicker';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
+import GooglePayModal from '../components/GooglePayModal';
+import PricingPlanCard, { isTrialPlanName } from '../components/plans/PricingPlanCard';
+import { getWalletPaymentLabel } from '../utils/walletPayment';
+import { renderAccentedTitle } from '../utils/accentedTitle';
 
 // ── normalizePlan — mirrors LandingPage exactly ───────────────
 function normalizePlan(raw = {}) {
-  const planName = raw.name || 'Plan';
-  const isAdvantagePlan = /advantage/i.test(planName);
   const normalizedCategory = String(raw.category || '')
     .trim()
     .toLowerCase()
@@ -30,7 +32,7 @@ function normalizePlan(raw = {}) {
 
   return {
     id: raw.id,
-    name: planName,
+    name: raw.name || 'Plan',
     duration: raw.duration || '',
     price: raw.price || '',
     actualPrice: raw.actualPrice ?? null,
@@ -41,24 +43,16 @@ function normalizePlan(raw = {}) {
     trackingAddonPrice: raw.trackingAddonPrice ?? null,
     category,
     featured: !!raw.featured,
-    accent:
-      category === 'analytics'
-        ? 'from-violet-400/20 to-slate-700/10'
-        : isAdvantagePlan
-        ? 'from-amber-300/35 to-yellow-500/20'
-        : raw.featured
-        ? 'from-cyan-400/35 to-blue-500/20'
-        : 'from-sky-400/25 to-indigo-500/15',
   };
 }
 
-// Plan prices are always entered in AZN — `formatPrice` converts to whatever
-// currency matches the user's selected language, same as everywhere else.
-function formatTrackingAddonAmount(plan, formatPrice) {
-  const amount =
-    plan?.discountedPrice ?? plan?.actualPrice ?? Number(String(plan?.price || '').replace(/[^0-9.]/g, '')) ?? null;
-  if (amount == null || !Number.isFinite(Number(amount))) return plan?.price || '';
-  return formatPrice(Number(amount));
+// Generic add-on for subscription plans that have no own trackingAddonPrice:
+// the first standalone tracking_plans plan (same fallback the request modal uses).
+function toFallbackAddon(trackingPlan) {
+  if (!trackingPlan) return null;
+  const amount = trackingPlan.discountedPrice ?? trackingPlan.actualPrice ?? Number(String(trackingPlan.price || '').replace(/[^0-9.]/g, ''));
+  if (amount == null || !Number.isFinite(Number(amount))) return null;
+  return { id: trackingPlan.id, price: Number(amount), credits: Number(trackingPlan.trackingCreditsLimit) || 0 };
 }
 
 // ── 6-box OTP input ───────────────────────────────────────────
@@ -96,7 +90,7 @@ function OtpInput({ value, onChange, isDark }) {
   };
 
   return (
-    <div className="flex gap-2.5 justify-center">
+    <div className="flex justify-center gap-2.5">
       {Array.from({ length: 6 }, (_, i) => (
         <input
           key={i}
@@ -108,12 +102,12 @@ function OtpInput({ value, onChange, isDark }) {
           onChange={(e) => handleChange(i, e)}
           onKeyDown={(e) => handleKey(i, e)}
           onPaste={handlePaste}
-          className={`w-11 h-13 rounded-xl border text-center text-xl font-bold outline-none transition-all ${
+          className={`w-11 rounded-xl border text-center text-xl font-bold outline-none transition-all ${
             digits[i]
-              ? 'border-cyan-400 bg-cyan-400/10 text-cyan-300 shadow-[0_0_0_3px_rgba(34,211,238,0.15)]'
+              ? 'border-cyan-500 bg-cyan-500/10 text-cyan-600 shadow-[0_0_0_3px_rgba(6,182,212,0.15)] dark:text-cyan-300'
               : isDark
               ? 'border-white/10 bg-white/[0.04] text-white focus:border-cyan-400/60'
-              : 'border-slate-200 bg-slate-50 text-slate-800 focus:border-cyan-400'
+              : 'border-slate-200 bg-slate-50 text-slate-800 focus:border-cyan-500'
           }`}
           style={{ height: 52 }}
         />
@@ -122,196 +116,90 @@ function OtpInput({ value, onChange, isDark }) {
   );
 }
 
-// ── Plan card — same structure as LandingPage ─────────────────
-function PlanCard({
-  plan,
-  isCurrent,
-  onUpgrade,
-  ownTrackingAddon,
-  trackingAddOnPlans,
-  trackingChoice,
-  onTrackingChoiceChange,
-  formatPrice,
-}) {
-  const hasDiscount =
-    Number.isFinite(Number(plan.actualPrice)) &&
-    Number.isFinite(Number(plan.discountedPrice)) &&
-    Number(plan.actualPrice) > Number(plan.discountedPrice);
+// ── Renew box shown on the active plan card ───────────────────
+// Same flow as Settings → Ödəniş: "Kart" charges the default saved card
+// (POST /payments/pay-now), the wallet option opens Epoint's Google/Apple Pay
+// widget (POST /payments/epoint/pay-now/widget) and polls until it settles.
+function RenewBox({ isTrial, defaultCard, walletLabel, onPayCard, onPayWallet, payingCard, payingWallet }) {
+  const { t } = useTranslation('pricing');
+  const [open, setOpen] = useState(false);
 
-  const discountPercent = hasDiscount
-    ? Math.round(((Number(plan.actualPrice) - Number(plan.discountedPrice)) / Number(plan.actualPrice)) * 100)
-    : 0;
+  if (isTrial) {
+    return (
+      <div className="rounded-2xl bg-white/90 p-3 text-xs leading-5 text-slate-600 ring-1 ring-slate-200 dark:bg-white/[0.05] dark:text-slate-300 dark:ring-white/10">
+        {t('upgrade.trialNoRenew')}
+      </div>
+    );
+  }
 
-  // Fall back to the legacy price string (e.g. "1 AZN") when actualPrice is null — mirrors LandingPage behaviour
-  const rawFallback = plan.price ? Number(plan.price.match(/[\d.]+/)?.[0] || 0) : null;
-  const displayPrice = plan.actualPrice != null
-    ? `₼${Number(plan.actualPrice).toFixed(2)}`
-    : rawFallback != null
-    ? `₼${rawFallback.toFixed(2)}`
-    : '—';
-  const discountedDisplay = plan.discountedPrice != null ? `₼${Number(plan.discountedPrice).toFixed(2)}` : null;
-
-  const featuredClasses = plan.featured
-    ? 'border-cyan-300/50 bg-slate-900/95 shadow-[0_20px_80px_rgba(34,211,238,0.14)]'
-    : 'border-white/10 bg-slate-900/70';
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition hover:-translate-y-0.5 hover:shadow-xl"
+      >
+        <RefreshCw className="h-4 w-4 transition group-hover:rotate-180" />
+        {t('upgrade.renew')}
+      </button>
+    );
+  }
 
   return (
-    <article
-      className={`relative flex h-full flex-col overflow-hidden rounded-3xl border p-5 shadow-lg backdrop-blur transition duration-300 ${
-        isCurrent ? 'border-cyan-400/40 cursor-default' : `hover:-translate-y-1 hover:border-white/20 cursor-pointer ${featuredClasses}`
-      }`}
-      style={{ animation: 'upgradeFadeIn 0.35s ease both' }}
-    >
-      {/* gradient background — always present */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${plan.accent} opacity-100`} />
-
-      {/* card content — blurred when current */}
-      <div
-        className="relative z-10 flex h-full flex-col"
-        style={isCurrent ? { filter: 'blur(3px)', opacity: 0.35, userSelect: 'none', pointerEvents: 'none' } : {}}
+    <div className="space-y-2 rounded-2xl bg-white p-3 text-slate-700 shadow-lg ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:ring-white/10">
+      <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{t('upgrade.chooseMethod')}</p>
+      <button
+        type="button"
+        onClick={onPayCard}
+        disabled={!defaultCard || payingCard}
+        className="flex w-full items-center gap-3 rounded-xl border border-slate-200 px-3 py-2.5 text-left text-sm font-semibold transition hover:border-cyan-400 hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-slate-200 disabled:hover:bg-transparent dark:border-white/10 dark:hover:bg-cyan-400/10"
       >
-        {/* header */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-xl font-semibold text-white">{plan.name}</h3>
-            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">{plan.duration}</p>
-          </div>
-          {plan.featured && (
-            <span className="rounded-full border border-cyan-300/30 bg-cyan-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
-              Popular
-            </span>
-          )}
-        </div>
-
-        {/* price box */}
-        <div className="mt-5 rounded-2xl border border-cyan-300/20 bg-slate-950/45 p-3">
-          {hasDiscount && discountedDisplay ? (
-            <>
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm text-slate-300 line-through">{displayPrice}</p>
-                <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-100">
-                  -{discountPercent}%
-                </span>
-              </div>
-              <div className="mt-1 flex items-end gap-2">
-                <span className="text-3xl font-semibold tracking-tight text-white">{discountedDisplay}</span>
-                <span className="text-xs text-slate-400">special offer</span>
-              </div>
-            </>
-          ) : (
-            <div className="flex items-end gap-2">
-              <span className="text-3xl font-semibold tracking-tight text-white">{displayPrice}</span>
-            </div>
-          )}
-        </div>
-
-        {/* summary */}
-        <p className="mt-3 min-h-[3rem] text-sm leading-6 text-slate-300">{plan.summary}</p>
-
-        {/* features */}
-        <ul className="mt-5 flex-1 space-y-3 text-sm text-slate-200">
-          {plan.features.map((feat, i) => (
-            <li key={i} className="flex items-start gap-3">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
-              <span>{feat}</span>
-            </li>
-          ))}
-        </ul>
-
-        {/* Tracking add-on opt-in — Subscription-category plans only */}
-        {plan.category === 'subscription' && (ownTrackingAddon || (trackingAddOnPlans && trackingAddOnPlans.length > 0)) ? (
-          <div className="mt-4 space-y-2 rounded-xl border border-teal-300/30 bg-teal-400/5 p-3">
-            <label className="flex items-center gap-2 text-sm font-medium text-teal-100">
-              <input
-                type="checkbox"
-                checked={!!trackingChoice?.includeTracking}
-                onChange={(e) => onTrackingChoiceChange(plan.id, {
-                  includeTracking: e.target.checked,
-                  trackingPlanId: ownTrackingAddon
-                    ? ownTrackingAddon.id
-                    : trackingChoice?.trackingPlanId || trackingAddOnPlans?.[0]?.id || '',
-                })}
-                className="h-4 w-4 rounded border-slate-600 accent-teal-400"
-              />
-              Include tracking add-on
-            </label>
-            {trackingChoice?.includeTracking ? (
-              ownTrackingAddon ? (
-                <p className="text-xs text-teal-200/90">
-                  +{formatPrice(ownTrackingAddon.price)} — grants {ownTrackingAddon.credits} tracking credits
-                </p>
-              ) : (
-                <>
-                  {trackingAddOnPlans.length > 1 ? (
-                    <select
-                      value={trackingChoice?.trackingPlanId || trackingAddOnPlans[0]?.id || ''}
-                      onChange={(e) => onTrackingChoiceChange(plan.id, { includeTracking: true, trackingPlanId: e.target.value })}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-400"
-                    >
-                      {trackingAddOnPlans.map((tp) => (
-                        <option key={tp.id} value={tp.id}>
-                          {tp.name} — {formatTrackingAddonAmount(tp, formatPrice)}
-                        </option>
-                      ))}
-                    </select>
-                  ) : null}
-                  {(() => {
-                    const selected =
-                      trackingAddOnPlans.find((tp) => tp.id === (trackingChoice?.trackingPlanId || trackingAddOnPlans[0]?.id)) ||
-                      trackingAddOnPlans[0];
-                    return selected ? (
-                      <p className="text-xs text-teal-200/90">
-                        +{formatTrackingAddonAmount(selected, formatPrice)} — grants {selected.trackingCreditsLimit ?? 0} tracking credits
-                      </p>
-                    ) : null;
-                  })()}
-                </>
-              )
-            ) : null}
-          </div>
-        ) : null}
-
-        {/* upgrade button */}
-        <button
-          type="button"
-          onClick={() => onUpgrade(plan)}
-          className="mt-5 w-full rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
-        >
-          Upgrade to {plan.name}
-        </button>
-      </div>
-
-      {/* Active plan overlay */}
-      {isCurrent && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center rounded-3xl">
-          <div className="flex flex-col items-center gap-2.5 rounded-2xl border border-cyan-400/30 bg-cyan-400/10 px-8 py-5 text-center backdrop-blur-sm">
-            <div className="flex items-center gap-2.5">
-              <span
-                className="h-2.5 w-2.5 rounded-full bg-cyan-400"
-                style={{ boxShadow: '0 0 8px rgba(34,211,238,0.9)', animation: 'upgradePulse 1.8s ease-in-out infinite' }}
-              />
-              <span className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-300">Active Plan</span>
-            </div>
-            <p className="text-xs text-slate-400">Your current subscription</p>
-          </div>
-        </div>
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 text-white">
+          {payingCard ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+        </span>
+        <span className="min-w-0">
+          <span className="block">{t('upgrade.card')}</span>
+          <span className="block truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            {defaultCard ? defaultCard.cardMask || defaultCard.mask || '••••' : t('upgrade.noCard')}
+          </span>
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={onPayWallet}
+        disabled={payingWallet}
+        className="flex w-full items-center gap-3 rounded-xl border border-slate-200 px-3 py-2.5 text-left text-sm font-semibold transition hover:border-emerald-400 hover:bg-emerald-50 disabled:opacity-50 dark:border-white/10 dark:hover:bg-emerald-400/10"
+      >
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white dark:bg-white dark:text-slate-900">
+          {payingWallet ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
+        </span>
+        <span>{t('upgrade.payWith', { wallet: walletLabel })}</span>
+      </button>
+      {!defaultCard && (
+        <p className="px-1 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
+          {t('upgrade.addCardHint')}{' '}
+          <Link to="/settings" className="font-semibold text-cyan-600 hover:underline dark:text-cyan-300">{t('upgrade.settingsLink')}</Link>
+        </p>
       )}
-    </article>
+      <button type="button" onClick={() => setOpen(false)} className="w-full pt-1 text-center text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white">
+        {t('upgrade.cancel')}
+      </button>
+    </div>
   );
 }
 
 // ── Main page ─────────────────────────────────────────────────
 export default function UpgradePlanPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { t } = useTranslation('pricing');
+  const { t: tl } = useTranslation('landing');
+  const { user, syncPermissionsFromLimits } = useAuth();
   const { isDark } = useTheme();
-  const { formatPrice } = useLanguage();
 
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('subscription');
-  const [trackingChoices, setTrackingChoices] = useState({});
 
   const [verifying, setVerifying] = useState(false);
   const [pendingRequest, setPendingRequest] = useState(null);
@@ -320,61 +208,122 @@ export default function UpgradePlanPage() {
   const [codeError, setCodeError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Renewal of the active plan (same endpoints as Settings → Ödəniş)
+  const [cards, setCards] = useState([]);
+  const [payingCard, setPayingCard] = useState(false);
+  const [payingWallet, setPayingWallet] = useState(false);
+  const [renewalWidgetUrl, setRenewalWidgetUrl] = useState('');
+  const [renewalAttemptId, setRenewalAttemptId] = useState('');
+  const walletLabel = getWalletPaymentLabel();
+  const defaultCard = cards.find((c) => c.isDefault) || null;
+
   // Custom plan request — same SubscriptionRequestModal + public
   // /subscription-requests + email-verification flow the Landing Page uses
-  // for its "Request custom limits" buttons (planId: 'custom'). This is
-  // intentionally a separate, parallel path from handleUpgrade/handleVerify
-  // above, which only ever handle real, priced plans on this page.
+  // for its "Request custom limits" buttons (planId: 'custom').
   const [customRequestOpen, setCustomRequestOpen] = useState(false);
+
+  const swalTheme = isDark
+    ? { background: '#0f172a', color: '#f1f5f9' }
+    : { background: '#ffffff', color: '#0f172a' };
 
   useEffect(() => {
     settingsAPI.getPublicPlans()
       .then((res) => setPlans((res?.data?.plans || []).map(normalizePlan).filter((p) => p.id)))
-      .catch(() => setError('Failed to load plans. Please try again.'))
+      .catch(() => setError(t('upgrade.loadError')))
       .finally(() => setLoading(false));
+    paymentsAPI.listCards()
+      .then((res) => setCards(res?.data?.cards || []))
+      .catch(() => setCards([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const visiblePlans = plans.filter((p) => p.category === activeTab);
   const currentPlanId = user?.selectedPlanId || null;
+  const currentPlan = plans.find((p) => String(p.id) === String(currentPlanId)) || null;
+  const fallbackAddon = toFallbackAddon(plans.find((p) => p.category === 'tracking_plans'));
 
-  // Standalone tracking_plans plans double as a generic add-on source for any
-  // Subscription-category plan that doesn't have its own trackingAddonPrice set.
-  const trackingAddOnPlans = plans.filter((p) => p.category === 'tracking_plans');
-
-  const getOwnTrackingAddon = (plan) => {
-    if (plan.category !== 'subscription') return null;
-    const price = plan.trackingAddonPrice;
-    const credits = Number(plan.trackingCreditsLimit);
-    if (price === null || price === undefined || !Number.isFinite(Number(price))) return null;
-    if (!Number.isFinite(credits) || credits <= 0) return null;
-    return { id: plan.id, price: Number(price), credits };
+  const refreshLimits = async () => {
+    const limitsRes = await settingsAPI.getLimits().catch(() => null);
+    if (limitsRes?.data) syncPermissionsFromLimits(limitsRes.data);
   };
 
-  const onTrackingChoiceChange = (planId, choice) => {
-    setTrackingChoices((prev) => ({ ...prev, [planId]: choice }));
+  const renewSuccess = (nextExpiresAt) => {
+    Swal.fire({
+      title: t('upgrade.renewSuccessTitle'),
+      text: nextExpiresAt
+        ? t('upgrade.renewSuccessDate', { date: new Date(nextExpiresAt).toLocaleDateString() })
+        : t('upgrade.renewSuccess'),
+      icon: 'success',
+      confirmButtonColor: '#06b6d4',
+      ...swalTheme,
+    });
   };
 
-  const handleUpgrade = async (plan) => {
+  const renewError = (message) => {
+    Swal.fire({ title: t('upgrade.errorTitle'), text: message || t('upgrade.renewFailed'), icon: 'error', confirmButtonColor: '#06b6d4', ...swalTheme });
+  };
+
+  const handlePayCard = async () => {
+    try {
+      setPayingCard(true);
+      const response = await paymentsAPI.payNow();
+      await refreshLimits();
+      renewSuccess(response?.data?.nextExpiresAt);
+    } catch (err) {
+      renewError(err?.response?.data?.error);
+    } finally {
+      setPayingCard(false);
+    }
+  };
+
+  const handlePayWallet = async () => {
+    try {
+      setPayingWallet(true);
+      const response = await paymentsAPI.payNowWidget();
+      const { attemptId, widgetUrl } = response?.data || {};
+      if (!attemptId || !widgetUrl) throw new Error(t('upgrade.walletLoadFailed', { wallet: walletLabel }));
+      setRenewalAttemptId(attemptId);
+      setRenewalWidgetUrl(widgetUrl);
+    } catch (err) {
+      renewError(err?.response?.data?.error || err?.message);
+    } finally {
+      setPayingWallet(false);
+    }
+  };
+
+  const pollRenewalWidgetStatus = async () => {
+    const res = await paymentsAPI.getRenewalWidgetStatus(renewalAttemptId);
+    const status = res?.data?.status;
+    if (status === 'completed') {
+      setRenewalWidgetUrl('');
+      await refreshLimits();
+      renewSuccess(null);
+      return { done: true };
+    }
+    if (status === 'failed') {
+      setRenewalWidgetUrl('');
+      renewError(t('upgrade.walletRejected', { wallet: walletLabel }));
+      return { done: true };
+    }
+    return { done: false };
+  };
+
+  const handleUpgrade = async (plan, includeTrackingChoice, addon) => {
     const result = await Swal.fire({
-      title: `Switch to ${plan.name}?`,
-      html: `<span style="color:#94a3b8;font-size:14px">A 6-digit verification code will be sent to your email.</span>`,
+      title: t('upgrade.confirmTitle', { plan: plan.name }),
+      text: t('upgrade.confirmText'),
       icon: 'question',
       showCancelButton: true,
-      confirmButtonText: 'Yes, request upgrade',
-      cancelButtonText: 'Not now',
-      background: '#0f172a',
-      color: '#f1f5f9',
-      confirmButtonColor: '#22d3ee',
+      confirmButtonText: t('upgrade.confirmYes'),
+      cancelButtonText: t('upgrade.confirmNo'),
+      confirmButtonColor: '#06b6d4',
       reverseButtons: true,
+      ...swalTheme,
     });
     if (!result.isConfirmed) return;
 
-    const choice = trackingChoices[plan.id];
-    const ownTrackingAddon = getOwnTrackingAddon(plan);
-    const includeTracking = plan.category === 'subscription' && !!choice?.includeTracking;
-    const trackingPlanId = includeTracking
-      ? String((ownTrackingAddon ? ownTrackingAddon.id : choice?.trackingPlanId) || '')
-      : '';
+    const includeTracking = plan.category === 'subscription' && !!includeTrackingChoice && !!addon;
+    const trackingPlanId = includeTracking ? String(addon.id || '') : '';
 
     setSubmitting(true);
     try {
@@ -383,13 +332,7 @@ export default function UpgradePlanPage() {
       setPendingRequest({ id: req?.id, email: req?.email });
       setVerifying(true);
     } catch (err) {
-      Swal.fire({
-        title: 'Something went wrong',
-        text: err?.response?.data?.error || 'Failed to submit request.',
-        icon: 'error',
-        background: '#0f172a',
-        color: '#f1f5f9',
-      });
+      Swal.fire({ title: t('upgrade.errorTitle'), text: err?.response?.data?.error || t('upgrade.submitFailed'), icon: 'error', ...swalTheme });
     } finally {
       setSubmitting(false);
     }
@@ -397,69 +340,65 @@ export default function UpgradePlanPage() {
 
   const handleVerify = async (e) => {
     e.preventDefault();
-    if (code.length < 6) { setCodeError('Please enter the complete 6-digit code.'); return; }
+    if (code.length < 6) { setCodeError(t('upgrade.codeIncomplete')); return; }
     setCodeError('');
     setSubmitting(true);
     try {
       await settingsAPI.verifySubscriptionRequest({ requestId: pendingRequest.id, email: pendingRequest.email, code });
-      // Every plan on this page is a real, priced plan (no "custom" option
-      // here) — always move on to an online payment. The account is
-      // upgraded automatically once payment succeeds (see payments.js
-      // /epoint/callback).
+      // Every plan on this page is a real, priced plan — always move on to an
+      // online payment. The account is upgraded automatically once payment
+      // succeeds (see payments.js /epoint/callback).
       setVerifying(false);
       setChoosingPayment(true);
     } catch (err) {
-      setCodeError(err?.response?.data?.error || 'Invalid or expired code. Please try again.');
+      setCodeError(err?.response?.data?.error || t('upgrade.codeInvalid'));
     } finally {
       setSubmitting(false);
     }
   };
 
   const onCustomRequestSuccess = () => {
-    Swal.fire({
-      title: 'Request sent',
-      text: 'Your custom plan request has been sent. Admin will review it and reach you soon.',
-      icon: 'success',
-      background: '#0f172a',
-      color: '#f1f5f9',
-      confirmButtonColor: '#22d3ee',
-    });
+    Swal.fire({ title: t('upgrade.customSentTitle'), text: t('upgrade.customSentText'), icon: 'success', confirmButtonColor: '#06b6d4', ...swalTheme });
   };
 
-  const pageBg = isDark ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-900';
-  const headerBg = isDark ? 'bg-slate-950/90 border-white/[0.06]' : 'bg-white/90 border-slate-200';
-  const cardBg = isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
+  const tabs = [
+    { key: 'subscription', label: tl('landing:pricing.subscriptionPlans') },
+    { key: 'analytics', label: tl('landing:pricing.analyticsPlans') },
+    { key: 'amazon_monitoring', label: tl('landing:pricing.amazonMonitoringPlans') },
+    { key: 'tracking_plans', label: tl('landing:pricing.trackingPlans') },
+    { key: 'support', label: tl('landing:pricing.supportPlans') },
+  ];
+
+  const stepCard = 'w-full max-w-sm rounded-[1.75rem] border border-slate-200/80 bg-white p-8 shadow-2xl shadow-slate-900/10 dark:border-white/10 dark:bg-slate-900 dark:shadow-black/40';
+  const stepIcon = (
+    <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30">
+      <ShieldCheck className="h-7 w-7" />
+    </div>
+  );
+  const pageBg = 'min-h-screen bg-white text-slate-700 dark:bg-slate-950 dark:text-slate-100';
 
   // ── Choose payment method ──────────────────────────────────
   if (choosingPayment) {
     return (
-      <div className={`min-h-screen flex items-center justify-center px-4 ${pageBg}`}>
-        <div className={`w-full max-w-sm rounded-3xl border p-8 shadow-xl ${cardBg}`}>
-          <div className="text-center mb-7">
-            <div className={`mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border ${isDark ? 'border-cyan-400/20 bg-cyan-400/10' : 'border-cyan-300/30 bg-cyan-50'}`}>
-              <ShieldCheck className="h-7 w-7 text-cyan-400" />
-            </div>
-            <h2 className="text-xl font-bold">Choose payment method</h2>
-            <p className={`mt-2 text-sm leading-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Email verified — pay to activate your new plan.
-            </p>
+      <div className={`${pageBg} flex items-center justify-center px-4`}>
+        <div className={stepCard}>
+          <div className="mb-7 text-center">
+            {stepIcon}
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('upgrade.payTitle')}</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">{t('upgrade.payText')}</p>
           </div>
-
           <PaymentMethodPicker
             requestId={pendingRequest?.id}
-            cardLabel="Card"
-            chooseLabel="How would you like to pay?"
-            onGooglePaySuccess={() => {
-              navigate('/dashboard');
-            }}
+            cardLabel={t('upgrade.card')}
+            chooseLabel={t('upgrade.chooseMethod')}
+            onGooglePaySuccess={() => navigate('/dashboard')}
           />
-
           <button
             type="button"
             onClick={() => { setChoosingPayment(false); setCode(''); setCodeError(''); }}
-            className={`mt-5 w-full text-center text-xs transition ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+            className="mt-5 w-full text-center text-xs text-slate-400 transition hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
           >
-            ← Choose a different plan
+            ← {t('upgrade.otherPlan')}
           </button>
         </div>
       </div>
@@ -469,40 +408,34 @@ export default function UpgradePlanPage() {
   // ── Verify ─────────────────────────────────────────────────
   if (verifying) {
     return (
-      <div className={`min-h-screen flex items-center justify-center px-4 ${pageBg}`}>
-        <div className={`w-full max-w-sm rounded-3xl border p-8 shadow-xl ${cardBg}`}>
-          <div className="text-center mb-7">
-            <div className={`mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border ${isDark ? 'border-cyan-400/20 bg-cyan-400/10' : 'border-cyan-300/30 bg-cyan-50'}`}>
-              <ShieldCheck className="h-7 w-7 text-cyan-400" />
-            </div>
-            <h2 className="text-xl font-bold">Check your email</h2>
-            <p className={`mt-2 text-sm leading-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              We sent a 6-digit code to{' '}
-              <span className={`font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{pendingRequest?.email}</span>
+      <div className={`${pageBg} flex items-center justify-center px-4`}>
+        <div className={stepCard}>
+          <div className="mb-7 text-center">
+            {stepIcon}
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('upgrade.verifyTitle')}</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+              {t('upgrade.verifyText')}{' '}
+              <span className="font-semibold text-slate-700 dark:text-slate-200">{pendingRequest?.email}</span>
             </p>
           </div>
-
           <form onSubmit={handleVerify} className="space-y-5">
             <OtpInput value={code} onChange={setCode} isDark={isDark} />
-            {codeError && (
-              <p className="text-center text-xs text-red-400">{codeError}</p>
-            )}
+            {codeError && <p className="text-center text-xs text-rose-500">{codeError}</p>}
             <button
               type="submit"
               disabled={submitting || code.length < 6}
-              className="w-full rounded-xl bg-cyan-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-40 flex items-center justify-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-40"
             >
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Confirm &amp; Submit
+              {t('upgrade.verifySubmit')}
             </button>
           </form>
-
           <button
             type="button"
             onClick={() => { setVerifying(false); setCode(''); setCodeError(''); }}
-            className={`mt-5 w-full text-center text-xs transition ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+            className="mt-5 w-full text-center text-xs text-slate-400 transition hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
           >
-            ← Choose a different plan
+            ← {t('upgrade.otherPlan')}
           </button>
         </div>
       </div>
@@ -511,109 +444,127 @@ export default function UpgradePlanPage() {
 
   // ── Main ───────────────────────────────────────────────────
   return (
-    <div className={`min-h-screen ${pageBg}`}>
-      <style>{`
-        @keyframes upgradeFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes upgradePulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.35; transform:scale(0.8); } }
-        @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; } }
-      `}</style>
+    <div className={`relative overflow-x-clip ${pageBg}`}>
+      <div className="pointer-events-none absolute left-1/2 top-10 h-[380px] w-[820px] -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400/15 via-blue-500/10 to-transparent blur-3xl" aria-hidden="true" />
 
-      {/* Header */}
-      <div className={`sticky top-0 z-30 border-b px-6 py-4 backdrop-blur-xl flex items-center gap-4 ${headerBg}`}>
+      <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6">
         <button
           type="button"
           onClick={() => navigate('/dashboard')}
-          className={`flex h-9 w-9 items-center justify-center rounded-xl border transition ${
-            isDark ? 'border-white/10 bg-white/[0.05] text-slate-400 hover:bg-white/10 hover:text-white' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
-          }`}
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3.5 py-2 text-sm font-semibold text-slate-600 shadow-sm backdrop-blur transition hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-white"
         >
-          <ArrowLeft size={17} />
+          <ArrowLeft size={15} />
+          {t('upgrade.back')}
         </button>
-        <div>
-          <h1 className="text-base font-bold">Upgrade your plan</h1>
-          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Choose the plan that fits your workflow</p>
+
+        {/* Header */}
+        <div className="mx-auto mt-6 max-w-2xl text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-white/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 shadow-sm backdrop-blur dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200">
+            <BadgeCheck size={14} />
+            {tl('landing:pricing.eyebrow')}
+          </span>
+          <h1 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 dark:text-white md:text-5xl" style={{ textWrap: 'balance' }}>
+            {renderAccentedTitle(t('upgrade.title'), t('upgrade.titleAccents', { returnObjects: true }))}
+          </h1>
+          <p className="mt-3 text-base leading-7 text-slate-600 dark:text-slate-300 md:text-lg">{t('upgrade.subtitle')}</p>
+          {currentPlan && (
+            <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3.5 py-1.5 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-600/15 dark:bg-emerald-400/10 dark:text-emerald-300">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+              {t('upgrade.currentIs', { plan: currentPlan.name })}
+            </p>
+          )}
         </div>
-      </div>
 
-      <div className="mx-auto max-w-7xl px-6 py-10">
-
-        {/* Tab bar — identical to LandingPage */}
-        <div className="flex justify-center mb-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] p-1.5 backdrop-blur">
-            {[
-              { key: 'subscription', label: 'Subscription Plans' },
-              { key: 'analytics', label: 'Analytics Plans' },
-              { key: 'amazon_monitoring', label: 'Amazon Monitoring' },
-              { key: 'tracking_plans', label: 'Tracking Plans' },
-              { key: 'support', label: 'Support Plans' },
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setActiveTab(key)}
-                className={`rounded-full px-6 py-2 text-sm font-semibold transition ${
-                  activeTab === key
-                    ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20'
-                    : isDark
-                    ? 'text-slate-300 hover:text-white'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+        {/* Tabs */}
+        <div className="mt-10 flex justify-center">
+          <div className="max-w-full overflow-x-auto rounded-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/80 p-1.5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/[0.05]">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition md:px-5 ${
+                    activeTab === tab.key
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Request custom plan — same categories LandingPage offers it on */}
         {['subscription', 'analytics', 'amazon_monitoring'].includes(activeTab) && (
-          <div className="mb-6 flex justify-center">
+          <div className="mt-8 flex justify-center md:justify-end">
             <button
               type="button"
               onClick={() => setCustomRequestOpen(true)}
-              className="rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20"
+              className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-white/80 px-4 py-2 text-sm font-semibold text-cyan-700 shadow-sm transition hover:border-transparent hover:bg-gradient-to-r hover:from-cyan-500 hover:to-blue-600 hover:text-white dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200"
             >
-              Request custom limits
+              <Sparkles size={14} />
+              {tl('landing:pricing.requestCustom')}
             </button>
           </div>
         )}
 
         {/* Plan grid */}
-        {loading ? (
-          <div className="flex items-center justify-center py-24">
-            <Loader2 className="h-9 w-9 animate-spin text-cyan-400" />
-          </div>
-        ) : error ? (
-          <div className="py-24 text-center text-sm text-red-400">{error}</div>
-        ) : visiblePlans.length === 0 ? (
-          <div className={`rounded-3xl border p-16 text-center text-sm ${isDark ? 'border-white/10 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
-            No plans available in this category yet.
-          </div>
-        ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {visiblePlans.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                isCurrent={plan.id === currentPlanId}
-                onUpgrade={handleUpgrade}
-                ownTrackingAddon={getOwnTrackingAddon(plan)}
-                trackingAddOnPlans={trackingAddOnPlans}
-                trackingChoice={trackingChoices[plan.id]}
-                onTrackingChoiceChange={onTrackingChoiceChange}
-                formatPrice={formatPrice}
-              />
-            ))}
-          </div>
-        )}
+        <div className="mt-8">
+          {loading ? (
+            <div className="flex items-center justify-center py-24">
+              <Loader2 className="h-9 w-9 animate-spin text-cyan-500" />
+            </div>
+          ) : error ? (
+            <div className="py-24 text-center text-sm text-rose-500">{error}</div>
+          ) : visiblePlans.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-12 text-center text-sm text-slate-500 dark:border-white/15 dark:bg-white/[0.03] dark:text-slate-400">
+              {tl('landing:pricing.noPlans')}
+            </div>
+          ) : (
+            <div className={`grid gap-5 ${activeTab === 'analytics' ? 'md:grid-cols-2' : 'md:grid-cols-2 xl:grid-cols-4'}`}>
+              {visiblePlans.map((plan) => {
+                const isCurrent = String(plan.id) === String(currentPlanId);
+                return (
+                  <PricingPlanCard
+                    key={plan.id}
+                    plan={plan}
+                    isCurrent={isCurrent}
+                    fallbackAddon={fallbackAddon}
+                    ctaLabel={t('upgrade.upgradeTo', { plan: plan.name })}
+                    onSubscribe={handleUpgrade}
+                    currentSlot={
+                      <RenewBox
+                        isTrial={isTrialPlanName(plan.name)}
+                        defaultCard={defaultCard}
+                        walletLabel={walletLabel}
+                        onPayCard={handlePayCard}
+                        onPayWallet={handlePayWallet}
+                        payingCard={payingCard}
+                        payingWallet={payingWallet}
+                      />
+                    }
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Fullscreen loader during submit */}
       {submitting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-sm">
           <Loader2 className="h-10 w-10 animate-spin text-cyan-400" />
         </div>
       )}
+
+      <GooglePayModal
+        widgetUrl={renewalWidgetUrl}
+        onCancel={() => setRenewalWidgetUrl('')}
+        onPoll={pollRenewalWidgetStatus}
+        title={walletLabel}
+      />
 
       <SubscriptionRequestModal
         open={customRequestOpen}
