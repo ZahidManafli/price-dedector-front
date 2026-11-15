@@ -8,7 +8,9 @@
     "select": "Select Plan",
     "features": "Features",
     "save": "Save {{percent}}%",
-    "specialOffer": "special offer"
+    "specialOffer": "special offer",
+    "includeTracking": "Include tracking add-on",
+    "trackingAddonInfo": "+{{price}} · {{credits}} tracking credits"
   },
   "subscription": {
     "trackProducts": "Track up to {{count}} Amazon products",

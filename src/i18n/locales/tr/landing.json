@@ -162,7 +162,10 @@
     "supportDescription": "Mentörle doğrudan iletişim ve öncelikli destek için planlar.",
     "noPlans": "Bu plan grubu için fiyatlandırmayı sonlandırıyoruz. Bize ulaşın, hacminize uygun bir plan birlikte oluşturalım.",
     "noPlansCta": "Bize Ulaşın",
-    "monthlyDuration": "Aylık"
+    "monthlyDuration": "Aylık",
+    "titleAccents": [
+      "Esnek"
+    ]
   },
   "plans": {
     "basic": "Başlangıç",

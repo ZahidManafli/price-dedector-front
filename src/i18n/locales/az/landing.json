@@ -162,7 +162,10 @@
     "supportDescription": "Mentorla birbaşa əlaqə və prioritet dəstək üçün planlar.",
     "noPlans": "Bu plan qrupu üçün qiymətləri hazırlayırıq. Bizimlə əlaqə saxlayın, iş həcminizə uyğun plan hazırlayaq.",
     "noPlansCta": "Bizimlə danışın",
-    "monthlyDuration": "Aylıq"
+    "monthlyDuration": "Aylıq",
+    "titleAccents": [
+      "Elastik"
+    ]
   },
   "plans": {
     "basic": "Başlanğıc",

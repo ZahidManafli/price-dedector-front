@@ -162,7 +162,10 @@
     "supportDescription": "Plans for direct mentor access and priority support.",
     "noPlans": "We're finalizing pricing for this plan group. Reach out and we'll put together a plan that fits your volume.",
     "noPlansCta": "Talk to us",
-    "monthlyDuration": "Monthly"
+    "monthlyDuration": "Monthly",
+    "titleAccents": [
+      "Flexible"
+    ]
   },
   "plans": {
     "basic": "Basic",

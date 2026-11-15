@@ -8,7 +8,9 @@
     "select": "Выбрать план",
     "features": "Функции",
     "save": "Экономь {{percent}}%",
-    "specialOffer": "специальное предложение"
+    "specialOffer": "специальное предложение",
+    "includeTracking": "Добавить пакет трекинга",
+    "trackingAddonInfo": "+{{price}} · {{credits}} кредитов трекинга"
   },
   "subscription": {
     "trackProducts": "Отслеживайте до {{count}} товаров Amazon",

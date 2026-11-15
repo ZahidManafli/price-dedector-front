@@ -8,7 +8,9 @@
     "select": "Planı Seçin",
     "features": "Xüsusiyyətlər",
     "save": "%{{percent}} Az Verin",
-    "specialOffer": "xüsusi təklif"
+    "specialOffer": "xüsusi təklif",
+    "includeTracking": "Tracking əlavəsini daxil et",
+    "trackingAddonInfo": "+{{price}} · {{credits}} tracking krediti"
   },
   "subscription": {
     "trackProducts": "{{count}} Amazon məhsuludə qədər izləyin",

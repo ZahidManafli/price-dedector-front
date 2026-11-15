@@ -8,7 +8,9 @@
     "select": "Planı Seçin",
     "features": "Özellikler",
     "save": "%{{percent}} Kazan",
-    "specialOffer": "özel teklif"
+    "specialOffer": "özel teklif",
+    "includeTracking": "Takip eklentisini dahil et",
+    "trackingAddonInfo": "+{{price}} · {{credits}} takip kredisi"
   },
   "subscription": {
     "trackProducts": "{{count}}'e kadar Amazon ürünü izleyin",

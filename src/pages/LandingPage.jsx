@@ -246,16 +246,23 @@ function LanguageSelector() {
   );
 }
 
+// A plan feature line that describes the tracking credits ("60 credit for Tracking",
+// "300 tracking credits", "izləmə krediti"…). Struck through while the plan's own
+// tracking add-on is unticked, because those credits only come with the add-on.
+const TRACKING_FEATURE_RE = /(tracking|izl[əe]m[əe]|izleme|takip|отслеж|трек)/i;
+const CREDIT_WORD_RE = /(credit|kredit|кредит)/i;
+const isTrackingCreditFeature = (text) => TRACKING_FEATURE_RE.test(text) && CREDIT_WORD_RE.test(text);
+
 function PlanCard({ plan, onSubscribe }) {
   const { formatPrice } = useLanguage();
   const { t } = useTranslation('pricing');
-  const [includeTracking, setIncludeTracking] = useState(false);
-
-  const featuredClasses = plan.featured
-    ? 'border-cyan-500/40 bg-white shadow-[0_16px_60px_rgba(8,145,178,0.14)] dark:border-cyan-300/50 dark:bg-slate-900/95 dark:shadow-[0_20px_80px_rgba(34,211,238,0.14)]'
-    : 'border-slate-200 bg-white shadow-md dark:border-white/10 dark:bg-slate-900/70';
+  // The add-on is pre-selected; unticking it strikes the tracking-credit feature.
+  const [includeTracking, setIncludeTracking] = useState(true);
+  const featured = !!plan.featured;
 
   const hasDiscount =
+    plan.actualPrice != null &&
+    plan.discountedPrice != null &&
     Number.isFinite(Number(plan.actualPrice)) &&
     Number.isFinite(Number(plan.discountedPrice)) &&
     Number(plan.actualPrice) > Number(plan.discountedPrice);
@@ -268,7 +275,6 @@ function PlanCard({ plan, onSubscribe }) {
   const displayPrice = plan.actualPrice
     ? formatPrice(plan.actualPrice)
     : formatPrice(plan.price?.match(/[\d.]+/)?.[0] || 0);
-  const discountedDisplay = plan.discountedPrice ? formatPrice(plan.discountedPrice) : null;
 
   // A Subscription-category plan can carry its own individually-priced tracking
   // add-on (trackingAddonPrice + trackingCreditsLimit set directly on the plan by
@@ -281,6 +287,7 @@ function PlanCard({ plan, onSubscribe }) {
     if (!Number.isFinite(credits) || credits <= 0) return null;
     return { price: Number(price), credits };
   })();
+  const addonOn = includeTracking && !!ownTrackingAddon;
 
   // Combine in AZN first, then convert once — never convert the plan price and the
   // add-on price separately and add the converted numbers, which would compound
@@ -290,85 +297,113 @@ function PlanCard({ plan, onSubscribe }) {
     : plan.actualPrice != null
       ? Number(plan.actualPrice)
       : Number(plan.price?.match(/[\d.]+/)?.[0] || 0);
-  const addonAzn = includeTracking && ownTrackingAddon ? ownTrackingAddon.price : 0;
+  const addonAzn = addonOn ? ownTrackingAddon.price : 0;
   const totalDisplay = formatPrice(baseAzn + addonAzn);
+
+  const muted = featured ? 'text-cyan-50/80' : 'text-slate-500 dark:text-slate-400';
 
   return (
     <article
-      className={`relative flex h-full flex-col overflow-hidden rounded-3xl border p-5 shadow-lg backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-slate-300 dark:hover:border-white/20 ${featuredClasses}`}
+      className={`group relative flex h-full flex-col rounded-[1.75rem] p-2 transition duration-300 hover:-translate-y-1 ${
+        featured
+          ? 'bg-gradient-to-br from-cyan-500 via-sky-500 to-blue-600 shadow-2xl shadow-cyan-500/25 ring-1 ring-cyan-400/40'
+          : 'border border-slate-200/80 bg-slate-50/90 shadow-sm hover:shadow-xl hover:shadow-slate-900/[0.06] dark:border-white/10 dark:bg-white/[0.04] dark:hover:shadow-black/30'
+      }`}
       style={{ animation: 'fadeIn 0.4s ease both' }}
     >
-      <div className={`absolute inset-0 bg-gradient-to-br ${plan.accent} opacity-100`} />
-      <div className="relative z-10 flex h-full flex-col">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white">{plan.name}</h3>
-            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{plan.duration}</p>
+      {featured && (
+        <>
+          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[1.75rem]" aria-hidden="true">
+            <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-white/25 blur-3xl" />
           </div>
-          {plan.featured ? (
-            <span className="rounded-full border border-cyan-500/30 dark:border-cyan-300/30 bg-cyan-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-100">
-              {t('planCard.featured')}
-            </span>
-          ) : null}
-        </div>
+          <span className="absolute -top-3 right-6 z-10 rounded-full bg-amber-300 px-3 py-1 text-[11px] font-bold text-slate-900 shadow-md shadow-amber-500/30">
+            {t('planCard.featured')}
+          </span>
+        </>
+      )}
 
-        <div className="mt-5 rounded-2xl border border-cyan-500/20 dark:border-cyan-300/20 bg-cyan-50/60 dark:bg-slate-950/45 p-3">
-          {hasDiscount && discountedDisplay ? (
+      {/* Top: name, price, add-on, CTA */}
+      <div className="relative px-4 pb-5 pt-5">
+        <h3 className={`text-lg font-semibold ${featured ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{plan.name}</h3>
+        {plan.summary && <p className={`mt-1 line-clamp-2 min-h-[2.5rem] text-sm leading-5 ${muted}`}>{plan.summary}</p>}
+
+        <div className="mt-5 flex min-h-[1.5rem] flex-wrap items-center gap-2">
+          {hasDiscount && (
             <>
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm text-slate-400 dark:text-slate-300 line-through">{displayPrice}</p>
-                <span className="rounded-full border border-emerald-500/30 dark:border-emerald-300/30 bg-emerald-400/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-100">
-                  {t('pricing:planCard.save', { percent: discountPercent })}
-                </span>
-              </div>
-              <div className="mt-1 flex items-end gap-2">
-                <span className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">{totalDisplay}</span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">{t('pricing:planCard.specialOffer')}</span>
-              </div>
+              <span className={`text-sm line-through ${featured ? 'text-cyan-50/70' : 'text-slate-400'}`}>{displayPrice}</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                  featured ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/15 dark:bg-emerald-400/10 dark:text-emerald-300'
+                }`}
+              >
+                {t('pricing:planCard.save', { percent: discountPercent })}
+              </span>
             </>
-          ) : (
-            <div className="flex items-end gap-2">
-              <span className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">{totalDisplay}</span>
-            </div>
           )}
-          {includeTracking && ownTrackingAddon ? (
-            <p className="mt-1 text-xs text-teal-700 dark:text-teal-300">
-              Includes +{formatPrice(ownTrackingAddon.price)} tracking add-on — {ownTrackingAddon.credits} tracking credits
-            </p>
-          ) : null}
         </div>
+        <p className="mt-1 flex items-baseline gap-1.5">
+          <span className={`text-4xl font-bold tracking-tight tabular-nums ${featured ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{totalDisplay}</span>
+          {plan.duration && <span className={`text-sm ${muted}`}>/ {plan.duration.toLowerCase()}</span>}
+        </p>
 
-        {ownTrackingAddon ? (
-          <label className="mt-3 flex cursor-pointer items-center gap-2 rounded-xl border border-teal-500/30 bg-teal-500/5 px-3 py-2 text-sm font-medium text-teal-700 dark:text-teal-200">
+        {ownTrackingAddon && (
+          <label
+            className={`mt-4 flex cursor-pointer items-start gap-2.5 rounded-xl px-3 py-2.5 text-sm transition ${
+              featured
+                ? 'bg-white/15 text-white ring-1 ring-white/25 hover:bg-white/20'
+                : 'bg-white text-slate-700 ring-1 ring-slate-200 hover:ring-cyan-400/50 dark:bg-white/[0.04] dark:text-slate-200 dark:ring-white/10'
+            }`}
+          >
             <input
               type="checkbox"
               checked={includeTracking}
               onChange={(e) => setIncludeTracking(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-400 accent-teal-500"
+              className={`mt-0.5 h-4 w-4 shrink-0 rounded ${featured ? 'accent-white' : 'accent-cyan-600'}`}
             />
-            Include tracking add-on
+            <span className="leading-5">
+              <span className="block font-semibold">{t('pricing:planCard.includeTracking')}</span>
+              <span className={`block text-xs ${featured ? 'text-cyan-50/80' : 'text-slate-500 dark:text-slate-400'}`}>
+                {t('pricing:planCard.trackingAddonInfo', { price: formatPrice(ownTrackingAddon.price), credits: ownTrackingAddon.credits })}
+              </span>
+            </span>
           </label>
-        ) : null}
-
-        <p className="mt-3 min-h-[3rem] text-sm leading-6 text-slate-600 dark:text-slate-300">{plan.summary}</p>
-
-        <ul className="mt-5 flex-1 space-y-3 text-sm text-slate-700 dark:text-slate-200">
-          {plan.features.map((feature) => (
-            <li key={feature} className="flex items-start gap-3">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-300" />
-              <span>{feature}</span>
-            </li>
-          ))}
-        </ul>
+        )}
 
         <button
           type="button"
-          onClick={() => onSubscribe?.(plan, includeTracking && !!ownTrackingAddon)}
-          className="mt-5 w-full rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+          onClick={() => onSubscribe?.(plan, addonOn)}
+          className={`mt-5 w-full rounded-full px-4 py-2.5 text-sm font-semibold transition ${
+            featured
+              ? 'bg-white text-blue-700 shadow-lg shadow-blue-900/20 hover:bg-cyan-50'
+              : 'border border-slate-200 bg-white text-slate-900 hover:border-transparent hover:bg-gradient-to-r hover:from-cyan-500 hover:to-blue-600 hover:text-white dark:border-white/15 dark:bg-white/5 dark:text-white'
+          }`}
         >
           {t('planCard.subscribe')}
         </button>
       </div>
+
+      {/* Bottom: features panel */}
+      {plan.features.length > 0 && (
+        <ul
+          className={`relative flex-1 space-y-3 rounded-[1.35rem] p-5 text-sm ${
+            featured ? 'bg-white text-slate-700 shadow-inner dark:bg-slate-950/90 dark:text-slate-100' : 'bg-white/80 text-slate-700 ring-1 ring-slate-200/70 dark:bg-slate-950/40 dark:text-slate-200 dark:ring-white/5'
+          }`}
+        >
+          {plan.features.map((feature) => {
+            const struck = !!ownTrackingAddon && !includeTracking && isTrackingCreditFeature(feature);
+            return (
+              <li key={feature} className={`flex items-start gap-2.5 transition ${struck ? 'opacity-60' : ''}`}>
+                {struck ? (
+                  <X className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                ) : (
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-300" />
+                )}
+                <span className={struck ? 'text-slate-400 line-through decoration-slate-400' : ''}>{feature}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </article>
   );
 }
@@ -691,6 +726,15 @@ export default function LandingPage() {
       label: t('landing:platformStats.managedOrders', 'Total Managed Orders'),
       sublabel: t('landing:platformStats.managedOrdersSub', 'Qoşulmuş eBay hesablarında'),
     },
+  ];
+
+  // Pricing tabs: label, intro text, plans and whether "custom plan" is offered.
+  const planTabs = [
+    { key: 'subscription', label: t('landing:pricing.subscriptionPlans'), description: t('landing:pricing.subscriptionDescription'), plans: subscriptionVisiblePlans, custom: true },
+    { key: 'analytics', label: t('landing:pricing.analyticsPlans'), description: t('landing:pricing.analyticsDescription'), plans: analyticsVisiblePlans, custom: true },
+    { key: 'amazon_monitoring', label: t('landing:pricing.amazonMonitoringPlans'), description: t('landing:pricing.amazonMonitoringDescription'), plans: amazonMonitoringVisiblePlans, custom: true },
+    { key: 'tracking_plans', label: t('landing:pricing.trackingPlans'), description: t('landing:pricing.trackingDescription'), plans: trackingVisiblePlans },
+    { key: 'support', label: t('landing:pricing.supportPlans'), description: t('landing:pricing.supportDescription'), plans: supportVisiblePlans },
   ];
 
   const showcaseCards = [
@@ -1205,269 +1249,79 @@ export default function LandingPage() {
 
         <AppsSection apkUrl={MOBILE_APK_URL} chromeUrl={CHROME_EXTENSION_URL} telegramUrl={TELEGRAM_BOT_URL} />
 
-        <section id="plans" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
-          <SectionHeader
-            eyebrow={t('landing:pricing.eyebrow')}
-            title={t('landing:pricing.title')}
-            description={t('landing:pricing.description')}
-            align="center"
-          />
-
-          <div className="mt-10 flex justify-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 p-1.5 backdrop-blur dark:border-white/15 dark:bg-white/[0.05]">
-              <button
-                onClick={() => setActiveTab('subscription')}
-                className={`rounded-full px-6 py-2 text-sm font-semibold transition ${
-                  activeTab === 'subscription'
-                    ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20'
-                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
-                }`}
-              >
-                {t('landing:pricing.subscriptionPlans')}
-              </button>
-              <button
-                onClick={() => setActiveTab('analytics')}
-                className={`rounded-full px-6 py-2 text-sm font-semibold transition ${
-                  activeTab === 'analytics'
-                    ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20'
-                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
-                }`}
-              >
-                {t('landing:pricing.analyticsPlans')}
-              </button>
-              <button
-                onClick={() => setActiveTab('amazon_monitoring')}
-                className={`rounded-full px-6 py-2 text-sm font-semibold transition ${
-                  activeTab === 'amazon_monitoring'
-                    ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20'
-                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
-                }`}
-              >
-                {t('landing:pricing.amazonMonitoringPlans')}
-              </button>
-              <button
-                onClick={() => setActiveTab('tracking_plans')}
-                className={`rounded-full px-6 py-2 text-sm font-semibold transition ${
-                  activeTab === 'tracking_plans'
-                    ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20'
-                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
-                }`}
-              >
-                {t('landing:pricing.trackingPlans')}
-              </button>
-              <button
-                onClick={() => setActiveTab('support')}
-                className={`rounded-full px-6 py-2 text-sm font-semibold transition ${
-                  activeTab === 'support'
-                    ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20'
-                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
-                }`}
-              >
-                {t('landing:pricing.supportPlans')}
-              </button>
+        {/* ── Plans ── */}
+        <section id="plans" className="relative px-6 pb-20 md:pb-28">
+          <div className="pointer-events-none absolute left-1/2 top-24 h-[360px] w-[760px] -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400/15 via-blue-500/10 to-transparent blur-3xl" aria-hidden="true" />
+          <div className="relative mx-auto max-w-7xl">
+            <div className="mx-auto max-w-2xl text-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-white/70 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 shadow-sm backdrop-blur dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200">
+                <BadgeCheck size={14} />
+                {t('landing:pricing.eyebrow')}
+              </span>
+              <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 dark:text-white md:text-5xl" style={{ textWrap: 'balance' }}>
+                {renderAccentedTitle(t('landing:pricing.title'), t('landing:pricing.titleAccents', { returnObjects: true }))}
+              </h2>
+              <p className="mt-3 text-base leading-7 text-slate-600 dark:text-slate-300 md:text-lg">{t('landing:pricing.description')}</p>
             </div>
-          </div>
 
-          <div className="mt-12">
-            {activeTab === 'subscription' && (
-              <div>
-                <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-100">
-                      {t('landing:pricing.subscriptionPlans')}
-                    </p>
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-                      {t('landing:pricing.subscriptionDescription')}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <button
-                    type="button"
-                    onClick={() => onSubscribePlan({ id: 'custom' })}
-                    className="rounded-xl border border-cyan-500/25 dark:border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-700 dark:text-cyan-100 transition hover:bg-cyan-400/20"
-                  >
-                    {t('landing:pricing.requestCustom')}
-                  </button>
-                </div>
-
-                <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
-                  {subscriptionVisiblePlans.length === 0 ? (
-                    <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
-                      <p>{t('landing:pricing.noPlans')}</p>
-                      <a
-                        href="mailto:checkilanotify@gmail.com"
-                        className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
-                      >
-                        {t('landing:pricing.noPlansCta')}
-                        <ArrowRight size={14} />
-                      </a>
-                    </div>
-                  ) : (
-                    subscriptionVisiblePlans.map((plan) => (
-                      <PlanCard key={plan.id || plan.name} plan={plan} onSubscribe={onSubscribePlan} />
-                    ))
-                  )}
+            {/* Tabs: scroll sideways on small screens instead of wrapping */}
+            <div className="mt-10 flex justify-center">
+              <div className="max-w-full overflow-x-auto rounded-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/80 p-1.5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/[0.05]">
+                  {planTabs.map((tab) => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setActiveTab(tab.key)}
+                      className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition md:px-5 ${
+                        activeTab === tab.key
+                          ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25'
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
               </div>
-            )}
+            </div>
 
-            {activeTab === 'analytics' && (
-              <div>
-                <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-100">
-                      {t('landing:pricing.analyticsPlans')}
-                    </p>
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-                      {t('landing:pricing.analyticsDescription')}
-                    </p>
+            {planTabs
+              .filter((tab) => tab.key === activeTab)
+              .map((tab) => (
+                <div key={tab.key} className="mt-10">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                    <p className="max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">{tab.description}</p>
+                    {tab.custom && (
+                      <button
+                        type="button"
+                        onClick={() => onSubscribePlan({ id: 'custom' })}
+                        className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-cyan-500/30 bg-white/80 px-4 py-2 text-sm font-semibold text-cyan-700 shadow-sm transition hover:border-transparent hover:bg-gradient-to-r hover:from-cyan-500 hover:to-blue-600 hover:text-white dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200"
+                      >
+                        <Sparkles size={14} />
+                        {t('landing:pricing.requestCustom')}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className={`mt-8 grid gap-5 ${tab.key === 'analytics' ? 'md:grid-cols-2' : 'md:grid-cols-2 xl:grid-cols-4'}`}>
+                    {tab.plans.length === 0 ? (
+                      <div className="col-span-full rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-8 text-center text-sm text-slate-600 dark:border-white/15 dark:bg-white/[0.03] dark:text-slate-300">
+                        <p>{t('landing:pricing.noPlans')}</p>
+                        <a
+                          href="mailto:checkilanotify@gmail.com"
+                          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
+                        >
+                          {t('landing:pricing.noPlansCta')}
+                          <ArrowRight size={14} />
+                        </a>
+                      </div>
+                    ) : (
+                      tab.plans.map((plan) => <PlanCard key={plan.id || plan.name} plan={plan} onSubscribe={onSubscribePlan} />)
+                    )}
                   </div>
                 </div>
-
-                <div className="mt-4">
-                  <button
-                    type="button"
-                    onClick={() => onSubscribePlan({ id: 'custom' })}
-                    className="rounded-xl border border-cyan-500/25 dark:border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-700 dark:text-cyan-100 transition hover:bg-cyan-400/20"
-                  >
-                    {t('landing:pricing.requestCustom')}
-                  </button>
-                </div>
-
-                <div className="mt-6 grid gap-5 lg:grid-cols-2">
-                  {analyticsVisiblePlans.length === 0 ? (
-                    <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
-                      <p>{t('landing:pricing.noPlans')}</p>
-                      <a
-                        href="mailto:checkilanotify@gmail.com"
-                        className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
-                      >
-                        {t('landing:pricing.noPlansCta')}
-                        <ArrowRight size={14} />
-                      </a>
-                    </div>
-                  ) : (
-                    analyticsVisiblePlans.map((plan) => (
-                      <PlanCard key={plan.id || plan.name} plan={plan} onSubscribe={onSubscribePlan} />
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'amazon_monitoring' && (
-              <div>
-                <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-100">
-                      {t('landing:pricing.amazonMonitoringPlans')}
-                    </p>
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-                      {t('landing:pricing.amazonMonitoringDescription')}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <button
-                    type="button"
-                    onClick={() => onSubscribePlan({ id: 'custom' })}
-                    className="rounded-xl border border-cyan-500/25 dark:border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-700 dark:text-cyan-100 transition hover:bg-cyan-400/20"
-                  >
-                    {t('landing:pricing.requestCustom')}
-                  </button>
-                </div>
-
-                <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
-                  {amazonMonitoringVisiblePlans.length === 0 ? (
-                    <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
-                      <p>{t('landing:pricing.noPlans')}</p>
-                      <a
-                        href="mailto:checkilanotify@gmail.com"
-                        className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
-                      >
-                        {t('landing:pricing.noPlansCta')}
-                        <ArrowRight size={14} />
-                      </a>
-                    </div>
-                  ) : (
-                    amazonMonitoringVisiblePlans.map((plan) => (
-                      <PlanCard key={plan.id || plan.name} plan={plan} onSubscribe={onSubscribePlan} />
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'tracking_plans' && (
-              <div>
-                <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-100">
-                      {t('landing:pricing.trackingPlans')}
-                    </p>
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-                      {t('landing:pricing.trackingDescription')}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
-                  {trackingVisiblePlans.length === 0 ? (
-                    <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
-                      <p>{t('landing:pricing.noPlans')}</p>
-                      <a
-                        href="mailto:checkilanotify@gmail.com"
-                        className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
-                      >
-                        {t('landing:pricing.noPlansCta')}
-                        <ArrowRight size={14} />
-                      </a>
-                    </div>
-                  ) : (
-                    trackingVisiblePlans.map((plan) => (
-                      <PlanCard key={plan.id || plan.name} plan={plan} onSubscribe={onSubscribePlan} />
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'support' && (
-              <div>
-                <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-100">
-                      {t('landing:pricing.supportPlans')}
-                    </p>
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-                      {t('landing:pricing.supportDescription')}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
-                  {supportVisiblePlans.length === 0 ? (
-                    <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
-                      <p>{t('landing:pricing.noPlans')}</p>
-                      <a
-                        href="mailto:checkilanotify@gmail.com"
-                        className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
-                      >
-                        {t('landing:pricing.noPlansCta')}
-                        <ArrowRight size={14} />
-                      </a>
-                    </div>
-                  ) : (
-                    supportVisiblePlans.map((plan) => (
-                      <PlanCard key={plan.id || plan.name} plan={plan} onSubscribe={onSubscribePlan} />
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
+              ))}
           </div>
         </section>
 
