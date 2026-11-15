@@ -193,7 +193,10 @@
     "ctaButton": "Başla",
     "ready": "Devam etmeye hazır mısınız?",
     "readyDescription": "Planları inceledikten sonra platforma giriş yapın veya özel teklif talep edin.",
-    "reviewPlans": "Planları incele"
+    "reviewPlans": "Planları incele",
+    "titleAccents": [
+      "büyüdükçe ölçeklendirin"
+    ]
   },
   "contact": {
     "title": "Sorularınız mı var?",

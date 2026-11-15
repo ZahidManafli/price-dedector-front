@@ -1402,33 +1402,56 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="contact" className="mx-auto max-w-7xl px-6 pb-16 md:pb-24">
-          <div className="grid gap-4 overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-200/60 backdrop-blur lg:grid-cols-[1.15fr_0.85fr] lg:p-8 dark:border-white/10 dark:bg-slate-900/75 dark:shadow-black/25">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-cyan-700 dark:text-cyan-100">{t('landing:cta.needHelp')}</p>
-              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white md:text-4xl">
-                {t('landing:cta.startWithPlan')}
-              </h3>
+        {/* ── Final CTA banner ── */}
+        <section id="contact" className="relative px-4 pb-16 sm:px-6 md:pb-24">
+          <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-[#062a3c] to-[#0b1e4d] px-6 py-14 text-center shadow-2xl shadow-slate-900/20 ring-1 ring-white/10 sm:px-10 md:rounded-[2.5rem] md:py-20">
+            <div className="pointer-events-none absolute -left-24 -top-24 h-[380px] w-[380px] rounded-full bg-cyan-400/25 blur-3xl" aria-hidden="true" />
+            <div className="pointer-events-none absolute -bottom-32 -right-16 h-[420px] w-[460px] rounded-full bg-blue-600/30 blur-3xl" aria-hidden="true" />
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.08]"
+              style={{
+                backgroundImage: 'linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px)',
+                backgroundSize: '48px 48px',
+                maskImage: 'radial-gradient(ellipse at center, black 10%, transparent 70%)',
+                WebkitMaskImage: 'radial-gradient(ellipse at center, black 10%, transparent 70%)',
+              }}
+              aria-hidden="true"
+            />
+            {/* Floating accent chips (desktop only) */}
+            <div className="landing-float pointer-events-none absolute left-10 top-12 hidden items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-3.5 py-2.5 text-sm font-medium text-white backdrop-blur lg:flex" aria-hidden="true">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-400/20 text-emerald-300"><CheckCircle2 className="h-4 w-4" /></span>
+              {t('landing:hero.floatOrderTitle')}
+            </div>
+            <div className="landing-float landing-float-delay pointer-events-none absolute bottom-12 right-10 hidden items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-3.5 py-2.5 text-sm font-medium text-white backdrop-blur lg:flex" aria-hidden="true">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-400/20 text-cyan-300"><Truck className="h-4 w-4" /></span>
+              {t('landing:hero.floatTrackingTitle')}
             </div>
 
-            <div className="flex flex-col justify-between gap-4 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 dark:border-white/10 dark:bg-white/[0.04]">
-              <div>
-                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{t('landing:cta.ready')}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                  {t('landing:cta.readyDescription')}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3">
+            <div className="relative mx-auto max-w-3xl">
+              <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-white/5 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200 backdrop-blur">
+                <Sparkles size={14} />
+                {t('landing:cta.needHelp')}
+              </span>
+              <h2 className="mt-6 text-3xl font-bold tracking-tight text-white md:text-5xl md:leading-[1.12]" style={{ textWrap: 'balance' }}>
+                {renderAccentedTitle(
+                  t('landing:cta.startWithPlan'),
+                  t('landing:cta.titleAccents', { returnObjects: true }),
+                  'from-cyan-300 via-sky-300 to-blue-400'
+                )}
+              </h2>
+              <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-slate-300 md:text-lg">{t('landing:cta.readyDescription')}</p>
+
+              <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.01]"
+                  className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 hover:bg-cyan-50 sm:w-auto"
                 >
                   {t('landing:cta.ctaButton')}
-                  <ArrowRight size={14} />
+                  <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
                 </Link>
                 <a
                   href="#plans"
-                  className="inline-flex items-center rounded-xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 dark:border-white/15 dark:text-white dark:hover:border-white/25 dark:hover:bg-white/10"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:-translate-y-0.5 hover:border-white/40 hover:bg-white/10 sm:w-auto"
                 >
                   {t('landing:cta.reviewPlans')}
                 </a>

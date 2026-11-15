@@ -193,7 +193,10 @@
     "ctaButton": "Get Started",
     "ready": "Ready to continue?",
     "readyDescription": "Open the portal or ask for a custom fit after you review the plans.",
-    "reviewPlans": "Review plans"
+    "reviewPlans": "Review plans",
+    "titleAccents": [
+      "scale when the workflow proves itself"
+    ]
   },
   "contact": {
     "title": "Have questions?",

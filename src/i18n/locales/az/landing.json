@@ -193,7 +193,10 @@
     "ctaButton": "Başla",
     "ready": "Davam etməyə hazırsınız?",
     "readyDescription": "Planları nəzərdən keçirdikdən sonra portala daxil olun və ya fərdi təklif istəyin.",
-    "reviewPlans": "Planlara bax"
+    "reviewPlans": "Planlara bax",
+    "titleAccents": [
+      "ehtiyac olduqda genişləndirin"
+    ]
   },
   "contact": {
     "title": "Suallarınız var?",
