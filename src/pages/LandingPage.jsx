@@ -38,6 +38,7 @@ import PartnersSection from '../components/PartnersSection';
 import { applySeo } from '../utils/seo';
 import { pathFor, SUPPORTED_LANGS, SEO_PAGES, imageFor } from '../data/seoPages';
 import MilliNetBadge, { TRUST_BADGE_CARD } from '../components/marketing/MilliNetBadge';
+import { renderAccentedTitle } from '../utils/accentedTitle';
 
 const CHROME_EXTENSION_URL =
   'https://chromewebstore.google.com/detail/checkila-extension/mokpdmidbgchibehajdblfkjcgcibcbb';
@@ -87,25 +88,7 @@ function AnimatedNumber({ value, duration = 1400 }) {
   return <span ref={ref}>{shown.toLocaleString('en-US')}</span>;
 }
 
-// Hero title with the language's accent phrases (landing:hero.titleAccents)
-// painted in the brand gradient, e.g. "<eBay Dropshipping> Aləti və E-ticarət
-// <Avtomatlaşdırma> Platforması". Phrases not found in the title are ignored.
-function renderAccentedTitle(title, accents) {
-  const text = String(title || '');
-  const list = (Array.isArray(accents) ? accents : []).map(String).filter((a) => a && text.includes(a));
-  if (!list.length) return text;
-  const escaped = list.map((a) => a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const parts = text.split(new RegExp(`(${escaped.join('|')})`, 'g'));
-  return parts.map((part, i) =>
-    list.includes(part) ? (
-      <span key={i} className="bg-gradient-to-r from-cyan-500 via-sky-500 to-blue-600 bg-clip-text text-transparent">
-        {part}
-      </span>
-    ) : (
-      <React.Fragment key={i}>{part}</React.Fragment>
-    )
-  );
-}
+// renderAccentedTitle: utils/accentedTitle.jsx (shared with PartnersSection).
 const MOBILE_APK_URL = `${API_BASE_URL}/uploads/checkila.apk`;
 const MOBILE_FEATURE_ICONS = [BarChart3, Radar, Truck, ShieldCheck, Sparkles, Puzzle];
 

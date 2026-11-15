@@ -43,7 +43,10 @@
     "eyebrow": "Our Partners",
     "title": "Trusted by Leading Platforms",
     "description": "We partner with industry-leading companies to bring you the best solutions and services",
-    "error": "Failed to load partners"
+    "error": "Failed to load partners",
+    "titleAccents": [
+      "Leading Platforms"
+    ]
   },
   "features": {
     "tracking": {

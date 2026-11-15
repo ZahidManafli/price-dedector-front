@@ -43,7 +43,10 @@
     "eyebrow": "Ortaklarımız",
     "title": "Önde Gelen Platformlar Tarafından Tercih Ediliyor",
     "description": "Size en iyi çözümleri sunmak için sektörün lider şirketleriyle iş birliği yapıyoruz",
-    "error": "Ortakları yükleme hatası"
+    "error": "Ortakları yükleme hatası",
+    "titleAccents": [
+      "Önde Gelen Platformlar"
+    ]
   },
   "features": {
     "tracking": {

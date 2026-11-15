@@ -43,7 +43,10 @@
     "eyebrow": "Tərəfdaşlarımız",
     "title": "Aparıcı Platformalar Bizə Etibar Edir",
     "description": "Sizə ən yaxşı xidmətləri təqdim etmək üçün aparıcı şirkətlərlə əməkdaşlıq edirik",
-    "error": "Tərəfdaşlar yüklənərkən xəta"
+    "error": "Tərəfdaşlar yüklənərkən xəta",
+    "titleAccents": [
+      "Aparıcı Platformalar"
+    ]
   },
   "features": {
     "tracking": {
