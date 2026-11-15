@@ -2178,5 +2178,15 @@
     "undeliverable": "Undeliverable",
     "returning": "Being returned",
     "newDate": "new date: {{date}}"
+  },
+  "privacyModal": {
+    "description": "Please read the Privacy Policy to the end and accept it to continue.",
+    "scrollHint": "The \"I accept\" button becomes active after you scroll to the end of the policy.",
+    "readyHint": "You have reached the end. By accepting, you confirm that you agree to this Policy.",
+    "continueReading": "Keep reading",
+    "accept": "I accept",
+    "saving": "Saving...",
+    "endReached": "You have reached the end of the Privacy Policy.",
+    "failed": "Could not save your consent. Please try again."
   }
 }

@@ -2153,5 +2153,15 @@
     "sendCreditRequest": "Kredit sorğusu göndər",
     "sendResetRequest": "Yeniləmə sorğusu göndər",
     "sendRequest": "Sorğu göndər"
+  },
+  "privacyModal": {
+    "description": "Davam etmək üçün Məxfilik Siyasətini sonadək oxuyub qəbul edin.",
+    "scrollHint": "\"Qəbul edirəm\" düyməsi siyasəti sonadək scroll etdikdən sonra aktiv olur.",
+    "readyHint": "Siyasəti sonadək oxudunuz. Qəbul etməklə onunla razı olduğunuzu təsdiqləyirsiniz.",
+    "continueReading": "Oxumağa davam et",
+    "accept": "Qəbul edirəm",
+    "saving": "Yadda saxlanılır...",
+    "endReached": "Məxfilik Siyasətinin sonuna çatdınız.",
+    "failed": "Razılıq yadda saxlanılmadı. Yenidən cəhd edin."
   }
 }

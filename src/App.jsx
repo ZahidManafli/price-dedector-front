@@ -8,6 +8,8 @@ import { useSidebar, SidebarProvider } from './context/SidebarContext';
 import { LanguageProvider } from './context/LanguageContext';
 import Sidebar from './components/Sidebar';
 import BirthdayModal from './components/BirthdayModal';
+import PrivacyPolicyModal from './components/PrivacyPolicyModal';
+import { PRIVACY_POLICY_VERSION } from './content/privacyPolicy';
 import { TourProvider } from './context/TourContext';
 
 // Pages
@@ -147,6 +149,11 @@ function AppContent() {
   // editor's own compact top bar provides a "back" link, so navigation isn't lost.
   const location = useLocation();
   const hideSidebar = location.pathname.startsWith('/studio/');
+  const needsPrivacyConsent =
+    isAuthenticated && hasToken && !!user &&
+    Object.prototype.hasOwnProperty.call(user, 'privacyPolicyVersion') &&
+    user.privacyPolicyVersion !== PRIVACY_POLICY_VERSION &&
+    !['/privacy', '/extension-privacy', '/maintenance'].includes(location.pathname);
 
   // Pages scroll inside <main>, not the window, so the browser never resets the
   // position on navigation. Start every new page at the top; links with a hash
@@ -197,7 +204,11 @@ function AppContent() {
     <div className="flex h-screen bg-gray-50 dark:bg-slate-950">
       <ActivityTracker />
       {isAuthenticated && hasToken && !hideSidebar && <Sidebar />}
-      {isAuthenticated && hasToken && user && !user.dateOfBirth && <BirthdayModal />}
+      {/* Mandatory onboarding steps: Privacy Policy consent first, then birthday.
+          The privacy check is skipped if the backend doesn't send the field yet
+          (older backend without migration 145), so nobody gets stuck. */}
+      {needsPrivacyConsent && <PrivacyPolicyModal />}
+      {isAuthenticated && hasToken && user && !needsPrivacyConsent && !user.dateOfBirth && <BirthdayModal />}
       <main ref={mainRef} className={`flex-1 overflow-auto transition-all duration-300 ${isAuthenticated && hasToken && !hideSidebar ? '' : 'w-full'}`}>
         <div className="min-h-screen">
           <React.Suspense fallback={<RouteFallback />}>

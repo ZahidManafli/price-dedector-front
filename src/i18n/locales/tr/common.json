@@ -1724,5 +1724,15 @@
     "sendCreditRequest": "Kredi talebi gönder",
     "sendResetRequest": "Yenileme talebi gönder",
     "sendRequest": "Talep gönder"
+  },
+  "privacyModal": {
+    "description": "Devam etmek için Gizlilik Politikasını sonuna kadar okuyup kabul edin.",
+    "scrollHint": "\"Kabul ediyorum\" düğmesi politikayı sonuna kadar kaydırdıktan sonra etkinleşir.",
+    "readyHint": "Sona ulaştınız. Kabul ederek bu Politikayı onayladığınızı belirtirsiniz.",
+    "continueReading": "Okumaya devam et",
+    "accept": "Kabul ediyorum",
+    "saving": "Kaydediliyor...",
+    "endReached": "Gizlilik Politikasının sonuna ulaştınız.",
+    "failed": "Onayınız kaydedilemedi. Lütfen tekrar deneyin."
   }
 }

@@ -105,6 +105,7 @@ export const authAPI = {
   changePassword: (currentPassword, newPassword) =>
     api.post('/auth/change-password', { currentPassword, newPassword }),
   setBirthday: (dateOfBirth) => api.put('/auth/birthday', { dateOfBirth }),
+  acceptPrivacyPolicy: (version) => api.put('/auth/privacy-consent', { version }),
   updateOnboardingTourState: (state) => api.post('/auth/onboarding-tour/state', { state }),
   logout: () => api.post('/auth/logout'),
   verifyToken: () => api.get('/auth/verify'),
