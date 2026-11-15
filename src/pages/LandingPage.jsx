@@ -609,12 +609,13 @@ export default function LandingPage() {
   };
 
   // Features bento ("Hər şeyi sizin üçün asanlaşdırırıq"): image cards on a dark brand panel.
+  // Panels keep each image's own aspect ratio so screenshots are never cropped or letterboxed.
   // span = width on the 12-col lg grid; horizontal = full-width card with text left, image right.
   const featureBento = [
-    { key: 'amazonToEbay', image: '/landing/features/amazon-to-ebay.webp', span: 'lg:col-span-7', href: pathFor('inventoryTracking', activeLang) },
-    { key: 'aiFeedback', image: '/landing/features/ai-feedback.webp', span: 'lg:col-span-5' },
-    { key: 'trackingListings', image: '/landing/features/tracking-listings.webp', span: 'lg:col-span-5' },
-    { key: 'allInOne', image: '/landing/features/all-in-one.webp', span: 'lg:col-span-7', href: pathFor('productResearch', activeLang) },
+    { key: 'amazonToEbay', image: '/landing/features/amazon-to-ebay.webp', span: 'lg:col-span-6', href: pathFor('inventoryTracking', activeLang) },
+    { key: 'aiFeedback', image: '/landing/features/ai-feedback.webp', span: 'lg:col-span-6' },
+    { key: 'trackingListings', image: '/landing/features/tracking-listings.webp', span: 'lg:col-span-6' },
+    { key: 'allInOne', image: '/landing/features/all-in-one.webp', span: 'lg:col-span-6', href: pathFor('productResearch', activeLang) },
     { key: 'priceTracking', image: '/landing/features/product-detail.webp', span: 'lg:col-span-12', horizontal: true, href: pathFor('amazonTracking', activeLang) },
   ].map((card) => ({
     ...card,
@@ -1126,21 +1127,15 @@ export default function LandingPage() {
                 >
                   <div
                     className={`relative overflow-hidden rounded-[1.25rem] bg-white ${
-                      card.horizontal ? 'aspect-[5/2] lg:order-2 lg:aspect-auto lg:w-[62%] lg:min-h-[300px]' : 'aspect-[16/9] lg:aspect-auto lg:h-[280px]'
+                      card.horizontal ? 'aspect-[1807/727] lg:order-2 lg:w-[62%] lg:shrink-0 lg:self-center' : 'aspect-[1672/941]'
                     }`}
                   >
-                    {!card.horizontal && (
-                      // Same image, blurred, fills the side gaps left by object-contain on wide cards
-                      <img src={card.image} alt="" aria-hidden="true" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-70 blur-2xl" />
-                    )}
                     <img
                       src={card.image}
                       alt={card.title}
                       loading="lazy"
                       decoding="async"
-                      className={`absolute inset-0 h-full w-full transition duration-500 group-hover:scale-[1.03] ${
-                        card.horizontal ? 'object-cover object-left-top' : 'object-contain'
-                      }`}
+                      className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
                     />
                   </div>
                   <div className={`flex flex-1 flex-col px-3 pb-3 pt-4 ${card.horizontal ? 'lg:justify-center lg:px-7 lg:py-6' : ''}`}>
