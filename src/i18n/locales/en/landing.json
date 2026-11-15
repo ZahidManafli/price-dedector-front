@@ -349,5 +349,23 @@
         "answer": "Yes. Checkila Tracking automatically converts Amazon tracking numbers, including TBA-prefixed codes, into a carrier format eBay recognizes, uploads the converted number to the matching eBay order, and messages the buyer automatically every time the tracking label updates."
       }
     ]
+  },
+  "apps": {
+    "title": "Checkila is always with you",
+    "titleAccents": [
+      "always"
+    ],
+    "downloadFor": "Download for",
+    "alsoOn": "Also available on",
+    "notif": "New order: {{name}} · {{price}}",
+    "tagInstant": "Instant alerts",
+    "tagAnywhere": "Manage anywhere",
+    "phone": {
+      "orders": "Orders",
+      "all": "All",
+      "new": "New",
+      "shipped": "Shipped",
+      "delivered": "Delivered"
+    }
   }
 }

@@ -40,6 +40,7 @@ import { pathFor, SUPPORTED_LANGS, SEO_PAGES, imageFor } from '../data/seoPages'
 import MilliNetBadge, { TRUST_BADGE_CARD } from '../components/marketing/MilliNetBadge';
 import { renderAccentedTitle } from '../utils/accentedTitle';
 import { TrackingMock, MarketAnalysisMock } from '../components/marketing/ShowcaseMocks';
+import AppsSection from '../components/marketing/AppsSection';
 
 const CHROME_EXTENSION_URL =
   'https://chromewebstore.google.com/detail/checkila-extension/mokpdmidbgchibehajdblfkjcgcibcbb';
@@ -91,7 +92,6 @@ function AnimatedNumber({ value, duration = 1400 }) {
 
 // renderAccentedTitle: utils/accentedTitle.jsx (shared with PartnersSection).
 const MOBILE_APK_URL = `${API_BASE_URL}/uploads/checkila.apk`;
-const MOBILE_FEATURE_ICONS = [BarChart3, Radar, Truck, ShieldCheck, Sparkles, Puzzle];
 
 function ReviewsModal({ open, onClose, isDark }) {
   const [reviews, setReviews] = useState([]);
@@ -1203,122 +1203,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="companion" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
-          <SectionHeader
-            eyebrow={t('landing:companion.eyebrow')}
-            title={t('landing:companion.title')}
-            description={t('landing:companion.description')}
-            align="center"
-          />
-
-          <div className="mt-10 grid gap-5 md:grid-cols-2">
-            <article className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60 backdrop-blur transition hover:-translate-y-1 hover:border-cyan-300/60 dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none dark:hover:border-cyan-300/30">
-              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/20 dark:border-cyan-300/20 bg-cyan-400/10">
-                <Puzzle className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
-              </div>
-              <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-white">{t('landing:companion.chrome.title')}</h3>
-              <p className="mt-2 flex-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('landing:companion.chrome.description')}</p>
-              <a
-                href={CHROME_EXTENSION_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-5 inline-flex w-fit items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:scale-[1.01] hover:from-cyan-300 hover:to-blue-400"
-              >
-                {t('landing:companion.chrome.cta')}
-                <ArrowRight size={14} />
-              </a>
-            </article>
-
-            <article className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60 backdrop-blur transition hover:-translate-y-1 hover:border-cyan-300/60 dark:border-white/10 dark:bg-white/[0.05] dark:shadow-none dark:hover:border-cyan-300/30">
-              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/20 dark:border-cyan-300/20 bg-cyan-400/10">
-                <Send className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
-              </div>
-              <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-white">{t('landing:companion.telegram.title')}</h3>
-              <p className="mt-2 flex-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('landing:companion.telegram.description')}</p>
-              <a
-                href={TELEGRAM_BOT_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-5 inline-flex w-fit items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:scale-[1.01] hover:from-cyan-300 hover:to-blue-400"
-              >
-                {t('landing:companion.telegram.cta')}
-                <ArrowRight size={14} />
-              </a>
-            </article>
-          </div>
-        </section>
-
-        <section id="mobile-app" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
-          <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-xl shadow-slate-200/60 dark:border-white/10 dark:bg-slate-900/70 dark:shadow-none">
-            <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-cyan-400/20 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
-
-            <div className="relative grid gap-10 p-8 md:grid-cols-2 md:items-center md:gap-12 md:p-14">
-              <div className="flex flex-col items-start gap-5">
-                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 dark:border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-100">
-                  {t('landing:mobileApp.eyebrow')}
-                </div>
-                <h2 className="max-w-md text-3xl font-semibold tracking-tight text-slate-900 dark:text-white md:text-4xl">
-                  {t('landing:mobileApp.title')}
-                </h2>
-                <p className="max-w-md text-sm leading-7 text-slate-600 dark:text-slate-300 md:text-base">
-                  {t('landing:mobileApp.description')}
-                </p>
-
-                <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                  {t('landing:mobileApp.features', { returnObjects: true }).map((feature, index) => {
-                    const Icon = MOBILE_FEATURE_ICONS[index] || CheckCircle2;
-                    return (
-                      <li
-                        key={index}
-                        className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
-                      >
-                        <Icon className="h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-300" />
-                        {feature}
-                      </li>
-                    );
-                  })}
-                </ul>
-
-                <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <a
-                    href={MOBILE_APK_URL}
-                    download
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:scale-[1.01] hover:from-cyan-300 hover:to-blue-400"
-                  >
-                    <Smartphone size={16} />
-                    {t('landing:mobileApp.android.cta')}
-                    <Download size={14} />
-                  </a>
-
-                  <div
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 px-5 py-3 text-sm font-medium text-slate-400 dark:border-white/15 dark:text-slate-500"
-                    title={t('landing:mobileApp.ios.badge')}
-                  >
-                    <Apple size={16} />
-                    {t('landing:mobileApp.ios.label')}
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-white/10 dark:text-slate-400">
-                      {t('landing:mobileApp.ios.badge')}
-                    </span>
-                  </div>
-                </div>
-
-                <p className="text-xs text-slate-400 dark:text-slate-500">{t('landing:mobileApp.android.note')}</p>
-              </div>
-
-              <div className="flex justify-center md:justify-end">
-                <div className="relative w-48 rounded-[2rem] border-4 border-slate-900 bg-slate-900 p-2 shadow-2xl dark:border-slate-700">
-                  <div className="absolute left-1/2 top-2 h-1 w-10 -translate-x-1/2 rounded-full bg-slate-700" />
-                  <div className="flex h-80 w-full flex-col items-center justify-center gap-4 rounded-[1.6rem] bg-gradient-to-br from-cyan-400 via-blue-500 to-slate-900 p-6">
-                    <div className="flex h-28 w-28 items-center justify-center rounded-3xl bg-white p-3 shadow-xl">
-                      <img src="/logo-2.png" alt="Checkila" className="h-full w-full object-contain" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <AppsSection apkUrl={MOBILE_APK_URL} chromeUrl={CHROME_EXTENSION_URL} telegramUrl={TELEGRAM_BOT_URL} />
 
         <section id="plans" className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
           <SectionHeader

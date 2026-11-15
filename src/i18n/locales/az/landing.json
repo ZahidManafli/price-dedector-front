@@ -349,5 +349,23 @@
         "answer": "Bəli. Checkila Tracking Amazon tracking nömrələrini, TBA prefiksli kodlar daxil olmaqla, eBay-in tanıdığı daşıyıcı formatına aftomatik çevirir, çevrilmiş nömrəni müvafiq eBay sifarişinə yükləyir və hər label yeniləndikdə müştəriyə aftomatik mesaj göndərir."
       }
     ]
+  },
+  "apps": {
+    "title": "Checkila hər zaman yanınızda",
+    "titleAccents": [
+      "hər zaman"
+    ],
+    "downloadFor": "Yüklə",
+    "alsoOn": "Həmçinin",
+    "notif": "Yeni sifariş: {{name}} · {{price}}",
+    "tagInstant": "Ani bildirişlər",
+    "tagAnywhere": "Hər yerdən idarə",
+    "phone": {
+      "orders": "Sifarişlər",
+      "all": "Hamısı",
+      "new": "Yeni",
+      "shipped": "Göndərilib",
+      "delivered": "Çatdırılıb"
+    }
   }
 }
