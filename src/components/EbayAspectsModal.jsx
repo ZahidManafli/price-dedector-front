@@ -8,7 +8,7 @@ import { Check, ListChecks, Search, Type, X } from 'lucide-react';
 
 const VALUE_PREVIEW = 24;
 
-export default function EbayAspectsModal({ aspects = [], values = {}, fromAmazon = [], categoryId, isDark, onPick, onClose }) {
+export default function EbayAspectsModal({ aspects = [], values = {}, fromAmazon = [], fromAi = [], categoryId, isDark, onPick, onClose }) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all'); // all | required | empty
   const [expanded, setExpanded] = useState({});
@@ -22,6 +22,7 @@ export default function EbayAspectsModal({ aspects = [], values = {}, fromAmazon
   }, []);
 
   const amazonSet = useMemo(() => new Set(fromAmazon), [fromAmazon]);
+  const aiSet = useMemo(() => new Set(fromAi), [fromAi]);
   const counts = useMemo(() => ({
     all: aspects.length,
     required: aspects.filter((a) => a.required).length,
@@ -127,6 +128,14 @@ export default function EbayAspectsModal({ aspects = [], values = {}, fromAmazon
                             <Check size={12} /> {current}
                             {amazonSet.has(aspect.name) && (
                               <span className={`rounded px-1 text-[9px] font-semibold uppercase ${isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-50 text-amber-700'}`}>Amazon</span>
+                            )}
+                            {aiSet.has(aspect.name) && (
+                              <span
+                                title="OpenAI tərəfindən eBay-in təqdim etdiyi siyahıdan seçildi — yoxlayın"
+                                className={`rounded px-1 text-[9px] font-semibold uppercase ${isDark ? 'bg-indigo-500/15 text-indigo-300' : 'bg-indigo-50 text-indigo-700'}`}
+                              >
+                                AI
+                              </span>
                             )}
                           </span>
                         ) : (

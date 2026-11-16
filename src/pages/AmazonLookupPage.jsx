@@ -1583,6 +1583,7 @@ export default function AmazonLookupPage() {
                                   aspects={activeModalState.prepared?.taxonomyAspects || []}
                                   values={li.itemSpecifics || {}}
                                   fromAmazon={activeModalState.prepared?.itemSpecificsFromAmazon || []}
+                                  fromAi={activeModalState.prepared?.itemSpecificsFromAi || []}
                                   categoryId={li.categoryId}
                                   isDark={isDark}
                                   onPick={updateSpec}
@@ -1604,6 +1605,14 @@ export default function AmazonLookupPage() {
                                             className={`shrink-0 rounded px-1 text-[9px] font-semibold uppercase ${isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-50 text-amber-700'}`}
                                           >
                                             Amazon
+                                          </span>
+                                        )}
+                                        {(activeModalState.prepared?.itemSpecificsFromAi || []).includes(name) && (
+                                          <span
+                                            title="OpenAI tərəfindən eBay-in təqdim etdiyi siyahıdan seçildi — yoxlayın"
+                                            className={`shrink-0 rounded px-1 text-[9px] font-semibold uppercase ${isDark ? 'bg-indigo-500/15 text-indigo-300' : 'bg-indigo-50 text-indigo-700'}`}
+                                          >
+                                            AI
                                           </span>
                                         )}
                                       </span>
