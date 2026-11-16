@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { amazonAPI, ebayAPI, dewisoAPI, studioAPI, walletAPI } from '../services/api';
+import { amazonAPI, ebayAPI, studioAPI, walletAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import AutoListProgressStepper from '../components/AutoListProgressStepper';
@@ -8,6 +8,7 @@ import WalletTopupModal from '../components/WalletTopupModal';
 import WalletHistoryModal from '../components/WalletHistoryModal';
 import TutorialVideoButton from '../components/TutorialVideoButton';
 import EbayAspectsModal from '../components/EbayAspectsModal';
+import ImageEditModal from '../components/ImageEditModal';
 import {
   buildAmazonProductUrl,
   extractAmazonAsin,
@@ -35,7 +36,15 @@ import {
   Wallet,
   Receipt,
   Lock,
+  Pencil,
+  Plus,
+  ImagePlus,
 } from 'lucide-react';
+
+// Must match the backend's own cap on listing pictures (POST /ebay/quick-list
+// and /amazon-lookup/prepare both cap at 24) — keep in sync with
+// ListOnEbayModal.jsx's own MAX_LISTING_IMAGES.
+const MAX_PREVIEW_IMAGES = 24;
 
 // Same field + aliases ListOnEbayModal.jsx checks for "Country/Region of
 // Manufacture" — kept in sync so this behaves identically there.
@@ -174,10 +183,12 @@ export default function AmazonLookupPage() {
   // Single-result "List on eBay" (the existing instant-preview card above)
   const [singleListingState, setSingleListingState] = useState(null); // { status, message, itemId, listingUrl, prepared }
   const [editableListing, setEditableListing] = useState(null); // user-editable copy of prepared.listingInput while awaiting confirmation
-  const [newImageUrl, setNewImageUrl] = useState('');
   const [aspectsModalOpen, setAspectsModalOpen] = useState(false); // eBay item specifics browser (Without AI preview)
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const imageFileInputRef = useRef(null);
+  // Index into editableListing.pictureUrls currently open in ImageEditModal —
+  // same shared modal/UX as ListOnEbayModal.jsx: null = closed, 0..length-1 =
+  // replacing that picture, === pictureUrls.length = adding new one(s).
+  const [editingImageIdx, setEditingImageIdx] = useState(null);
+  const [selectedPreviewImageIdx, setSelectedPreviewImageIdx] = useState(0);
   const [bulkEditingIndex, setBulkEditingIndex] = useState(null); // set when the shared preview modal is editing a bulk row instead of the single lookup
 
   // Bulk auto-listing (paste multiple Amazon links)
@@ -552,6 +563,7 @@ export default function AmazonLookupPage() {
     setSingleListingState((prev) => ({ ...prev, ...outcome }));
     if (outcome.status === 'awaiting_confirmation') {
       setEditableListing(outcome.prepared?.listingInput || null);
+      setSelectedPreviewImageIdx(0);
     } else if (outcome.status === 'listed') {
       if (outcome.adRateSkippedReason) {
         notifyAdRateSkipped(outcome);
@@ -567,7 +579,8 @@ export default function AmazonLookupPage() {
     setSingleListingState(null);
     setBulkEditingIndex(null);
     setEditableListing(null);
-    setNewImageUrl('');
+    setEditingImageIdx(null);
+    setSelectedPreviewImageIdx(0);
   }, []);
 
   // Opens the same preview/edit modal used for the single-ASIN flow, but
@@ -579,6 +592,7 @@ export default function AmazonLookupPage() {
       if (!item?.prepared?.listingInput) return;
       setBulkEditingIndex(index);
       setEditableListing(item.prepared.listingInput);
+      setSelectedPreviewImageIdx(0);
     },
     [bulkResults]
   );
@@ -1384,34 +1398,50 @@ export default function AmazonLookupPage() {
                   const updateField = (field, value) => setEditableListing((prev) => ({ ...prev, [field]: value }));
                   const updateSpec = (name, value) =>
                     setEditableListing((prev) => ({ ...prev, itemSpecifics: { ...prev.itemSpecifics, [name]: value } }));
-                  const removeImage = (idx) =>
-                    setEditableListing((prev) => ({ ...prev, pictureUrls: prev.pictureUrls.filter((_, i) => i !== idx) }));
-                  const addImageByUrl = () => {
-                    const url = newImageUrl.trim();
-                    if (!url) return;
-                    setEditableListing((prev) => ({ ...prev, pictureUrls: [...(prev.pictureUrls || []), url].slice(0, 24) }));
-                    setNewImageUrl('');
+                  const removeImage = (idx) => {
+                    setEditableListing((prev) => ({ ...prev, pictureUrls: (prev.pictureUrls || []).filter((_, i) => i !== idx) }));
+                    setSelectedPreviewImageIdx((prev) => Math.max(0, prev > idx ? prev - 1 : prev === idx ? 0 : prev));
                   };
-                  const handleImageFileSelected = async (e) => {
-                    const file = e.target.files?.[0];
-                    e.target.value = '';
-                    if (!file) return;
-                    setUploadingImage(true);
-                    try {
-                      const formData = new FormData();
-                      formData.append('images', file);
-                      formData.append('templateId', `amazon-lookup-image-${Date.now()}`);
-                      const res = await dewisoAPI.uploadImages(formData);
-                      const item = res?.data?.items?.[0];
-                      const uploadedUrl = item?.maxDimensionImageUrl || item?.localUrl;
-                      if (!uploadedUrl) throw new Error(item?.error || 'Upload returned no image URL');
-                      setEditableListing((prev) => ({ ...prev, pictureUrls: [...(prev.pictureUrls || []), uploadedUrl].slice(0, 24) }));
-                    } catch (uploadErr) {
-                      setAlert({ type: 'error', message: uploadErr?.response?.data?.error || uploadErr.message || 'Image upload failed' });
-                    } finally {
-                      setUploadingImage(false);
-                    }
+                  // Swaps the image at `idx` with its left/right neighbor — same
+                  // reorder control as ListOnEbayModal.jsx's gallery.
+                  const moveImage = (idx, direction) => {
+                    const targetIdx = idx + direction;
+                    if (targetIdx < 0 || targetIdx >= pictureUrls.length) return;
+                    setEditableListing((prev) => {
+                      const next = [...(prev.pictureUrls || [])];
+                      [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+                      return { ...prev, pictureUrls: next };
+                    });
+                    setSelectedPreviewImageIdx((prev) => (prev === idx ? targetIdx : prev === targetIdx ? idx : prev));
                   };
+                  // idx === pictureUrls.length means "Add Image" was used — append
+                  // rather than overwrite an existing slot. `images` is always an
+                  // array (see ImageEditModal) — length 1 for a URL paste or an
+                  // 'edit' replace, length N for a multi-file add — same shared
+                  // modal/logic as ListOnEbayModal.jsx's handleImageEdited.
+                  const handleImageEdited = (images) => {
+                    const idx = editingImageIdx;
+                    const list = Array.isArray(images) ? images : [images];
+                    if (!list.length || idx === null) { setEditingImageIdx(null); return; }
+                    setEditableListing((prev) => {
+                      const current = Array.isArray(prev.pictureUrls) ? prev.pictureUrls : [];
+                      const isAppend = idx >= current.length;
+                      const room = Math.max(0, MAX_PREVIEW_IMAGES - current.length);
+                      const toAppend = (isAppend ? list : list.slice(1)).slice(0, room);
+                      const next = [...current];
+                      if (isAppend) toAppend.forEach((img) => next.push(img.maxDimensionImageUrl || img.displayUrl));
+                      else {
+                        next[idx] = list[0].maxDimensionImageUrl || list[0].displayUrl;
+                        toAppend.forEach((img) => next.push(img.maxDimensionImageUrl || img.displayUrl));
+                      }
+                      return { ...prev, pictureUrls: next };
+                    });
+                    setSelectedPreviewImageIdx(idx);
+                    setEditingImageIdx(null);
+                  };
+                  const canAddMoreImages = pictureUrls.length < MAX_PREVIEW_IMAGES;
+                  const handleAddImage = () => { if (canAddMoreImages) setEditingImageIdx(pictureUrls.length); };
+                  const mainIdx = Math.min(selectedPreviewImageIdx, Math.max(0, pictureUrls.length - 1));
 
                   const inputCls = `w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/40 ${
                     isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
@@ -1421,73 +1451,96 @@ export default function AmazonLookupPage() {
                     <div className={`mt-5 pt-5 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
 
                       <div className="grid md:grid-cols-5 gap-6">
-                        {/* Gallery */}
+                        {/* Gallery — same edit/add/reorder UX as Checkila Analysis's "List on eBay" modal */}
                         <div className="md:col-span-2 space-y-2">
-                          {pictureUrls[0] && (
-                            <div
-                              className={`relative rounded-xl overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-slate-50'}`}
-                            >
-                              <img src={pictureUrls[0]} alt={li.title || ''} className="w-full aspect-square object-contain" />
-                              <span className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                                {t('amazonLookupPage.coverImageBadge')}
-                              </span>
+                          <div className={`overflow-hidden rounded-xl border ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-slate-50'}`}>
+                            {pictureUrls.length > 0 ? (
+                              <div className="group relative aspect-square w-full bg-white">
+                                <img
+                                  src={pictureUrls[mainIdx]}
+                                  alt={li.title || ''}
+                                  className="w-full h-full object-contain"
+                                  onError={(e) => { e.target.src = pictureUrls[0]; }}
+                                />
+                                {mainIdx === 0 && (
+                                  <span className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                                    {t('amazonLookupPage.coverImageBadge')}
+                                  </span>
+                                )}
+                                {pictureUrls.length > 1 && (
+                                  <span className="absolute right-2 bottom-2 rounded-full bg-slate-900/70 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                    {mainIdx + 1} / {pictureUrls.length}
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingImageIdx(mainIdx)}
+                                  className={`absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold opacity-0 shadow-md transition hover:bg-indigo-600 hover:text-white focus:opacity-100 group-hover:opacity-100 ${isDark ? 'bg-slate-900/95 text-slate-200' : 'bg-white/95 text-slate-700'}`}
+                                >
+                                  <Pencil size={11} /> {t('amazonLookupPage.replaceImage')}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeImage(mainIdx)}
+                                  className="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                                  title={t('amazonLookupPage.removeImage')}
+                                >
+                                  <X size={12} />
+                                </button>
+                              </div>
+                            ) : (
                               <button
                                 type="button"
-                                onClick={() => removeImage(0)}
-                                className="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white rounded-full p-1"
-                                title={t('amazonLookupPage.removeImage')}
+                                onClick={handleAddImage}
+                                className={`flex aspect-square w-full flex-col items-center justify-center gap-2 text-sm font-medium transition ${isDark ? 'text-slate-400 hover:bg-slate-900' : 'text-slate-500 hover:bg-slate-100'}`}
                               >
-                                <X size={12} />
+                                <ImagePlus size={28} />
+                                {t('amazonLookupPage.addImage')}
                               </button>
-                            </div>
-                          )}
-                          {pictureUrls.length > 1 && (
-                            <div className="flex gap-1.5 overflow-x-auto pb-1">
-                              {pictureUrls.slice(1).map((url, idx) => (
-                                <div
-                                  key={`${url}-${idx}`}
-                                  className={`relative group flex-none w-14 h-14 rounded-md overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-white'}`}
-                                >
-                                  <img src={url} alt={`${li.title || ''} ${idx + 2}`} className="w-full h-full object-contain" />
+                            )}
+
+                            {/* Thumbnails — click to preview, ‹ › to reorder, + to add (multiple at once) */}
+                            <div className="flex items-center gap-1.5 overflow-x-auto p-2">
+                              {pictureUrls.map((url, idx) => (
+                                <div key={`${url}-${idx}`} className="group/thumb relative shrink-0">
                                   <button
                                     type="button"
-                                    onClick={() => removeImage(idx + 1)}
-                                    className="absolute inset-0 bg-black/0 group-hover:bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-                                    title={t('amazonLookupPage.removeImage')}
+                                    onClick={() => setSelectedPreviewImageIdx(idx)}
+                                    className={`block h-12 w-12 overflow-hidden rounded-md border-2 bg-white transition ${
+                                      mainIdx === idx ? 'border-indigo-500' : isDark ? 'border-slate-700 opacity-70 hover:opacity-100' : 'border-slate-200 opacity-75 hover:opacity-100'
+                                    }`}
                                   >
-                                    <X size={14} className="text-white" />
+                                    <img src={url} alt={`${li.title || ''} ${idx + 1}`} className="h-full w-full object-contain" />
                                   </button>
+                                  {pictureUrls.length > 1 && (
+                                    <div className="absolute inset-x-0 -bottom-1 flex justify-center gap-0.5 opacity-0 transition group-hover/thumb:opacity-100">
+                                      {[[-1, '‹', idx === 0], [1, '›', idx === pictureUrls.length - 1]].map(([dir, glyph, disabled]) => (
+                                        <button
+                                          key={dir}
+                                          type="button"
+                                          onClick={() => moveImage(idx, dir)}
+                                          disabled={disabled}
+                                          className={`flex h-3.5 w-3.5 items-center justify-center rounded text-[9px] leading-none shadow disabled:cursor-not-allowed disabled:opacity-30 ${isDark ? 'border border-slate-600 bg-slate-900 text-slate-200' : 'border border-slate-300 bg-white text-slate-700'}`}
+                                        >
+                                          {glyph}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                               ))}
+                              {canAddMoreImages && (
+                                <button
+                                  type="button"
+                                  onClick={handleAddImage}
+                                  title={t('amazonLookupPage.addImage')}
+                                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-md border-2 border-dashed transition ${isDark ? 'border-slate-700 text-slate-500 hover:border-indigo-500 hover:text-indigo-400' : 'border-slate-300 text-slate-400 hover:border-indigo-400 hover:text-indigo-500'}`}
+                                >
+                                  <Plus size={16} />
+                                </button>
+                              )}
                             </div>
-                          )}
-                          <div className="flex gap-1.5">
-                            <input
-                              value={newImageUrl}
-                              onChange={(e) => setNewImageUrl(e.target.value)}
-                              placeholder={t('amazonLookupPage.addImageUrlPlaceholder')}
-                              className={`flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none ${isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300'}`}
-                            />
-                            <button type="button" onClick={addImageByUrl} className="btn-secondary text-xs px-2.5">
-                              {t('amazonLookupPage.addImage')}
-                            </button>
                           </div>
-                          <input
-                            ref={imageFileInputRef}
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageFileSelected}
-                            className="hidden"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => imageFileInputRef.current?.click()}
-                            disabled={uploadingImage}
-                            className="btn-secondary text-xs px-2.5 w-full inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
-                          >
-                            {uploadingImage ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
-                            {uploadingImage ? 'Yüklənir...' : 'Şəkil yüklə'}
-                          </button>
                           <p className={`text-xs text-center ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                             {t('amazonLookupPage.previewGalleryTitle', { count: pictureUrls.length })}
                           </p>
@@ -1694,6 +1747,17 @@ export default function AmazonLookupPage() {
                           {t('amazonLookupPage.confirmAndList')}
                         </button>
                       </div>
+
+                      {editingImageIdx !== null && (
+                        <ImageEditModal
+                          isDark={isDark}
+                          currentUrl={pictureUrls[editingImageIdx] ?? null}
+                          imageIndex={editingImageIdx}
+                          mode={editingImageIdx >= pictureUrls.length ? 'add' : 'edit'}
+                          onConfirm={handleImageEdited}
+                          onClose={() => setEditingImageIdx(null)}
+                        />
+                      )}
                     </div>
                   );
                 })()}

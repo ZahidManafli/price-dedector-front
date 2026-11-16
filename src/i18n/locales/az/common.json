@@ -841,7 +841,8 @@
     "missingProductData": "Məhsul yaratmaq üçün ASIN və ya eBay məhsul ID-si çıxarıla bilmədi.",
     "pricesMustBeGreater": "Məhsul əlavə etmək üçün Amazon və eBay qiymətləri sıfırdan böyük olmalıdır.",
     "addedToProducts": "Elan məhsullara uğurla əlavə edildi.",
-    "failedAddListing": "Elan məhsullara əlavə edilə bilmədi."
+    "failedAddListing": "Elan məhsullara əlavə edilə bilmədi.",
+    "replaceImage": "Dəyiş"
   },
   "listingDetailPage": {
     "unavailable": "Siyahı detalları mövcud deyil. Bu səhifəni Siyahılar cədvəlindən açın.",

@@ -741,7 +741,8 @@
     "missingProductData": "Не удалось извлечь ASIN или ID товара eBay для создания товара.",
     "pricesMustBeGreater": "Цены Amazon и eBay должны быть больше нуля, чтобы добавить товар.",
     "addedToProducts": "Объявление успешно добавлено в товары.",
-    "failedAddListing": "Не удалось добавить объявление в товары."
+    "failedAddListing": "Не удалось добавить объявление в товары.",
+    "replaceImage": "Заменить"
   },
   "listingDetailPage": {
     "unavailable": "Детали объявления недоступны. Откройте эту страницу из таблицы объявлений.",

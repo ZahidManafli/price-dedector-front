@@ -741,7 +741,8 @@
     "missingProductData": "Ürün oluşturma için ASIN veya eBay ürün ID'si çıkarılamadı.",
     "pricesMustBeGreater": "Ürün eklemek için Amazon ve eBay fiyatları sıfırdan büyük olmalı.",
     "addedToProducts": "İlan ürünlere başarıyla eklendi.",
-    "failedAddListing": "İlan ürünlere eklenemedi."
+    "failedAddListing": "İlan ürünlere eklenemedi.",
+    "replaceImage": "Değiştir"
   },
   "listingDetailPage": {
     "unavailable": "İlan ayrıntıları kullanılamıyor. Bu sayfayı İlanlar tablosundan açın.",

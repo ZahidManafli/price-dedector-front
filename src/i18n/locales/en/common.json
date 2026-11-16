@@ -1072,7 +1072,8 @@
     "missingProductData": "Could not extract ASIN or eBay Item ID for product creation.",
     "pricesMustBeGreater": "Amazon and eBay prices must be greater than zero to add product.",
     "addedToProducts": "Listing was added to products successfully.",
-    "failedAddListing": "Failed to add listing to products."
+    "failedAddListing": "Failed to add listing to products.",
+    "replaceImage": "Replace"
   },
   "listingDetailPage": {
     "unavailable": "Listing details are unavailable. Open this page from the Listings table.",
