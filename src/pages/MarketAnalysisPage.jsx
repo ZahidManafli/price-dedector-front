@@ -1011,8 +1011,15 @@ export default function MarketAnalysisPage() {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const handleToggleSavedProduct = useCallback(async (item) => {
-    const itemId = getResultKey(item);
+  // `item` is normally a raw search-result row, whose itemId is derived via
+  // getResultKey. The Favorites drawer instead passes an already-saved product
+  // row (shape: { id, itemId, title, ... } — `id` there is the saved row's own
+  // UUID, not the eBay item) — `overrideItemId` lets it pass that row's real,
+  // already-canonical itemId straight through instead of getResultKey
+  // recomputing a different (wrong) key from the mismatched shape, which
+  // previously made "remove" insert a duplicate instead of deleting.
+  const handleToggleSavedProduct = useCallback(async (item, overrideItemId) => {
+    const itemId = overrideItemId || getResultKey(item);
     if (!itemId) return;
 
     setSavedProductSaving(itemId);
@@ -1373,7 +1380,7 @@ export default function MarketAnalysisPage() {
                             </div>
                             <button
                               type="button"
-                              onClick={() => handleToggleSavedProduct(product)}
+                              onClick={() => handleToggleSavedProduct(product, product.itemId)}
                               className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 transition hover:bg-rose-100 dark:border-rose-900 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-950"
                               aria-label={t('marketItemCard.unsaveProduct')}
                               title={t('marketItemCard.unsaveProduct')}
