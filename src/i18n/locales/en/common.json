@@ -200,7 +200,9 @@
     "details": "Details",
     "searchOnAmazon": "Search on Amazon",
     "saveSeller": "Save seller",
-    "unsaveSeller": "Remove saved seller"
+    "unsaveSeller": "Remove saved seller",
+    "saveProduct": "Save product",
+    "unsaveProduct": "Remove saved product"
   },
   "marketAnalysisPage": {
     "title": "Checkila Analysis",
@@ -257,7 +259,16 @@
     "closeSavedSellers": "Close saved sellers",
     "showingResults": "Showing {{count}} result(s)",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "favorites": "Favorites",
+    "closeFavorites": "Close favorites",
+    "sellersTab": "Sellers",
+    "productsTab": "Products",
+    "savedProducts": "Saved products",
+    "savedProductsHint": "Click a title to open it on eBay. Click the heart to remove it from your saved list.",
+    "savedProductsLoading": "Loading saved products...",
+    "savedProductsEmpty": "No saved products yet.",
+    "openSavedProduct": "Open this product on eBay"
   },
   "marketListingDetailPage": {
     "loadingListingDetails": "Loading listing details...",

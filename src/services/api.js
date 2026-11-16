@@ -365,6 +365,8 @@ export const ebayAPI = {
   cancelScheduledListing: (id) => api.delete(`/ebay/scheduled-listings/${encodeURIComponent(id)}`),
   listSavedSellers: () => api.get('/ebay/saved-sellers'),
   toggleSavedSeller: (sellerName) => api.post('/ebay/saved-sellers/toggle', { sellerName }),
+  listSavedProducts: () => api.get('/ebay/saved-products'),
+  toggleSavedProduct: (product) => api.post('/ebay/saved-products/toggle', product),
   getMessageTemplates: (ebayAccountId) =>
     api.get('/ebay/message-templates', { params: ebayAccountId ? { ebayAccountId } : {} }),
   saveMessageTemplates: (payload) => api.put('/ebay/message-templates', payload),

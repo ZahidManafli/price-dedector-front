@@ -350,9 +350,13 @@ export default function MarketAnalysisPage() {
   const [recentSearches, setRecentSearches] = useState(() => loadRecentSearches());
   const [savedSellers, setSavedSellers] = useState([]);
   const [savedSellersLoading, setSavedSellersLoading] = useState(false);
-  const [savedSellersOpen, setSavedSellersOpen] = useState(false);
-  const [savedSellersMounted, setSavedSellersMounted] = useState(false);
-  const [savedSellersVisible, setSavedSellersVisible] = useState(false);
+  const [favoritesOpen, setFavoritesOpen] = useState(false);
+  const [favoritesMounted, setFavoritesMounted] = useState(false);
+  const [favoritesVisible, setFavoritesVisible] = useState(false);
+  const [favoritesTab, setFavoritesTab] = useState('sellers');
+  const [savedProducts, setSavedProducts] = useState([]);
+  const [savedProductsLoading, setSavedProductsLoading] = useState(false);
+  const [savedProductSaving, setSavedProductSaving] = useState('');
   const [savedSellerSaving, setSavedSellerSaving] = useState('');
   const [calcAmazonPrice, setCalcAmazonPrice] = useState('');
   const [calcEbayPrice, setCalcEbayPrice] = useState('');
@@ -506,17 +510,32 @@ export default function MarketAnalysisPage() {
     }
   }, []);
 
+  const loadSavedProducts = useCallback(async () => {
+    try {
+      setSavedProductsLoading(true);
+      const response = await ebayAPI.listSavedProducts();
+      setSavedProducts(Array.isArray(response?.data?.savedProducts) ? response.data.savedProducts : []);
+    } catch (loadError) {
+      console.warn('[market-analysis] failed to load saved products:', loadError?.message || loadError);
+    } finally {
+      setSavedProductsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadSavedSellers();
-  }, [loadSavedSellers]);
+    loadSavedProducts();
+  }, [loadSavedSellers, loadSavedProducts]);
 
+  // "Favorites" drawer — shared open/mount/visible state drives both the
+  // Sellers and Products tabs inside it.
   useEffect(() => {
     let closeTimer = null;
 
-    if (savedSellersOpen) {
-      setSavedSellersMounted(true);
+    if (favoritesOpen) {
+      setFavoritesMounted(true);
       const animationFrame = window.requestAnimationFrame(() => {
-        setSavedSellersVisible(true);
+        setFavoritesVisible(true);
       });
 
       return () => {
@@ -524,26 +543,26 @@ export default function MarketAnalysisPage() {
       };
     }
 
-    if (savedSellersMounted) {
-      setSavedSellersVisible(false);
+    if (favoritesMounted) {
+      setFavoritesVisible(false);
       closeTimer = window.setTimeout(() => {
-        setSavedSellersMounted(false);
+        setFavoritesMounted(false);
       }, 260);
     }
 
     return () => {
       if (closeTimer) window.clearTimeout(closeTimer);
     };
-  }, [savedSellersMounted, savedSellersOpen]);
+  }, [favoritesMounted, favoritesOpen]);
 
   useEffect(() => {
-    if (!savedSellersOpen) return undefined;
+    if (!favoritesOpen) return undefined;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [savedSellersOpen]);
+  }, [favoritesOpen]);
 
   const searchCost = String(params.sellerUsername || '').trim() ? 2 : 1;
 
@@ -970,7 +989,8 @@ export default function MarketAnalysisPage() {
     try {
       const response = await ebayAPI.toggleSavedSeller(seller);
       setSavedSellers(Array.isArray(response?.data?.savedSellers) ? response.data.savedSellers : []);
-      setSavedSellersOpen(true);
+      setFavoritesTab('sellers');
+      setFavoritesOpen(true);
     } catch (toggleError) {
       setError(toggleError?.response?.data?.error || toggleError?.message || 'Failed to update saved sellers');
     } finally {
@@ -983,6 +1003,39 @@ export default function MarketAnalysisPage() {
     if (!seller) return;
     handleSellerClick(seller);
   };
+
+  const openSavedProductUrl = (product) => {
+    let url = String(product?.itemWebUrl || '').trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url.replace(/^\/+/, '');
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleToggleSavedProduct = useCallback(async (item) => {
+    const itemId = getResultKey(item);
+    if (!itemId) return;
+
+    setSavedProductSaving(itemId);
+    try {
+      const response = await ebayAPI.toggleSavedProduct({
+        itemId,
+        title: item?.title || '',
+        priceValue: Number.isFinite(Number(item?.priceValue)) ? Number(item?.priceValue) : null,
+        priceCurrency: item?.priceCurrency || '',
+        imageUrl: item?.imageUrl || '',
+        itemWebUrl: item?.itemWebUrl || '',
+        sellerName: item?.sellerName || '',
+        condition: item?.condition || '',
+      });
+      setSavedProducts(Array.isArray(response?.data?.savedProducts) ? response.data.savedProducts : []);
+      setFavoritesTab('products');
+      setFavoritesOpen(true);
+    } catch (toggleError) {
+      setError(toggleError?.response?.data?.error || toggleError?.message || 'Failed to update saved products');
+    } finally {
+      setSavedProductSaving('');
+    }
+  }, [getResultKey, setError]);
 
   const handleTitleSearch = (item) => {
     const titleQuery = String(item?.title || '').trim();
@@ -1046,6 +1099,10 @@ export default function MarketAnalysisPage() {
   const sortedSavedSellers = useMemo(
     () => [...savedSellers].sort((a, b) => String(a.sellerName || '').localeCompare(String(b.sellerName || ''))),
     [savedSellers]
+  );
+  const savedProductKeys = useMemo(
+    () => new Set(savedProducts.map((entry) => entry.itemId)),
+    [savedProducts]
   );
   const typeButtonBase = 'rounded-lg px-4 py-2 text-sm font-semibold transition border border-slate-200 dark:border-slate-700';
   const typeButtonActive = 'bg-blue-600 text-white border-blue-600 shadow-sm';
@@ -1130,11 +1187,11 @@ export default function MarketAnalysisPage() {
           </button>
           <button
             type="button"
-            onClick={() => setSavedSellersOpen((prev) => !prev)}
+            onClick={() => setFavoritesOpen((prev) => !prev)}
             className="btn-secondary flex items-center gap-2"
           >
             <Heart size={14} fill="currentColor" className="text-rose-500" />
-            {t('marketAnalysisPage.savedSellers')} ({savedSellers.length})
+            {t('marketAnalysisPage.favorites')} ({savedSellers.length + savedProducts.length})
           </button>
           {isAdmin && (
             <button type="button" onClick={() => setAiFoundOpen(true)} className="btn-secondary flex items-center gap-2">
@@ -1146,98 +1203,191 @@ export default function MarketAnalysisPage() {
         </div>
       </header>
 
-      {savedSellersMounted && (
+      {favoritesMounted && (
         <div className="fixed inset-0 z-50">
           <button
             type="button"
-            className={`absolute inset-0 bg-slate-950/45 backdrop-blur-[2px] transition-opacity duration-300 ease-out ${savedSellersVisible ? 'opacity-100' : 'opacity-0'}`}
-            onClick={() => setSavedSellersOpen(false)}
-            aria-label={t('marketAnalysisPage.closeSavedSellers')}
+            className={`absolute inset-0 bg-slate-950/45 backdrop-blur-[2px] transition-opacity duration-300 ease-out ${favoritesVisible ? 'opacity-100' : 'opacity-0'}`}
+            onClick={() => setFavoritesOpen(false)}
+            aria-label={t('marketAnalysisPage.closeFavorites')}
           />
 
-          <aside className={`absolute right-0 top-0 h-full w-full max-w-[420px] border-l border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.28)] transition-transform duration-300 ease-out will-change-transform dark:border-slate-800 dark:bg-slate-950 ${savedSellersVisible ? 'translate-x-0' : 'translate-x-full'}`}>
+          <aside className={`absolute right-0 top-0 h-full w-full max-w-[420px] border-l border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.28)] transition-transform duration-300 ease-out will-change-transform dark:border-slate-800 dark:bg-slate-950 ${favoritesVisible ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="flex h-full flex-col">
               <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
-                <div>
+                <div className="flex items-center gap-2">
+                  <Heart size={18} fill="currentColor" className="text-rose-500" />
                   <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                    {t('marketAnalysisPage.savedSellers')}
+                    {t('marketAnalysisPage.favorites')}
                   </h2>
-                  <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-300">
-                    {t('marketAnalysisPage.savedSellersHint')}
-                  </p>
                 </div>
                 <button
                   type="button"
                   className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
-                  onClick={() => setSavedSellersOpen(false)}
-                  aria-label={t('marketAnalysisPage.closeSavedSellers')}
+                  onClick={() => setFavoritesOpen(false)}
+                  aria-label={t('marketAnalysisPage.closeFavorites')}
                 >
                   <X size={16} />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-                <div className="flex items-center justify-between gap-2">
-                  <button type="button" className="btn-secondary" onClick={loadSavedSellers} disabled={savedSellersLoading}>
-                    {savedSellersLoading ? t('marketAnalysisPage.savedSellersLoading') : t('marketAnalysisPage.refresh')}
+              <div className="flex gap-1.5 border-b border-slate-200 px-5 pt-3 dark:border-slate-800">
+                {[
+                  { key: 'sellers', label: t('marketAnalysisPage.sellersTab'), count: savedSellers.length },
+                  { key: 'products', label: t('marketAnalysisPage.productsTab'), count: savedProducts.length },
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setFavoritesTab(tab.key)}
+                    className={`relative -mb-px flex items-center gap-1.5 rounded-t-lg border border-b-0 px-3.5 py-2 text-sm font-semibold transition ${
+                      favoritesTab === tab.key
+                        ? 'border-slate-200 bg-white text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-white'
+                        : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {tab.label}
+                    <span className={`rounded-full px-1.5 text-[11px] ${favoritesTab === tab.key ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                      {tab.count}
+                    </span>
                   </button>
-                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                    {savedSellers.length}
-                  </span>
-                </div>
+                ))}
+              </div>
 
-                {savedSellersLoading ? (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300">
-                    {t('marketAnalysisPage.savedSellersLoading')}
+              {favoritesTab === 'sellers' ? (
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <button type="button" className="btn-secondary" onClick={loadSavedSellers} disabled={savedSellersLoading}>
+                      {savedSellersLoading ? t('marketAnalysisPage.savedSellersLoading') : t('marketAnalysisPage.refresh')}
+                    </button>
+                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                      {savedSellers.length}
+                    </span>
                   </div>
-                ) : sortedSavedSellers.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300">
-                    {t('marketAnalysisPage.savedSellersEmpty')}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {sortedSavedSellers.map((seller) => {
-                      const sellerName = String(seller.sellerName || '').trim();
-                      const sellerKey = normalizeSellerName(sellerName);
-                      const isSaved = savedSellerKeys.has(sellerKey);
-                      const busy = savedSellerSaving === sellerKey;
-                      return (
-                        <div
-                          key={seller.id || sellerKey}
-                          className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:-translate-y-[1px] hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
-                        >
-                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${isSaved ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/70 dark:text-rose-300' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-300'}`}>
-                            <Heart size={16} fill={isSaved ? 'currentColor' : 'none'} strokeWidth={2} />
-                          </div>
-                          <div className="min-w-0 flex-1">
+                  <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">{t('marketAnalysisPage.savedSellersHint')}</p>
+
+                  {savedSellersLoading ? (
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300">
+                      {t('marketAnalysisPage.savedSellersLoading')}
+                    </div>
+                  ) : sortedSavedSellers.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300">
+                      {t('marketAnalysisPage.savedSellersEmpty')}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {sortedSavedSellers.map((seller) => {
+                        const sellerName = String(seller.sellerName || '').trim();
+                        const sellerKey = normalizeSellerName(sellerName);
+                        const isSaved = savedSellerKeys.has(sellerKey);
+                        const busy = savedSellerSaving === sellerKey;
+                        return (
+                          <div
+                            key={seller.id || sellerKey}
+                            className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:-translate-y-[1px] hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+                          >
+                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${isSaved ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/70 dark:text-rose-300' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-300'}`}>
+                              <Heart size={16} fill={isSaved ? 'currentColor' : 'none'} strokeWidth={2} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenSavedSeller(sellerName)}
+                                className="block w-full truncate text-left text-sm font-semibold text-blue-700 transition hover:underline dark:text-blue-400"
+                                title={sellerName}
+                              >
+                                {sellerName}
+                              </button>
+                              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                {t('marketAnalysisPage.openSavedSeller')}
+                              </p>
+                            </div>
                             <button
                               type="button"
-                              onClick={() => handleOpenSavedSeller(sellerName)}
-                              className="block w-full truncate text-left text-sm font-semibold text-blue-700 transition hover:underline dark:text-blue-400"
-                              title={sellerName}
+                              onClick={() => handleToggleSavedSeller(sellerName)}
+                              className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border transition ${isSaved ? 'border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:border-rose-900 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-950' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-rose-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 dark:hover:text-rose-300'}`}
+                              aria-label={isSaved ? t('marketItemCard.unsaveSeller') : t('marketItemCard.saveSeller')}
+                              title={isSaved ? t('marketItemCard.unsaveSeller') : t('marketItemCard.saveSeller')}
+                              disabled={busy}
                             >
-                              {sellerName}
+                              <Heart size={16} fill={isSaved ? 'currentColor' : 'none'} strokeWidth={2} />
                             </button>
-                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                              {t('marketAnalysisPage.openSavedSeller')}
-                            </p>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleSavedSeller(sellerName)}
-                            className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border transition ${isSaved ? 'border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:border-rose-900 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-950' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-rose-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 dark:hover:text-rose-300'}`}
-                            aria-label={isSaved ? t('marketItemCard.unsaveSeller') : t('marketItemCard.saveSeller')}
-                            title={isSaved ? t('marketItemCard.unsaveSeller') : t('marketItemCard.saveSeller')}
-                            disabled={busy}
-                          >
-                            <Heart size={16} fill={isSaved ? 'currentColor' : 'none'} strokeWidth={2} />
-                          </button>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <button type="button" className="btn-secondary" onClick={loadSavedProducts} disabled={savedProductsLoading}>
+                      {savedProductsLoading ? t('marketAnalysisPage.savedProductsLoading') : t('marketAnalysisPage.refresh')}
+                    </button>
+                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                      {savedProducts.length}
+                    </span>
                   </div>
-                )}
-              </div>
+                  <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">{t('marketAnalysisPage.savedProductsHint')}</p>
+
+                  {savedProductsLoading ? (
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300">
+                      {t('marketAnalysisPage.savedProductsLoading')}
+                    </div>
+                  ) : savedProducts.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300">
+                      {t('marketAnalysisPage.savedProductsEmpty')}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {savedProducts.map((product) => {
+                        const busy = savedProductSaving === product.itemId;
+                        return (
+                          <div
+                            key={product.id || product.itemId}
+                            className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-3 transition hover:-translate-y-[1px] hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+                          >
+                            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
+                              {product.imageUrl ? (
+                                <img src={product.imageUrl} alt={product.title} className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-slate-400">
+                                  <ShoppingBag size={16} />
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <button
+                                type="button"
+                                onClick={() => openSavedProductUrl(product)}
+                                className="block w-full truncate text-left text-sm font-semibold text-blue-700 transition hover:underline dark:text-blue-400"
+                                title={product.title}
+                                disabled={!product.itemWebUrl}
+                              >
+                                {product.title}
+                              </button>
+                              <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">{formatCurrency(product.priceValue)}</span>
+                                {product.sellerName && <span className="truncate">· {product.sellerName}</span>}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleSavedProduct(product)}
+                              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 transition hover:bg-rose-100 dark:border-rose-900 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-950"
+                              aria-label={t('marketItemCard.unsaveProduct')}
+                              title={t('marketItemCard.unsaveProduct')}
+                              disabled={busy}
+                            >
+                              <Heart size={16} fill="currentColor" strokeWidth={2} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </aside>
         </div>
@@ -1483,12 +1633,15 @@ export default function MarketAnalysisPage() {
                         item={item}
                         isSelected={selectedIds.includes(item.id)}
                         isSellerSaved={savedSellerKeys.has(normalizeSellerName(item.sellerName))}
+                        isProductSaved={savedProductKeys.has(getResultKey(item))}
+                        productSaving={savedProductSaving === getResultKey(item)}
                         onSelect={handleSelect}
                         onInspect={handleInspect}
                         onSellerClick={handleSellerClick}
                         onSearchTitle={handleTitleSearch}
                         onSellSimilar={handleSellSimilar}
                         onToggleSeller={handleToggleSavedSeller}
+                        onToggleProduct={handleToggleSavedProduct}
                       />
                       <TitleWarningBadges title={item.title} className="px-3 pb-2 text-[11px]" />
                     </div>
@@ -1668,6 +1821,16 @@ export default function MarketAnalysisPage() {
                               const amazonSearchUrl = buildAmazonSearchUrlFromTitle(item?.title);
                               return (
                                 <div className="flex gap-2 flex-wrap items-center">
+                                  <button
+                                    type="button"
+                                    className={`btn-secondary ${savedProductKeys.has(getResultKey(item)) ? 'text-rose-600' : ''}`}
+                                    onClick={() => handleToggleSavedProduct(item)}
+                                    aria-label={savedProductKeys.has(getResultKey(item)) ? t('marketItemCard.unsaveProduct') : t('marketItemCard.saveProduct')}
+                                    title={savedProductKeys.has(getResultKey(item)) ? t('marketItemCard.unsaveProduct') : t('marketItemCard.saveProduct')}
+                                    disabled={savedProductSaving === getResultKey(item)}
+                                  >
+                                    <Heart size={14} fill={savedProductKeys.has(getResultKey(item)) ? 'currentColor' : 'none'} strokeWidth={2} />
+                                  </button>
                                   {amazonSearchUrl && (
                                     <a
                                       href={amazonSearchUrl}

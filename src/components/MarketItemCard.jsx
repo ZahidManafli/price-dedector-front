@@ -25,8 +25,11 @@ export default function MarketItemCard({
   onSearchTitle,
   onSellSimilar,
   onToggleSeller,
+  onToggleProduct,
   isSelected,
   isSellerSaved,
+  isProductSaved,
+  productSaving,
 }) {
   const { t } = useTranslation();
   const sellerFlag = countryCodeToFlagEmoji(item?.sellerCountryCode);
@@ -35,7 +38,7 @@ export default function MarketItemCard({
 
   return (
     <article className="glass-card p-3 flex flex-col gap-3">
-      <div className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
+      <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
         {item.imageUrl ? (
           <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
         ) : (
@@ -43,6 +46,20 @@ export default function MarketItemCard({
             {t('marketItemCard.noImage')}
           </div>
         )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleProduct?.(item);
+          }}
+          className={`absolute right-1.5 top-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur transition hover:scale-105 dark:bg-slate-900/90 ${isProductSaved ? 'text-rose-600' : 'text-slate-500 hover:text-rose-600'}`}
+          aria-label={isProductSaved ? t('marketItemCard.unsaveProduct') : t('marketItemCard.saveProduct')}
+          title={isProductSaved ? t('marketItemCard.unsaveProduct') : t('marketItemCard.saveProduct')}
+          disabled={productSaving}
+        >
+          <Heart size={14} fill={isProductSaved ? 'currentColor' : 'none'} strokeWidth={2} />
+        </button>
       </div>
 
       <div>

@@ -350,7 +350,9 @@
     "details": "Подробности",
     "searchOnAmazon": "Поиск на Amazon",
     "saveSeller": "Сохранить продавца",
-    "unsaveSeller": "Убрать продавца из сохранённых"
+    "unsaveSeller": "Убрать продавца из сохранённых",
+    "saveProduct": "Сохранить товар",
+    "unsaveProduct": "Убрать товар из сохранённых"
   },
   "marketAnalysisPage": {
     "title": "Анализ Checkila",
@@ -407,7 +409,16 @@
     "closeSavedSellers": "Закрыть сохранённых продавцов",
     "showingResults": "Показано {{count}} результат(ов)",
     "previous": "Предыдущая",
-    "next": "Следующая"
+    "next": "Следующая",
+    "favorites": "Избранное",
+    "closeFavorites": "Закрыть избранное",
+    "sellersTab": "Продавцы",
+    "productsTab": "Товары",
+    "savedProducts": "Сохранённые товары",
+    "savedProductsHint": "Нажмите на название, чтобы открыть на eBay. Нажмите на сердечко, чтобы убрать из сохранённых.",
+    "savedProductsLoading": "Загрузка сохранённых товаров...",
+    "savedProductsEmpty": "Сохранённых товаров пока нет.",
+    "openSavedProduct": "Открыть этот товар на eBay"
   },
   "marketListingDetailPage": {
     "loadingListingDetails": "Загрузка деталей объявления...",

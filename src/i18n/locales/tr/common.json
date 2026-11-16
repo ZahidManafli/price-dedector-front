@@ -350,7 +350,9 @@
     "details": "Details",
     "searchOnAmazon": "Search on Amazon",
     "saveSeller": "Satıcıyı kaydet",
-    "unsaveSeller": "Kaydedilen satıcıyı kaldır"
+    "unsaveSeller": "Kaydedilen satıcıyı kaldır",
+    "saveProduct": "Ürünü kaydet",
+    "unsaveProduct": "Kaydedilen ürünü kaldır"
   },
   "marketAnalysisPage": {
     "title": "Checkila Analizi",
@@ -407,7 +409,16 @@
     "closeSavedSellers": "Kaydedilen satıcıları kapat",
     "showingResults": "{{count}} sonuç gösteriliyor",
     "previous": "Önceki",
-    "next": "Sonraki"
+    "next": "Sonraki",
+    "favorites": "Favoriler",
+    "closeFavorites": "Favorileri kapat",
+    "sellersTab": "Satıcılar",
+    "productsTab": "Ürünler",
+    "savedProducts": "Kaydedilen ürünler",
+    "savedProductsHint": "Açmak için başlığa tıklayın. Listeden çıkarmak için kalbe tıklayın.",
+    "savedProductsLoading": "Kaydedilen ürünler yükleniyor...",
+    "savedProductsEmpty": "Henüz kaydedilen ürün yok.",
+    "openSavedProduct": "Bu ürünü eBay’de aç"
   },
   "marketListingDetailPage": {
     "loadingListingDetails": "İlan ayrıntıları yükleniyor...",
