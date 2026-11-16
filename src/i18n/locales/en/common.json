@@ -36,7 +36,10 @@
     "loginFailed": "Login failed",
     "invalidCredentials": "Invalid email or password",
     "fillAllFields": "Please fill all fields",
-    "loginSuccess": "Login successful!"
+    "loginSuccess": "Login successful!",
+    "forgotPassword": "Forgot your password?",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "loginPage": {
     "title": "Welcome back",
@@ -44,7 +47,25 @@
     "register": "Register",
     "noAccount": "Don't have an account?",
     "loggingIn": "Logging in...",
-    "requestSent": "Your request is seen. Admin will reach you soon."
+    "requestSent": "Your request is seen. Admin will reach you soon.",
+    "titleAccent": "back",
+    "secureNote": "Your connection is encrypted and your data stays protected",
+    "marketingTitle": "Track your prices, automate your business",
+    "marketingTitleAccent": "automate",
+    "marketingBullets": [
+      {
+        "title": "Bank-level security",
+        "description": "Your connection is encrypted and your card details never touch our servers."
+      },
+      {
+        "title": "Automation, around the clock",
+        "description": "Prices, stock and tracking codes update automatically, every hour of every day."
+      },
+      {
+        "title": "Trusted by thousands of sellers",
+        "description": "eBay and Amazon sellers save hours every week with Checkila."
+      }
+    ]
   },
   "ebayCalculatorPage": {
     "title": "eBay Profit Calculator",

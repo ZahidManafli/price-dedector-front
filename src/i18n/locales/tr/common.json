@@ -36,7 +36,10 @@
     "loginFailed": "Giriş başarısız",
     "invalidCredentials": "Geçersiz e-posta veya şifre",
     "fillAllFields": "Lütfen tüm alanları doldurun",
-    "loginSuccess": "Giriş başarılı!"
+    "loginSuccess": "Giriş başarılı!",
+    "forgotPassword": "Şifrenizi mi unuttunuz?",
+    "showPassword": "Şifreyi göster",
+    "hidePassword": "Şifreyi gizle"
   },
   "loginPage": {
     "title": "Tekrar hoş geldin",
@@ -44,7 +47,25 @@
     "register": "Kayıt Ol",
     "noAccount": "Hesabın yok mu?",
     "loggingIn": "Giriş yapılıyor...",
-    "requestSent": "Talebiniz alındı. Yönetici yakında sizinle iletişime geçecektir."
+    "requestSent": "Talebiniz alındı. Yönetici yakında sizinle iletişime geçecektir.",
+    "titleAccent": "hoş geldin",
+    "secureNote": "Bağlantınız şifrelenir, verileriniz korunur",
+    "marketingTitle": "Fiyatlarınızı izleyin, işinizi otomatikleştirin",
+    "marketingTitleAccent": "otomatikleştirin",
+    "marketingBullets": [
+      {
+        "title": "Banka düzeyinde güvenlik",
+        "description": "Bağlantınız şifrelenir, kart bilgileriniz sunucularımızda asla saklanmaz."
+      },
+      {
+        "title": "7/24 otomasyon",
+        "description": "Fiyat, stok ve takip kodları günün her saati otomatik güncellenir."
+      },
+      {
+        "title": "Binlerce satıcı güveniyor",
+        "description": "eBay ve Amazon satıcıları Checkila ile her hafta saatlerce zaman kazanıyor."
+      }
+    ]
   },
   "ebayCalculatorPage": {
     "title": "eBay Kâr Hesaplayıcı",

@@ -36,7 +36,10 @@
     "loginFailed": "Giriş uğursuz oldu",
     "invalidCredentials": "Yanlış e-poçt və ya şifrə",
     "fillAllFields": "Zəhmət olmasa bütün sahələri doldurun",
-    "loginSuccess": "Uğurla daxil oldunuz!"
+    "loginSuccess": "Uğurla daxil oldunuz!",
+    "forgotPassword": "Şifrəni unutmusunuz?",
+    "showPassword": "Şifrəni göstər",
+    "hidePassword": "Şifrəni gizlət"
   },
   "loginPage": {
     "title": "Yenidən xoş gəlmisiniz",
@@ -44,7 +47,25 @@
     "register": "Qeydiyyat",
     "noAccount": "Hesabınız yoxdur?",
     "loggingIn": "Daxil olunur...",
-    "requestSent": "Sorğunuz qəbul edildi. Admin tezliklə sizinlə əlaqə saxlayacaq."
+    "requestSent": "Sorğunuz qəbul edildi. Admin tezliklə sizinlə əlaqə saxlayacaq.",
+    "titleAccent": "xoş gəlmisiniz",
+    "secureNote": "Bağlantınız şifrələnir, məlumatlarınız qorunur",
+    "marketingTitle": "Qiymətlərinizi izləyin, biznesinizi avtomatlaşdırın",
+    "marketingTitleAccent": "avtomatlaşdırın",
+    "marketingBullets": [
+      {
+        "title": "Bank səviyyəli təhlükəsizlik",
+        "description": "Bağlantınız şifrələnir, kart məlumatlarınız heç vaxt serverlərimizdə saxlanmır."
+      },
+      {
+        "title": "7/24 avtomatlaşdırma",
+        "description": "Qiymət, stok və tracking kodları fasiləsiz avtomatik yenilənir."
+      },
+      {
+        "title": "Minlərlə satıcı etibar edir",
+        "description": "eBay və Amazon satıcıları Checkila ilə vaxtlarına qənaət edir."
+      }
+    ]
   },
   "ebayCalculatorPage": {
     "title": "eBay Mənfəət Kalkulyatoru",
