@@ -704,6 +704,7 @@ export default function AdminPanelPage() {
       ID: u.id || '',
       Email: u.email || '',
       Name: u.name || '',
+      'Phone Number': u.phoneNumber || '',
       Role: u.role || '',
       UID: u.uid || '',
       'Plan Name': u.selectedPlanName || '',
