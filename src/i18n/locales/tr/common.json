@@ -23,7 +23,9 @@
     "logout": "Çıkış",
     "ebayStatus": "eBay Durumu",
     "ebayMessages": "eBay Mesajları",
-    "replayTour": "Yönlendirme turunu tekrar oynat"
+    "replayTour": "Yönlendirme turunu tekrar oynat",
+    "switchEbayAccount": "eBay hesabını değiştir",
+    "ebayAccountDisconnected": "Bu hesap bağlı değil"
   },
   "auth": {
     "login": "Giriş Yap",
@@ -742,7 +744,8 @@
     "pricesMustBeGreater": "Ürün eklemek için Amazon ve eBay fiyatları sıfırdan büyük olmalı.",
     "addedToProducts": "İlan ürünlere başarıyla eklendi.",
     "failedAddListing": "İlan ürünlere eklenemedi.",
-    "replaceImage": "Değiştir"
+    "replaceImage": "Değiştir",
+    "dragToReorder": "Sıralamak için sürükleyin"
   },
   "listingDetailPage": {
     "unavailable": "İlan ayrıntıları kullanılamıyor. Bu sayfayı İlanlar tablosundan açın.",

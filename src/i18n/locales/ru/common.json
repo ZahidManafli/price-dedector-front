@@ -23,7 +23,9 @@
     "logout": "Выйти",
     "ebayStatus": "Статус eBay",
     "ebayMessages": "Сообщения eBay",
-    "replayTour": "Повторить обучение"
+    "replayTour": "Повторить обучение",
+    "switchEbayAccount": "Сменить аккаунт eBay",
+    "ebayAccountDisconnected": "Этот аккаунт не подключён"
   },
   "auth": {
     "login": "Вход",
@@ -742,7 +744,8 @@
     "pricesMustBeGreater": "Цены Amazon и eBay должны быть больше нуля, чтобы добавить товар.",
     "addedToProducts": "Объявление успешно добавлено в товары.",
     "failedAddListing": "Не удалось добавить объявление в товары.",
-    "replaceImage": "Заменить"
+    "replaceImage": "Заменить",
+    "dragToReorder": "Перетащите, чтобы изменить порядок"
   },
   "listingDetailPage": {
     "unavailable": "Детали объявления недоступны. Откройте эту страницу из таблицы объявлений.",

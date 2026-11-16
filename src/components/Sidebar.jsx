@@ -30,6 +30,8 @@ import {
   Palette,
   MessageSquare,
   Trophy,
+  Check,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -73,6 +75,12 @@ export default function Sidebar() {
   const { isCollapsed, toggleSidebar } = useSidebar();
   const { replayTour } = useTour();
   const [activeEbayLabel, setActiveEbayLabel] = useState(null);
+  // Multi-account quick-switch dropdown next to the active eBay label — only
+  // shown when the user actually has more than one eBay account connected.
+  const [ebayAccounts, setEbayAccounts] = useState([]);
+  const [activeEbayAccountId, setActiveEbayAccountId] = useState(null);
+  const [ebayDropdownOpen, setEbayDropdownOpen] = useState(false);
+  const [switchingEbayAccount, setSwitchingEbayAccount] = useState(false);
   const [messagesSidebarOpen, setMessagesSidebarOpen] = useState(false);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const { newOrdersCount, newCasesCount, clearOrdersBadge, clearCasesBadge } = useEbayData();
@@ -157,9 +165,17 @@ export default function Sidebar() {
         const res = await ebayAPI.getStatus();
         const status = res?.data || {};
         const label = status?.activeAccountLabel || status?.accountId || null;
-        if (!cancelled) setActiveEbayLabel(label);
+        if (!cancelled) {
+          setActiveEbayLabel(label);
+          setEbayAccounts(Array.isArray(status?.ebayAccounts) ? status.ebayAccounts : []);
+          setActiveEbayAccountId(status?.activeEbayAccountId || null);
+        }
       } catch {
-        if (!cancelled) setActiveEbayLabel(null);
+        if (!cancelled) {
+          setActiveEbayLabel(null);
+          setEbayAccounts([]);
+          setActiveEbayAccountId(null);
+        }
       }
     };
     load();
@@ -182,6 +198,25 @@ export default function Sidebar() {
     // navigating anywhere re-syncs the sidebar with whatever the backend currently
     // resolves as active, same as landing on any of those pages does.
   }, [user?.uid, location.pathname]);
+
+  // Same pattern every other "switch active eBay account" control in the app
+  // uses (Settings/Orders/Listings/Tracking pages): call the API, then tell
+  // every mounted page (including this sidebar's own listener above) to
+  // re-sync via the shared 'ebay:updated' event, instead of only updating
+  // local state here.
+  const handleSwitchActiveEbay = async (accountId) => {
+    if (!accountId || accountId === activeEbayAccountId || switchingEbayAccount) return;
+    setSwitchingEbayAccount(true);
+    try {
+      await ebayAPI.setActiveAccount(accountId);
+      window.dispatchEvent(new Event('ebay:updated'));
+      setEbayDropdownOpen(false);
+    } catch {
+      // Best-effort — the dropdown stays open so the user can retry.
+    } finally {
+      setSwitchingEbayAccount(false);
+    }
+  };
 
   return (
     <>
@@ -220,7 +255,58 @@ export default function Sidebar() {
                     <MessageSquare size={16} />
                   </button>
                 </div>
-                {activeEbayLabel ? (
+                {ebayAccounts.length > 1 ? (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setEbayDropdownOpen((v) => !v)}
+                      className="flex w-full items-center gap-1 text-left"
+                      title={t('sidebar.switchEbayAccount')}
+                    >
+                      <span className="block min-w-0 flex-1 truncate text-xs text-slate-500 dark:text-slate-300">
+                        {t('sidebar.ebayStatus')}: <span className="font-medium text-slate-700 dark:text-slate-100">{activeEbayLabel || '—'}</span>
+                      </span>
+                      <ChevronDown size={11} className={`shrink-0 text-slate-400 transition-transform ${ebayDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {ebayDropdownOpen && (
+                      <div className="absolute left-0 top-full z-50 mt-1 w-60 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl dark:border-slate-600 dark:bg-slate-800">
+                        <p className="px-3 pb-1.5 pt-2.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                          {t('sidebar.switchEbayAccount')}
+                        </p>
+                        <div className="max-h-56 overflow-y-auto">
+                          {ebayAccounts.map((acc) => {
+                            const label = acc.connectionName || acc.username || acc.profileUserId || acc.id;
+                            const isActiveAcc = acc.id === activeEbayAccountId;
+                            return (
+                              <button
+                                key={acc.id}
+                                type="button"
+                                disabled={!acc.connected || switchingEbayAccount}
+                                onClick={() => handleSwitchActiveEbay(acc.id)}
+                                title={!acc.connected ? t('sidebar.ebayAccountDisconnected') : undefined}
+                                className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                                  isActiveAcc
+                                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
+                                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
+                                }`}
+                              >
+                                <span className="truncate">{label}</span>
+                                {isActiveAcc ? (
+                                  switchingEbayAccount ? (
+                                    <Loader2 size={13} className="shrink-0 animate-spin" />
+                                  ) : (
+                                    <Check size={14} className="shrink-0" />
+                                  )
+                                ) : null}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : activeEbayLabel ? (
                   <span className="block text-xs text-slate-500 dark:text-slate-300 truncate">
                     {t('sidebar.ebayStatus')}: <span className="font-medium text-slate-700 dark:text-slate-100">{activeEbayLabel}</span>
                   </span>

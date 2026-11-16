@@ -23,7 +23,9 @@
     "logout": "Logout",
     "ebayStatus": "eBay Status",
     "ebayMessages": "eBay Messages",
-    "replayTour": "Replay onboarding tour"
+    "replayTour": "Replay onboarding tour",
+    "switchEbayAccount": "Switch eBay account",
+    "ebayAccountDisconnected": "This account is not connected"
   },
   "auth": {
     "login": "Login",
@@ -1073,7 +1075,8 @@
     "pricesMustBeGreater": "Amazon and eBay prices must be greater than zero to add product.",
     "addedToProducts": "Listing was added to products successfully.",
     "failedAddListing": "Failed to add listing to products.",
-    "replaceImage": "Replace"
+    "replaceImage": "Replace",
+    "dragToReorder": "Drag to reorder"
   },
   "listingDetailPage": {
     "unavailable": "Listing details are unavailable. Open this page from the Listings table.",

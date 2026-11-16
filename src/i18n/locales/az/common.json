@@ -23,7 +23,9 @@
     "logout": "Çıxış",
     "ebayStatus": "eBay Statusu",
     "ebayMessages": "eBay Mesajları",
-    "replayTour": "Onboarding turunu yenidən oynat"
+    "replayTour": "Onboarding turunu yenidən oynat",
+    "switchEbayAccount": "eBay hesabını dəyiş",
+    "ebayAccountDisconnected": "Bu hesab qoşulmayıb"
   },
   "auth": {
     "login": "Daxil ol",
@@ -842,7 +844,8 @@
     "pricesMustBeGreater": "Məhsul əlavə etmək üçün Amazon və eBay qiymətləri sıfırdan böyük olmalıdır.",
     "addedToProducts": "Elan məhsullara uğurla əlavə edildi.",
     "failedAddListing": "Elan məhsullara əlavə edilə bilmədi.",
-    "replaceImage": "Dəyiş"
+    "replaceImage": "Dəyiş",
+    "dragToReorder": "Sürükləyərək sırasını dəyişin"
   },
   "listingDetailPage": {
     "unavailable": "Siyahı detalları mövcud deyil. Bu səhifəni Siyahılar cədvəlindən açın.",

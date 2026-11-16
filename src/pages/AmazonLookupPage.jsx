@@ -189,6 +189,11 @@ export default function AmazonLookupPage() {
   // replacing that picture, === pictureUrls.length = adding new one(s).
   const [editingImageIdx, setEditingImageIdx] = useState(null);
   const [selectedPreviewImageIdx, setSelectedPreviewImageIdx] = useState(0);
+  // Drag-and-drop reordering of the preview gallery's thumbnails — dragged
+  // image's index, and whichever thumbnail is currently being dragged over
+  // (for the drop-target highlight). Both reset on drop/dragend.
+  const [draggedImageIdx, setDraggedImageIdx] = useState(null);
+  const [dragOverImageIdx, setDragOverImageIdx] = useState(null);
   const [bulkEditingIndex, setBulkEditingIndex] = useState(null); // set when the shared preview modal is editing a bulk row instead of the single lookup
 
   // Bulk auto-listing (paste multiple Amazon links)
@@ -581,6 +586,8 @@ export default function AmazonLookupPage() {
     setEditableListing(null);
     setEditingImageIdx(null);
     setSelectedPreviewImageIdx(0);
+    setDraggedImageIdx(null);
+    setDragOverImageIdx(null);
   }, []);
 
   // Opens the same preview/edit modal used for the single-ASIN flow, but
@@ -1414,6 +1421,25 @@ export default function AmazonLookupPage() {
                     });
                     setSelectedPreviewImageIdx((prev) => (prev === idx ? targetIdx : prev === targetIdx ? idx : prev));
                   };
+                  // Drag-and-drop reorder — drop a thumbnail anywhere in the strip to
+                  // move it there directly, instead of stepping one slot at a time
+                  // with moveImage above (kept for touch/keyboard users who can't drag).
+                  const reorderImages = (fromIdx, toIdx) => {
+                    if (fromIdx === toIdx || fromIdx == null || toIdx == null) return;
+                    setEditableListing((prev) => {
+                      const current = Array.isArray(prev.pictureUrls) ? [...prev.pictureUrls] : [];
+                      if (fromIdx < 0 || fromIdx >= current.length || toIdx < 0 || toIdx >= current.length) return prev;
+                      const [moved] = current.splice(fromIdx, 1);
+                      current.splice(toIdx, 0, moved);
+                      return { ...prev, pictureUrls: current };
+                    });
+                    setSelectedPreviewImageIdx((prev) => {
+                      if (prev === fromIdx) return toIdx;
+                      if (fromIdx < prev && toIdx >= prev) return prev - 1;
+                      if (fromIdx > prev && toIdx <= prev) return prev + 1;
+                      return prev;
+                    });
+                  };
                   // idx === pictureUrls.length means "Add Image" was used — append
                   // rather than overwrite an existing slot. `images` is always an
                   // array (see ImageEditModal) — length 1 for a URL paste or an
@@ -1499,18 +1525,37 @@ export default function AmazonLookupPage() {
                               </button>
                             )}
 
-                            {/* Thumbnails — click to preview, ‹ › to reorder, + to add (multiple at once) */}
+                            {/* Thumbnails — click to preview, drag to reorder (‹ › for touch/precision), + to add (multiple at once) */}
                             <div className="flex items-center gap-1.5 overflow-x-auto p-2">
                               {pictureUrls.map((url, idx) => (
-                                <div key={`${url}-${idx}`} className="group/thumb relative shrink-0">
+                                <div
+                                  key={`${url}-${idx}`}
+                                  className={`group/thumb relative shrink-0 transition-opacity ${draggedImageIdx === idx ? 'opacity-40' : ''}`}
+                                  draggable
+                                  onDragStart={(e) => { setDraggedImageIdx(idx); e.dataTransfer.effectAllowed = 'move'; }}
+                                  onDragEnter={() => { if (draggedImageIdx !== null && draggedImageIdx !== idx) setDragOverImageIdx(idx); }}
+                                  onDragOver={(e) => e.preventDefault()}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    if (draggedImageIdx !== null) reorderImages(draggedImageIdx, idx);
+                                    setDraggedImageIdx(null);
+                                    setDragOverImageIdx(null);
+                                  }}
+                                  onDragEnd={() => { setDraggedImageIdx(null); setDragOverImageIdx(null); }}
+                                >
                                   <button
                                     type="button"
                                     onClick={() => setSelectedPreviewImageIdx(idx)}
-                                    className={`block h-12 w-12 overflow-hidden rounded-md border-2 bg-white transition ${
-                                      mainIdx === idx ? 'border-indigo-500' : isDark ? 'border-slate-700 opacity-70 hover:opacity-100' : 'border-slate-200 opacity-75 hover:opacity-100'
+                                    title={t('amazonLookupPage.dragToReorder')}
+                                    className={`block h-12 w-12 cursor-grab overflow-hidden rounded-md border-2 bg-white transition active:cursor-grabbing ${
+                                      dragOverImageIdx === idx
+                                        ? 'border-indigo-400 ring-2 ring-indigo-400/60'
+                                        : mainIdx === idx
+                                          ? 'border-indigo-500'
+                                          : isDark ? 'border-slate-700 opacity-70 hover:opacity-100' : 'border-slate-200 opacity-75 hover:opacity-100'
                                     }`}
                                   >
-                                    <img src={url} alt={`${li.title || ''} ${idx + 1}`} className="h-full w-full object-contain" />
+                                    <img src={url} alt={`${li.title || ''} ${idx + 1}`} className="h-full w-full object-contain" draggable={false} />
                                   </button>
                                   {pictureUrls.length > 1 && (
                                     <div className="absolute inset-x-0 -bottom-1 flex justify-center gap-0.5 opacity-0 transition group-hover/thumb:opacity-100">
