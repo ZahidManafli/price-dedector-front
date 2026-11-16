@@ -83,9 +83,11 @@ const COUNTRY_OPTIONS = [
   'Portugal', 'Brazil', 'Switzerland', 'Unknown',
 ];
 
-// Guarantees the origin spec is always present in the list so the modal can always
-// render it as a Select. Only overrides the value with the "United States" default
-// when it's genuinely missing/blank/"Unknown" — a real scraped country is left as-is.
+// Guarantees the origin spec is always present in the list, defaulted to
+// "United States" on load every time — even over a real scraped country from
+// the source listing — so the modal always opens with it set correctly. The
+// seller can still change it afterward via the Select; this only governs the
+// initial/auto-filled value.
 function ensureItemOriginSpec(list) {
   const arr = Array.isArray(list) ? list.map((s) => ({ ...s })) : [];
   const idx = arr.findIndex(isItemOriginSpec);
@@ -93,10 +95,7 @@ function ensureItemOriginSpec(list) {
     arr.push({ name: ITEM_ORIGIN_SPEC_NAME, label: ITEM_ORIGIN_SPEC_NAME, value: 'United States' });
     return arr;
   }
-  const currentValue = String(arr[idx].value || '').trim();
-  if (!currentValue || currentValue.toLowerCase() === 'unknown') {
-    arr[idx] = { ...arr[idx], value: 'United States' };
-  }
+  arr[idx] = { ...arr[idx], value: 'United States' };
   return arr;
 }
 
