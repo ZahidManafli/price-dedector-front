@@ -568,6 +568,8 @@ export default function UpgradePlanPage() {
                     fallbackAddon={fallbackAddon}
                     ctaLabel={t('upgrade.upgradeTo', { plan: plan.name })}
                     onSubscribe={handleUpgrade}
+                    includeTracking={isCurrent ? renewIncludeTracking : undefined}
+                    onIncludeTrackingChange={isCurrent ? setRenewIncludeTracking : undefined}
                     currentSlot={
                       <RenewBox
                         isTrial={isTrialPlanName(plan.name)}

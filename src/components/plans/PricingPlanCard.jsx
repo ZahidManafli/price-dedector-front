@@ -40,11 +40,26 @@ export function getOwnTrackingAddon(plan) {
 
 export const isTrialPlanName = (name) => /trial/i.test(String(name || ''));
 
-export default function PricingPlanCard({ plan, onSubscribe, ctaLabel, fallbackAddon = null, isCurrent = false, currentSlot = null }) {
+export default function PricingPlanCard({
+  plan,
+  onSubscribe,
+  ctaLabel,
+  fallbackAddon = null,
+  isCurrent = false,
+  currentSlot = null,
+  includeTracking: includeTrackingProp,
+  onIncludeTrackingChange,
+}) {
   const { formatPrice } = useLanguage();
   const { t } = useTranslation('pricing');
   // The add-on is pre-selected; unticking it strikes the tracking-credit feature.
-  const [includeTracking, setIncludeTracking] = useState(true);
+  // Uncontrolled by default (each card owns its own choice for the subscribe
+  // flow); the current-plan card is controlled from outside instead — passed
+  // down the same state the renew box's own checkbox uses, so the headline
+  // price always matches what that checkbox says, not an independent default.
+  const [includeTrackingState, setIncludeTrackingState] = useState(true);
+  const includeTracking = includeTrackingProp !== undefined ? includeTrackingProp : includeTrackingState;
+  const setIncludeTracking = onIncludeTrackingChange || setIncludeTrackingState;
   const featured = !!plan.featured;
 
   const hasDiscount =
