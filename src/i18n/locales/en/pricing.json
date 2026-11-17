@@ -44,6 +44,7 @@
     "currentIs": "Your current plan: {{plan}}",
     "upgradeTo": "Switch to {{plan}}",
     "renew": "Renew plan",
+    "renewIncludeTracking": "Also renew the Tracking add-on (+{{price}})",
     "chooseMethod": "Choose a payment method",
     "card": "Card",
     "noCard": "No default card added",

@@ -184,7 +184,7 @@ export const paymentsAPI = {
   setDefaultCard: (cardId) => api.patch(`/payments/cards/${encodeURIComponent(cardId)}/default`),
   deleteCard: (cardId) => api.delete(`/payments/cards/${encodeURIComponent(cardId)}`),
   setAutoRenew: (enabled) => api.patch('/payments/auto-renew', { enabled }),
-  payNow: () => api.post('/payments/pay-now'),
+  payNow: (data) => api.post('/payments/pay-now', data),
   payWithSavedCard: (requestId) => api.post(`/payments/epoint/pay-with-saved-card/${encodeURIComponent(requestId)}`),
   // Google Pay / Apple Pay (Epoint's digital-wallet widget) — getWidgetPayload
   // hands back a widget_url meant to be embedded in an <iframe> (not
@@ -192,7 +192,7 @@ export const paymentsAPI = {
   // page hosting that iframe poll for the async callback result.
   getWidgetPayload: (requestId) => api.get(`/payments/epoint/widget/${encodeURIComponent(requestId)}`),
   getPaymentStatus: (requestId) => api.get(`/payments/epoint/status/${encodeURIComponent(requestId)}`),
-  payNowWidget: () => api.post('/payments/epoint/pay-now/widget'),
+  payNowWidget: (data) => api.post('/payments/epoint/pay-now/widget', data),
   getRenewalWidgetStatus: (attemptId) => api.get(`/payments/epoint/pay-now/widget/${encodeURIComponent(attemptId)}/status`),
 };
 

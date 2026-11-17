@@ -44,6 +44,7 @@
     "currentIs": "Ваш текущий план: {{plan}}",
     "upgradeTo": "Перейти на {{plan}}",
     "renew": "Продлить план",
+    "renewIncludeTracking": "Также продлить добавку Tracking (+{{price}})",
     "chooseMethod": "Выберите способ оплаты",
     "card": "Карта",
     "noCard": "Основная карта не добавлена",

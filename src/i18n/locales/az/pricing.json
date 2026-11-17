@@ -44,6 +44,7 @@
     "currentIs": "Hazırkı planınız: {{plan}}",
     "upgradeTo": "{{plan}} planına keç",
     "renew": "Planı yenilə",
+    "renewIncludeTracking": "Tracking əlavəsini də yenilə (+{{price}})",
     "chooseMethod": "Ödəniş üsulunu seçin",
     "card": "Kart",
     "noCard": "Əsas kart əlavə edilməyib",

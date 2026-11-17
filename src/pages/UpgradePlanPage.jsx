@@ -6,10 +6,11 @@ import Swal from 'sweetalert2';
 import { paymentsAPI, settingsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import PaymentMethodPicker from '../components/PaymentMethodPicker';
 import SubscriptionRequestModal from '../components/SubscriptionRequestModal';
 import GooglePayModal from '../components/GooglePayModal';
-import PricingPlanCard, { isTrialPlanName } from '../components/plans/PricingPlanCard';
+import PricingPlanCard, { isTrialPlanName, getOwnTrackingAddon } from '../components/plans/PricingPlanCard';
 import { getWalletPaymentLabel } from '../utils/walletPayment';
 import { renderAccentedTitle } from '../utils/accentedTitle';
 
@@ -120,8 +121,9 @@ function OtpInput({ value, onChange, isDark }) {
 // Same flow as Settings → Ödəniş: "Kart" charges the default saved card
 // (POST /payments/pay-now), the wallet option opens Epoint's Google/Apple Pay
 // widget (POST /payments/epoint/pay-now/widget) and polls until it settles.
-function RenewBox({ isTrial, defaultCard, walletLabel, onPayCard, onPayWallet, payingCard, payingWallet }) {
+function RenewBox({ isTrial, addon, includeTracking, onToggleTracking, defaultCard, walletLabel, onPayCard, onPayWallet, payingCard, payingWallet }) {
   const { t } = useTranslation('pricing');
+  const { formatPrice } = useLanguage();
   const [open, setOpen] = useState(false);
 
   if (isTrial) {
@@ -132,21 +134,43 @@ function RenewBox({ isTrial, defaultCard, walletLabel, onPayCard, onPayWallet, p
     );
   }
 
+  // Shown above the renew button/payment panel either way — the user must be
+  // able to see and change this before they commit to a payment method, not
+  // only while the method picker happens to be open.
+  const trackingToggle = addon ? (
+    <label className="flex cursor-pointer items-start gap-2.5 rounded-xl bg-white px-3 py-2.5 text-xs text-slate-700 shadow-sm ring-1 ring-slate-200 hover:ring-emerald-400/50 dark:bg-white/[0.04] dark:text-slate-200 dark:ring-white/10">
+      <input
+        type="checkbox"
+        checked={includeTracking}
+        onChange={(e) => onToggleTracking(e.target.checked)}
+        className="mt-0.5 h-4 w-4 shrink-0 rounded accent-emerald-600"
+      />
+      <span className="font-semibold leading-4">
+        {t('upgrade.renewIncludeTracking', { price: formatPrice(addon.price) })}
+      </span>
+    </label>
+  ) : null;
+
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition hover:-translate-y-0.5 hover:shadow-xl"
-      >
-        <RefreshCw className="h-4 w-4 transition group-hover:rotate-180" />
-        {t('upgrade.renew')}
-      </button>
+      <div className="space-y-2">
+        {trackingToggle}
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition hover:-translate-y-0.5 hover:shadow-xl"
+        >
+          <RefreshCw className="h-4 w-4 transition group-hover:rotate-180" />
+          {t('upgrade.renew')}
+        </button>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-2 rounded-2xl bg-white p-3 text-slate-700 shadow-lg ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:ring-white/10">
+    <div className="space-y-2">
+      {trackingToggle}
+      <div className="space-y-2 rounded-2xl bg-white p-3 text-slate-700 shadow-lg ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:ring-white/10">
       <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{t('upgrade.chooseMethod')}</p>
       <button
         type="button"
@@ -184,6 +208,7 @@ function RenewBox({ isTrial, defaultCard, walletLabel, onPayCard, onPayWallet, p
       <button type="button" onClick={() => setOpen(false)} className="w-full pt-1 text-center text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white">
         {t('upgrade.cancel')}
       </button>
+      </div>
     </div>
   );
 }
@@ -217,6 +242,12 @@ export default function UpgradePlanPage() {
   const walletLabel = getWalletPaymentLabel();
   const defaultCard = cards.find((c) => c.isDefault) || null;
 
+  // Renew-box tracking checkbox — pre-checked only if the user already has
+  // the paid add-on active (users.tracking_addon_active, read once via
+  // /settings/limits); unticking it means this renewal skips both the charge
+  // and the credit grant (see billingService.js resolveRenewalCharge).
+  const [renewIncludeTracking, setRenewIncludeTracking] = useState(true);
+
   // Custom plan request — same SubscriptionRequestModal + public
   // /subscription-requests + email-verification flow the Landing Page uses
   // for its "Request custom limits" buttons (planId: 'custom').
@@ -234,6 +265,9 @@ export default function UpgradePlanPage() {
     paymentsAPI.listCards()
       .then((res) => setCards(res?.data?.cards || []))
       .catch(() => setCards([]));
+    settingsAPI.getLimits()
+      .then((res) => setRenewIncludeTracking(!!res?.data?.trackingCredits?.addonActive))
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -266,7 +300,7 @@ export default function UpgradePlanPage() {
   const handlePayCard = async () => {
     try {
       setPayingCard(true);
-      const response = await paymentsAPI.payNow();
+      const response = await paymentsAPI.payNow({ includeTracking: renewIncludeTracking });
       await refreshLimits();
       renewSuccess(response?.data?.nextExpiresAt);
     } catch (err) {
@@ -279,7 +313,7 @@ export default function UpgradePlanPage() {
   const handlePayWallet = async () => {
     try {
       setPayingWallet(true);
-      const response = await paymentsAPI.payNowWidget();
+      const response = await paymentsAPI.payNowWidget({ includeTracking: renewIncludeTracking });
       const { attemptId, widgetUrl } = response?.data || {};
       if (!attemptId || !widgetUrl) throw new Error(t('upgrade.walletLoadFailed', { wallet: walletLabel }));
       setRenewalAttemptId(attemptId);
@@ -537,6 +571,9 @@ export default function UpgradePlanPage() {
                     currentSlot={
                       <RenewBox
                         isTrial={isTrialPlanName(plan.name)}
+                        addon={getOwnTrackingAddon(plan) || (plan.category === 'subscription' ? fallbackAddon : null)}
+                        includeTracking={renewIncludeTracking}
+                        onToggleTracking={setRenewIncludeTracking}
                         defaultCard={defaultCard}
                         walletLabel={walletLabel}
                         onPayCard={handlePayCard}
