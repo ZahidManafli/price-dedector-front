@@ -109,6 +109,33 @@ export const AuthProvider = ({ children }) => {
     };
   }, [user]);
 
+  // Fired by services/api.js the moment ANY request reveals (via the
+  // backend's 403 PLAN_EXPIRED) that the plan has actually expired — pushes
+  // that authoritative expiry straight into the cached user object so
+  // isPlanExpired below (re-evaluated on every render against Date.now())
+  // flips true on this very next render, and App.jsx's ProtectedRoute
+  // <Navigate>s to /plan-expired itself: a normal client-side route change,
+  // not a full reload. Without this, isPlanExpired only reflected whatever
+  // planExpiresAt was cached at the last login/explicit refresh — accurate
+  // the instant it expires only by coincidence, not because anything here
+  // reacted to the passage of time or to the server's own verdict.
+  useEffect(() => {
+    const handlePlanExpiredEvent = (e) => {
+      const planExpiresAt = e?.detail?.planExpiresAt;
+      if (!planExpiresAt) return;
+      setUser((prev) => {
+        if (!prev || prev.planExpiresAt === planExpiresAt) return prev;
+        const next = { ...prev, planExpiresAt };
+        try {
+          localStorage.setItem('authUser', JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    };
+    window.addEventListener('auth:planExpired', handlePlanExpiredEvent);
+    return () => window.removeEventListener('auth:planExpired', handlePlanExpiredEvent);
+  }, []);
+
   const setSession = (nextUser, nextToken) => {
     try {
       if (nextToken) {

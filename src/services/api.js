@@ -97,20 +97,23 @@ api.interceptors.response.use(
         window.location.href = '/dashboard';
       }
     } else if (status === 403 && code === 'PLAN_EXPIRED') {
-      const path = typeof window !== 'undefined' ? window.location.pathname : '';
-      // /settings stays reachable while expired (e.g. so the user can add a
-      // card and pay via "Ödəniş et") — a stray 403 from an unrelated
-      // sub-call made from that page (eBay/Amazon status, still gated on
-      // expiry) must not bounce them straight back out to /plan-expired.
-      // Clicking "Kart əlavə et" navigates the browser away from /settings
-      // to /payments/epoint/card/register/:id (and checkout works the same
-      // way) — those must stay exempt too, or an expired user gets bounced
-      // mid-way through adding a card or paying.
-      const isExempt =
-        path === '/plan-expired' || path === '/upgrade-plan' || path === '/settings' || path.startsWith('/payments');
-      if (path && !isExempt) {
-        hardRedirectInFlight = true;
-        window.location.href = '/plan-expired';
+      // No hard reload here on purpose (unlike the branches above) — a page
+      // commonly has several requests in flight at once, and a burst of these
+      // landing together used to each independently reassign
+      // window.location.href, cancelling and restarting the navigation over
+      // and over until the browser was left showing nothing (the black-screen
+      // bug). AuthContext already computes isPlanExpired reactively from
+      // user.planExpiresAt on every render, and App.jsx's ProtectedRoute
+      // already <Navigate>s to /plan-expired the moment that's true — this
+      // event just pushes the authoritative, just-learned expiry into that
+      // cached user object so React re-renders and the existing client-side
+      // route guard does the (smooth, single, non-reloading) navigation
+      // itself. AuthContext's handler is itself idempotent (skips the state
+      // update if planExpiresAt already matches), so firing this once per
+      // failed request in a burst is harmless.
+      const planExpiresAt = error?.response?.data?.planExpiresAt;
+      if (typeof window !== 'undefined' && planExpiresAt) {
+        window.dispatchEvent(new CustomEvent('auth:planExpired', { detail: { planExpiresAt } }));
       }
     }
     return Promise.reject(error);
