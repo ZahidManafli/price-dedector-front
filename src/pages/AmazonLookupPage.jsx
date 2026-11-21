@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { amazonAPI, ebayAPI, studioAPI, walletAPI } from '../services/api';
+import { amazonAPI, dewisoAPI, ebayAPI, studioAPI, walletAPI } from '../services/api';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import AutoListProgressStepper from '../components/AutoListProgressStepper';
