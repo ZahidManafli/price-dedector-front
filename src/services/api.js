@@ -47,10 +47,24 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// A page load commonly fires many parallel requests (dashboard widgets,
+// status polls, etc.) — if the session has just gone bad (expired plan,
+// invalid token), several of them land their 403/401 within the same tick,
+// and without this guard EACH one would independently reassign
+// window.location.href. Reassigning href to a new URL while a previous
+// reassignment's navigation hasn't committed yet cancels and restarts that
+// navigation — repeated several times over, this can leave the browser mid-
+// teardown of the old page with the new one never finishing its first paint,
+// which shows up to the user as a blank/black screen. Once any branch below
+// starts a hard redirect, every other response in this same page load must
+// no-op instead of firing its own.
+let hardRedirectInFlight = false;
+
 // Redirect to login on 401 / invalid token
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (hardRedirectInFlight) return Promise.reject(error);
     const status = error?.response?.status;
     const code = error?.response?.data?.code;
     const isMaintenance = status === 503 && code === 'MAINTENANCE_MODE';
@@ -59,13 +73,17 @@ api.interceptors.response.use(
         localStorage.removeItem('authToken');
         localStorage.removeItem('authUser');
       } catch {}
-      if (typeof window !== 'undefined') window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        hardRedirectInFlight = true;
+        window.location.href = '/login';
+      }
     } else if (isMaintenance) {
       try {
         localStorage.removeItem('authToken');
         localStorage.removeItem('authUser');
       } catch {}
       if (typeof window !== 'undefined' && window.location.pathname !== '/maintenance') {
+        hardRedirectInFlight = true;
         window.location.href = '/maintenance';
       }
     } else if (status === 403 && code === 'PLAN_TAB_ACCESS_DENIED') {
@@ -75,6 +93,7 @@ api.interceptors.response.use(
       // a "no access" lock instead of bouncing the whole page to /dashboard.
       if (error?.config?.skipPlanTabRedirect) return Promise.reject(error);
       if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
+        hardRedirectInFlight = true;
         window.location.href = '/dashboard';
       }
     } else if (status === 403 && code === 'PLAN_EXPIRED') {
@@ -90,6 +109,7 @@ api.interceptors.response.use(
       const isExempt =
         path === '/plan-expired' || path === '/upgrade-plan' || path === '/settings' || path.startsWith('/payments');
       if (path && !isExempt) {
+        hardRedirectInFlight = true;
         window.location.href = '/plan-expired';
       }
     }
