@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ebayAPI, productAPI } from '../services/api';
 import {
   calculateProfit,
+  calculateRecommendedEbayPriceForMargin,
   extractAmazonAsin,
   formatCurrency,
   isValidAmazonAsin,
@@ -61,6 +62,16 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
     adRate: 0,
     fixedFee: 0.3,
   };
+  // 'margin' mode never reads the typed currentEbayPrice for preview/profit
+  // purposes — it's always derived live from the Amazon price + target
+  // margin %, exactly like the backend recomputes it on save.
+  const resolveEffectiveEbayPrice = (data) =>
+    data.pricingMode === 'margin'
+      ? calculateRecommendedEbayPriceForMargin(data.currentAmazonPrice, data.targetMarginPercent, {
+          ...profitOptions,
+          adRate: (parseFloat(data.adRate) || 0) / 100,
+        })
+      : parseFloat(data.currentEbayPrice) || 0;
   const [formData, setFormData] = useState({
     productName: '',
     amazonAsin: '',
@@ -70,6 +81,8 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
     currentAmazonPrice: '',
     currentEbayPrice: '',
     adRate: '',
+    pricingMode: 'fixed',
+    targetMarginPercent: '',
     userEmail: '',
     // New products start with every check unselected (false) until the user opts in
     // here or later from the Products page's per-row check-settings popover.
@@ -126,6 +139,8 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
           currentAmazonPrice: product.currentAmazonPrice ?? '',
           currentEbayPrice: product.currentEbayPrice ?? '',
           adRate: product.adRate ?? '',
+          pricingMode: product.pricingMode === 'margin' ? 'margin' : 'fixed',
+          targetMarginPercent: product.targetMarginPercent ?? '',
           userEmail: product.userEmail || '',
           // The API already resolves NULL (legacy, pre-feature) to enabled — default
           // to true here only as a further fallback if a field is ever missing.
@@ -136,7 +151,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
         };
 
         setFormData(nextData);
-        setCalculatedProfit(calculateProfit(nextData.currentEbayPrice, nextData.currentAmazonPrice, {
+        setCalculatedProfit(calculateProfit(resolveEffectiveEbayPrice(nextData), nextData.currentAmazonPrice, {
           ...profitOptions,
           adRate: (parseFloat(nextData.adRate) || 0) / 100,
         }));
@@ -161,12 +176,12 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
 
   useEffect(() => {
     setCalculatedProfit(
-      calculateProfit(formData.currentEbayPrice, formData.currentAmazonPrice, {
+      calculateProfit(resolveEffectiveEbayPrice(formData), formData.currentAmazonPrice, {
         ...profitOptions,
         adRate: (parseFloat(formData.adRate) || 0) / 100,
       })
     );
-  }, [formData.currentAmazonPrice, formData.currentEbayPrice, formData.adRate]);
+  }, [formData.currentAmazonPrice, formData.currentEbayPrice, formData.adRate, formData.pricingMode, formData.targetMarginPercent]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -198,7 +213,12 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       return;
     }
 
-    if (!formData.currentAmazonPrice || !formData.currentEbayPrice) {
+    if (formData.pricingMode === 'margin') {
+      if (!formData.currentAmazonPrice || !(parseFloat(formData.targetMarginPercent) > 0)) {
+        setAlert({ type: 'error', message: t('productFormPage.marginPercentRequired') });
+        return;
+      }
+    } else if (!formData.currentAmazonPrice || !formData.currentEbayPrice) {
       setAlert({ type: 'error', message: t('productFormPage.enterBothPrices') });
       return;
     }
@@ -218,7 +238,12 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       formDataObj.append('isVariationProduct', String(!!formData.isVariationProduct));
       formDataObj.append('variationSku', formData.isVariationProduct ? String(formData.variationSku || '').trim() : '');
       formDataObj.append('currentAmazonPrice', formData.currentAmazonPrice);
-      formDataObj.append('currentEbayPrice', formData.currentEbayPrice);
+      formDataObj.append('pricingMode', formData.pricingMode === 'margin' ? 'margin' : 'fixed');
+      if (formData.pricingMode === 'margin') {
+        formDataObj.append('targetMarginPercent', formData.targetMarginPercent);
+      } else {
+        formDataObj.append('currentEbayPrice', formData.currentEbayPrice);
+      }
       formDataObj.append('adRate', formData.adRate || '0');
       formDataObj.append('userEmail', formData.userEmail);
       formDataObj.append('checkPriceEnabled', String(!!formData.checkPriceEnabled));
@@ -270,11 +295,11 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
     }
   };
 
+  const ebayPriceNum = resolveEffectiveEbayPrice(formData);
   const fees =
-    Number(formData.currentEbayPrice) > 0 && Number(formData.currentAmazonPrice) > 0
-      ? Math.max(0, Number(formData.currentEbayPrice) - Number(formData.currentAmazonPrice) - calculatedProfit)
+    ebayPriceNum > 0 && Number(formData.currentAmazonPrice) > 0
+      ? Math.max(0, ebayPriceNum - Number(formData.currentAmazonPrice) - calculatedProfit)
       : null;
-  const ebayPriceNum = Number(formData.currentEbayPrice) || 0;
   const margin = ebayPriceNum > 0 && fees !== null ? Math.round((calculatedProfit / ebayPriceNum) * 100) : null;
   const asinValid = !formData.amazonAsin || isValidAmazonAsin(formData.amazonAsin);
   const ebayIdValid = !formData.ebayItemId || /^\d{9,15}$/.test(String(formData.ebayItemId).trim());
@@ -422,38 +447,125 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
               {/* Pricing */}
               <section className={section}>
                 <SectionTitle icon={CircleDollarSign} accent="text-emerald-500" title={t('productFormPage.ui.pricingTitle')} hint={t('productFormPage.ui.pricingHint')} />
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  {[
-                    ['currentAmazonPrice', t('productFormPage.amazonPrice'), '$', true],
-                    ['currentEbayPrice', t('productFormPage.ebayPrice'), '$', true],
-                    ['adRate', t('productFormPage.adRate'), '%', false],
-                  ].map(([name, label, unit, required]) => (
-                    <div key={name}>
-                      <label className={labelCls} htmlFor={`pf-${name}`}>{label}</label>
-                      <div className="relative">
-                        {unit === '$' && <span className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm ${muted}`}>$</span>}
-                        <input
-                          id={`pf-${name}`}
-                          type="number"
-                          name={name}
-                          value={formData[name]}
-                          onChange={handleChange}
-                          placeholder={name === 'adRate' ? t('productFormPage.adRatePlaceholder') : t('productFormPage.pricePlaceholder')}
-                          step="0.01"
-                          min="0"
-                          className={`${inputCls()} tabular-nums ${unit === '$' ? 'pl-7' : 'pr-8'}`}
-                          disabled={loading}
-                          required={required}
-                        />
-                        {unit === '%' && <span className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm ${muted}`}>%</span>}
-                      </div>
-                    </div>
+
+                {/* Fixed price (typed in, pushed to eBay as-is) vs margin mode
+                    (eBay price is always system-computed from the Amazon cost
+                    + this target %, and re-syncs automatically whenever the
+                    Amazon price changes). */}
+                <div className={`mb-4 inline-flex rounded-xl border p-1 ${isDark ? 'border-slate-700 bg-slate-950/60' : 'border-slate-200 bg-white'}`}>
+                  {['fixed', 'margin'].map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, pricingMode: mode }))}
+                      disabled={loading}
+                      className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+                        formData.pricingMode === mode
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {mode === 'fixed' ? t('productFormPage.pricingModeFixed') : t('productFormPage.pricingModeMargin')}
+                    </button>
                   ))}
                 </div>
-                <p className={`mt-2 text-xs ${muted}`}>{t('productFormPage.adRateHint')}</p>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className={labelCls} htmlFor="pf-currentAmazonPrice">{t('productFormPage.amazonPrice')}</label>
+                    <div className="relative">
+                      <span className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm ${muted}`}>$</span>
+                      <input
+                        id="pf-currentAmazonPrice"
+                        type="number"
+                        name="currentAmazonPrice"
+                        value={formData.currentAmazonPrice}
+                        onChange={handleChange}
+                        placeholder={t('productFormPage.pricePlaceholder')}
+                        step="0.01"
+                        min="0"
+                        className={`${inputCls()} tabular-nums pl-7`}
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {formData.pricingMode === 'margin' ? (
+                    <>
+                      <div>
+                        <label className={labelCls} htmlFor="pf-targetMarginPercent">{t('productFormPage.targetMarginPercent')}</label>
+                        <div className="relative">
+                          <input
+                            id="pf-targetMarginPercent"
+                            type="number"
+                            name="targetMarginPercent"
+                            value={formData.targetMarginPercent}
+                            onChange={handleChange}
+                            placeholder={t('productFormPage.targetMarginPercentPlaceholder')}
+                            step="0.1"
+                            min="0"
+                            className={`${inputCls()} tabular-nums pr-8`}
+                            disabled={loading}
+                            required
+                          />
+                          <span className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm ${muted}`}>%</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className={labelCls}>{t('productFormPage.computedEbayPrice')}</label>
+                        <div className={`rounded-xl border px-3 py-2.5 text-sm font-semibold tabular-nums ${isDark ? 'border-slate-800 bg-slate-900/60 text-slate-200' : 'border-slate-200 bg-slate-100 text-slate-700'}`}>
+                          {ebayPriceNum > 0 ? formatCurrency(ebayPriceNum) : '—'}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div>
+                      <label className={labelCls} htmlFor="pf-currentEbayPrice">{t('productFormPage.ebayPrice')}</label>
+                      <div className="relative">
+                        <span className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm ${muted}`}>$</span>
+                        <input
+                          id="pf-currentEbayPrice"
+                          type="number"
+                          name="currentEbayPrice"
+                          value={formData.currentEbayPrice}
+                          onChange={handleChange}
+                          placeholder={t('productFormPage.pricePlaceholder')}
+                          step="0.01"
+                          min="0"
+                          className={`${inputCls()} tabular-nums pl-7`}
+                          disabled={loading}
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className={labelCls} htmlFor="pf-adRate">{t('productFormPage.adRate')}</label>
+                    <div className="relative">
+                      <input
+                        id="pf-adRate"
+                        type="number"
+                        name="adRate"
+                        value={formData.adRate}
+                        onChange={handleChange}
+                        placeholder={t('productFormPage.adRatePlaceholder')}
+                        step="0.01"
+                        min="0"
+                        className={`${inputCls()} tabular-nums pr-8`}
+                        disabled={loading}
+                      />
+                      <span className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm ${muted}`}>%</span>
+                    </div>
+                  </div>
+                </div>
+                <p className={`mt-2 text-xs ${muted}`}>
+                  {formData.pricingMode === 'margin' ? t('productFormPage.marginModeHint') : t('productFormPage.adRateHint')}
+                </p>
 
                 {/* Profit Preview */}
-                {(formData.currentAmazonPrice || formData.currentEbayPrice) && (
+                {(formData.currentAmazonPrice || formData.currentEbayPrice || formData.targetMarginPercent) && (
                   <div className={`mt-4 rounded-xl border p-4 ${
                     calculatedProfit >= 0
                       ? isDark ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-emerald-200 bg-emerald-50/60'

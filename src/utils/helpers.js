@@ -56,6 +56,19 @@ export const calculateRecommendedEbayPrice = (amazonPrice, targetProfit = 0, opt
   return Math.round(((cost + desiredProfit + fixedFee) / denominator) * 100) / 100;
 };
 
+// "Margin mode" on the Products page: target profit = X% of the Amazon cost,
+// eBay price solved to hit it. Mirrors backend-for-server/src/utils/profitCalculator.js's
+// calculateRecommendedEbayPriceForMargin exactly — used for the live price
+// preview while the seller is typing a margin % (the actual save/push still
+// goes through the backend, which recomputes this itself rather than trusting
+// whatever the client displayed).
+export const calculateRecommendedEbayPriceForMargin = (amazonPrice, marginPercent, options = {}) => {
+  const cogs = parseFloat(amazonPrice) || 0;
+  const percent = Math.max(0, parseFloat(marginPercent) || 0) / 100;
+  const targetProfit = cogs * percent;
+  return calculateRecommendedEbayPrice(cogs, targetProfit, options);
+};
+
 // Format currency
 export const formatCurrency = (value) => {
   return new Intl.NumberFormat('en-US', {

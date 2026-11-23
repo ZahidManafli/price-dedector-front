@@ -14,7 +14,7 @@ import ProductBulkImportModal from '../components/ProductBulkImportModal';
 import TutorialVideoButton from '../components/TutorialVideoButton';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
-import { buildAmazonProductUrl, calculateProfit, formatCurrency } from '../utils/helpers';
+import { buildAmazonProductUrl, calculateProfit, calculateRecommendedEbayPriceForMargin, formatCurrency } from '../utils/helpers';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -601,33 +601,31 @@ export default function ProductsPage() {
   const handleInlineSave = async (product) => {
     setSavingInline(true);
     try {
+      const pricingMode = inlineValues.pricingMode === 'margin' ? 'margin' : 'fixed';
       const fd = new FormData();
       fd.append('productName', (inlineValues.productName ?? product.productName) || '');
       fd.append('adRate', (inlineValues.adRate ?? product.adRate ?? 0).toString());
       fd.append('amazonAsin', (inlineValues.amazonAsin ?? product.amazonAsin) || '');
       fd.append('ebayItemId', (inlineValues.ebayItemId ?? product.ebayItemId) || '');
       fd.append('currentAmazonPrice', (inlineValues.currentAmazonPrice ?? product.currentAmazonPrice ?? '').toString());
-      fd.append('currentEbayPrice', (inlineValues.currentEbayPrice ?? product.currentEbayPrice ?? '').toString());
+      fd.append('pricingMode', pricingMode);
+      if (pricingMode === 'margin') {
+        fd.append('targetMarginPercent', (inlineValues.targetMarginPercent ?? product.targetMarginPercent ?? '').toString());
+      } else {
+        fd.append('currentEbayPrice', (inlineValues.currentEbayPrice ?? product.currentEbayPrice ?? '').toString());
+      }
       fd.append('userEmail', product.userEmail || '');
-      await productAPI.update(product.id, fd);
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === product.id
-            ? {
-                ...p,
-                productName: (inlineValues.productName ?? p.productName) || p.productName,
-                adRate: inlineValues.adRate ?? p.adRate,
-                amazonAsin: (inlineValues.amazonAsin ?? p.amazonAsin) || p.amazonAsin,
-                ebayItemId: (inlineValues.ebayItemId ?? p.ebayItemId) || p.ebayItemId,
-                currentAmazonPrice: inlineValues.currentAmazonPrice ?? p.currentAmazonPrice,
-                currentEbayPrice: inlineValues.currentEbayPrice ?? p.currentEbayPrice,
-              }
-            : p
-        )
-      );
+      // Margin mode derives the real eBay price server-side (and pushes it
+      // live) — reuse the same background-job poll-then-refresh flow the
+      // full edit form already relies on (see the productFormJob effect
+      // above) instead of optimistically echoing a locally-guessed value,
+      // which would be wrong the moment ad rate or the margin formula
+      // differs even slightly from a hand-rolled client guess.
+      const response = await productAPI.update(product.id, fd);
+      const jobId = response?.data?.jobId;
+      if (jobId) setProductFormJob({ jobId, jobType: 'update', status: 'processing' });
       setInlineEditId(null);
       setInlineValues({});
-      setAlert({ type: 'success', message: 'Product updated' });
     } catch {
       setAlert({ type: 'error', message: 'Failed to update product' });
     } finally {
@@ -1255,18 +1253,58 @@ export default function ProductsPage() {
                       {/* eBay price + trend */}
                       <td className={tdCls}>
                         {isEditing ? (
-                          <input
-                            type="number"
-                            min="0" step="0.01"
-                            value={inlineValues.currentEbayPrice ?? product.currentEbayPrice ?? ''}
-                            onChange={(e) => setInlineValues((v) => ({ ...v, currentEbayPrice: e.target.value }))}
-                            className={`w-24 rounded-lg border px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-blue-500/40 ${
-                              isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
-                            }`}
-                          />
+                          <div className="space-y-1">
+                            <button
+                              type="button"
+                              onClick={() => setInlineValues((v) => ({
+                                ...v,
+                                pricingMode: (v.pricingMode ?? product.pricingMode ?? 'fixed') === 'margin' ? 'fixed' : 'margin',
+                              }))}
+                              className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                                isDark ? 'bg-slate-700 text-slate-200 hover:bg-slate-600' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                              }`}
+                              title="Sabit qiymət / Hədəf marja %"
+                            >
+                              {(inlineValues.pricingMode ?? product.pricingMode ?? 'fixed') === 'margin' ? 'Marja %' : 'Sabit $'}
+                            </button>
+                            {(inlineValues.pricingMode ?? product.pricingMode ?? 'fixed') === 'margin' ? (
+                              <>
+                                <input
+                                  type="number"
+                                  min="0" step="0.1"
+                                  value={inlineValues.targetMarginPercent ?? product.targetMarginPercent ?? ''}
+                                  onChange={(e) => setInlineValues((v) => ({ ...v, targetMarginPercent: e.target.value }))}
+                                  placeholder="20%"
+                                  className={`w-24 rounded-lg border px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-blue-500/40 ${
+                                    isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+                                  }`}
+                                />
+                                <p className={`text-[10px] tabular-nums ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                  ≈ {formatCurrency(calculateRecommendedEbayPriceForMargin(
+                                    inlineValues.currentAmazonPrice ?? product.currentAmazonPrice,
+                                    inlineValues.targetMarginPercent ?? product.targetMarginPercent,
+                                    { taxRate: 0.06, fvfRate: 0.136, adRate: (parseFloat(inlineValues.adRate ?? product.adRate) || 0) / 100, fixedFee: 0.3 }
+                                  ))}
+                                </p>
+                              </>
+                            ) : (
+                              <input
+                                type="number"
+                                min="0" step="0.01"
+                                value={inlineValues.currentEbayPrice ?? product.currentEbayPrice ?? ''}
+                                onChange={(e) => setInlineValues((v) => ({ ...v, currentEbayPrice: e.target.value }))}
+                                className={`w-24 rounded-lg border px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-blue-500/40 ${
+                                  isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+                                }`}
+                              />
+                            )}
+                          </div>
                         ) : (
                           <>
                             <p className="font-semibold tabular-nums">{formatCurrency(product.currentEbayPrice)}</p>
+                            {product.pricingMode === 'margin' && (
+                              <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Marja: {product.targetMarginPercent}%</p>
+                            )}
                             {ebayTrend !== null && <TrendBadge pct={ebayTrend} />}
                           </>
                         )}
@@ -1344,6 +1382,8 @@ export default function ProductsPage() {
                                     ebayItemId: product.ebayItemId ?? '',
                                     currentAmazonPrice: product.currentAmazonPrice ?? '',
                                     currentEbayPrice: product.currentEbayPrice ?? '',
+                                    pricingMode: product.pricingMode || 'fixed',
+                                    targetMarginPercent: product.targetMarginPercent ?? '',
                                   });
                                 }}
                                 title="Quick edit"
