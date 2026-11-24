@@ -7,7 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import PartnersManagement from '../components/PartnersManagement';
 import ZikAccounts from '../components/ZikAccounts';
 import ReferralManagementTab from '../components/ReferralManagementTab';
-import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle, CalendarClock, Clock3, ShieldAlert, Plus, X, Eye, Star, Check, Shield, ChevronDown, Zap, Globe, LifeBuoy, Inbox, Layers, Share2, Handshake, Bell, Sparkles, Gift, ShoppingCart, PlayCircle, Bot, KeyRound, Webhook, Wrench, Trophy } from 'lucide-react';
+import { ShieldCheck, Users, UserPlus, Pencil, ListChecks, PackageOpen, RefreshCw, Search, Trash2, AlertTriangle, CalendarClock, Clock3, ShieldAlert, Plus, X, Eye, Star, Check, Shield, ChevronDown, Zap, Globe, LifeBuoy, Inbox, Layers, Share2, Handshake, Bell, Sparkles, Gift, ShoppingCart, PlayCircle, Bot, KeyRound, Webhook, Wrench, Trophy, Copy } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { TAB_KEYS, USER_DEFAULT_ALLOWED_TABS } from '../utils/planAccess';
 import * as XLSX from 'xlsx';
@@ -19,6 +19,7 @@ import AdminOrderNotificationsTab from '../components/AdminOrderNotificationsTab
 import AdminWhatsNewTab from '../components/AdminWhatsNewTab';
 import AdminGiftsTab from '../components/AdminGiftsTab';
 import AdminGamificationTab from '../components/AdminGamificationTab';
+import AdminPriceDuplicatesTab from '../components/AdminPriceDuplicatesTab';
 import AdminAnalytics from '../components/AdminAnalytics';
 import DateRangePicker from '../components/DateRangePicker';
 import TutorialVideoButton from '../components/TutorialVideoButton';
@@ -151,6 +152,7 @@ const ADMIN_NAV_GROUPS = [
     title: 'Sistem',
     items: [
       { key: 'zik-accounts', label: 'Zik Accounts', icon: KeyRound, description: 'Analiz məlumat mənbəyi hesabları' },
+      { key: 'price-duplicates', label: 'Eyni eBay qiyməti', icon: Copy, description: 'Productlarında eyni current eBay qiyməti olan istifadəçilər' },
       { key: 'stripe-webhooks', label: 'Stripe Webhooks', icon: Webhook, description: 'Stripe ödəniş hadisələri' },
       { key: 'maintenance', label: 'Maintenance', icon: Wrench, description: 'Texniki xidmət rejimi və pəncərələri' },
       { key: 'danger', labelKey: 'adminPanelPage.dangerZoneTab', icon: AlertTriangle, danger: true, description: 'Geri qaytarılmayan əməliyyatlar' },
@@ -1917,6 +1919,12 @@ export default function AdminPanelPage() {
         {!loading && activeTab === 'zik-accounts' && (
           <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
             <ZikAccounts />
+          </div>
+        )}
+
+        {!loading && activeTab === 'price-duplicates' && (
+          <div className={`glass-card p-4 md:p-5 ${isDark ? 'bg-slate-900 border-slate-700' : ''}`}>
+            <AdminPriceDuplicatesTab />
           </div>
         )}
 

@@ -598,6 +598,11 @@ export const adminAPI = {
   payExpense: (id) => api.post(`/admin/expenses/${id}/pay`),
   getBalance: () => api.get('/admin/balance'),
   updateBalance: (balance) => api.put('/admin/balance', { balance }),
+  // Price duplicates diagnostics (eyni eBay qiyməti olan məhsullar)
+  listPriceDuplicateUsers: (minCount) =>
+    api.get('/admin/price-duplicates', { params: minCount ? { minCount } : undefined }),
+  getUserPriceDuplicateProducts: (userId) =>
+    api.get(`/admin/price-duplicates/${encodeURIComponent(userId)}/products`),
 };
 
 export const referralAPI = {

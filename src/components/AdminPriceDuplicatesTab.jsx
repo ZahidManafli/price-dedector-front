@@ -1,0 +1,262 @@
+/**
+ * components/AdminPriceDuplicatesTab.jsx
+ *
+ * Drop this into your AdminPanelPage as:
+ *   {!loading && activeTab === 'price-duplicates' && <AdminPriceDuplicatesTab />}
+ *
+ * Diagnostics: lists users whose products share an identical current_ebay_price
+ * across multiple listings (different ASIN/cost collapsing onto one price is the
+ * signature of the margin/sync data-corruption bug). This is a triage list, not a
+ * hard verdict — some users legitimately price several products the same.
+ * Clicking a user opens all of their products so the admin can inspect the
+ * affected ones directly.
+ */
+
+import React, { useCallback, useEffect, useState } from 'react';
+import { AlertTriangle, Loader2, Mail, Phone, RefreshCw, X } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import { adminAPI } from '../services/api';
+
+function formatPrice(v) {
+  if (v === null || v === undefined || Number.isNaN(Number(v))) return '—';
+  return `$${Number(v).toFixed(2)}`;
+}
+
+function formatDate(v) {
+  if (!v) return '—';
+  try {
+    return new Date(v).toLocaleString('az-AZ');
+  } catch {
+    return v;
+  }
+}
+
+export default function AdminPriceDuplicatesTab() {
+  const { isDark } = useTheme();
+
+  const [minCount, setMinCount] = useState(3);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [selectedUser, setSelectedUser] = useState(null); // { userId, name, ... } | null
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [productsError, setProductsError] = useState(null);
+
+  const card = isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-900';
+
+  const loadUsers = useCallback(async (count) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await adminAPI.listPriceDuplicateUsers(count);
+      setUsers(res?.data?.users || []);
+    } catch (e) {
+      setError(e?.response?.data?.error || e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadUsers(minCount); }, [loadUsers, minCount]);
+
+  const openUser = async (user) => {
+    setSelectedUser(user);
+    setProducts([]);
+    setProductsError(null);
+    setProductsLoading(true);
+    try {
+      const res = await adminAPI.getUserPriceDuplicateProducts(user.userId);
+      setProducts(res?.data?.products || []);
+    } catch (e) {
+      setProductsError(e?.response?.data?.error || e.message);
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  const closeModal = () => {
+    setSelectedUser(null);
+    setProducts([]);
+    setProductsError(null);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className={`text-lg font-semibold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+            <AlertTriangle size={18} className="text-amber-500" />
+            Eyni eBay qiyməti diaqnostikası
+          </h2>
+          <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            Hansı istifadəçilərin productlarında eyni current eBay qiyməti təkrarlanır — bu, qiymət korrupsiyası bugunun əlamətidir, amma legitim üst-üstə düşmə də ola bilər.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+            Minimum təkrar sayı
+          </label>
+          <select
+            value={minCount}
+            onChange={(e) => setMinCount(Number(e.target.value))}
+            className={`rounded-lg border px-2 py-1.5 text-sm ${
+              isDark ? 'bg-slate-800 border-slate-600 text-slate-100' : 'bg-white border-slate-300 text-slate-900'
+            }`}
+          >
+            {[2, 3, 4, 5, 10].map((n) => (
+              <option key={n} value={n}>{n}+</option>
+            ))}
+          </select>
+          <button
+            onClick={() => loadUsers(minCount)}
+            className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+              isDark ? 'bg-slate-700 hover:bg-slate-600 text-slate-100' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+            }`}
+          >
+            <RefreshCw size={14} /> Yenilə
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="rounded-lg border border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 size={24} className="animate-spin text-slate-400" />
+        </div>
+      ) : users.length === 0 ? (
+        <div className={`rounded-xl border p-8 text-center ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
+          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            Seçilmiş həddə uyğun heç bir təkrarlanan qiymət tapılmadı.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {users.map((user) => {
+            const maxGroup = user.groups.reduce((max, g) => (g.count > max.count ? g : max), user.groups[0]);
+            return (
+              <button
+                key={user.userId}
+                onClick={() => openUser(user)}
+                className={`w-full text-left rounded-xl border p-4 transition hover:shadow-md ${
+                  isDark ? 'bg-slate-900 border-slate-700 hover:border-slate-500' : 'bg-white border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="min-w-0">
+                    <div className={`font-semibold text-sm ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                      {user.name || 'Adsız istifadəçi'}
+                    </div>
+                    <div className={`flex items-center gap-3 mt-1 text-xs flex-wrap ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <span className="inline-flex items-center gap-1"><Mail size={12} /> {user.email || '—'}</span>
+                      {user.phoneNumber && (
+                        <span className="inline-flex items-center gap-1"><Phone size={12} /> {user.phoneNumber}</span>
+                      )}
+                      <span>{user.totalProducts} məhsul</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {user.groups.map((g) => (
+                      <span
+                        key={g.price}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          g.price === maxGroup.price
+                            ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                        }`}
+                      >
+                        {formatPrice(g.price)} × {g.count}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {selectedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+          <div className={`w-full max-w-3xl rounded-2xl border shadow-2xl p-6 space-y-4 overflow-y-auto max-h-[90vh] ${card}`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-base">{selectedUser.name || 'Adsız istifadəçi'}</h3>
+                <div className={`flex items-center gap-3 mt-1 text-xs flex-wrap ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <span>{selectedUser.email || '—'}</span>
+                  {selectedUser.phoneNumber && <span>{selectedUser.phoneNumber}</span>}
+                </div>
+              </div>
+              <button onClick={closeModal} className="p-1 rounded hover:opacity-70">
+                <X size={18} />
+              </button>
+            </div>
+
+            {productsError && (
+              <div className="rounded-lg border border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+                {productsError}
+              </div>
+            )}
+
+            {productsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 size={24} className="animate-spin text-slate-400" />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className={`text-left text-xs uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <th className="py-2 pr-3">Məhsul</th>
+                      <th className="py-2 pr-3">ASIN</th>
+                      <th className="py-2 pr-3">Amazon</th>
+                      <th className="py-2 pr-3">eBay</th>
+                      <th className="py-2 pr-3">Profit</th>
+                      <th className="py-2 pr-3">Mode</th>
+                      <th className="py-2 pr-3">Son sync</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {products.map((p) => (
+                      <tr
+                        key={p.id}
+                        className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'} ${
+                          p.isDuplicatePrice ? (isDark ? 'bg-red-950/20' : 'bg-red-50') : ''
+                        }`}
+                      >
+                        <td className="py-2 pr-3 max-w-[220px] truncate" title={p.productName}>{p.productName}</td>
+                        <td className="py-2 pr-3 font-mono text-xs">{p.amazonAsin || '—'}</td>
+                        <td className="py-2 pr-3">{formatPrice(p.currentAmazonPrice)}</td>
+                        <td className="py-2 pr-3 font-semibold">
+                          {formatPrice(p.currentEbayPrice)}
+                          {p.isDuplicatePrice && (
+                            <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                              ×{p.duplicateGroupSize}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2 pr-3">{formatPrice(p.profit)}</td>
+                        <td className="py-2 pr-3 text-xs">
+                          {p.pricingMode === 'margin' ? `Marja ${p.targetMarginPercent ?? ''}%` : 'Fixed'}
+                        </td>
+                        <td className="py-2 pr-3 text-xs">{formatDate(p.ebayLastSyncAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
