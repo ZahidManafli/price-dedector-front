@@ -13,7 +13,8 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, Loader2, Mail, Phone, RefreshCw, X } from 'lucide-react';
+import Swal from 'sweetalert2';
+import { AlertTriangle, Loader2, Mail, Phone, RefreshCw, Wrench, X } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { adminAPI } from '../services/api';
 
@@ -57,6 +58,7 @@ export default function AdminPriceDuplicatesTab() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [healing, setHealing] = useState(false);
 
   const [selectedUser, setSelectedUser] = useState(null); // { userId, name, ... } | null
   const [products, setProducts] = useState([]);
@@ -84,6 +86,35 @@ export default function AdminPriceDuplicatesTab() {
   }, []);
 
   useEffect(() => { loadUsers(minCount); }, [loadUsers, minCount]);
+
+  const handleHealAll = async () => {
+    const confirmResult = await Swal.fire({
+      title: 'Bütün uyğunsuzluqlar düzəldilsin?',
+      html: 'Bu, current eBay qiyməti öz son <b>price_history</b> dəyərindən fərqlənən BÜTÜN istifadəçilərin məhsullarını tapıb, öz son history dəyərinə qaytaracaq (yalnız son 3 dəqiqə ərzində dəyişməyənlər toxunulacaq).',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Bəli, düzəlt',
+      cancelButtonText: 'Ləğv et',
+      confirmButtonColor: '#dc2626',
+    });
+    if (!confirmResult.isConfirmed) return;
+
+    setHealing(true);
+    try {
+      const res = await adminAPI.healPriceDuplicates();
+      const { checked = 0, healed = 0, errors = [] } = res?.data || {};
+      await Swal.fire({
+        title: 'Tamamlandı',
+        html: `${checked} məhsul yoxlanıldı, <b>${healed}</b> məhsulun qiyməti son history dəyərinə bərpa olundu.${errors.length ? `<br/><span style="color:#dc2626">${errors.length} xəta baş verdi.</span>` : ''}`,
+        icon: healed > 0 ? 'success' : 'info',
+      });
+      await loadUsers(minCount);
+    } catch (e) {
+      Swal.fire('Xəta', e?.response?.data?.error || e.message, 'error');
+    } finally {
+      setHealing(false);
+    }
+  };
 
   const openUser = async (user) => {
     setSelectedUser(user);
@@ -162,6 +193,15 @@ export default function AdminPriceDuplicatesTab() {
             }`}
           >
             <RefreshCw size={14} /> Yenilə
+          </button>
+          <button
+            onClick={handleHealAll}
+            disabled={healing}
+            title="current_ebay_price öz son price_history dəyərindən fərqlənən bütün məhsulları bərpa et"
+            className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 transition"
+          >
+            {healing ? <Loader2 size={14} className="animate-spin" /> : <Wrench size={14} />}
+            {healing ? 'Düzəldilir…' : 'Uyğunsuzluqları düzəlt'}
           </button>
         </div>
       </div>

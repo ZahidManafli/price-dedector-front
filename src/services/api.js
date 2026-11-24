@@ -605,6 +605,7 @@ export const adminAPI = {
     api.get(`/admin/price-duplicates/${encodeURIComponent(userId)}/products`),
   getProductPriceHistory: (productId) =>
     api.get(`/admin/products/${encodeURIComponent(productId)}/price-history`),
+  healPriceDuplicates: () => api.post('/admin/price-duplicates/heal'),
 };
 
 export const referralAPI = {
