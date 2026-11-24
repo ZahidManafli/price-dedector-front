@@ -37,6 +37,19 @@ function ebayListingUrl(product) {
   return null;
 }
 
+const PLATFORM_LABELS = {
+  init: 'Yaradılma',
+  manual_update: 'Əl ilə dəyişdirilib',
+  compare: 'Müqayisə / Cron',
+  cron: 'Cron',
+  ebay_listing_edit: 'eBay elanından',
+  data_repair: 'Data bərpası',
+};
+
+function formatPlatform(platform) {
+  return PLATFORM_LABELS[platform] || platform || '—';
+}
+
 export default function AdminPriceDuplicatesTab() {
   const { isDark } = useTheme();
 
@@ -49,6 +62,11 @@ export default function AdminPriceDuplicatesTab() {
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [productsError, setProductsError] = useState(null);
+
+  const [historyProduct, setHistoryProduct] = useState(null); // product row | null
+  const [historyRows, setHistoryRows] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
 
   const card = isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-900';
 
@@ -86,6 +104,27 @@ export default function AdminPriceDuplicatesTab() {
     setSelectedUser(null);
     setProducts([]);
     setProductsError(null);
+  };
+
+  const openHistory = async (product) => {
+    setHistoryProduct(product);
+    setHistoryRows([]);
+    setHistoryError(null);
+    setHistoryLoading(true);
+    try {
+      const res = await adminAPI.getProductPriceHistory(product.id);
+      setHistoryRows(res?.data?.history || []);
+    } catch (e) {
+      setHistoryError(e?.response?.data?.error || e.message);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const closeHistory = () => {
+    setHistoryProduct(null);
+    setHistoryRows([]);
+    setHistoryError(null);
   };
 
   return (
@@ -237,7 +276,9 @@ export default function AdminPriceDuplicatesTab() {
                       return (
                         <tr
                           key={p.id}
-                          className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'} ${
+                          onClick={() => openHistory(p)}
+                          title="Qiymət tarixçəsinə bax"
+                          className={`border-t cursor-pointer transition ${isDark ? 'border-slate-800 hover:bg-slate-800/60' : 'border-slate-100 hover:bg-slate-50'} ${
                             p.isDuplicatePrice ? (isDark ? 'bg-red-950/20' : 'bg-red-50') : ''
                           }`}
                         >
@@ -250,6 +291,7 @@ export default function AdminPriceDuplicatesTab() {
                                   href={listingUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
                                   className="text-blue-600 dark:text-blue-400 hover:underline"
                                   title="eBay elanını aç"
                                 >
@@ -277,6 +319,69 @@ export default function AdminPriceDuplicatesTab() {
                         </tr>
                       );
                     })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {historyProduct && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70">
+          <div className={`w-full max-w-2xl rounded-2xl border shadow-2xl p-6 space-y-4 overflow-y-auto max-h-[90vh] ${card}`}>
+            <div className="flex items-center justify-between">
+              <div className="min-w-0">
+                <h3 className="font-semibold text-base truncate" title={historyProduct.productName}>
+                  {historyProduct.productName}
+                </h3>
+                <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Qiymət tarixçəsi</p>
+              </div>
+              <button onClick={closeHistory} className="p-1 rounded hover:opacity-70 flex-shrink-0">
+                <X size={18} />
+              </button>
+            </div>
+
+            {historyError && (
+              <div className="rounded-lg border border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+                {historyError}
+              </div>
+            )}
+
+            {historyLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 size={24} className="animate-spin text-slate-400" />
+              </div>
+            ) : historyRows.length === 0 ? (
+              <div className={`rounded-xl border p-8 text-center ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Bu məhsul üçün tarixçə tapılmadı.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className={`text-left text-xs uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <th className="py-2 pr-3">Tarix</th>
+                      <th className="py-2 pr-3">Mənbə</th>
+                      <th className="py-2 pr-3">Əvvəlki → Yeni</th>
+                      <th className="py-2 pr-3">Amazon</th>
+                      <th className="py-2 pr-3">eBay</th>
+                      <th className="py-2 pr-3">Profit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyRows.map((h) => (
+                      <tr key={h.id} className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                        <td className="py-2 pr-3 text-xs whitespace-nowrap">{formatDate(h.createdAt)}</td>
+                        <td className="py-2 pr-3 text-xs whitespace-nowrap">{formatPlatform(h.platform)}</td>
+                        <td className="py-2 pr-3 whitespace-nowrap">
+                          {formatPrice(h.previousPrice)} → <span className="font-semibold">{formatPrice(h.newPrice)}</span>
+                        </td>
+                        <td className="py-2 pr-3">{formatPrice(h.amazonPrice)}</td>
+                        <td className="py-2 pr-3">{formatPrice(h.ebayPrice)}</td>
+                        <td className="py-2 pr-3">{formatPrice(h.profit)}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

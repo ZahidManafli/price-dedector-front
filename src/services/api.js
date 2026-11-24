@@ -603,6 +603,8 @@ export const adminAPI = {
     api.get('/admin/price-duplicates', { params: minCount ? { minCount } : undefined }),
   getUserPriceDuplicateProducts: (userId) =>
     api.get(`/admin/price-duplicates/${encodeURIComponent(userId)}/products`),
+  getProductPriceHistory: (productId) =>
+    api.get(`/admin/products/${encodeURIComponent(productId)}/price-history`),
 };
 
 export const referralAPI = {
