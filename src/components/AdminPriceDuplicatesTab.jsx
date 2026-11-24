@@ -31,6 +31,12 @@ function formatDate(v) {
   }
 }
 
+function ebayListingUrl(product) {
+  if (product.ebayLink) return product.ebayLink;
+  if (product.ebayItemId) return `https://www.ebay.com/itm/${product.ebayItemId}`;
+  return null;
+}
+
 export default function AdminPriceDuplicatesTab() {
   const { isDark } = useTheme();
 
@@ -217,6 +223,7 @@ export default function AdminPriceDuplicatesTab() {
                     <tr className={`text-left text-xs uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       <th className="py-2 pr-3">Məhsul</th>
                       <th className="py-2 pr-3">ASIN</th>
+                      <th className="py-2 pr-3">eBay Item ID</th>
                       <th className="py-2 pr-3">Amazon</th>
                       <th className="py-2 pr-3">eBay</th>
                       <th className="py-2 pr-3">Profit</th>
@@ -225,31 +232,51 @@ export default function AdminPriceDuplicatesTab() {
                     </tr>
                   </thead>
                   <tbody>
-                    {products.map((p) => (
-                      <tr
-                        key={p.id}
-                        className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'} ${
-                          p.isDuplicatePrice ? (isDark ? 'bg-red-950/20' : 'bg-red-50') : ''
-                        }`}
-                      >
-                        <td className="py-2 pr-3 max-w-[220px] truncate" title={p.productName}>{p.productName}</td>
-                        <td className="py-2 pr-3 font-mono text-xs">{p.amazonAsin || '—'}</td>
-                        <td className="py-2 pr-3">{formatPrice(p.currentAmazonPrice)}</td>
-                        <td className="py-2 pr-3 font-semibold">
-                          {formatPrice(p.currentEbayPrice)}
-                          {p.isDuplicatePrice && (
-                            <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
-                              ×{p.duplicateGroupSize}
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2 pr-3">{formatPrice(p.profit)}</td>
-                        <td className="py-2 pr-3 text-xs">
-                          {p.pricingMode === 'margin' ? `Marja ${p.targetMarginPercent ?? ''}%` : 'Fixed'}
-                        </td>
-                        <td className="py-2 pr-3 text-xs">{formatDate(p.ebayLastSyncAt)}</td>
-                      </tr>
-                    ))}
+                    {products.map((p) => {
+                      const listingUrl = ebayListingUrl(p);
+                      return (
+                        <tr
+                          key={p.id}
+                          className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'} ${
+                            p.isDuplicatePrice ? (isDark ? 'bg-red-950/20' : 'bg-red-50') : ''
+                          }`}
+                        >
+                          <td className="py-2 pr-3 max-w-[220px] truncate" title={p.productName}>{p.productName}</td>
+                          <td className="py-2 pr-3 font-mono text-xs">{p.amazonAsin || '—'}</td>
+                          <td className="py-2 pr-3 font-mono text-xs">
+                            {p.ebayItemId ? (
+                              listingUrl ? (
+                                <a
+                                  href={listingUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                                  title="eBay elanını aç"
+                                >
+                                  {p.ebayItemId}
+                                </a>
+                              ) : (
+                                p.ebayItemId
+                              )
+                            ) : '—'}
+                          </td>
+                          <td className="py-2 pr-3">{formatPrice(p.currentAmazonPrice)}</td>
+                          <td className="py-2 pr-3 font-semibold">
+                            {formatPrice(p.currentEbayPrice)}
+                            {p.isDuplicatePrice && (
+                              <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                                ×{p.duplicateGroupSize}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2 pr-3">{formatPrice(p.profit)}</td>
+                          <td className="py-2 pr-3 text-xs">
+                            {p.pricingMode === 'margin' ? `Marja ${p.targetMarginPercent ?? ''}%` : 'Fixed'}
+                          </td>
+                          <td className="py-2 pr-3 text-xs">{formatDate(p.ebayLastSyncAt)}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
