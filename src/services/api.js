@@ -530,6 +530,11 @@ export const dewisoAPI = {
 };
 
 // Admin APIs
+// Checkila mascot (admin-only operational assistant) — see components/CheckilaMascot.jsx.
+export const mascotAPI = {
+  chat: (messages) => api.post('/mascot/chat', { messages }),
+};
+
 export const adminAPI = {
   getOrderNotificationsOverview: () => api.get('/admin/ebay-order-notifications/overview'),
   listNotifiedOrders: (params = {}) => api.get('/admin/ebay-order-notifications/orders', { params }),

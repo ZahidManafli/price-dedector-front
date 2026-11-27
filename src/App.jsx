@@ -32,6 +32,7 @@ const EbayCallbackPage = React.lazy(() => import('./pages/EbayCallbackPage'));
 const AmazonCallbackPage = React.lazy(() => import('./pages/AmazonCallbackPage'));
 const AmazonLookupPage = React.lazy(() => import('./pages/AmazonLookupPage'));
 const AdminPanelPage = React.lazy(() => import('./pages/AdminPanelPage'));
+const CheckilaMascot = React.lazy(() => import('./components/CheckilaMascot'));
 const PrivacyPage = React.lazy(() => import('./pages/PrivacyPage'));
 const TermsPage = React.lazy(() => import('./pages/TermsPage'));
 const SupportContactPage = React.lazy(() => import('./pages/SupportContactPage'));
@@ -204,6 +205,11 @@ function AppContent() {
     <div className="flex h-screen bg-gray-50 dark:bg-slate-950">
       <ActivityTracker />
       {isAuthenticated && hasToken && !hideSidebar && <Sidebar />}
+      {isAuthenticated && hasToken && String(user?.role || '').toLowerCase() === 'admin' && (
+        <React.Suspense fallback={null}>
+          <CheckilaMascot />
+        </React.Suspense>
+      )}
       {/* Mandatory onboarding steps: Privacy Policy consent first, then birthday.
           The privacy check is skipped if the backend doesn't send the field yet
           (older backend without migration 145), so nobody gets stuck. */}
