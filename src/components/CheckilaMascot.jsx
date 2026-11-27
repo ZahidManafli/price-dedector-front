@@ -297,7 +297,12 @@ function applyRunPose(rig, t, direction) {
   const speed = 10;
   const swing = Math.sin(t * speed);
   rig.root.scale.x = direction < 0 ? -1 : 1;
-  rig.root.position.y += Math.abs(Math.sin(t * speed)) * 0.2;
+  // Assignment, NOT +=: this runs every frame for as long as the mascot is
+  // traveling, so accumulating onto the previous value here would make it
+  // drift upward without bound (and right out of the camera's view) the
+  // longer a single run lasts, only "coming back" once it arrives and the
+  // idle/dance poses (which also assign, not accumulate) reset it.
+  rig.root.position.y = Math.abs(Math.sin(t * speed)) * 0.2;
   rig.root.rotation.z = swing * 0.07;
   rig.headGroup.rotation.x = 0.1;
   rig.headGroup.rotation.y = swing * 0.1;
