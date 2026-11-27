@@ -139,28 +139,33 @@ function buildMascot() {
   faceRim.position.set(0, 0.02, 0.82);
   headGroup.add(faceRim);
 
-  const eyeGroup = new THREE.Group();
-  const eye = new THREE.Mesh(
-    new THREE.SphereGeometry(0.16, 24, 24),
-    new THREE.MeshStandardMaterial({ color: '#1f8dff', emissive: '#1f8dff', emissiveIntensity: 1.0, roughness: 0.25 })
-  );
-  eyeGroup.add(eye);
-  const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 16), new THREE.MeshStandardMaterial({ color: '#05101c' }));
-  pupil.position.z = 0.1;
-  eyeGroup.add(pupil);
-  const highlight = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 12), new THREE.MeshBasicMaterial({ color: '#ffffff' }));
-  highlight.position.set(0.055, 0.06, 0.15);
-  eyeGroup.add(highlight);
-  eyeGroup.position.set(-0.16, 0.08, 1.1);
-  headGroup.add(eyeGroup);
+  // One matching pair of eyes (not one eye + a "wink" brow, which read as a
+  // missing eye at small widget sizes) — both wrapped in eyeGroup so the
+  // blink animation (see MascotScene) scales them together as one unit.
+  const buildEyeball = () => {
+    const eye = new THREE.Group();
+    const ball = new THREE.Mesh(
+      new THREE.SphereGeometry(0.15, 24, 24),
+      new THREE.MeshStandardMaterial({ color: '#1f8dff', emissive: '#1f8dff', emissiveIntensity: 1.0, roughness: 0.25 })
+    );
+    eye.add(ball);
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.065, 16, 16), new THREE.MeshStandardMaterial({ color: '#05101c' }));
+    pupil.position.z = 0.1;
+    eye.add(pupil);
+    const highlight = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 12), new THREE.MeshBasicMaterial({ color: '#ffffff' }));
+    highlight.position.set(0.05, 0.055, 0.14);
+    eye.add(highlight);
+    return eye;
+  };
 
-  const brow = new THREE.Mesh(
-    new THREE.TorusGeometry(0.14, 0.02, 8, 24, Math.PI * 0.8),
-    new THREE.MeshStandardMaterial({ color: '#1f8dff' })
-  );
-  brow.position.set(0.28, 0.18, 1.05);
-  brow.rotation.z = Math.PI * 0.15;
-  headGroup.add(brow);
+  const eyeGroup = new THREE.Group();
+  const leftEye = buildEyeball();
+  leftEye.position.set(-0.27, 0.08, 1.1);
+  eyeGroup.add(leftEye);
+  const rightEye = buildEyeball();
+  rightEye.position.set(0.27, 0.08, 1.1);
+  eyeGroup.add(rightEye);
+  headGroup.add(eyeGroup);
 
   const smile = new THREE.Mesh(
     new THREE.TorusGeometry(0.2, 0.018, 8, 24, Math.PI * 0.75),
