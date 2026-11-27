@@ -12,12 +12,13 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import * as THREE from 'three';
-import { Send, X, Loader2, Sparkles } from 'lucide-react';
+import { Send, X, Loader2, Sparkles, Pin, PinOff } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { mascotAPI } from '../services/api';
 
-const WIDGET_SIZE = 130;
+const WIDGET_SIZE = 150;
 const MARGIN = 16;
+const PIN_STORAGE_KEY = 'checkila.mascot.pinned';
 
 // ---------------------------------------------------------------------------
 // 3D model — a small chibi-proportioned figure (big head, small body) rigged
@@ -85,6 +86,29 @@ function buildArm(side, armColor, handColor) {
 
   pivot.userData.restRotationZ = side * 0.22;
   pivot.rotation.z = pivot.userData.restRotationZ;
+  return pivot;
+}
+
+// Same shoulder-pivot idea, at the hip — lets a leg swing forward/back (and,
+// for the frontal camera here, kick out to the side) from a fixed joint
+// instead of the whole leg mesh having to be re-positioned for each pose.
+function buildLeg(legColor, shoeColor) {
+  const pivot = new THREE.Group();
+  const upperLeg = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.17, 0.3, 6, 12),
+    new THREE.MeshStandardMaterial({ color: legColor, roughness: 0.6 })
+  );
+  upperLeg.position.y = -0.24;
+  pivot.add(upperLeg);
+
+  const shoe = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.17, 0.2, 6, 12),
+    new THREE.MeshStandardMaterial({ color: shoeColor, roughness: 0.5 })
+  );
+  shoe.rotation.z = Math.PI / 2;
+  shoe.position.set(0, -0.5, 0.08);
+  pivot.add(shoe);
+
   return pivot;
 }
 
@@ -178,25 +202,18 @@ function buildMascot() {
   belt.position.y = -0.55;
   torsoGroup.add(belt);
 
-  // --- Legs + feet --------------------------------------------------------
+  // --- Legs + feet (hip-pivoted, see buildLeg) ---------------------------
   const legsGroup = new THREE.Group();
   legsGroup.position.y = -0.85;
   root.add(legsGroup);
 
-  const legMat = new THREE.MeshStandardMaterial({ color: '#15161a', roughness: 0.6 });
-  [-1, 1].forEach((side) => {
-    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.17, 0.38, 6, 12), legMat);
-    leg.position.set(side * 0.22, -0.28, 0);
-    legsGroup.add(leg);
+  const leftLeg = buildLeg('#15161a', '#2fb6e0');
+  leftLeg.position.set(-0.22, 0.1, 0);
+  legsGroup.add(leftLeg);
 
-    const shoe = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.17, 0.2, 6, 12),
-      new THREE.MeshStandardMaterial({ color: side < 0 ? '#2fb6e0' : '#39d17d', roughness: 0.5 })
-    );
-    shoe.rotation.z = Math.PI / 2;
-    shoe.position.set(side * 0.22, -0.62, 0.08);
-    legsGroup.add(shoe);
-  });
+  const rightLeg = buildLeg('#15161a', '#39d17d');
+  rightLeg.position.set(0.22, 0.1, 0);
+  legsGroup.add(rightLeg);
 
   // --- Arms (shoulder-pivoted, see buildArm) -----------------------------
   const leftArm = buildArm(-1, '#101114', '#f3f6fb');
@@ -207,7 +224,7 @@ function buildMascot() {
   rightArm.position.set(0.56, 0.42, 0.02);
   torsoGroup.add(rightArm);
 
-  return { root, headGroup, torsoGroup, legsGroup, eyeGroup, leftArm, rightArm };
+  return { root, headGroup, torsoGroup, legsGroup, leftLeg, rightLeg, eyeGroup, leftArm, rightArm };
 }
 
 function fitCameraToObject(camera, object, paddingFactor = 1.45) {
@@ -229,18 +246,26 @@ function fitCameraToObject(camera, object, paddingFactor = 1.45) {
   return center;
 }
 
-// Three "moods" the idle loop cycles through at random — mostly idle, with
-// occasional waves/dances so the mascot feels alive without being
-// distracting. Each entry returns nothing; they mutate the rig in place.
+// Three "moods" the idle loop cycles through at random while the mascot is
+// stationary — mostly idle, with occasional waves/dances so it feels alive
+// without being distracting. A fourth pose, applyRunPose, takes over
+// whenever the wander loop (CheckilaMascot component) reports it's actually
+// traveling between two points, instead of these three. Each entry returns
+// nothing; they mutate the rig in place.
 function applyIdlePose(rig, t) {
+  rig.root.scale.x = 1;
+  rig.root.rotation.x = 0;
   rig.headGroup.rotation.y = Math.sin(t * 0.6) * 0.18;
   rig.headGroup.rotation.z = Math.sin(t * 0.8) * 0.03;
+  rig.headGroup.rotation.x = 0;
   rig.leftArm.rotation.z = rig.leftArm.userData.restRotationZ + Math.sin(t * 1.4) * 0.05;
   rig.rightArm.rotation.z = rig.rightArm.userData.restRotationZ + Math.sin(t * 1.4 + Math.PI) * 0.05;
   rig.leftArm.rotation.x = 0;
   rig.rightArm.rotation.x = 0;
   rig.root.rotation.z = 0;
   rig.legsGroup.rotation.z = 0;
+  rig.leftLeg.rotation.z = 0;
+  rig.rightLeg.rotation.z = 0;
 }
 
 function applyWavePose(rig, t, progress) {
@@ -259,9 +284,38 @@ function applyDancePose(rig, t) {
   rig.leftArm.rotation.z = rig.leftArm.userData.restRotationZ + Math.sin(t * 6) * 1.1;
   rig.rightArm.rotation.z = rig.rightArm.userData.restRotationZ + Math.sin(t * 6 + Math.PI) * 1.1;
   rig.legsGroup.rotation.z = Math.sin(t * 6) * 0.12;
+  rig.leftLeg.rotation.z = Math.sin(t * 6) * 0.3;
+  rig.rightLeg.rotation.z = Math.sin(t * 6 + Math.PI) * 0.3;
 }
 
-function MascotScene({ containerRef }) {
+// Running + hopping combined, used while the mascot is actually traveling
+// across the screen (see the wander loop's motionRef in CheckilaMascot).
+// Legs/arms swing opposite each other and the whole body hops — tuned for a
+// camera that's always front-on, so the swing mostly reads as side-to-side
+// kicks rather than a true forward/back running stride.
+function applyRunPose(rig, t, direction) {
+  const speed = 10;
+  const swing = Math.sin(t * speed);
+  rig.root.scale.x = direction < 0 ? -1 : 1;
+  rig.root.position.y += Math.abs(Math.sin(t * speed)) * 0.2;
+  rig.root.rotation.z = swing * 0.07;
+  rig.headGroup.rotation.x = 0.1;
+  rig.headGroup.rotation.y = swing * 0.1;
+  rig.headGroup.rotation.z = 0;
+  rig.leftLeg.rotation.z = swing * 0.65;
+  rig.rightLeg.rotation.z = -swing * 0.65;
+  rig.legsGroup.rotation.z = 0;
+  rig.leftArm.rotation.z = rig.leftArm.userData.restRotationZ - swing * 0.9;
+  rig.rightArm.rotation.z = rig.rightArm.userData.restRotationZ + swing * 0.9;
+  rig.leftArm.rotation.x = 0;
+  rig.rightArm.rotation.x = 0;
+}
+
+// motionRef is a plain ref object ({ isMoving, direction }) the wander loop
+// in CheckilaMascot mutates every frame — read directly here instead of via
+// React state/props so the Three.js render loop (its own rAF, independent of
+// React's render cycle) never needs to restart to pick up a new value.
+function MascotScene({ containerRef, motionRef }) {
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return undefined;
@@ -291,24 +345,28 @@ function MascotScene({ containerRef }) {
 
     const rig = buildMascot();
     scene.add(rig.root);
-    fitCameraToObject(camera, rig.root, 1.5);
+    fitCameraToObject(camera, rig.root, 1.14);
 
     let frameId;
     let nextBlinkAt = performance.now() + 1500 + Math.random() * 2500;
     let blinkUntil = 0;
     const start = performance.now();
 
-    // Mood state machine: idle most of the time, occasionally wave or dance.
+    // Mood state machine for when the mascot is STATIONARY: idle most of the
+    // time, occasionally wave or dance. While motionRef reports it's
+    // traveling, applyRunPose takes over instead and this cycle is paused
+    // (and reset, so arriving somewhere never resumes a stale countdown).
     let mood = 'idle';
     let moodUntil = performance.now() + 4000 + Math.random() * 4000;
     let moodStart = performance.now();
+    let wasMoving = false;
 
     const pickNextMood = (now) => {
       const roll = Math.random();
-      if (roll < 0.45) {
+      if (roll < 0.4) {
         mood = 'wave';
         moodUntil = now + 1800;
-      } else if (roll < 0.75) {
+      } else if (roll < 0.7) {
         mood = 'dance';
         moodUntil = now + 2600 + Math.random() * 1400;
       } else {
@@ -321,15 +379,29 @@ function MascotScene({ containerRef }) {
     const animate = () => {
       const now = performance.now();
       const t = (now - start) / 1000;
+      const isMoving = !!motionRef?.current?.isMoving;
 
-      if (now >= moodUntil) pickNextMood(now);
-      const progress = (now - moodStart) / 1000;
+      if (isMoving) {
+        applyRunPose(rig, t, motionRef.current.direction || 1);
+      } else {
+        if (wasMoving) {
+          // Just arrived somewhere — start a fresh, short idle window
+          // instead of resuming whatever mood countdown was running before
+          // it started moving.
+          mood = 'idle';
+          moodStart = now;
+          moodUntil = now + 1200 + Math.random() * 2000;
+        }
+        if (now >= moodUntil) pickNextMood(now);
+        const progress = (now - moodStart) / 1000;
 
-      rig.root.position.y = Math.sin(t * 1.8) * 0.06;
+        rig.root.position.y = Math.sin(t * 1.8) * 0.06;
 
-      if (mood === 'wave') applyWavePose(rig, t, progress);
-      else if (mood === 'dance') applyDancePose(rig, t);
-      else applyIdlePose(rig, t);
+        if (mood === 'wave') applyWavePose(rig, t, progress);
+        else if (mood === 'dance') applyDancePose(rig, t);
+        else applyIdlePose(rig, t);
+      }
+      wasMoving = isMoving;
 
       if (now >= nextBlinkAt && now >= blinkUntil) {
         blinkUntil = now + 140;
@@ -354,7 +426,7 @@ function MascotScene({ containerRef }) {
       renderer.dispose();
       if (renderer.domElement.parentNode === container) container.removeChild(renderer.domElement);
     };
-  }, [containerRef]);
+  }, [containerRef, motionRef]);
 
   return null;
 }
@@ -509,15 +581,42 @@ function ChatPanel({ anchor, onClose, isDark }) {
 // Wandering widget
 // ---------------------------------------------------------------------------
 
+function getCornerPosition() {
+  return {
+    x: window.innerWidth - WIDGET_SIZE - MARGIN,
+    y: window.innerHeight - WIDGET_SIZE - MARGIN,
+  };
+}
+
 export default function CheckilaMascot() {
   const { isDark } = useTheme();
   const containerRef = useRef(null);
   const wrapperRef = useRef(null);
-  const posRef = useRef({ x: 60, y: 60 });
-  const targetRef = useRef({ x: 60, y: 60 });
+  const posRef = useRef(getCornerPosition());
+  const targetRef = useRef({ ...posRef.current });
   const nextTargetAtRef = useRef(0);
+  // Mutated directly by the wander loop below and read directly by
+  // MascotScene's own render loop — see that component's comment on why this
+  // is a plain ref instead of React state.
+  const motionRef = useRef({ isMoving: false, direction: 1 });
   const [chatOpen, setChatOpen] = useState(false);
   const [anchor, setAnchor] = useState({ x: 60, y: 60 });
+  const [pinned, setPinned] = useState(() => {
+    try {
+      return localStorage.getItem(PIN_STORAGE_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PIN_STORAGE_KEY, pinned ? '1' : '0');
+    } catch {
+      // Best-effort only — a private window or blocked storage just means
+      // the pinned choice won't be remembered next visit.
+    }
+  }, [pinned]);
 
   const pickNewTarget = useCallback(() => {
     const maxX = window.innerWidth - WIDGET_SIZE - MARGIN;
@@ -530,33 +629,52 @@ export default function CheckilaMascot() {
   }, []);
 
   useEffect(() => {
-    posRef.current = { x: window.innerWidth - WIDGET_SIZE - MARGIN, y: window.innerHeight - WIDGET_SIZE - MARGIN };
-    targetRef.current = { ...posRef.current };
-    pickNewTarget();
+    if (!pinned) pickNewTarget();
 
     let frameId;
     const tick = () => {
       if (!chatOpen && wrapperRef.current) {
         const now = performance.now();
-        if (now >= nextTargetAtRef.current) pickNewTarget();
+
+        if (pinned) {
+          targetRef.current = getCornerPosition();
+        } else if (now >= nextTargetAtRef.current) {
+          pickNewTarget();
+        }
 
         const pos = posRef.current;
         const target = targetRef.current;
-        pos.x += (target.x - pos.x) * 0.015;
-        pos.y += (target.y - pos.y) * 0.015;
+        const dx = target.x - pos.x;
+        const dy = target.y - pos.y;
+        const dist = Math.hypot(dx, dy);
+
+        // Fast-ish lerp so travel reads as a quick dash rather than a slow
+        // drift — paired with the 3D run/hop pose while isMoving is true.
+        pos.x += dx * 0.045;
+        pos.y += dy * 0.045;
         wrapperRef.current.style.left = `${pos.x}px`;
         wrapperRef.current.style.top = `${pos.y}px`;
+
+        motionRef.current.isMoving = dist > 3;
+        if (Math.abs(dx) > 1) motionRef.current.direction = dx >= 0 ? 1 : -1;
+      } else {
+        motionRef.current.isMoving = false;
       }
       frameId = requestAnimationFrame(tick);
     };
     tick();
     return () => cancelAnimationFrame(frameId);
-  }, [chatOpen, pickNewTarget]);
+  }, [chatOpen, pinned, pickNewTarget]);
 
   const handleClick = () => {
     const pos = posRef.current;
     setAnchor({ x: pos.x, y: pos.y });
     setChatOpen((v) => !v);
+  };
+
+  const togglePinned = (e) => {
+    e.stopPropagation();
+    setPinned((v) => !v);
   };
 
   return (
@@ -570,14 +688,35 @@ export default function CheckilaMascot() {
           width: WIDGET_SIZE,
           height: WIDGET_SIZE,
           zIndex: 2147482900,
-          cursor: 'pointer',
-          filter: chatOpen ? 'drop-shadow(0 0 14px rgba(59,130,246,0.55))' : 'drop-shadow(0 6px 12px rgba(0,0,0,0.25))',
         }}
-        onClick={handleClick}
-        title="Checkila Köməkçi"
       >
-        <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
-        <MascotScene containerRef={containerRef} />
+        <button
+          type="button"
+          onClick={togglePinned}
+          title={pinned ? 'Sərbəst gəzsin' : 'Sağ-alt küncdə qalsın'}
+          className={`absolute -top-1 -right-1 z-10 flex h-6 w-6 items-center justify-center rounded-full border shadow transition ${
+            pinned
+              ? 'bg-blue-600 text-white border-blue-700'
+              : isDark
+              ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          {pinned ? <Pin size={11} /> : <PinOff size={11} />}
+        </button>
+        <div
+          onClick={handleClick}
+          style={{
+            width: '100%',
+            height: '100%',
+            cursor: 'pointer',
+            filter: chatOpen ? 'drop-shadow(0 0 14px rgba(59,130,246,0.55))' : 'drop-shadow(0 6px 12px rgba(0,0,0,0.25))',
+          }}
+          title="Checkila Köməkçi"
+        >
+          <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+          <MascotScene containerRef={containerRef} motionRef={motionRef} />
+        </div>
       </div>
       {chatOpen && <ChatPanel anchor={anchor} onClose={() => setChatOpen(false)} isDark={isDark} />}
     </>
