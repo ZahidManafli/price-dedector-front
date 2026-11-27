@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, Gift, Trophy, Loader2, PackageCheck, TrendingUp, AlertTriangle, ShoppingBag, ShoppingCart } from 'lucide-react';
+import { Bell, CheckCheck, Gift, Trophy, Loader2, PackageCheck, TrendingUp, AlertTriangle, ShoppingBag, ShoppingCart, Truck } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { notificationsAPI } from '../services/api';
 import Alert from '../components/Alert';
@@ -17,6 +17,7 @@ function iconForType(type) {
   if (type === 'ebay_new_order') return ShoppingCart;
   if (type === 'product_price_alert') return TrendingUp;
   if (type === 'product_auto_stock') return PackageCheck;
+  if (type === 'product_shipping_info_changed') return Truck;
   if (type === 'product_compare_done') return CheckCheck;
   if (type === 'product_create_done' || type === 'product_update_done') return ShoppingBag;
   if (type?.endsWith('_failed') || type?.includes('failure')) return AlertTriangle;

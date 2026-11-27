@@ -26,6 +26,7 @@ import {
   ShoppingCart,
   Store,
   TrendingUp,
+  Truck,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
@@ -441,6 +442,12 @@ export default function ProductDetailPage() {
                   {amazonUrl && linkPill('amazon', <ShoppingCart size={15} className="text-orange-500" />, 'Amazon', amazonAsin, amazonUrl)}
                   {ebayUrl && linkPill('ebay', <Store size={15} className="text-blue-500" />, 'eBay', ebayItemId, ebayUrl)}
                 </div>
+                {Array.isArray(product.shippingInfo) && product.shippingInfo.length > 0 && (
+                  <div className={`mt-2 flex items-start gap-1.5 text-xs ${muted}`}>
+                    <Truck size={13} className="mt-0.5 shrink-0" />
+                    <span>{product.shippingInfo.join(' • ')}</span>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2 lg:flex-col xl:flex-row">

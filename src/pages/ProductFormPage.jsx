@@ -90,6 +90,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
     checkStockEnabled: false,
     checkTitleEnabled: false,
     checkHighPriceEnabled: false,
+    checkShippingInfoEnabled: false,
   });
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(isEditMode);
@@ -148,6 +149,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
           checkStockEnabled: product.checkStockEnabled !== false,
           checkTitleEnabled: product.checkTitleEnabled !== false,
           checkHighPriceEnabled: product.checkHighPriceEnabled !== false,
+          checkShippingInfoEnabled: product.checkShippingInfoEnabled !== false,
         };
 
         setFormData(nextData);
@@ -250,6 +252,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       formDataObj.append('checkStockEnabled', String(!!formData.checkStockEnabled));
       formDataObj.append('checkTitleEnabled', String(!!formData.checkTitleEnabled));
       formDataObj.append('checkHighPriceEnabled', String(!!formData.checkHighPriceEnabled));
+      formDataObj.append('checkShippingInfoEnabled', String(!!formData.checkShippingInfoEnabled));
       if (selectedEbayAccountId) {
         const selectedAcc = findMatchingAccount(ebayAccounts, [selectedEbayAccountId]);
         const selectedAccountValue = getPreferredAccountValue(selectedAcc || {});
@@ -341,7 +344,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       </span>
     </label>
   );
-  const enabledChecks = ['checkPriceEnabled', 'checkStockEnabled', 'checkTitleEnabled', 'checkHighPriceEnabled'].filter((k) => formData[k]).length;
+  const enabledChecks = ['checkPriceEnabled', 'checkStockEnabled', 'checkTitleEnabled', 'checkHighPriceEnabled', 'checkShippingInfoEnabled'].filter((k) => formData[k]).length;
 
   return (
     <div
@@ -622,6 +625,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
                     { key: 'checkStockEnabled', labelKey: 'stockLabel', hintKey: 'stockHint' },
                     { key: 'checkTitleEnabled', labelKey: 'titleLabel', hintKey: 'titleHint' },
                     { key: 'checkHighPriceEnabled', labelKey: 'highPriceLabel', hintKey: 'highPriceHint' },
+                    { key: 'checkShippingInfoEnabled', labelKey: 'shippingInfoLabel', hintKey: 'shippingInfoHint' },
                   ].map(({ key, labelKey, hintKey }) => (
                     <Toggle key={key} name={key} checked={formData[key]} label={t(`productChecks.${labelKey}`)} hint={t(`productChecks.${hintKey}`)} />
                   ))}

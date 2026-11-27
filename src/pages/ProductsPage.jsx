@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowDown, ArrowUp, ArrowUpDown, Bell, Check, ExternalLink, FileSpreadsheet,
   Grid3X3, List, MoreVertical, PackageCheck, PackageX, Pencil, Plus, RefreshCw, Search, Send, Trash2,
-  TrendingDown, TrendingUp, X,
+  TrendingDown, TrendingUp, Truck, X,
 } from 'lucide-react';
 import { ebayAPI, productAPI, settingsAPI } from '../services/api';
 import ProductCard from '../components/ProductCard';
@@ -172,6 +172,7 @@ const CHECK_TOGGLES = [
   { key: 'checkStockEnabled', labelKey: 'stockLabel', hintKey: 'stockHint' },
   { key: 'checkTitleEnabled', labelKey: 'titleLabel', hintKey: 'titleHint' },
   { key: 'checkHighPriceEnabled', labelKey: 'highPriceLabel', hintKey: 'highPriceHint' },
+  { key: 'checkShippingInfoEnabled', labelKey: 'shippingInfoLabel', hintKey: 'shippingInfoHint' },
 ];
 
 // Per-row "⋮" popover on the Products page table — lets the user pick which of the
@@ -646,6 +647,7 @@ export default function ProductsPage() {
                 checkStockEnabled: saved.checkStockEnabled ?? draft.checkStockEnabled,
                 checkTitleEnabled: saved.checkTitleEnabled ?? draft.checkTitleEnabled,
                 checkHighPriceEnabled: saved.checkHighPriceEnabled ?? draft.checkHighPriceEnabled,
+                checkShippingInfoEnabled: saved.checkShippingInfoEnabled ?? draft.checkShippingInfoEnabled,
               }
             : p
         )
@@ -1144,9 +1146,20 @@ export default function ProductsPage() {
                             autoFocus
                           />
                         ) : (
-                          <p className="font-medium leading-tight truncate" title={product.productName}>
-                            {product.productName}
-                          </p>
+                          <>
+                            <p className="font-medium leading-tight truncate" title={product.productName}>
+                              {product.productName}
+                            </p>
+                            {Array.isArray(product.shippingInfo) && product.shippingInfo.length > 0 && (
+                              <p
+                                className={`mt-0.5 flex items-center gap-1 text-[11px] truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}
+                                title={product.shippingInfo.join(' / ')}
+                              >
+                                <Truck size={10} className="shrink-0" />
+                                <span className="truncate">{product.shippingInfo[0]}</span>
+                              </p>
+                            )}
+                          </>
                         )}
                       </td>
 

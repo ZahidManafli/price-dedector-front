@@ -637,6 +637,8 @@
     "titleHint": "Treats an Amazon title change as out of stock.",
     "highPriceLabel": "\"High price\" check",
     "highPriceHint": "Treats Amazon's ambiguous \"High price\" (no buy box) notice as out of stock.",
+    "shippingInfoLabel": "Shipping info check",
+    "shippingInfoHint": "Notifies you when Amazon's delivery estimate changes.",
     "save": "Save",
     "saving": "Saving...",
     "saved": "Check settings updated",

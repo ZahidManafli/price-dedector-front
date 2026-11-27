@@ -346,6 +346,8 @@
     "titleHint": "Amazon başlığı dəyişəndə məhsulu stokda yoxdur kimi qeyd edir.",
     "highPriceLabel": "\"High price\" yoxlansın",
     "highPriceHint": "Amazonun qeyri-müəyyən \"High price\" (buy box yoxdur) bildirişini stokda yoxdur kimi qəbul edir.",
+    "shippingInfoLabel": "Çatdırılma vaxtı yoxlansın",
+    "shippingInfoHint": "Amazonun çatdırılma tarixi (shipping) dəyişəndə sizə bildiriş göndərir.",
     "save": "Yadda saxla",
     "saving": "Yadda saxlanılır...",
     "saved": "Yoxlama tənzimləmələri yeniləndi",

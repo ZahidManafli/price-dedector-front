@@ -286,6 +286,8 @@
     "titleHint": "Amazon başlığı değiştiğinde ürünü stokta yok olarak işaretler.",
     "highPriceLabel": "\"High price\" kontrolü",
     "highPriceHint": "Amazon'un belirsiz \"High price\" (buy box yok) uyarısını stokta yok olarak kabul eder.",
+    "shippingInfoLabel": "Kargo bilgisi kontrolü",
+    "shippingInfoHint": "Amazon'un tahmini teslimat süresi değiştiğinde bildirim gönderir.",
     "save": "Kaydet",
     "saving": "Kaydediliyor...",
     "saved": "Kontrol ayarları güncellendi",
