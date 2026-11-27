@@ -148,6 +148,7 @@ export const productAPI = {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
   updateCheckSettings: (id, data) => api.patch(`/products/${id}/check-settings`, data),
+  updateAllCheckSettings: (data) => api.patch('/products/check-settings/bulk', data),
   delete: (id) => api.delete(`/products/${id}`),
   getPriceHistory: (id) => api.get(`/products/${id}/history`),
   // Queues a background job (Amazon scrape can now take up to ~90s across

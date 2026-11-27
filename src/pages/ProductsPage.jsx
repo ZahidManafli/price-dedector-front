@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowDown, ArrowUp, ArrowUpDown, Bell, Check, ExternalLink, FileSpreadsheet,
-  Grid3X3, List, MoreVertical, PackageCheck, PackageX, Pencil, Plus, RefreshCw, Search, Send, Trash2,
+  Grid3X3, List, MoreVertical, PackageCheck, PackageX, Pencil, Plus, RefreshCw, Search, Send, Settings, Trash2,
   TrendingDown, TrendingUp, Truck, X,
 } from 'lucide-react';
 import { ebayAPI, productAPI, settingsAPI } from '../services/api';
@@ -437,6 +437,114 @@ function NotificationSettingsModal({ isDark, t, onClose }) {
   );
 }
 
+// Same six fields as CHECK_TOGGLES/CheckSettingsPopover above, but applied to
+// EVERY product the signed-in user owns in one action (PATCH
+// /products/check-settings/bulk) instead of opening each row's popover one
+// by one. Shown as two buttons per row rather than a single toggle, since
+// there's no single "current" value to display here — products can already
+// differ from each other — this is a command ("turn this check on/off for
+// everything"), not a shared state to edit.
+const BULK_CHECK_ROWS = [
+  { key: 'checkPriceEnabled', labelKey: 'priceLabel' },
+  { key: 'checkStockEnabled', labelKey: 'stockLabel' },
+  { key: 'checkTitleEnabled', labelKey: 'titleLabel' },
+  { key: 'checkHighPriceEnabled', labelKey: 'highPriceLabel' },
+  { key: 'checkShippingInfoEnabled', labelKey: 'shippingInfoLabel' },
+  { key: 'shippingInfoOutOfStockEnabled', labelKey: 'shippingInfoOutOfStockLabel' },
+];
+
+function BulkCheckSettingsModal({ isDark, t, onClose, onApplied }) {
+  const [pending, setPending] = useState(null); // `${key}:${value}` while that button's request is in flight
+  const [result, setResult] = useState(null); // { key, value, updatedCount } | null
+  const [error, setError] = useState(null);
+
+  const handleApply = async (key, value) => {
+    const token = `${key}:${value}`;
+    setPending(token);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await productAPI.updateAllCheckSettings({ [key]: value });
+      setResult({ key, value, updatedCount: res?.data?.updatedCount ?? 0 });
+      onApplied();
+    } catch (err) {
+      setError(err?.response?.data?.error || t('productsPage.bulkCheckSettingsSaveFailed'));
+    } finally {
+      setPending(null);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div className={`w-full max-w-md rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+        <div className="flex items-center justify-between mb-1">
+          <h2 className={`text-base font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+            {t('productsPage.bulkCheckSettingsTitle')}
+          </h2>
+          <button type="button" onClick={onClose} className={isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-700'}>
+            <X size={18} />
+          </button>
+        </div>
+        <p className={`text-xs mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          {t('productsPage.bulkCheckSettingsHint')}
+        </p>
+
+        {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
+
+        <div className="space-y-2.5">
+          {BULK_CHECK_ROWS.map(({ key, labelKey }) => (
+            <div
+              key={key}
+              className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 ${
+                isDark ? 'border-slate-800' : 'border-slate-100'
+              }`}
+            >
+              <div className="min-w-0">
+                <p className={`text-sm font-medium truncate ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+                  {t(`productChecks.${labelKey}`)}
+                </p>
+                {result?.key === key && (
+                  <p className="text-[11px] text-green-500 mt-0.5">
+                    {t('productsPage.bulkCheckSettingsApplied', { count: result.updatedCount })}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  disabled={!!pending}
+                  onClick={() => handleApply(key, true)}
+                  className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50"
+                >
+                  {pending === `${key}:true` ? (
+                    <RefreshCw size={12} className="animate-spin" />
+                  ) : (
+                    t('productsPage.bulkCheckSettingsEnableAll')
+                  )}
+                </button>
+                <button
+                  type="button"
+                  disabled={!!pending}
+                  onClick={() => handleApply(key, false)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition disabled:opacity-50 ${
+                    isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {pending === `${key}:false` ? (
+                    <RefreshCw size={12} className="animate-spin" />
+                  ) : (
+                    t('productsPage.bulkCheckSettingsDisableAll')
+                  )}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ProductsPage() {
@@ -468,6 +576,7 @@ export default function ProductsPage() {
   const [savingInline, setSavingInline] = useState(false);
   const [checkSettingsOpenId, setCheckSettingsOpenId] = useState(null);
   const [notificationSettingsOpen, setNotificationSettingsOpen] = useState(false);
+  const [bulkCheckSettingsOpen, setBulkCheckSettingsOpen] = useState(false);
   const sortDropRef = useRef(null);
 
   useEffect(() => {
@@ -798,6 +907,15 @@ export default function ProductsPage() {
         <NotificationSettingsModal isDark={isDark} t={t} onClose={() => setNotificationSettingsOpen(false)} />
       )}
 
+      {bulkCheckSettingsOpen && (
+        <BulkCheckSettingsModal
+          isDark={isDark}
+          t={t}
+          onClose={() => setBulkCheckSettingsOpen(false)}
+          onApplied={fetchProducts}
+        />
+      )}
+
       {alert && (
         <div className="mb-5">
           <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
@@ -983,6 +1101,21 @@ export default function ProductsPage() {
         >
           <Bell size={14} />
           <span className="hidden sm:inline">{t('productsPage.notificationSettingsButton')}</span>
+        </button>
+
+        {/* Bulk check-settings — enable/disable price/stock/title/etc.
+            checking for EVERY product at once; see BulkCheckSettingsModal
+            above. */}
+        <button
+          type="button"
+          onClick={() => setBulkCheckSettingsOpen(true)}
+          title={t('productsPage.bulkCheckSettingsTitle')}
+          className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition ${
+            isDark ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-white'
+          }`}
+        >
+          <Settings size={14} />
+          <span className="hidden sm:inline">{t('productsPage.bulkCheckSettingsButton')}</span>
         </button>
       </div>
 
