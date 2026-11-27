@@ -293,10 +293,10 @@ function applyDancePose(rig, t) {
 // Legs/arms swing opposite each other and the whole body hops — tuned for a
 // camera that's always front-on, so the swing mostly reads as side-to-side
 // kicks rather than a true forward/back running stride.
-function applyRunPose(rig, t, direction) {
+function applyRunPose(rig, t) {
   const speed = 10;
   const swing = Math.sin(t * speed);
-  rig.root.scale.x = direction < 0 ? -1 : 1;
+  rig.root.scale.x = 1;
   // Assignment, NOT +=: this runs every frame for as long as the mascot is
   // traveling, so accumulating onto the previous value here would make it
   // drift upward without bound (and right out of the camera's view) the
@@ -365,6 +365,11 @@ function MascotScene({ containerRef, motionRef }) {
     let moodUntil = performance.now() + 4000 + Math.random() * 4000;
     let moodStart = performance.now();
     let wasMoving = false;
+    // Smoothly turned to face the direction of travel while running, and
+    // smoothly turned back to face the viewer once stopped — interpolated
+    // here (not snapped) so the turn itself reads as a deliberate "turning to
+    // run that way" motion instead of an instant flip.
+    let facingY = 0;
 
     const pickNextMood = (now) => {
       const roll = Math.random();
@@ -385,9 +390,13 @@ function MascotScene({ containerRef, motionRef }) {
       const now = performance.now();
       const t = (now - start) / 1000;
       const isMoving = !!motionRef?.current?.isMoving;
+      const direction = motionRef?.current?.direction || 1;
+      const targetFacingY = isMoving ? (direction < 0 ? 0.85 : -0.85) : 0;
+      facingY += (targetFacingY - facingY) * 0.08;
+      rig.root.rotation.y = facingY;
 
       if (isMoving) {
-        applyRunPose(rig, t, motionRef.current.direction || 1);
+        applyRunPose(rig, t);
       } else {
         if (wasMoving) {
           // Just arrived somewhere — start a fresh, short idle window
@@ -442,7 +451,19 @@ function MascotScene({ containerRef, motionRef }) {
 
 function ChatPanel({ anchor, onClose, isDark }) {
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Salam! Mən Checkila-yam 👋 Nə köməklik edim?' },
+    {
+      role: 'assistant',
+      content:
+        'Salam! Mən Checkila-yam 👋 Sizə Products üzərində real əməliyyatları sözlə etməkdə kömək edə bilərəm:\n\n' +
+        '• Məhsul axtarmaq (ASIN / eBay ID / ad ilə)\n' +
+        '• Amazon və ya eBay qiymətini dəyişmək\n' +
+        '• Marja (margin) rejimi təyin etmək\n' +
+        '• Reklam faizini (ad rate) dəyişmək\n' +
+        '• Yoxlama tənzimləmələrini aç/bağlamaq\n' +
+        '• Yeni məhsul izləməyə qoşmaq\n' +
+        '• ASIN-i Checkila Smart ilə birbaşa eBay-ə canlı list etmək\n\n' +
+        'Məsələn: "B0C7BKZ883 ASIN-li məhsulun Amazon qiymətini 19.99 et" yaza bilərsiniz. Nə köməklik edim?',
+    },
   ]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -505,8 +526,8 @@ function ChatPanel({ anchor, onClose, isDark }) {
   };
 
   // Anchor the panel above/left of the mascot, clamped to the viewport.
-  const panelWidth = 340;
-  const panelHeight = 440;
+  const panelWidth = 370;
+  const panelHeight = 480;
   const left = Math.min(Math.max(8, anchor.x - panelWidth + WIDGET_SIZE), window.innerWidth - panelWidth - 8);
   const top = Math.min(Math.max(8, anchor.y - panelHeight - 12), window.innerHeight - panelHeight - 8);
 
@@ -557,24 +578,24 @@ function ChatPanel({ anchor, onClose, isDark }) {
         )}
       </div>
 
-      <div className={`flex items-center gap-2 p-2.5 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+      <div className={`flex items-end gap-2 p-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={sending}
-          rows={1}
+          rows={2}
           placeholder="Məsələn: B0C7BKZ883 ASIN-li məhsulun Amazon qiymətini 19.99 et"
-          className={`flex-1 resize-none rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+          className={`flex-1 resize-none rounded-xl border px-3.5 py-2.5 text-sm leading-relaxed min-h-[52px] max-h-32 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
             isDark ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
           }`}
         />
         <button
           onClick={send}
           disabled={sending || !input.trim()}
-          className="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-blue-600 text-white disabled:opacity-40 hover:bg-blue-700 transition shrink-0"
+          className="inline-flex items-center justify-center h-11 w-11 rounded-xl bg-blue-600 text-white disabled:opacity-40 hover:bg-blue-700 transition shrink-0"
         >
-          <Send size={15} />
+          <Send size={17} />
         </button>
       </div>
     </div>,
@@ -608,9 +629,13 @@ export default function CheckilaMascot() {
   const [anchor, setAnchor] = useState({ x: 60, y: 60 });
   const [pinned, setPinned] = useState(() => {
     try {
-      return localStorage.getItem(PIN_STORAGE_KEY) === '1';
+      // Defaults to pinned (bottom-right corner) until the admin explicitly
+      // un-pins it at least once — free wandering is opt-in, not the
+      // out-of-the-box behavior.
+      const stored = localStorage.getItem(PIN_STORAGE_KEY);
+      return stored === null ? true : stored === '1';
     } catch {
-      return false;
+      return true;
     }
   });
 
@@ -637,10 +662,21 @@ export default function CheckilaMascot() {
     if (!pinned) pickNewTarget();
 
     let frameId;
-    const tick = () => {
-      if (!chatOpen && wrapperRef.current) {
-        const now = performance.now();
+    // Constant speed (px/sec) rather than an exponential lerp — a lerp
+    // covers most of the distance in its first few frames and then crawls
+    // the last little bit, which (especially over the short hops this does)
+    // reads as an instant jump rather than a visible run. A fixed speed
+    // keeps it on screen, actually running, for a consistent, noticeable
+    // stretch of time no matter the distance.
+    const RUN_SPEED_PX_PER_SEC = 260;
+    let lastTickAt = performance.now();
 
+    const tick = () => {
+      const now = performance.now();
+      const dtSec = Math.min(0.05, (now - lastTickAt) / 1000);
+      lastTickAt = now;
+
+      if (!chatOpen && wrapperRef.current) {
         if (pinned) {
           targetRef.current = getCornerPosition();
         } else if (now >= nextTargetAtRef.current) {
@@ -653,10 +689,11 @@ export default function CheckilaMascot() {
         const dy = target.y - pos.y;
         const dist = Math.hypot(dx, dy);
 
-        // Fast-ish lerp so travel reads as a quick dash rather than a slow
-        // drift — paired with the 3D run/hop pose while isMoving is true.
-        pos.x += dx * 0.045;
-        pos.y += dy * 0.045;
+        if (dist > 2) {
+          const travel = Math.min(dist, RUN_SPEED_PX_PER_SEC * dtSec);
+          pos.x += (dx / dist) * travel;
+          pos.y += (dy / dist) * travel;
+        }
         wrapperRef.current.style.left = `${pos.x}px`;
         wrapperRef.current.style.top = `${pos.y}px`;
 
