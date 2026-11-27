@@ -781,21 +781,29 @@ function ChatPanel({ messages, setMessages, onClose, onReset, anchor, isDark }) 
 const DEFAULT_FLAVOR_LINES = [
   'Uf, bura qədər dırmaşmaq çox vaxt apardı! 😅',
   'Nəfəsim kəsildi, bir azca dincəlim burda.',
+  'Aman Allah, bu qədər pillə var imiş burda!',
+  'Bir az tərlədim bu dırmaşmaqdan, amma dəyərdi 😄',
   '{productName}-a qədər gəldim, möhkəm imiş bu!',
   'Bilirsinizmi, {productName} satmaqla {profit}$ qazanırsınız? 💰',
+  'Elə buradan görürəm ki, {productName} yaxşı gedir!',
   'Yorulmayasınız, işləriniz qaydasındadır 💪',
+  '{productName} üstündə {profit}$ mənfəət var — pis deyil ha!',
+  'Deyəsən {productName} bu gün xoş xəbərlər gətirib 😊',
 ];
 
 // Shown while pinned (no product row to reference, so no {productName}/
-// {profit} placeholders here) — used as a fallback when the AI-generated
-// batch (see getFlavorLines, which mixes both kinds) doesn't have enough
-// placeholder-free lines yet.
+// {profit} placeholders here) — used as a fallback when the curated batch
+// from the backend (see getFlavorLines) doesn't have enough placeholder-free
+// lines loaded yet.
 const GENERIC_FLAVOR_LINES = [
   'Burda rahatam, təşəkkürlər 😌',
   'Siz işinizə davam edin, mən burda gözləyirəm.',
   'Bu gün hər şey qaydasındadır!',
   'Bir az darıxdım, danışaq? 💬',
   'Checkila-da gözəl bir gün keçirirsiniz, elə deyilmi?',
+  'Hər şey qaydasında görünür, narahat olmayın 👍',
+  'Bura pəncərə kimidir, hər şeyi görürəm buradan 👀',
+  'Sizi izləyirəm, lazım olsam buradayam 😊',
 ];
 
 function fillFlavorLine(template, { productName, profit }) {
@@ -827,14 +835,21 @@ function pickRandomProductElement() {
   return visible[Math.floor(Math.random() * visible.length)];
 }
 
-function SpeechBubble({ text, anchor, isDark }) {
+// Position is driven imperatively (see syncBubblePosition in the tick loop
+// below), the same way the mascot's own wrapper div is — a ref assigned here
+// lets the parent keep the bubble glued to the body's actual on-screen
+// position every frame, instead of a React-state anchor that only reflected
+// wherever the mascot was the instant the bubble was created (and then went
+// stale as soon as the body kept moving, e.g. still finishing its approach
+// to the pinned corner).
+const SpeechBubble = React.forwardRef(function SpeechBubble({ text, anchor, isDark }, ref) {
   if (!text) return null;
   const width = 230;
   const left = Math.min(Math.max(8, anchor.x + WIDGET_SIZE / 2 - width / 2), window.innerWidth - width - 8);
   const top = Math.max(8, anchor.y - 98);
 
   return createPortal(
-    <div style={{ position: 'fixed', left, top, width, zIndex: 2147482950 }} className="pointer-events-none">
+    <div ref={ref} style={{ position: 'fixed', left, top, width, zIndex: 2147482950 }} className="pointer-events-none">
       <div
         className={`relative rounded-2xl border px-3.5 py-2.5 text-xs leading-snug shadow-xl ${
           isDark ? 'bg-slate-800 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
@@ -850,7 +865,7 @@ function SpeechBubble({ text, anchor, isDark }) {
     </div>,
     document.body
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Wandering widget
@@ -878,7 +893,7 @@ export default function CheckilaMascot() {
   // "Visit a random product row" state machine — see the tick loop below.
   // phase: 'idle' | 'traveling' | 'climbing' | 'bubble'.
   const visitRef = useRef({ phase: 'idle', el: null, productName: '', profit: null });
-  const nextVisitAtRef = useRef(performance.now() + 15000 + Math.random() * 15000);
+  const nextVisitAtRef = useRef(performance.now() + 6000 + Math.random() * 8000);
   const phaseUntilRef = useRef(0);
   const climbStartAtRef = useRef(0);
   const flavorLinesRef = useRef(DEFAULT_FLAVOR_LINES);
@@ -888,10 +903,16 @@ export default function CheckilaMascot() {
   // branch).
   const pinnedBubbleActiveRef = useRef(false);
   const pinnedBubbleUntilRef = useRef(0);
-  const nextPinnedBubbleAtRef = useRef(performance.now() + 20000 + Math.random() * 20000);
+  const nextPinnedBubbleAtRef = useRef(performance.now() + 7000 + Math.random() * 8000);
   const [chatOpen, setChatOpen] = useState(false);
   const [anchor, setAnchor] = useState({ x: 60, y: 60 });
   const [bubble, setBubble] = useState(null); // { text, anchor } | null
+  // The bubble's DOM node — see syncBubblePosition in the tick loop, which
+  // repositions it imperatively every frame so it stays glued to the mascot
+  // even while the mascot itself keeps moving (position updates on the
+  // mascot's own wrapper are likewise imperative, not React state, for the
+  // same reason: a 60fps state update would be wasteful re-rendering).
+  const bubbleWrapperRef = useRef(null);
   // Chat history lives in MySQL (mascot_chat_messages), scoped per admin —
   // loaded once on mount; the greeting below is shown locally whenever that
   // admin has no saved history yet, never written to the DB itself (only
@@ -995,6 +1016,21 @@ export default function CheckilaMascot() {
       setBubble(null);
     };
 
+    // Keeps the speech bubble glued above the mascot's actual on-screen
+    // position every frame — same formula SpeechBubble uses for its own
+    // initial placement, just applied imperatively so it never goes stale
+    // while the body keeps moving (e.g. still travelling to the pinned
+    // corner when the "feelings" bubble fires).
+    const syncBubblePosition = (pos) => {
+      const node = bubbleWrapperRef.current;
+      if (!node) return;
+      const width = 230;
+      const left = Math.min(Math.max(8, pos.x + WIDGET_SIZE / 2 - width / 2), window.innerWidth - width - 8);
+      const top = Math.max(8, pos.y - 98);
+      node.style.left = `${left}px`;
+      node.style.top = `${top}px`;
+    };
+
     const tick = () => {
       const now = performance.now();
       const dtSec = Math.min(0.05, (now - lastTickAt) / 1000);
@@ -1023,7 +1059,7 @@ export default function CheckilaMascot() {
             if (now >= pinnedBubbleUntilRef.current) {
               pinnedBubbleActiveRef.current = false;
               setBubble(null);
-              nextPinnedBubbleAtRef.current = now + 25000 + Math.random() * 25000;
+              nextPinnedBubbleAtRef.current = now + 10000 + Math.random() * 10000;
             }
           } else if (now >= nextPinnedBubbleAtRef.current) {
             const text = pickGenericFlavorLine(flavorLinesRef.current);
@@ -1051,7 +1087,7 @@ export default function CheckilaMascot() {
           // Whether or not a row was found, don't retry again for a while —
           // an empty/loading Products table shouldn't spin this check every
           // frame.
-          nextVisitAtRef.current = now + 20000 + Math.random() * 20000;
+          nextVisitAtRef.current = now + 9000 + Math.random() * 9000;
         } else if (visit.phase === 'idle' && now >= nextTargetAtRef.current) {
           pickNewTarget();
         }
@@ -1069,6 +1105,7 @@ export default function CheckilaMascot() {
         }
         wrapperRef.current.style.left = `${pos.x}px`;
         wrapperRef.current.style.top = `${pos.y}px`;
+        syncBubblePosition(pos);
 
         const arrived = dist <= 3;
         motionRef.current.isMoving = !arrived;
@@ -1167,7 +1204,9 @@ export default function CheckilaMascot() {
           isDark={isDark}
         />
       )}
-      {!chatOpen && bubble && <SpeechBubble text={bubble.text} anchor={bubble.anchor} isDark={isDark} />}
+      {!chatOpen && bubble && (
+        <SpeechBubble ref={bubbleWrapperRef} text={bubble.text} anchor={bubble.anchor} isDark={isDark} />
+      )}
     </>
   );
 }
