@@ -396,7 +396,12 @@ function MascotScene({ containerRef, motionRef }) {
       const t = (now - start) / 1000;
       const isMoving = !!motionRef?.current?.isMoving;
       const direction = motionRef?.current?.direction || 1;
-      const targetFacingY = isMoving ? (direction < 0 ? 0.85 : -0.85) : 0;
+      // direction > 0 means moving toward +X (screen right): rotating root.y
+      // POSITIVE swings its front (local +Z, facing the camera at rest)
+      // toward world +X, i.e. turns it to face screen-right — so this must
+      // match direction's own sign, not oppose it (that was the bug: it was
+      // inverted, so it turned to face away from where it was actually going).
+      const targetFacingY = isMoving ? (direction < 0 ? -0.85 : 0.85) : 0;
       facingY += (targetFacingY - facingY) * 0.08;
       rig.root.rotation.y = facingY;
 
