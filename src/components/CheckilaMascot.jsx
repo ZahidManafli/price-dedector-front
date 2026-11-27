@@ -11,14 +11,29 @@
 // change — run `npm install three` before this renders).
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useLocation } from 'react-router-dom';
 import * as THREE from 'three';
-import { Send, X, Loader2, Sparkles, Pin, PinOff } from 'lucide-react';
+import { Send, X, Loader2, Sparkles, Pin, PinOff, Trash2 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { mascotAPI } from '../services/api';
 
 const WIDGET_SIZE = 150;
 const MARGIN = 16;
 const PIN_STORAGE_KEY = 'checkila.mascot.pinned';
+
+const DEFAULT_GREETING_MESSAGE = {
+  role: 'assistant',
+  content:
+    'Salam! Mən Checkila-yam 👋 Sizə Products üzərində real əməliyyatları sözlə etməkdə kömək edə bilərəm:\n\n' +
+    '• Məhsul axtarmaq (ASIN / eBay ID / ad ilə)\n' +
+    '• Amazon və ya eBay qiymətini dəyişmək\n' +
+    '• Marja (margin) rejimi təyin etmək\n' +
+    '• Reklam faizini (ad rate) dəyişmək\n' +
+    '• Yoxlama tənzimləmələrini aç/bağlamaq\n' +
+    '• Yeni məhsul izləməyə qoşmaq\n' +
+    '• ASIN-i Checkila Smart ilə birbaşa eBay-ə canlı list etmək\n\n' +
+    'Məsələn: "B0C7BKZ883 ASIN-li məhsulun Amazon qiymətini 19.99 et" yaza bilərsiniz. Nə köməklik edim?',
+};
 
 // ---------------------------------------------------------------------------
 // 3D model — a small chibi-proportioned figure (big head, small body) rigged
@@ -321,6 +336,27 @@ function applyRunPose(rig, t) {
   rig.rightArm.rotation.x = 0;
 }
 
+// Played after arriving at a randomly-picked product row (see the "visit"
+// state machine in CheckilaMascot) — an exaggerated alternating reach-and-pull
+// motion, like scaling a wall, instead of the run/idle poses.
+function applyClimbPose(rig, t) {
+  const speed = 7;
+  const phase = Math.sin(t * speed);
+  rig.root.scale.x = 1;
+  rig.root.rotation.z = 0;
+  rig.root.position.y = Math.abs(Math.sin(t * speed * 0.6)) * 0.08;
+  rig.headGroup.rotation.x = -0.12;
+  rig.headGroup.rotation.y = 0;
+  rig.headGroup.rotation.z = 0;
+  rig.leftArm.rotation.x = -1.1 + phase * 0.35;
+  rig.rightArm.rotation.x = -1.1 - phase * 0.35;
+  rig.leftArm.rotation.z = rig.leftArm.userData.restRotationZ;
+  rig.rightArm.rotation.z = rig.rightArm.userData.restRotationZ;
+  rig.leftLeg.rotation.z = phase * 0.5;
+  rig.rightLeg.rotation.z = -phase * 0.5;
+  rig.legsGroup.rotation.z = 0;
+}
+
 // motionRef is a plain ref object ({ isMoving, direction }) the wander loop
 // in CheckilaMascot mutates every frame — read directly here instead of via
 // React state/props so the Three.js render loop (its own rAF, independent of
@@ -395,6 +431,7 @@ function MascotScene({ containerRef, motionRef }) {
       const now = performance.now();
       const t = (now - start) / 1000;
       const isMoving = !!motionRef?.current?.isMoving;
+      const climbing = !!motionRef?.current?.climbing;
       const direction = motionRef?.current?.direction || 1;
       // direction > 0 means moving toward +X (screen right): rotating root.y
       // POSITIVE swings its front (local +Z, facing the camera at rest)
@@ -405,7 +442,9 @@ function MascotScene({ containerRef, motionRef }) {
       facingY += (targetFacingY - facingY) * 0.08;
       rig.root.rotation.y = facingY;
 
-      if (isMoving) {
+      if (climbing) {
+        applyClimbPose(rig, t);
+      } else if (isMoving) {
         applyRunPose(rig, t);
       } else {
         if (wasMoving) {
@@ -459,22 +498,7 @@ function MascotScene({ containerRef, motionRef }) {
 // Chat panel
 // ---------------------------------------------------------------------------
 
-function ChatPanel({ anchor, onClose, isDark }) {
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content:
-        'Salam! Mən Checkila-yam 👋 Sizə Products üzərində real əməliyyatları sözlə etməkdə kömək edə bilərəm:\n\n' +
-        '• Məhsul axtarmaq (ASIN / eBay ID / ad ilə)\n' +
-        '• Amazon və ya eBay qiymətini dəyişmək\n' +
-        '• Marja (margin) rejimi təyin etmək\n' +
-        '• Reklam faizini (ad rate) dəyişmək\n' +
-        '• Yoxlama tənzimləmələrini aç/bağlamaq\n' +
-        '• Yeni məhsul izləməyə qoşmaq\n' +
-        '• ASIN-i Checkila Smart ilə birbaşa eBay-ə canlı list etmək\n\n' +
-        'Məsələn: "B0C7BKZ883 ASIN-li məhsulun Amazon qiymətini 19.99 et" yaza bilərsiniz. Nə köməklik edim?',
-    },
-  ]);
+function ChatPanel({ messages, setMessages, onClose, onReset, anchor, isDark }) {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
@@ -487,8 +511,10 @@ function ChatPanel({ anchor, onClose, isDark }) {
   const send = async () => {
     const text = input.trim();
     if (!text || sending) return;
-    const nextMessages = [...messages, { role: 'user', content: text }];
-    setMessages(nextMessages);
+    // Shown immediately for responsiveness; the backend independently saves
+    // this same text (and its own reply) to that admin's DB-stored history —
+    // see mascotAPI.startChat/services/mascotAgentService.js.
+    setMessages((prev) => [...prev, { role: 'user', content: text }]);
     setInput('');
     setError(null);
     setSending(true);
@@ -499,7 +525,7 @@ function ChatPanel({ anchor, onClose, isDark }) {
       // GET /mascot/chat/:jobId until it's done instead of holding one long
       // connection open (which a reverse proxy in front of the server can
       // cut before the real reply ever arrives).
-      const startRes = await mascotAPI.startChat(nextMessages.map(({ role, content }) => ({ role, content })));
+      const startRes = await mascotAPI.startChat(text);
       const jobId = startRes?.data?.jobId;
       if (!jobId) throw new Error('Cavab gözlənilmədi (jobId yoxdur)');
 
@@ -553,9 +579,18 @@ function ChatPanel({ anchor, onClose, isDark }) {
           <Sparkles size={16} className="text-blue-500" />
           <span className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>Checkila Köməkçi</span>
         </div>
-        <button onClick={onClose} className={`p-1 rounded-lg ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
-          <X size={16} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onReset}
+            title="Söhbəti təmizlə"
+            className={`p-1 rounded-lg ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+          >
+            <Trash2 size={15} />
+          </button>
+          <button onClick={onClose} className={`p-1 rounded-lg ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5">
@@ -614,6 +649,65 @@ function ChatPanel({ anchor, onClose, isDark }) {
 }
 
 // ---------------------------------------------------------------------------
+// "Visit a random product row" flourish — only on the Products page, only
+// while not pinned. The mascot runs over to a random row in the table (or
+// grid card — see the data-mascot-product-* attributes in ProductsPage.jsx),
+// plays a short climb animation, then shows a speech bubble with a flavor
+// line (see backend GET /mascot/flavor-lines) filled in with that product's
+// real name/profit.
+// ---------------------------------------------------------------------------
+
+const DEFAULT_FLAVOR_LINES = [
+  'Uf, bura qədər dırmaşmaq çox vaxt apardı! 😅',
+  'Nəfəsim kəsildi, bir azca dincəlim burda.',
+  '{productName}-a qədər gəldim, möhkəm imiş bu!',
+  'Bilirsinizmi, {productName} satmaqla {profit}$ qazanırsınız? 💰',
+  'Yorulmayasınız, işləriniz qaydasındadır 💪',
+];
+
+function fillFlavorLine(template, { productName, profit }) {
+  const profitText = Number.isFinite(Number(profit)) ? Number(profit).toFixed(2) : '—';
+  return String(template || '')
+    .replaceAll('{productName}', productName || 'bu məhsul')
+    .replaceAll('{profit}', profitText);
+}
+
+function pickRandomProductElement() {
+  const nodes = Array.from(document.querySelectorAll('[data-mascot-product-id]'));
+  const visible = nodes.filter((el) => {
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && rect.top > 40 && rect.top < window.innerHeight - 60;
+  });
+  if (!visible.length) return null;
+  return visible[Math.floor(Math.random() * visible.length)];
+}
+
+function SpeechBubble({ text, anchor, isDark }) {
+  if (!text) return null;
+  const width = 230;
+  const left = Math.min(Math.max(8, anchor.x + WIDGET_SIZE / 2 - width / 2), window.innerWidth - width - 8);
+  const top = Math.max(8, anchor.y - 98);
+
+  return createPortal(
+    <div style={{ position: 'fixed', left, top, width, zIndex: 2147482950 }} className="pointer-events-none">
+      <div
+        className={`relative rounded-2xl border px-3.5 py-2.5 text-xs leading-snug shadow-xl ${
+          isDark ? 'bg-slate-800 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
+        }`}
+      >
+        {text}
+        <div
+          className={`absolute -bottom-[7px] left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-b border-r ${
+            isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+          }`}
+        />
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Wandering widget
 // ---------------------------------------------------------------------------
 
@@ -626,6 +720,7 @@ function getCornerPosition() {
 
 export default function CheckilaMascot() {
   const { isDark } = useTheme();
+  const location = useLocation();
   const containerRef = useRef(null);
   const wrapperRef = useRef(null);
   const posRef = useRef(getCornerPosition());
@@ -634,9 +729,66 @@ export default function CheckilaMascot() {
   // Mutated directly by the wander loop below and read directly by
   // MascotScene's own render loop — see that component's comment on why this
   // is a plain ref instead of React state.
-  const motionRef = useRef({ isMoving: false, direction: 1 });
+  const motionRef = useRef({ isMoving: false, direction: 1, climbing: false });
+  // "Visit a random product row" state machine — see the tick loop below.
+  // phase: 'idle' | 'traveling' | 'climbing' | 'bubble'.
+  const visitRef = useRef({ phase: 'idle', el: null, productName: '', profit: null });
+  const nextVisitAtRef = useRef(performance.now() + 15000 + Math.random() * 15000);
+  const phaseUntilRef = useRef(0);
+  const flavorLinesRef = useRef(DEFAULT_FLAVOR_LINES);
   const [chatOpen, setChatOpen] = useState(false);
   const [anchor, setAnchor] = useState({ x: 60, y: 60 });
+  const [bubble, setBubble] = useState(null); // { text, anchor } | null
+  // Chat history lives in MySQL (mascot_chat_messages), scoped per admin —
+  // loaded once on mount; the greeting below is shown locally whenever that
+  // admin has no saved history yet, never written to the DB itself (only
+  // real exchanges are).
+  const [chatMessages, setChatMessages] = useState([DEFAULT_GREETING_MESSAGE]);
+
+  useEffect(() => {
+    let cancelled = false;
+    mascotAPI
+      .getChatHistory()
+      .then((res) => {
+        const stored = res?.data?.messages;
+        if (!cancelled && Array.isArray(stored) && stored.length) {
+          setChatMessages(stored.map(({ role, content }) => ({ role, content })));
+        }
+      })
+      .catch(() => {
+        // Keep the local greeting — not worth surfacing an error for this.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const resetChatHistory = useCallback(() => {
+    setChatMessages([DEFAULT_GREETING_MESSAGE]);
+    mascotAPI.clearChatHistory().catch(() => {
+      // Best-effort — the local reset already happened either way.
+    });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    mascotAPI
+      .getFlavorLines()
+      .then((res) => {
+        const lines = res?.data?.lines;
+        if (!cancelled && Array.isArray(lines) && lines.length) {
+          flavorLinesRef.current = lines;
+        }
+      })
+      .catch(() => {
+        // Keep the built-in default lines — this is a cosmetic flourish, not
+        // worth surfacing an error for.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const [pinned, setPinned] = useState(() => {
     try {
       // Defaults to pinned (bottom-right corner) until the admin explicitly
@@ -681,15 +833,52 @@ export default function CheckilaMascot() {
     const RUN_SPEED_PX_PER_SEC = 260;
     let lastTickAt = performance.now();
 
+    const isProductsPage = location.pathname.startsWith('/products');
+
+    const resetVisit = () => {
+      visitRef.current = { phase: 'idle', el: null, productName: '', profit: null };
+      motionRef.current.climbing = false;
+      setBubble(null);
+    };
+
     const tick = () => {
       const now = performance.now();
       const dtSec = Math.min(0.05, (now - lastTickAt) / 1000);
       lastTickAt = now;
 
+      // Pinning or opening the chat always wins — drop whatever visit was in
+      // progress rather than letting it fight the corner/chat anchor.
+      if ((pinned || chatOpen || !isProductsPage) && visitRef.current.phase !== 'idle') {
+        resetVisit();
+      }
+
       if (!chatOpen && wrapperRef.current) {
+        const visit = visitRef.current;
+
         if (pinned) {
           targetRef.current = getCornerPosition();
-        } else if (now >= nextTargetAtRef.current) {
+        } else if (visit.phase === 'idle' && isProductsPage && now >= nextVisitAtRef.current) {
+          const el = pickRandomProductElement();
+          if (el) {
+            const rect = el.getBoundingClientRect();
+            const maxX = window.innerWidth - WIDGET_SIZE - MARGIN;
+            const maxY = window.innerHeight - WIDGET_SIZE - MARGIN;
+            targetRef.current = {
+              x: Math.min(Math.max(MARGIN, rect.left + rect.width / 2 - WIDGET_SIZE / 2), maxX),
+              y: Math.min(Math.max(MARGIN, rect.top - WIDGET_SIZE + 24), maxY),
+            };
+            visitRef.current = {
+              phase: 'traveling',
+              el,
+              productName: el.dataset.mascotProductName || '',
+              profit: el.dataset.mascotProductProfit || null,
+            };
+          }
+          // Whether or not a row was found, don't retry again for a while —
+          // an empty/loading Products table shouldn't spin this check every
+          // frame.
+          nextVisitAtRef.current = now + 20000 + Math.random() * 20000;
+        } else if (visit.phase === 'idle' && now >= nextTargetAtRef.current) {
           pickNewTarget();
         }
 
@@ -707,16 +896,38 @@ export default function CheckilaMascot() {
         wrapperRef.current.style.left = `${pos.x}px`;
         wrapperRef.current.style.top = `${pos.y}px`;
 
-        motionRef.current.isMoving = dist > 3;
+        const arrived = dist <= 3;
+        motionRef.current.isMoving = !arrived;
         if (Math.abs(dx) > 1) motionRef.current.direction = dx >= 0 ? 1 : -1;
+
+        // Visit phase transitions: traveling -> climbing -> bubble -> idle.
+        if (visit.phase === 'traveling' && arrived) {
+          visitRef.current.phase = 'climbing';
+          motionRef.current.climbing = true;
+          phaseUntilRef.current = now + 1400;
+        } else if (visit.phase === 'climbing') {
+          if (now >= phaseUntilRef.current) {
+            visitRef.current.phase = 'bubble';
+            motionRef.current.climbing = false;
+            const lines = flavorLinesRef.current;
+            const template = lines[Math.floor(Math.random() * lines.length)];
+            const text = fillFlavorLine(template, { productName: visit.productName, profit: visit.profit });
+            setBubble({ text, anchor: { x: pos.x, y: pos.y } });
+            phaseUntilRef.current = now + 4500;
+          }
+        } else if (visit.phase === 'bubble' && now >= phaseUntilRef.current) {
+          resetVisit();
+          nextTargetAtRef.current = now; // pick a fresh wander target right away
+        }
       } else {
         motionRef.current.isMoving = false;
+        motionRef.current.climbing = false;
       }
       frameId = requestAnimationFrame(tick);
     };
     tick();
     return () => cancelAnimationFrame(frameId);
-  }, [chatOpen, pinned, pickNewTarget]);
+  }, [chatOpen, pinned, pickNewTarget, location.pathname]);
 
   const handleClick = () => {
     const pos = posRef.current;
@@ -770,7 +981,17 @@ export default function CheckilaMascot() {
           <MascotScene containerRef={containerRef} motionRef={motionRef} />
         </div>
       </div>
-      {chatOpen && <ChatPanel anchor={anchor} onClose={() => setChatOpen(false)} isDark={isDark} />}
+      {chatOpen && (
+        <ChatPanel
+          messages={chatMessages}
+          setMessages={setChatMessages}
+          onReset={resetChatHistory}
+          anchor={anchor}
+          onClose={() => setChatOpen(false)}
+          isDark={isDark}
+        />
+      )}
+      {!chatOpen && bubble && <SpeechBubble text={bubble.text} anchor={bubble.anchor} isDark={isDark} />}
     </>
   );
 }

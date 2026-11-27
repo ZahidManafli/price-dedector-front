@@ -1031,7 +1031,13 @@ export default function ProductsPage() {
             const amazonTrend = priceTrendPct(product.currentAmazonPrice, product.oldAmazonPrice);
             const ebayTrend = priceTrendPct(product.currentEbayPrice, product.oldEbayPrice);
             return (
-              <div key={product.id} className="relative">
+              <div
+                key={product.id}
+                data-mascot-product-id={product.id}
+                data-mascot-product-name={product.productName || ''}
+                data-mascot-product-profit={product.profit ?? ''}
+                className="relative"
+              >
                 {/* Status badge overlay */}
                 <div className="absolute top-2 left-2 z-20">
                   <StatusBadge status={status} />
@@ -1124,6 +1130,9 @@ export default function ProductsPage() {
                   return (
                     <tr
                       key={product.id}
+                      data-mascot-product-id={product.id}
+                      data-mascot-product-name={product.productName || ''}
+                      data-mascot-product-profit={product.profit ?? ''}
                       className={`border-t transition-colors ${
                         isDark ? 'border-slate-800' : 'border-slate-100'
                       } ${

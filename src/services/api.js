@@ -532,8 +532,14 @@ export const dewisoAPI = {
 // Admin APIs
 // Checkila mascot (admin-only operational assistant) — see components/CheckilaMascot.jsx.
 export const mascotAPI = {
-  startChat: (messages) => api.post('/mascot/chat', { messages }),
+  // History itself lives in MySQL (mascot_chat_messages), scoped per admin —
+  // startChat sends only the NEW message text; the backend appends it to
+  // that admin's own saved history, replies, and saves the reply too.
+  startChat: (message) => api.post('/mascot/chat', { message }),
   getChatStatus: (jobId) => api.get(`/mascot/chat/${jobId}`),
+  getChatHistory: () => api.get('/mascot/chat-history'),
+  clearChatHistory: () => api.delete('/mascot/chat-history'),
+  getFlavorLines: () => api.get('/mascot/flavor-lines'),
 };
 
 export const adminAPI = {
