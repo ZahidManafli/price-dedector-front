@@ -151,6 +151,7 @@ export const productAPI = {
   updateAllCheckSettings: (data) => api.patch('/products/check-settings/bulk', data),
   delete: (id) => api.delete(`/products/${id}`),
   getPriceHistory: (id) => api.get(`/products/${id}/history`),
+  getShippingInfoHistory: (id) => api.get(`/products/${id}/shipping-info-history`),
   // Queues a background job (Amazon scrape can now take up to ~90s across
   // retries) and returns { jobId } right away — poll it with pollJob below.
   comparePrice: (id) => api.post(`/products/${id}/compare`),

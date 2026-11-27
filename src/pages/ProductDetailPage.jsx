@@ -448,6 +448,11 @@ export default function ProductDetailPage() {
                     <span>{product.shippingInfo.join(' • ')}</span>
                   </div>
                 )}
+                {product.shippingInfoDaysOut != null && (
+                  <p className={`mt-1 text-xs font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                    {t('productsPage.deliveryDayLabel', { count: product.shippingInfoDaysOut })}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2 lg:flex-col xl:flex-row">
