@@ -308,6 +308,84 @@ function applyDancePose(rig, t) {
   rig.rightLeg.rotation.z = Math.sin(t * 6 + Math.PI) * 0.3;
 }
 
+// Big overhead stretch — both arms raised straight up, a little lean back —
+// `progress` (0→1 over the mood's duration) ramps the stretch in then eases
+// it back out near the end instead of snapping in/out.
+function applyStretchPose(rig, t, progress) {
+  const ramp = Math.min(1, progress * 3.2) * Math.min(1, (1 - progress) * 4);
+  rig.root.scale.x = 1;
+  rig.root.rotation.z = 0;
+  rig.root.rotation.x = -0.08 * ramp;
+  rig.root.position.y = 0.12 * ramp;
+  rig.headGroup.rotation.x = -0.12 * ramp;
+  rig.headGroup.rotation.y = Math.sin(t * 1.1) * 0.06;
+  rig.headGroup.rotation.z = 0;
+  rig.leftArm.rotation.x = -2.6 * ramp;
+  rig.rightArm.rotation.x = -2.6 * ramp;
+  rig.leftArm.rotation.z = rig.leftArm.userData.restRotationZ * (1 - ramp) - 0.25 * ramp;
+  rig.rightArm.rotation.z = rig.rightArm.userData.restRotationZ * (1 - ramp) + 0.25 * ramp;
+  rig.leftLeg.rotation.z = 0;
+  rig.rightLeg.rotation.z = 0;
+  rig.legsGroup.rotation.z = 0;
+}
+
+// A full playful twirl — `progress` drives rotation.y linearly through one
+// complete 2π turn over the mood's duration, so it lands facing forward
+// again right as the mood ends (no jump when the idle facing-lerp resumes).
+function applySpinPose(rig, t, progress) {
+  rig.root.scale.x = 1;
+  rig.root.rotation.x = 0;
+  rig.root.rotation.z = 0;
+  rig.root.rotation.y = progress * Math.PI * 2;
+  rig.root.position.y = Math.sin(Math.min(1, progress) * Math.PI) * 0.16;
+  rig.headGroup.rotation.x = 0;
+  rig.headGroup.rotation.y = 0;
+  rig.headGroup.rotation.z = Math.sin(t * 10) * 0.05;
+  rig.leftArm.rotation.x = 0;
+  rig.rightArm.rotation.x = 0;
+  rig.leftArm.rotation.z = rig.leftArm.userData.restRotationZ - 0.65;
+  rig.rightArm.rotation.z = rig.rightArm.userData.restRotationZ + 0.65;
+  rig.leftLeg.rotation.z = 0;
+  rig.rightLeg.rotation.z = 0;
+}
+
+// A "hmm, let me think" pose — one hand up near the head, head tilted,
+// gentle sway. Pairs nicely with a thought-bubble moment.
+function applyThinkPose(rig, t) {
+  rig.root.scale.x = 1;
+  rig.root.rotation.x = 0;
+  rig.root.rotation.z = 0;
+  rig.root.position.y = Math.sin(t * 1.2) * 0.04;
+  rig.headGroup.rotation.z = 0.18 + Math.sin(t * 0.8) * 0.04;
+  rig.headGroup.rotation.y = -0.15;
+  rig.headGroup.rotation.x = 0.05;
+  rig.rightArm.rotation.x = -1.6;
+  rig.rightArm.rotation.z = rig.rightArm.userData.restRotationZ - 0.5;
+  rig.leftArm.rotation.x = 0;
+  rig.leftArm.rotation.z = rig.leftArm.userData.restRotationZ + Math.sin(t * 1.4) * 0.05;
+  rig.leftLeg.rotation.z = 0;
+  rig.rightLeg.rotation.z = 0;
+}
+
+// Quick, happy clapping — both arms swing in and out of center rapidly with
+// a light bounce, like applauding something.
+function applyClapPose(rig, t) {
+  const clap = Math.abs(Math.sin(t * 8));
+  rig.root.scale.x = 1;
+  rig.root.rotation.x = 0;
+  rig.root.rotation.z = 0;
+  rig.root.position.y = clap * 0.08;
+  rig.headGroup.rotation.y = Math.sin(t * 2) * 0.06;
+  rig.headGroup.rotation.z = 0;
+  rig.headGroup.rotation.x = 0;
+  rig.leftArm.rotation.x = -0.9;
+  rig.rightArm.rotation.x = -0.9;
+  rig.leftArm.rotation.z = rig.leftArm.userData.restRotationZ - 0.9 + clap * 0.5;
+  rig.rightArm.rotation.z = rig.rightArm.userData.restRotationZ + 0.9 - clap * 0.5;
+  rig.leftLeg.rotation.z = 0;
+  rig.rightLeg.rotation.z = 0;
+}
+
 // Running + hopping combined, used while the mascot is actually traveling
 // across the screen (see the wander loop's motionRef in CheckilaMascot).
 // Legs/arms swing opposite each other and the whole body hops — tuned for a
@@ -339,22 +417,45 @@ function applyRunPose(rig, t) {
 // Played after arriving at a randomly-picked product row (see the "visit"
 // state machine in CheckilaMascot) — an exaggerated alternating reach-and-pull
 // motion, like scaling a wall, instead of the run/idle poses.
-function applyClimbPose(rig, t) {
-  const speed = 7;
-  const phase = Math.sin(t * speed);
+// `progress` (0→1 over the whole climb) drives two extra touches beyond the
+// basic reach-and-pull cycle: a slight body twist per reach (more convincing
+// than a flat front-on climb), and a brief "almost slipped!" wobble partway
+// through — both a visual flourish and a nice setup for a matching "aman, az
+// qaldı sürüşürdüm!" flavor line once the bubble shows.
+function applyClimbPose(rig, t, progress) {
+  const cycle = t * 6.5;
+  const phase = Math.sin(cycle);
+  const stepPhase = Math.sin(cycle * 2 + Math.PI / 2);
+
+  // Eases in over the first ~15% and out over the last ~10% so the climb
+  // doesn't start/stop on an abrupt mid-swing frame.
+  const settle = Math.min(1, progress / 0.15) * Math.min(1, (1 - progress) / 0.1);
+
+  // A short wobble window roughly a third of the way through the climb.
+  const slipStart = 0.32;
+  const slipSpan = 0.16;
+  const slipT = (progress - slipStart) / slipSpan;
+  const slip = slipT > 0 && slipT < 1 ? Math.sin(slipT * Math.PI) : 0;
+
   rig.root.scale.x = 1;
-  rig.root.rotation.z = 0;
-  rig.root.position.y = Math.abs(Math.sin(t * speed * 0.6)) * 0.08;
-  rig.headGroup.rotation.x = -0.12;
-  rig.headGroup.rotation.y = 0;
-  rig.headGroup.rotation.z = 0;
-  rig.leftArm.rotation.x = -1.1 + phase * 0.35;
-  rig.rightArm.rotation.x = -1.1 - phase * 0.35;
-  rig.leftArm.rotation.z = rig.leftArm.userData.restRotationZ;
-  rig.rightArm.rotation.z = rig.rightArm.userData.restRotationZ;
-  rig.leftLeg.rotation.z = phase * 0.5;
-  rig.rightLeg.rotation.z = -phase * 0.5;
-  rig.legsGroup.rotation.z = 0;
+  rig.root.rotation.z = (phase * 0.06 - slip * 0.22) * settle;
+  rig.root.rotation.y = Math.sin(cycle * 0.5) * 0.14 * settle;
+  rig.root.position.y = (Math.abs(phase) * 0.1 - slip * 0.1) * settle;
+
+  rig.headGroup.rotation.x = (-0.15 + slip * 0.3) * settle;
+  rig.headGroup.rotation.y = slip * 0.35;
+  rig.headGroup.rotation.z = phase * 0.05 * settle;
+
+  rig.leftArm.rotation.x = (-1.15 + phase * 0.5 - slip * 0.7) * settle;
+  rig.rightArm.rotation.x = (-1.15 - phase * 0.5 - slip * 0.7) * settle;
+  rig.leftArm.rotation.z = rig.leftArm.userData.restRotationZ + slip * 0.45;
+  rig.rightArm.rotation.z = rig.rightArm.userData.restRotationZ - slip * 0.45;
+
+  rig.leftLeg.rotation.z = phase * 0.55 * settle;
+  rig.rightLeg.rotation.z = -phase * 0.55 * settle;
+  rig.leftLeg.rotation.x = Math.max(0, stepPhase) * 0.4 * settle;
+  rig.rightLeg.rotation.x = Math.max(0, -stepPhase) * 0.4 * settle;
+  rig.legsGroup.rotation.z = slip * 0.18;
 }
 
 // motionRef is a plain ref object ({ isMoving, direction }) the wander loop
@@ -412,14 +513,29 @@ function MascotScene({ containerRef, motionRef }) {
     // run that way" motion instead of an instant flip.
     let facingY = 0;
 
+    // A richer set of idle flourishes than just wave/dance — picked at
+    // random, weighted toward plain idle so the mascot still reads as
+    // "resting" most of the time rather than constantly performing.
     const pickNextMood = (now) => {
       const roll = Math.random();
-      if (roll < 0.4) {
+      if (roll < 0.22) {
         mood = 'wave';
         moodUntil = now + 1800;
-      } else if (roll < 0.7) {
+      } else if (roll < 0.38) {
         mood = 'dance';
         moodUntil = now + 2600 + Math.random() * 1400;
+      } else if (roll < 0.52) {
+        mood = 'stretch';
+        moodUntil = now + 1900;
+      } else if (roll < 0.64) {
+        mood = 'spin';
+        moodUntil = now + 1100;
+      } else if (roll < 0.8) {
+        mood = 'think';
+        moodUntil = now + 2800 + Math.random() * 1400;
+      } else if (roll < 0.9) {
+        mood = 'clap';
+        moodUntil = now + 1500;
       } else {
         mood = 'idle';
         moodUntil = now + 5000 + Math.random() * 5000;
@@ -432,6 +548,7 @@ function MascotScene({ containerRef, motionRef }) {
       const t = (now - start) / 1000;
       const isMoving = !!motionRef?.current?.isMoving;
       const climbing = !!motionRef?.current?.climbing;
+      const climbProgress = motionRef?.current?.climbProgress ?? 0;
       const direction = motionRef?.current?.direction || 1;
       // direction > 0 means moving toward +X (screen right): rotating root.y
       // POSITIVE swings its front (local +Z, facing the camera at rest)
@@ -443,7 +560,7 @@ function MascotScene({ containerRef, motionRef }) {
       rig.root.rotation.y = facingY;
 
       if (climbing) {
-        applyClimbPose(rig, t);
+        applyClimbPose(rig, t, climbProgress);
       } else if (isMoving) {
         applyRunPose(rig, t);
       } else {
@@ -456,12 +573,16 @@ function MascotScene({ containerRef, motionRef }) {
           moodUntil = now + 1200 + Math.random() * 2000;
         }
         if (now >= moodUntil) pickNextMood(now);
-        const progress = (now - moodStart) / 1000;
+        const moodProgress = Math.min(1, Math.max(0, (now - moodStart) / Math.max(1, moodUntil - moodStart)));
 
         rig.root.position.y = Math.sin(t * 1.8) * 0.06;
 
-        if (mood === 'wave') applyWavePose(rig, t, progress);
+        if (mood === 'wave') applyWavePose(rig, t, moodProgress);
         else if (mood === 'dance') applyDancePose(rig, t);
+        else if (mood === 'stretch') applyStretchPose(rig, t, moodProgress);
+        else if (mood === 'spin') applySpinPose(rig, t, moodProgress);
+        else if (mood === 'think') applyThinkPose(rig, t);
+        else if (mood === 'clap') applyClapPose(rig, t);
         else applyIdlePose(rig, t);
       }
       wasMoving = isMoving;
@@ -665,11 +786,35 @@ const DEFAULT_FLAVOR_LINES = [
   'Yorulmayasınız, işləriniz qaydasındadır 💪',
 ];
 
+// Shown while pinned (no product row to reference, so no {productName}/
+// {profit} placeholders here) — used as a fallback when the AI-generated
+// batch (see getFlavorLines, which mixes both kinds) doesn't have enough
+// placeholder-free lines yet.
+const GENERIC_FLAVOR_LINES = [
+  'Burda rahatam, təşəkkürlər 😌',
+  'Siz işinizə davam edin, mən burda gözləyirəm.',
+  'Bu gün hər şey qaydasındadır!',
+  'Bir az darıxdım, danışaq? 💬',
+  'Checkila-da gözəl bir gün keçirirsiniz, elə deyilmi?',
+];
+
 function fillFlavorLine(template, { productName, profit }) {
   const profitText = Number.isFinite(Number(profit)) ? Number(profit).toFixed(2) : '—';
   return String(template || '')
     .replaceAll('{productName}', productName || 'bu məhsul')
     .replaceAll('{profit}', profitText);
+}
+
+// For the pinned "just feeling chatty" bubble, which has no product in
+// context — prefer lines that don't need {productName}/{profit} filled in,
+// falling back to the small built-in generic set if the AI-generated batch
+// turns out to be all product-specific this time.
+function pickGenericFlavorLine(lines) {
+  const placeholderFree = (Array.isArray(lines) ? lines : []).filter(
+    (l) => !l.includes('{productName}') && !l.includes('{profit}')
+  );
+  const pool = placeholderFree.length ? placeholderFree : GENERIC_FLAVOR_LINES;
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 function pickRandomProductElement() {
@@ -729,13 +874,21 @@ export default function CheckilaMascot() {
   // Mutated directly by the wander loop below and read directly by
   // MascotScene's own render loop — see that component's comment on why this
   // is a plain ref instead of React state.
-  const motionRef = useRef({ isMoving: false, direction: 1, climbing: false });
+  const motionRef = useRef({ isMoving: false, direction: 1, climbing: false, climbProgress: 0 });
   // "Visit a random product row" state machine — see the tick loop below.
   // phase: 'idle' | 'traveling' | 'climbing' | 'bubble'.
   const visitRef = useRef({ phase: 'idle', el: null, productName: '', profit: null });
   const nextVisitAtRef = useRef(performance.now() + 15000 + Math.random() * 15000);
   const phaseUntilRef = useRef(0);
+  const climbStartAtRef = useRef(0);
   const flavorLinesRef = useRef(DEFAULT_FLAVOR_LINES);
+  // Pinned mode has no product to visit/climb to, but should still feel
+  // alive — a separate, independent timer for just popping up a feelings
+  // bubble while parked in the corner (see the tick loop's `if (pinned)`
+  // branch).
+  const pinnedBubbleActiveRef = useRef(false);
+  const pinnedBubbleUntilRef = useRef(0);
+  const nextPinnedBubbleAtRef = useRef(performance.now() + 20000 + Math.random() * 20000);
   const [chatOpen, setChatOpen] = useState(false);
   const [anchor, setAnchor] = useState({ x: 60, y: 60 });
   const [bubble, setBubble] = useState(null); // { text, anchor } | null
@@ -831,6 +984,7 @@ export default function CheckilaMascot() {
     // keeps it on screen, actually running, for a consistent, noticeable
     // stretch of time no matter the distance.
     const RUN_SPEED_PX_PER_SEC = 260;
+    const CLIMB_DURATION_MS = 1900;
     let lastTickAt = performance.now();
 
     const isProductsPage = location.pathname.startsWith('/products');
@@ -851,12 +1005,32 @@ export default function CheckilaMascot() {
       if ((pinned || chatOpen || !isProductsPage) && visitRef.current.phase !== 'idle') {
         resetVisit();
       }
+      // Un-pinning (or opening chat) mid-bubble clears it too, the same way.
+      if ((!pinned || chatOpen) && pinnedBubbleActiveRef.current) {
+        pinnedBubbleActiveRef.current = false;
+        setBubble(null);
+      }
 
       if (!chatOpen && wrapperRef.current) {
         const visit = visitRef.current;
 
         if (pinned) {
           targetRef.current = getCornerPosition();
+          // Independent of the product-row "visit" flow above (which never
+          // runs while pinned) — just a periodic feelings bubble while
+          // parked in the corner, picked from placeholder-free flavor lines.
+          if (pinnedBubbleActiveRef.current) {
+            if (now >= pinnedBubbleUntilRef.current) {
+              pinnedBubbleActiveRef.current = false;
+              setBubble(null);
+              nextPinnedBubbleAtRef.current = now + 25000 + Math.random() * 25000;
+            }
+          } else if (now >= nextPinnedBubbleAtRef.current) {
+            const text = pickGenericFlavorLine(flavorLinesRef.current);
+            pinnedBubbleActiveRef.current = true;
+            pinnedBubbleUntilRef.current = now + 4500;
+            setBubble({ text, anchor: { x: posRef.current.x, y: posRef.current.y } });
+          }
         } else if (visit.phase === 'idle' && isProductsPage && now >= nextVisitAtRef.current) {
           const el = pickRandomProductElement();
           if (el) {
@@ -904,8 +1078,10 @@ export default function CheckilaMascot() {
         if (visit.phase === 'traveling' && arrived) {
           visitRef.current.phase = 'climbing';
           motionRef.current.climbing = true;
-          phaseUntilRef.current = now + 1400;
+          climbStartAtRef.current = now;
+          phaseUntilRef.current = now + CLIMB_DURATION_MS;
         } else if (visit.phase === 'climbing') {
+          motionRef.current.climbProgress = Math.min(1, (now - climbStartAtRef.current) / CLIMB_DURATION_MS);
           if (now >= phaseUntilRef.current) {
             visitRef.current.phase = 'bubble';
             motionRef.current.climbing = false;
