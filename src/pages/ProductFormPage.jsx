@@ -91,6 +91,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
     checkTitleEnabled: false,
     checkHighPriceEnabled: false,
     checkShippingInfoEnabled: false,
+    shippingInfoOutOfStockEnabled: false,
   });
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(isEditMode);
@@ -150,6 +151,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
           checkTitleEnabled: product.checkTitleEnabled !== false,
           checkHighPriceEnabled: product.checkHighPriceEnabled !== false,
           checkShippingInfoEnabled: product.checkShippingInfoEnabled !== false,
+          shippingInfoOutOfStockEnabled: !!product.shippingInfoOutOfStockEnabled,
         };
 
         setFormData(nextData);
@@ -253,6 +255,7 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
       formDataObj.append('checkTitleEnabled', String(!!formData.checkTitleEnabled));
       formDataObj.append('checkHighPriceEnabled', String(!!formData.checkHighPriceEnabled));
       formDataObj.append('checkShippingInfoEnabled', String(!!formData.checkShippingInfoEnabled));
+      formDataObj.append('shippingInfoOutOfStockEnabled', String(!!formData.shippingInfoOutOfStockEnabled));
       if (selectedEbayAccountId) {
         const selectedAcc = findMatchingAccount(ebayAccounts, [selectedEbayAccountId]);
         const selectedAccountValue = getPreferredAccountValue(selectedAcc || {});
@@ -630,6 +633,16 @@ export function ProductFormModal({ productId = null, onClose, onSuccess }) {
                     <Toggle key={key} name={key} checked={formData[key]} label={t(`productChecks.${labelKey}`)} hint={t(`productChecks.${hintKey}`)} />
                   ))}
                 </div>
+                {formData.checkShippingInfoEnabled && (
+                  <div className={`mt-3 border-l-2 pl-3 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                    <Toggle
+                      name="shippingInfoOutOfStockEnabled"
+                      checked={formData.shippingInfoOutOfStockEnabled}
+                      label={t('productChecks.shippingInfoOutOfStockLabel')}
+                      hint={t('productChecks.shippingInfoOutOfStockHint')}
+                    />
+                  </div>
+                )}
               </section>
 
               {/* Notifications */}

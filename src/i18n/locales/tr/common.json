@@ -288,6 +288,8 @@
     "highPriceHint": "Amazon'un belirsiz \"High price\" (buy box yok) uyarısını stokta yok olarak kabul eder.",
     "shippingInfoLabel": "Kargo bilgisi kontrolü",
     "shippingInfoHint": "Amazon'un tahmini teslimat süresi değiştiğinde bildirim gönderir.",
+    "shippingInfoOutOfStockLabel": "Değişince stokta yok say",
+    "shippingInfoOutOfStockHint": "Teslimat süresi değiştiğinde hem bildirim gönderir hem de ürünü stokta yok olarak işaretler. Kapalıysa yalnızca bildirim gönderilir.",
     "save": "Kaydet",
     "saving": "Kaydediliyor...",
     "saved": "Kontrol ayarları güncellendi",

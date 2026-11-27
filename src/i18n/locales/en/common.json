@@ -639,6 +639,8 @@
     "highPriceHint": "Treats Amazon's ambiguous \"High price\" (no buy box) notice as out of stock.",
     "shippingInfoLabel": "Shipping info check",
     "shippingInfoHint": "Notifies you when Amazon's delivery estimate changes.",
+    "shippingInfoOutOfStockLabel": "Mark out of stock on change",
+    "shippingInfoOutOfStockHint": "When the delivery estimate changes, also marks the product out of stock (not just a notification). Leave off to only get notified.",
     "save": "Save",
     "saving": "Saving...",
     "saved": "Check settings updated",

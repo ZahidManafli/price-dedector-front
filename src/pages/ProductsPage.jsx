@@ -180,12 +180,16 @@ const CHECK_TOGGLES = [
 // Compare should perform for THIS product, then persists them on Save via the
 // dedicated check-settings endpoint (not the full product-edit form).
 function CheckSettingsPopover({ product, isDark, t, onClose, onSave }) {
-  const [draft, setDraft] = useState(() =>
-    CHECK_TOGGLES.reduce((acc, { key }) => {
+  const [draft, setDraft] = useState(() => ({
+    ...CHECK_TOGGLES.reduce((acc, { key }) => {
       acc[key] = product[key] !== false;
       return acc;
-    }, {})
-  );
+    }, {}),
+    // Sub-option of checkShippingInfoEnabled — defaults to off (not the
+    // "NULL/undefined = enabled" rule the five checks above use), since
+    // there are no legacy rows relying on a particular behavior here.
+    shippingInfoOutOfStockEnabled: !!product.shippingInfoOutOfStockEnabled,
+  }));
   const [saving, setSaving] = useState(false);
   const popoverRef = useRef(null);
 
@@ -233,6 +237,24 @@ function CheckSettingsPopover({ product, isDark, t, onClose, onSave }) {
             </span>
           </label>
         ))}
+        {draft.checkShippingInfoEnabled && (
+          <label className={`ml-5 flex items-start gap-2 cursor-pointer border-l-2 pl-2.5 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+            <input
+              type="checkbox"
+              checked={draft.shippingInfoOutOfStockEnabled}
+              onChange={(e) => setDraft((prev) => ({ ...prev, shippingInfoOutOfStockEnabled: e.target.checked }))}
+              className="mt-0.5 h-4 w-4 rounded border-slate-400 text-blue-600 focus:ring-blue-500/40"
+            />
+            <span>
+              <span className={`block text-sm font-medium ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+                {t('productChecks.shippingInfoOutOfStockLabel')}
+              </span>
+              <span className={`block text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {t('productChecks.shippingInfoOutOfStockHint')}
+              </span>
+            </span>
+          </label>
+        )}
       </div>
       <div className="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-700/20">
         <button
@@ -648,6 +670,7 @@ export default function ProductsPage() {
                 checkTitleEnabled: saved.checkTitleEnabled ?? draft.checkTitleEnabled,
                 checkHighPriceEnabled: saved.checkHighPriceEnabled ?? draft.checkHighPriceEnabled,
                 checkShippingInfoEnabled: saved.checkShippingInfoEnabled ?? draft.checkShippingInfoEnabled,
+                shippingInfoOutOfStockEnabled: saved.shippingInfoOutOfStockEnabled ?? draft.shippingInfoOutOfStockEnabled,
               }
             : p
         )
