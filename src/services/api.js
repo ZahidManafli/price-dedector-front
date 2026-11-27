@@ -532,7 +532,8 @@ export const dewisoAPI = {
 // Admin APIs
 // Checkila mascot (admin-only operational assistant) — see components/CheckilaMascot.jsx.
 export const mascotAPI = {
-  chat: (messages) => api.post('/mascot/chat', { messages }),
+  startChat: (messages) => api.post('/mascot/chat', { messages }),
+  getChatStatus: (jobId) => api.get(`/mascot/chat/${jobId}`),
 };
 
 export const adminAPI = {
