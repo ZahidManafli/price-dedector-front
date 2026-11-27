@@ -151,8 +151,6 @@
     "bulkCheckSettingsButton": "Настройки",
     "bulkCheckSettingsTitle": "Настройки проверок для всех товаров",
     "bulkCheckSettingsHint": "Включите или отключите каждую проверку сразу для всех ваших товаров.",
-    "bulkCheckSettingsEnableAll": "Включить всё",
-    "bulkCheckSettingsDisableAll": "Отключить всё",
     "bulkCheckSettingsApplied": "Применено к {{count}} товарам",
     "bulkCheckSettingsSaveFailed": "Не удалось применить, попробуйте снова",
     "openAnalysis": "Открыть анализ Checkila",

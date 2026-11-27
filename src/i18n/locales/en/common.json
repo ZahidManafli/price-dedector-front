@@ -442,8 +442,6 @@
     "bulkCheckSettingsButton": "Settings",
     "bulkCheckSettingsTitle": "Check settings for all products",
     "bulkCheckSettingsHint": "Enable or disable each check for every one of your products at once.",
-    "bulkCheckSettingsEnableAll": "Enable all",
-    "bulkCheckSettingsDisableAll": "Disable all",
     "bulkCheckSettingsApplied": "Applied to {{count}} products",
     "bulkCheckSettingsSaveFailed": "Failed to apply, please try again",
     "openAnalysis": "Open Checkila Analysis",

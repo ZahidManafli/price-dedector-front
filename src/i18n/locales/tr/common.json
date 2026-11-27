@@ -151,8 +151,6 @@
     "bulkCheckSettingsButton": "Ayarlar",
     "bulkCheckSettingsTitle": "Tüm ürünler için kontrol ayarları",
     "bulkCheckSettingsHint": "Her kontrolü tüm ürünleriniz için aynı anda etkinleştirin veya devre dışı bırakın.",
-    "bulkCheckSettingsEnableAll": "Hepsini aç",
-    "bulkCheckSettingsDisableAll": "Hepsini kapat",
     "bulkCheckSettingsApplied": "{{count}} ürüne uygulandı",
     "bulkCheckSettingsSaveFailed": "Uygulanamadı, tekrar deneyin",
     "openAnalysis": "Checkila Analizini Aç",

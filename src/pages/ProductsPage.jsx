@@ -440,10 +440,10 @@ function NotificationSettingsModal({ isDark, t, onClose }) {
 // Same six fields as CHECK_TOGGLES/CheckSettingsPopover above, but applied to
 // EVERY product the signed-in user owns in one action (PATCH
 // /products/check-settings/bulk) instead of opening each row's popover one
-// by one. Shown as two buttons per row rather than a single toggle, since
-// there's no single "current" value to display here — products can already
-// differ from each other — this is a command ("turn this check on/off for
-// everything"), not a shared state to edit.
+// by one. The toggle's initial position reflects the currently loaded
+// products (on when every one of them has it enabled) — not a durable
+// "global setting" of its own, since per-product values can still diverge
+// again right after a bulk apply via each row's own popover.
 const BULK_CHECK_ROWS = [
   { key: 'checkPriceEnabled', labelKey: 'priceLabel' },
   { key: 'checkStockEnabled', labelKey: 'stockLabel' },
@@ -453,24 +453,39 @@ const BULK_CHECK_ROWS = [
   { key: 'shippingInfoOutOfStockEnabled', labelKey: 'shippingInfoOutOfStockLabel' },
 ];
 
-function BulkCheckSettingsModal({ isDark, t, onClose, onApplied }) {
-  const [pending, setPending] = useState(null); // `${key}:${value}` while that button's request is in flight
-  const [result, setResult] = useState(null); // { key, value, updatedCount } | null
+function isBulkCheckRowEnabledForProduct(key, product) {
+  // Mirrors CheckSettingsPopover's per-field default convention: the five
+  // main checks default to ON (NULL/legacy row = enabled), while the
+  // shipping-info-out-of-stock sub-option defaults to OFF.
+  return key === 'shippingInfoOutOfStockEnabled' ? !!product[key] : product[key] !== false;
+}
+
+function BulkCheckSettingsModal({ isDark, t, products, onClose, onApplied }) {
+  const [values, setValues] = useState(() =>
+    BULK_CHECK_ROWS.reduce((acc, { key }) => {
+      acc[key] = !products.length || products.every((p) => isBulkCheckRowEnabledForProduct(key, p));
+      return acc;
+    }, {})
+  );
+  const [pendingKey, setPendingKey] = useState(null);
+  const [appliedKey, setAppliedKey] = useState(null);
   const [error, setError] = useState(null);
 
-  const handleApply = async (key, value) => {
-    const token = `${key}:${value}`;
-    setPending(token);
+  const handleToggle = async (key, checked) => {
+    const previous = values[key];
+    setValues((prev) => ({ ...prev, [key]: checked }));
+    setPendingKey(key);
+    setAppliedKey(null);
     setError(null);
-    setResult(null);
     try {
-      const res = await productAPI.updateAllCheckSettings({ [key]: value });
-      setResult({ key, value, updatedCount: res?.data?.updatedCount ?? 0 });
+      await productAPI.updateAllCheckSettings({ [key]: checked });
+      setAppliedKey(key);
       onApplied();
     } catch (err) {
+      setValues((prev) => ({ ...prev, [key]: previous }));
       setError(err?.response?.data?.error || t('productsPage.bulkCheckSettingsSaveFailed'));
     } finally {
-      setPending(null);
+      setPendingKey(null);
     }
   };
 
@@ -503,39 +518,20 @@ function BulkCheckSettingsModal({ isDark, t, onClose, onApplied }) {
                 <p className={`text-sm font-medium truncate ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
                   {t(`productChecks.${labelKey}`)}
                 </p>
-                {result?.key === key && (
+                {appliedKey === key && (
                   <p className="text-[11px] text-green-500 mt-0.5">
-                    {t('productsPage.bulkCheckSettingsApplied', { count: result.updatedCount })}
+                    {t('productsPage.bulkCheckSettingsApplied', { count: products.length })}
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  type="button"
-                  disabled={!!pending}
-                  onClick={() => handleApply(key, true)}
-                  className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50"
-                >
-                  {pending === `${key}:true` ? (
-                    <RefreshCw size={12} className="animate-spin" />
-                  ) : (
-                    t('productsPage.bulkCheckSettingsEnableAll')
-                  )}
-                </button>
-                <button
-                  type="button"
-                  disabled={!!pending}
-                  onClick={() => handleApply(key, false)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition disabled:opacity-50 ${
-                    isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {pending === `${key}:false` ? (
-                    <RefreshCw size={12} className="animate-spin" />
-                  ) : (
-                    t('productsPage.bulkCheckSettingsDisableAll')
-                  )}
-                </button>
+              <div className="flex items-center gap-2 shrink-0">
+                {pendingKey === key && <RefreshCw size={12} className="animate-spin text-slate-400" />}
+                <ToggleSwitch
+                  checked={values[key]}
+                  disabled={!!pendingKey}
+                  isDark={isDark}
+                  onChange={(checked) => handleToggle(key, checked)}
+                />
               </div>
             </div>
           ))}
@@ -911,6 +907,7 @@ export default function ProductsPage() {
         <BulkCheckSettingsModal
           isDark={isDark}
           t={t}
+          products={products}
           onClose={() => setBulkCheckSettingsOpen(false)}
           onApplied={fetchProducts}
         />
